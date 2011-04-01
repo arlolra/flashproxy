@@ -3,10 +3,10 @@ function quote(s) {
 }
 
 function maybe_quote(s) {
-	if (/[\\\"]/.test(s))
-		return quote(s);
-	else
+	if (/^[_A-Za-z][_A-Za-z0-9]*$/.test(s))
 		return s;
+	else
+		return quote(s);
 }
 
 function repr(x, max_depth) {
