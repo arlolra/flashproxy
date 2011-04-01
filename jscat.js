@@ -69,8 +69,8 @@ while (true) {
 		connector.connect(DIRECTORY_ADDRESS, DIRECTORY_PORT, ev.sd);
 		break;
 	case "connect":
-		peer[ev.sd] = ev.userdata;
-		peer[ev.userdata] = ev.sd;
+		peers[ev.sd] = ev.userdata;
+		peers[ev.userdata] = ev.sd;
 		/* Queue initial read events. */
 		connector.recv(ev.sd, ev.userdata);
 		connector.recv(ev.userdata, ev.sd);
