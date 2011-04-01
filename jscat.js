@@ -18,6 +18,7 @@ var connector = {
 			n = this.selector.select();
 		} while (n == 0);
 		var key = this.selector.selectedKeys().iterator().next();
+		this.selector.selectedKeys().remove(key);
 		var ev = {};
 		if (key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT) {
 			ev.type = "accept";
