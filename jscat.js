@@ -11,6 +11,19 @@ var io = {
 
 var connector = {
 	selector: java.nio.channels.Selector.open(),
+	accept_pending: [],
+	connect_pending: [],
+
+	get_pending: function(pending_list, sd, keep) {
+		for (var i = 0; i < pending_list.length; i++) {
+			if (pending_list[i].sd == sd) {
+				var pending = pending_list[i];
+				if (!keep)
+					pending_list.splice(i, 1)[0];
+				return pending;
+			}
+		}
+	},
 
 	wait_for_event: function() {
 		var n;
@@ -24,14 +37,17 @@ var connector = {
 			== java.nio.channels.SelectionKey.OP_ACCEPT) {
 			ev.type = "accept";
 			ev.sd = key.channel().socket().accept();
-			/* userdata */
+			/* Keep the pending record. */
+			pending = this.get_pending(this.accept_pending, key.channel(), true);
+			ev.userdata = pending.userdata;
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
 			== java.nio.channels.SelectionKey.OP_CONNECT) {
 			if (key.channel().isConnectionPending())
 				key.channel().finishConnect();
 			ev.type = "connect";
 			ev.sd = key.channel().socket();
-			/* userdata */
+			pending = this.get_pending(this.connect_pending, key.channel());
+			ev.userdata = pending.userdata;
 			key.cancel();
 		} else {
 			io.print("Unknown selection key op.");
@@ -45,7 +61,7 @@ var connector = {
 		var s = ssc.socket();
 		s.bind(java.net.InetSocketAddress(port));
 		ssc.register(this.selector, java.nio.channels.SelectionKey.OP_ACCEPT);
-		/* userdata */
+		this.accept_pending.push({ sd: ssc, userdata: userdata });
 		return s;
 	},
 	connect: function(address, port, userdata) {
@@ -54,6 +70,7 @@ var connector = {
 		var s = sc.socket();
 		sc.register(this.selector, java.nio.channels.SelectionKey.OP_CONNECT);
 		sc.connect(java.net.InetSocketAddress(address, port));
+		this.connect_pending.push({ sd: sc, userdata: userdata });
 		return s;
 	},
 	recv: function(sd, userdata) {
