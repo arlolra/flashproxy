@@ -20,7 +20,8 @@ var connector = {
 		var key = this.selector.selectedKeys().iterator().next();
 		this.selector.selectedKeys().remove(key);
 		var ev = {};
-		if (key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT) {
+		if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
+			== java.nio.channels.SelectionKey.OP_ACCEPT) {
 			ev.type = "accept";
 			ev.sd = key.channel().socket().accept();
 			/* userdata */
