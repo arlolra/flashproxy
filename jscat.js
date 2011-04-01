@@ -1,16 +1,16 @@
 var io = {
-	"print": function(s) {
+	print: function(s) {
 		return print(s);
 	},
-	"quit": function() {
+	quit: function() {
 		return quit();
 	},
 };
 
 var connector = {
-	"selector": java.nio.channels.Selector.open(),
+	selector: java.nio.channels.Selector.open(),
 
-	"wait_for_event": function() {
+	wait_for_event: function() {
 		var n;
 		do {
 			n = this.selector.select();
@@ -26,7 +26,7 @@ var connector = {
 			return ev;
 		}
 	},
-	"listen": function(address, port, userdata) {
+	listen: function(address, port, userdata) {
 		var ssc = java.nio.channels.ServerSocketChannel.open();
 		ssc.configureBlocking(false);
 		var s = ssc.socket();
@@ -35,13 +35,13 @@ var connector = {
 		/* userdata */
 		return s;
 	},
-	"connect": function(address, port, userdata) {
+	connect: function(address, port, userdata) {
 	},
-	"recv": function(sd, userdata) {
+	recv: function(sd, userdata) {
 	},
-	"send": function(sd, data, userdata) {
+	send: function(sd, data, userdata) {
 	},
-	"close": function(sd, userdata) {
+	close: function(sd, userdata) {
 	},
 };
 
