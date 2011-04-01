@@ -15,7 +15,13 @@ function repr(x, max_depth) {
 
 	if (x === null) {
 		return "null";
-	} if (typeof x == "object") {
+	} else if (x instanceof java.lang.Iterable) {
+		var elems = [];
+		var i = x.iterator();
+		while (i.hasNext())
+			elems.push(repr(i.next()));
+		return x["class"] + ":[ " + elems.join(", ") + " ]";
+	} else if (typeof x == "object") {
 		if ("hashCode" in x)
 			// Guess that it's a Java object.
 			return String(x);
