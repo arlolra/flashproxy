@@ -13,9 +13,9 @@ var connector = {
 	"wait_for_event": function() {
 		var n;
 		do {
-			n = connector.selector.select();
+			n = this.selector.select();
 		} while (n == 0);
-		var key = connector.selector.selectedKeys().iterator().next();
+		var key = this.selector.selectedKeys().iterator().next();
 		var ev = {};
 		if (key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT) {
 			ev.type = "accept";
@@ -31,7 +31,7 @@ var connector = {
 		ssc.configureBlocking(false);
 		var s = ssc.socket();
 		s.bind(java.net.InetSocketAddress(port));
-		ssc.register(connector.selector, java.nio.channels.SelectionKey.OP_ACCEPT);
+		ssc.register(this.selector, java.nio.channels.SelectionKey.OP_ACCEPT);
 		/* userdata */
 		return s;
 	},
