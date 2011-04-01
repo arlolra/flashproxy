@@ -95,7 +95,7 @@ var l = connector.listen(LOCAL_ADDRESS, LOCAL_PORT);
 
 while (true) {
 	var ev = connector.wait_for_event();
-	print("ev: " + repr(ev));
+	io.print("ev: " + repr(ev));
 	switch (ev.type) {
 	case "accept":
 		io.print("Connection from "
