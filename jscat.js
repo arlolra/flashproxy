@@ -56,7 +56,6 @@ var DIRECTORY_PORT = 9999;
 var peers = {};
 
 var l = connector.listen(LOCAL_ADDRESS, LOCAL_PORT);
-print("Listening socket: " + l);
 
 while (true) {
 	var ev = connector.wait_for_event();
