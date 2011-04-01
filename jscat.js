@@ -25,8 +25,19 @@ var connector = {
 			ev.type = "accept";
 			ev.sd = key.channel().socket().accept();
 			/* userdata */
-			return ev;
+		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
+			== java.nio.channels.SelectionKey.OP_CONNECT) {
+			if (key.channel().isConnectionPending())
+				key.channel().finishConnect();
+			ev.type = "connect";
+			ev.sd = key.channel().socket();
+			/* userdata */
+			key.cancel();
+		} else {
+			io.print("Unknown selection key op.");
+			io.quit();
 		}
+		return ev;
 	},
 	listen: function(address, port, userdata) {
 		var ssc = java.nio.channels.ServerSocketChannel.open();
@@ -38,6 +49,12 @@ var connector = {
 		return s;
 	},
 	connect: function(address, port, userdata) {
+		var sc = java.nio.channels.SocketChannel.open();
+		sc.configureBlocking(false);
+		var s = sc.socket();
+		sc.register(this.selector, java.nio.channels.SelectionKey.OP_CONNECT);
+		sc.connect(java.net.InetSocketAddress(address, port));
+		return s;
 	},
 	recv: function(sd, userdata) {
 	},
