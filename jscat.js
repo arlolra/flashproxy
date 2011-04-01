@@ -1,3 +1,5 @@
+load("util.js");
+
 var io = {
 	print: function(s) {
 		return print(s);
@@ -60,7 +62,7 @@ print("Listening socket: " + l);
 
 while (true) {
 	var ev = connector.wait_for_event();
-	print("ev: type:" + ev.type + " sd:" + ev.sd);
+	print("ev: " + repr(ev));
 	switch (ev.type) {
 	case "accept":
 		io.print("Connection from " + ev.address + ":" + ev.port + ".");
