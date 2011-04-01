@@ -22,8 +22,6 @@ var connector = {
 		if (key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT) {
 			ev.type = "accept";
 			ev.sd = key.channel().socket().accept();
-			ev.address = ev.sd.getInetAddress().getHostAddress();
-			ev.port = ev.sd.getPort();
 			/* userdata */
 			return ev;
 		}
@@ -65,7 +63,9 @@ while (true) {
 	print("ev: " + repr(ev));
 	switch (ev.type) {
 	case "accept":
-		io.print("Connection from " + ev.address + ":" + ev.port + ".");
+		io.print("Connection from "
+			+ ev.sd.getInetAddress().getHostAddress() + ":"
+			+ ev.sd.getPort() + ".");
 		connector.connect(DIRECTORY_ADDRESS, DIRECTORY_PORT, ev.sd);
 		break;
 	case "connect":
