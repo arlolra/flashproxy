@@ -48,7 +48,7 @@ var connector = {
 	},
 
 	bytebuffer_to_string: function(bb) {
-		return String(new java.lang.String(java.util.Arrays.copyOf(bb.array(), bb.position())));
+		return String(new java.lang.String(java.util.Arrays.copyOf(bb.array(), bb.position()), "ISO-8859-1"));
 	},
 	string_to_bytebuffer: function(s) {
 		return java.nio.ByteBuffer.wrap(new java.lang.String(s).getBytes("ISO-8859-1"));
