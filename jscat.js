@@ -37,16 +37,18 @@ var connector = {
 		if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
 			== java.nio.channels.SelectionKey.OP_ACCEPT) {
 			ev.type = "accept";
-			ev.sd = channel.socket().accept();
+			ev.sd = channel.socket().accept().channel;
 			/* Keep the pending record. */
 			pending = this.get_pending(this.accept_pending, channel, true);
+			ev.address = ev.sd.socket().getInetAddress().getHostAddress();
+			ev.port = ev.sd.socket().getPort();
 			ev.userdata = pending.userdata;
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
 			== java.nio.channels.SelectionKey.OP_CONNECT) {
 			if (channel.isConnectionPending())
 				channel.finishConnect();
 			ev.type = "connect";
-			ev.sd = channel.socket();
+			ev.sd = channel;
 			pending = this.get_pending(this.connect_pending, channel);
 			ev.userdata = pending.userdata;
 			key.cancel();
@@ -63,16 +65,15 @@ var connector = {
 		s.bind(java.net.InetSocketAddress(port));
 		ssc.register(this.selector, java.nio.channels.SelectionKey.OP_ACCEPT);
 		this.accept_pending.push({ sd: ssc, userdata: userdata });
-		return s;
+		return ssc;
 	},
 	connect: function(address, port, userdata) {
 		var sc = java.nio.channels.SocketChannel.open();
 		sc.configureBlocking(false);
-		var s = sc.socket();
 		sc.register(this.selector, java.nio.channels.SelectionKey.OP_CONNECT);
 		sc.connect(java.net.InetSocketAddress(address, port));
 		this.connect_pending.push({ sd: sc, userdata: userdata });
-		return s;
+		return sc;
 	},
 	recv: function(sd, userdata) {
 	},
@@ -99,9 +100,7 @@ while (true) {
 	io.print("ev: " + repr(ev));
 	switch (ev.type) {
 	case "accept":
-		io.print("Connection from "
-			+ ev.sd.getInetAddress().getHostAddress() + ":"
-			+ ev.sd.getPort() + ".");
+		io.print("Connection from " + ev.address + ":" + ev.port + ".");
 		connector.connect(DIRECTORY_ADDRESS, DIRECTORY_PORT, ev.sd);
 		break;
 	case "connect":
