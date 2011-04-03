@@ -12,6 +12,7 @@ var io = {
 var connector = {
 	selector: java.nio.channels.Selector.open(),
 	read_buf: java.nio.ByteBuffer.allocate(1024),
+	events: [],
 
 	/* Register/unregister descriptors and operations with the selector.
 	   These assume that only one ops of each type is registered per
@@ -45,50 +46,79 @@ var connector = {
 		return s["class"] + "\0" + s.getInetAddress().getHostAddress() + "\0" + s.getPort();
 	},
 
+	op_accept: function(channel) {
+		var c = channel.socket().accept();
+		this.events.push({
+			type: "accept",
+			sd: channel,
+			address: c.getInetAddress().getHostAddress(),
+			port: c.getPort(),
+			client: c.channel,
+		});
+		/* For accept only, do not unregister the selection key. */
+	},
+	op_connect: function(channel) {
+		if (channel.isConnectionPending())
+			channel.finishConnect();
+		this.events.push({
+			type: "connect",
+			sd: channel,
+			address: channel.socket().getInetAddress().getHostAddress(),
+			port: channel.socket().getPort(),
+		});
+		this.unregister(channel, java.nio.channels.SelectionKey.OP_CONNECT);
+	},
+	op_read: function(channel) {
+		this.read_buf.clear();
+		var n = channel.read(this.read_buf);
+		var data;
+		if (n == -1)
+			data = undefined;
+		else
+			data = this.bytebuffer_to_string(this.read_buf);
+		this.events.push({
+			type: "recv",
+			sd: channel,
+			data: data,
+		});
+		this.unregister(channel, java.nio.channels.SelectionKey.OP_READ);
+	},
+	op_write: function(channel) {
+		this.events.push({
+			type: "send",
+			sd: channel,
+		});
+		this.unregister(channel, java.nio.channels.SelectionKey.OP_WRITE);
+	},
+
 	wait_for_event: function() {
-		var n;
-		do {
-			n = this.selector.select();
-		} while (n == 0);
-		var key = this.selector.selectedKeys().iterator().next();
-		var channel = key.channel();
-		this.selector.selectedKeys().remove(key);
-		var ev = {};
-		ev.sd = channel;
-		if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
-			== java.nio.channels.SelectionKey.OP_ACCEPT) {
-			ev.type = "accept";
-			var c = channel.socket().accept();
-			ev.address = c.getInetAddress().getHostAddress();
-			ev.port = c.getPort();
-			ev.client = c.channel;
-		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
-			== java.nio.channels.SelectionKey.OP_CONNECT) {
-			if (channel.isConnectionPending())
-				channel.finishConnect();
-			ev.type = "connect";
-			ev.address = channel.socket().getInetAddress().getHostAddress();
-			ev.port = channel.socket().getPort();
-			this.unregister(channel, java.nio.channels.SelectionKey.OP_CONNECT);
-		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_READ)
-			== java.nio.channels.SelectionKey.OP_READ) {
-			ev.type = "recv";
-			this.read_buf.clear();
-			var n = channel.read(this.read_buf);
-			if (n == -1)
-				ev.data = undefined;
-			else
-				ev.data = this.bytebuffer_to_string(this.read_buf);
-			this.unregister(channel, java.nio.channels.SelectionKey.OP_READ);
-		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_WRITE)
-			== java.nio.channels.SelectionKey.OP_WRITE) {
-			ev.type = "send";
-			this.unregister(channel, java.nio.channels.SelectionKey.OP_WRITE);
-		} else {
-			io.print("Unknown selection key op.");
-			io.quit();
+		while (true) {
+			if (this.events.length > 0)
+				return this.events.shift();
+
+			var n;
+			do {
+				n = this.selector.select();
+			} while (n == 0);
+			var key = this.selector.selectedKeys().iterator().next();
+			var channel = key.channel();
+			this.selector.selectedKeys().remove(key);
+			if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
+				== java.nio.channels.SelectionKey.OP_ACCEPT) {
+				this.op_accept(channel);
+			} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
+				== java.nio.channels.SelectionKey.OP_CONNECT) {
+				this.op_connect(channel);
+			} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_READ)
+				== java.nio.channels.SelectionKey.OP_READ) {
+				this.op_read(channel);
+			} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_WRITE)
+				== java.nio.channels.SelectionKey.OP_WRITE) {
+				this.op_write(channel);
+			} else {
+				throw new Error("Unknown selection key op.");
+			}
 		}
-		return ev;
 	},
 	listen: function(address, port) {
 		var sd = java.nio.channels.ServerSocketChannel.open();
