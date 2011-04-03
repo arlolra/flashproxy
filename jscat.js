@@ -150,7 +150,6 @@ var connector = {
 	},
 	close: function(sd) {
 		sd.close();
-		sd.keyFor(this.selector).cancel();
 	},
 };
 
