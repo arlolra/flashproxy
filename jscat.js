@@ -27,6 +27,26 @@ var connector = {
 			}
 		}
 	},
+
+	/* Register/unregister descriptors and operations with the selector.
+	   These assume that only one ops of each type is registered per
+	   descriptor; for example, you can't register two read events, because
+	   when one is unregistered it will unregister the other. */
+	register: function(sd, ops) {
+		var key = sd.keyFor(this.selector);
+		var current_ops = 0;
+		if (key)
+			current_ops = key.interestOps();
+		return sd.register(this.selector, current_ops | ops);
+	},
+	unregister: function(sd, ops) {
+		var key = sd.keyFor(this.selector);
+		var current_ops = 0;
+		if (key)
+			current_ops = key.interestOps();
+		return sd.register(this.selector, current_ops & ~ops);
+	},
+
 	bytebuffer_to_string: function(bb) {
 		return String(new java.lang.String(java.util.Arrays.copyOf(bb.array(), bb.position())));
 	},
@@ -60,7 +80,7 @@ var connector = {
 			ev.sd = channel;
 			pending = this.get_pending(this.connect_pending, channel);
 			ev.userdata = pending.userdata;
-			channel.register(this.selector, key.interestOps() & ~java.nio.channels.SelectionKey.OP_CONNECT);
+			this.unregister(channel, java.nio.channels.SelectionKey.OP_CONNECT);
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_READ)
 			== java.nio.channels.SelectionKey.OP_READ) {
 			ev.type = "recv";
@@ -70,14 +90,14 @@ var connector = {
 			pending = this.get_pending(this.read_pending, channel);
 			ev.userdata = pending.userdata;
 			ev.data = this.bytebuffer_to_string(this.read_buf);
-			channel.register(this.selector, key.interestOps() & ~java.nio.channels.SelectionKey.OP_READ);
+			this.unregister(channel, java.nio.channels.SelectionKey.OP_READ);
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_WRITE)
 			== java.nio.channels.SelectionKey.OP_WRITE) {
 			ev.type = "send";
 			ev.sd = channel;
 			pending = this.get_pending(this.write_pending, channel);
 			ev.userdata = pending.userdata;
-			channel.register(this.selector, key.interestOps() & ~java.nio.channels.SelectionKey.OP_WRITE);
+			this.unregister(channel, java.nio.channels.SelectionKey.OP_WRITE);
 		} else {
 			io.print("Unknown selection key op.");
 			io.quit();
@@ -89,43 +109,27 @@ var connector = {
 		ssc.configureBlocking(false);
 		var s = ssc.socket();
 		s.bind(java.net.InetSocketAddress(port));
-		var key = ssc.keyFor(this.selector);
-		var ops = 0;
-		if (key)
-			ops = key.interestOps();
-		ssc.register(this.selector, ops | java.nio.channels.SelectionKey.OP_ACCEPT);
+		this.register(ssc, java.nio.channels.SelectionKey.OP_ACCEPT);
 		this.accept_pending.push({ sd: ssc, userdata: userdata });
 		return ssc;
 	},
 	connect: function(address, port, userdata) {
 		var sc = java.nio.channels.SocketChannel.open();
 		sc.configureBlocking(false);
-		var key = sc.keyFor(this.selector);
-		var ops = 0;
-		if (key)
-			ops = key.interestOps();
-		sc.register(this.selector, ops | java.nio.channels.SelectionKey.OP_CONNECT);
+		this.register(sc, java.nio.channels.SelectionKey.OP_CONNECT);
 		sc.connect(java.net.InetSocketAddress(address, port));
 		this.connect_pending.push({ sd: sc, userdata: userdata });
 		return sc;
 	},
 	recv: function(sd, userdata) {
 		sd.configureBlocking(false);
-		var key = sd.keyFor(this.selector);
-		var ops = 0;
-		if (key)
-			ops = key.interestOps();
-		sd.register(this.selector, ops | java.nio.channels.SelectionKey.OP_READ);
+		this.register(sd, java.nio.channels.SelectionKey.OP_READ);
 		this.read_pending.push({ sd: sd, userdata: userdata });
 		return sd;
 	},
 	send: function(sd, data, userdata) {
 		sd.configureBlocking(false);
-		var key = sd.keyFor(this.selector);
-		var ops = 0;
-		if (key)
-			ops = key.interestOps();
-		sd.register(this.selector, ops | java.nio.channels.SelectionKey.OP_WRITE);
+		this.register(sd, java.nio.channels.SelectionKey.OP_WRITE);
 		sd.write(this.string_to_bytebuffer(data));
 		this.write_pending.push({ sd: sd, data: data, userdata: userdata });
 		return sd;
