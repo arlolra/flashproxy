@@ -12,21 +12,6 @@ var io = {
 var connector = {
 	selector: java.nio.channels.Selector.open(),
 	read_buf: java.nio.ByteBuffer.allocate(1024),
-	accept_pending: [],
-	connect_pending: [],
-	read_pending: [],
-	write_pending: [],
-
-	get_pending: function(pending_list, sd, keep) {
-		for (var i = 0; i < pending_list.length; i++) {
-			if (pending_list[i].sd == sd) {
-				var pending = pending_list[i];
-				if (!keep)
-					pending_list.splice(i, 1)[0];
-				return pending;
-			}
-		}
-	},
 
 	/* Register/unregister descriptors and operations with the selector.
 	   These assume that only one ops of each type is registered per
@@ -69,44 +54,35 @@ var connector = {
 		var channel = key.channel();
 		this.selector.selectedKeys().remove(key);
 		var ev = {};
+		ev.sd = channel;
 		if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
 			== java.nio.channels.SelectionKey.OP_ACCEPT) {
 			ev.type = "accept";
-			ev.sd = channel.socket().accept().channel;
-			/* Keep the pending record. */
-			pending = this.get_pending(this.accept_pending, channel, true);
-			ev.address = ev.sd.socket().getInetAddress().getHostAddress();
-			ev.port = ev.sd.socket().getPort();
-			ev.userdata = pending.userdata;
+			var c = channel.socket().accept();
+			ev.address = c.getInetAddress().getHostAddress();
+			ev.port = c.getPort();
+			ev.client = c.channel;
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
 			== java.nio.channels.SelectionKey.OP_CONNECT) {
 			if (channel.isConnectionPending())
 				channel.finishConnect();
 			ev.type = "connect";
-			ev.sd = channel;
-			pending = this.get_pending(this.connect_pending, channel);
-			ev.userdata = pending.userdata;
+			ev.address = channel.socket().getInetAddress().getHostAddress();
+			ev.port = channel.socket().getPort();
 			this.unregister(channel, java.nio.channels.SelectionKey.OP_CONNECT);
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_READ)
 			== java.nio.channels.SelectionKey.OP_READ) {
-			ev.sd = channel;
-			pending = this.get_pending(this.read_pending, channel);
+			ev.type = "recv";
 			this.read_buf.clear();
 			var n = channel.read(this.read_buf);
-			if (n == -1) {
-				ev.type = "eof";
-			} else {
-				ev.type = "recv";
-				ev.userdata = pending.userdata;
+			if (n == -1)
+				ev.data = undefined;
+			else
 				ev.data = this.bytebuffer_to_string(this.read_buf);
-			}
 			this.unregister(channel, java.nio.channels.SelectionKey.OP_READ);
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_WRITE)
 			== java.nio.channels.SelectionKey.OP_WRITE) {
 			ev.type = "send";
-			ev.sd = channel;
-			pending = this.get_pending(this.write_pending, channel);
-			ev.userdata = pending.userdata;
 			this.unregister(channel, java.nio.channels.SelectionKey.OP_WRITE);
 		} else {
 			io.print("Unknown selection key op.");
@@ -114,48 +90,127 @@ var connector = {
 		}
 		return ev;
 	},
-	listen: function(address, port, userdata) {
+	listen: function(address, port) {
 		var sd = java.nio.channels.ServerSocketChannel.open();
 		sd.configureBlocking(false);
 		sd.socket().bind(java.net.InetSocketAddress(port));
 		this.register(sd, java.nio.channels.SelectionKey.OP_ACCEPT);
-		this.accept_pending.push({ sd: sd, userdata: userdata });
 		return sd;
 	},
-	connect: function(address, port, userdata) {
+	connect: function(address, port) {
 		var sd = java.nio.channels.SocketChannel.open();
 		sd.configureBlocking(false);
 		this.register(sd, java.nio.channels.SelectionKey.OP_CONNECT);
 		sd.connect(java.net.InetSocketAddress(address, port));
-		this.connect_pending.push({ sd: sd, userdata: userdata });
 		return sd;
 	},
-	recv: function(sd, userdata) {
+	recv: function(sd) {
 		sd.configureBlocking(false);
 		this.register(sd, java.nio.channels.SelectionKey.OP_READ);
-		this.read_pending.push({ sd: sd, userdata: userdata });
 		return sd;
 	},
-	send: function(sd, data, userdata) {
+	send: function(sd, data) {
 		sd.configureBlocking(false);
 		this.register(sd, java.nio.channels.SelectionKey.OP_WRITE);
 		sd.write(this.string_to_bytebuffer(data));
-		this.write_pending.push({ sd: sd, data: data, userdata: userdata });
 		return sd;
 	},
-	close: function(sd, userdata) {
-		while (this.get_pending(this.accept_pending, sd))
-			;
-		while (this.get_pending(this.connect_pending, sd))
-			;
-		while (this.get_pending(this.read_pending, sd))
-			;
-		while (this.get_pending(this.write_pending, sd))
-			;
+	close: function(sd) {
 		sd.close();
 		sd.keyFor(this.selector).cancel();
 	},
 };
+
+
+accept_pending = [];
+connect_pending = [];
+recv_pending = [];
+send_pending = [];
+
+function add_pending(pending_list, id, data) {
+	pending_list.push({ id: id, data: data });
+}
+
+function get_pending(pending_list, id, keep) {
+	for (var i = 0; i < pending_list.length; i++) {
+		if (pending_list[i].id == id) {
+			var pending = pending_list[i];
+			if (!keep)
+				pending_list.splice(i, 1)[0];
+			return pending.data;
+		}
+	}
+}
+
+function listen(address, port, callback, userdata) {
+	var sd = connector.listen(address, port);
+	add_pending(accept_pending, sd, { callback: callback, userdata: userdata });
+	return sd;
+}
+
+function connect(address, port, callback, userdata) {
+	var sd = connector.connect(address, port);
+	add_pending(connect_pending, sd, { callback: callback, userdata: userdata });
+	return sd;
+}
+
+function recv(sd, callback, userdata) {
+	var sd = connector.recv(sd);
+	add_pending(recv_pending, sd, { callback: callback, userdata: userdata });
+	return sd;
+}
+
+function send(sd, data, callback, userdata) {
+	var sd = connector.send(sd, data);
+	add_pending(send_pending, sd, { callback: callback, userdata: userdata });
+	return sd;
+}
+
+function close(sd) {
+	while (get_pending(accept_pending, sd))
+		;
+	while (get_pending(connect_pending, sd))
+		;
+	while (get_pending(recv_pending, sd))
+		;
+	while (get_pending(send_pending, sd))
+		;
+	connector.close(sd);
+};
+
+function event_loop() {
+	while (true) {
+		var ev = connector.wait_for_event();
+		io.print("ev: " + repr(ev));
+		var pending;
+		switch (ev.type) {
+		case "accept":
+			/* accept events are persistent; don't remove pending
+			   except on error. */
+			pending = this.get_pending(this.accept_pending, ev.sd, true);
+			args = [ev.sd, ev.address, ev.port, ev.client, pending.userdata];
+			break;
+		case "connect":
+			pending = this.get_pending(this.connect_pending, ev.sd);
+			args = [ev.sd, ev.address, ev.port, pending.userdata];
+			break;
+		case "recv":
+			pending = this.get_pending(this.recv_pending, ev.sd);
+			args = [ev.sd, ev.data, pending.userdata];
+			break;
+		case "send":
+			pending = this.get_pending(this.send_pending, ev.sd);
+			args = [ev.sd, pending.userdata];
+			break;
+		default:
+			io.print("Unknown event type \"" + ev.type + "\".");
+			io.quit();
+		}
+		if (pending.callback)
+			pending.callback.apply(null, args);
+	}
+}
+
 
 io.print("jscat starting.")
 
@@ -167,38 +222,36 @@ var DIRECTORY_PORT = 9999;
 
 var peers = {};
 
-var l = connector.listen(LOCAL_ADDRESS, LOCAL_PORT);
+function accept_handler(sd, address, port, client, userdata) {
+	io.print("Connection from " + address + ":" + port + ".");
+	/* Pass the client as userdata. */
+	connect(DIRECTORY_ADDRESS, DIRECTORY_PORT, connect_handler, client);
+}
 
-while (true) {
-	var ev = connector.wait_for_event();
-	io.print("ev: " + repr(ev));
-	switch (ev.type) {
-	case "accept":
-		io.print("Connection from " + ev.address + ":" + ev.port + ".");
-		connector.connect(DIRECTORY_ADDRESS, DIRECTORY_PORT, ev.sd);
-		break;
-	case "connect":
-		peers[connector.s_sd(ev.sd)] = ev.userdata;
-		peers[connector.s_sd(ev.userdata)] = ev.sd;
-		/* Queue initial read events. */
-		connector.recv(ev.sd, ev.userdata);
-		connector.recv(ev.userdata, ev.sd);
-		break;
-	case "recv":
-		connector.send(ev.userdata, ev.data);
-		connector.recv(ev.sd, ev.userdata);
-		break;
-	case "eof":
-		connector.close(ev.sd);
-		var peer = peers[connector.s_sd(ev.sd)];
+function connect_handler(sd, address, port, userdata) {
+	io.print("Connection to " + address + ":" + port + ".");
+	peers[connector.s_sd(sd)] = userdata;
+	peers[connector.s_sd(userdata)] = sd;
+	/* Queue initial read events. */
+	recv(sd, recv_handler, userdata);
+	recv(userdata, recv_handler, sd);
+}
+
+function recv_handler(sd, data, userdata) {
+	if (data == undefined) {
+		close(sd);
+		var peer = peers[connector.s_sd(sd)];
 		if (peer) {
 			connector.close(peer);
-			delete peers[connector.s_sd(ev.sd)];
+			delete peers[connector.s_sd(sd)];
 			delete peers[connector.s_sd(peer)];
 		}
-		break;
-	case "error":
-		io.quit();
-		break;
+	} else {
+		send(userdata, data);
+		recv(sd, recv_handler, userdata);
 	}
 }
+
+listen(LOCAL_ADDRESS, LOCAL_PORT, accept_handler);
+
+event_loop();
