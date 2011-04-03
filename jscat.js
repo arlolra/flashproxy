@@ -254,8 +254,6 @@ var LOCAL_PORT = 9998;
 var DIRECTORY_ADDRESS = "localhost";
 var DIRECTORY_PORT = 9999;
 
-var peers = {};
-
 function accept_handler(sd, userdata, client, address, port) {
 	io.print("Connection from " + address + ":" + port + ".");
 	/* Pass the client as userdata. */
@@ -264,8 +262,6 @@ function accept_handler(sd, userdata, client, address, port) {
 
 function connect_handler(sd, userdata, address, port) {
 	io.print("Connection to " + address + ":" + port + ".");
-	peers[connector.s_sd(sd)] = userdata;
-	peers[connector.s_sd(userdata)] = sd;
 	/* Queue initial read events. */
 	recv(sd, recv_handler, userdata);
 	recv(userdata, recv_handler, sd);
@@ -274,12 +270,7 @@ function connect_handler(sd, userdata, address, port) {
 function recv_handler(sd, userdata, data) {
 	if (data == undefined) {
 		close(sd);
-		var peer = peers[connector.s_sd(sd)];
-		if (peer) {
-			connector.close(peer);
-			delete peers[connector.s_sd(sd)];
-			delete peers[connector.s_sd(peer)];
-		}
+		close(userdata);
 	} else {
 		send(userdata, data);
 		recv(sd, recv_handler, userdata);
