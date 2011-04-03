@@ -202,7 +202,26 @@ var connector = {
 		return sd;
 	},
 	close: function(sd) {
+		function filter_inplace(l, f) {
+			var i, j;
+			i = 0;
+			while (true) {
+				while (i < l.length && f(l[i]))
+					i++;
+				if (i >= l.length)
+					break;
+				j = i + 1;
+				while (j < l.length && !f(l[i]))
+					j++;
+				l.splice(i, j - i);
+			}
+		}
+
 		delete this.write_bufs[this.s_sd(sd)];
+		/* Remove events referring to this sd. */
+		filter_inplace(this.events, function(e) {
+			return e.sd == sd;
+		});
 		sd.close();
 	},
 };
