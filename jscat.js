@@ -46,6 +46,24 @@ var connector = {
 		return s["class"] + "\0" + s.getInetAddress().getHostAddress() + "\0" + s.getPort();
 	},
 
+	handle_selection_key: function(key) {
+		var channel = key.channel();
+		if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
+			== java.nio.channels.SelectionKey.OP_ACCEPT) {
+			this.op_accept(channel);
+		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
+			== java.nio.channels.SelectionKey.OP_CONNECT) {
+			this.op_connect(channel);
+		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_READ)
+			== java.nio.channels.SelectionKey.OP_READ) {
+			this.op_read(channel);
+		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_WRITE)
+			== java.nio.channels.SelectionKey.OP_WRITE) {
+			this.op_write(channel);
+		} else {
+			throw new Error("Unknown selection key op.");
+		}
+	},
 	op_accept: function(channel) {
 		var c = channel.socket().accept();
 		this.events.push({
@@ -100,24 +118,11 @@ var connector = {
 			do {
 				n = this.selector.select();
 			} while (n == 0);
-			var key = this.selector.selectedKeys().iterator().next();
-			var channel = key.channel();
-			this.selector.selectedKeys().remove(key);
-			if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
-				== java.nio.channels.SelectionKey.OP_ACCEPT) {
-				this.op_accept(channel);
-			} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
-				== java.nio.channels.SelectionKey.OP_CONNECT) {
-				this.op_connect(channel);
-			} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_READ)
-				== java.nio.channels.SelectionKey.OP_READ) {
-				this.op_read(channel);
-			} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_WRITE)
-				== java.nio.channels.SelectionKey.OP_WRITE) {
-				this.op_write(channel);
-			} else {
-				throw new Error("Unknown selection key op.");
-			}
+
+			var iter = this.selector.selectedKeys().iterator();
+			while (iter.hasNext())
+				this.handle_selection_key(iter.next());
+			this.selector.selectedKeys().clear();
 		}
 	},
 	listen: function(address, port) {
