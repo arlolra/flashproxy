@@ -89,27 +89,43 @@ var connector = {
 		ssc.configureBlocking(false);
 		var s = ssc.socket();
 		s.bind(java.net.InetSocketAddress(port));
-		ssc.register(this.selector, java.nio.channels.SelectionKey.OP_ACCEPT);
+		var key = ssc.keyFor(this.selector);
+		var ops = 0;
+		if (key)
+			ops = key.interestOps();
+		ssc.register(this.selector, ops | java.nio.channels.SelectionKey.OP_ACCEPT);
 		this.accept_pending.push({ sd: ssc, userdata: userdata });
 		return ssc;
 	},
 	connect: function(address, port, userdata) {
 		var sc = java.nio.channels.SocketChannel.open();
 		sc.configureBlocking(false);
-		sc.register(this.selector, java.nio.channels.SelectionKey.OP_CONNECT);
+		var key = sc.keyFor(this.selector);
+		var ops = 0;
+		if (key)
+			ops = key.interestOps();
+		sc.register(this.selector, ops | java.nio.channels.SelectionKey.OP_CONNECT);
 		sc.connect(java.net.InetSocketAddress(address, port));
 		this.connect_pending.push({ sd: sc, userdata: userdata });
 		return sc;
 	},
 	recv: function(sd, userdata) {
 		sd.configureBlocking(false);
-		sd.register(this.selector, java.nio.channels.SelectionKey.OP_READ);
+		var key = sd.keyFor(this.selector);
+		var ops = 0;
+		if (key)
+			ops = key.interestOps();
+		sd.register(this.selector, ops | java.nio.channels.SelectionKey.OP_READ);
 		this.read_pending.push({ sd: sd, userdata: userdata });
 		return sd;
 	},
 	send: function(sd, data, userdata) {
 		sd.configureBlocking(false);
-		sd.register(this.selector, java.nio.channels.SelectionKey.OP_WRITE);
+		var key = sd.keyFor(this.selector);
+		var ops = 0;
+		if (key)
+			ops = key.interestOps();
+		sd.register(this.selector, ops | java.nio.channels.SelectionKey.OP_WRITE);
 		sd.write(this.string_to_bytebuffer(data));
 		this.write_pending.push({ sd: sd, data: data, userdata: userdata });
 		return sd;
