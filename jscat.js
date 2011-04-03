@@ -31,22 +31,23 @@ var connector = {
 			n = this.selector.select();
 		} while (n == 0);
 		var key = this.selector.selectedKeys().iterator().next();
+		var channel = key.channel();
 		this.selector.selectedKeys().remove(key);
 		var ev = {};
 		if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
 			== java.nio.channels.SelectionKey.OP_ACCEPT) {
 			ev.type = "accept";
-			ev.sd = key.channel().socket().accept();
+			ev.sd = channel.socket().accept();
 			/* Keep the pending record. */
-			pending = this.get_pending(this.accept_pending, key.channel(), true);
+			pending = this.get_pending(this.accept_pending, channel, true);
 			ev.userdata = pending.userdata;
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
 			== java.nio.channels.SelectionKey.OP_CONNECT) {
-			if (key.channel().isConnectionPending())
-				key.channel().finishConnect();
+			if (channel.isConnectionPending())
+				channel.finishConnect();
 			ev.type = "connect";
-			ev.sd = key.channel().socket();
-			pending = this.get_pending(this.connect_pending, key.channel());
+			ev.sd = channel.socket();
+			pending = this.get_pending(this.connect_pending, channel);
 			ev.userdata = pending.userdata;
 			key.cancel();
 		} else {
