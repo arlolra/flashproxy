@@ -217,30 +217,32 @@ function event_loop() {
 	while (true) {
 		var ev = connector.wait_for_event();
 		io.print("ev: " + repr(ev));
-		var pending;
+
+		var pending, args;
 		switch (ev.type) {
 		case "accept":
 			/* accept events are persistent; don't remove pending
 			   except on error. */
 			pending = this.get_pending(this.accept_pending, ev.sd, true);
-			args = [ev.sd, ev.address, ev.port, ev.client, pending.userdata];
+			args = [ev.client, ev.address, ev.port];
 			break;
 		case "connect":
 			pending = this.get_pending(this.connect_pending, ev.sd);
-			args = [ev.sd, ev.address, ev.port, pending.userdata];
+			args = [ev.address, ev.port];
 			break;
 		case "recv":
 			pending = this.get_pending(this.recv_pending, ev.sd);
-			args = [ev.sd, ev.data, pending.userdata];
+			args = [ev.data];
 			break;
 		case "send":
 			pending = this.get_pending(this.send_pending, ev.sd);
-			args = [ev.sd, pending.userdata];
+			args = [];
 			break;
 		default:
-			io.print("Unknown event type \"" + ev.type + "\".");
-			io.quit();
+			throw new Error("Unknown event type \"" + ev.type + "\".");
 		}
+		/* Add standard arguments. */
+		args = [ev.sd, pending.userdata].concat(args);
 		if (pending.callback)
 			pending.callback.apply(null, args);
 	}
@@ -257,13 +259,13 @@ var DIRECTORY_PORT = 9999;
 
 var peers = {};
 
-function accept_handler(sd, address, port, client, userdata) {
+function accept_handler(sd, userdata, client, address, port) {
 	io.print("Connection from " + address + ":" + port + ".");
 	/* Pass the client as userdata. */
 	connect(DIRECTORY_ADDRESS, DIRECTORY_PORT, connect_handler, client);
 }
 
-function connect_handler(sd, address, port, userdata) {
+function connect_handler(sd, userdata, address, port) {
 	io.print("Connection to " + address + ":" + port + ".");
 	peers[connector.s_sd(sd)] = userdata;
 	peers[connector.s_sd(userdata)] = sd;
@@ -272,7 +274,7 @@ function connect_handler(sd, address, port, userdata) {
 	recv(userdata, recv_handler, sd);
 }
 
-function recv_handler(sd, data, userdata) {
+function recv_handler(sd, userdata, data) {
 	if (data == undefined) {
 		close(sd);
 		var peer = peers[connector.s_sd(sd)];
