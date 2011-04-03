@@ -105,21 +105,21 @@ var connector = {
 		return ev;
 	},
 	listen: function(address, port, userdata) {
-		var ssc = java.nio.channels.ServerSocketChannel.open();
-		ssc.configureBlocking(false);
-		var s = ssc.socket();
+		var sd = java.nio.channels.ServerSocketChannel.open();
+		sd.configureBlocking(false);
+		var s = sd.socket();
 		s.bind(java.net.InetSocketAddress(port));
-		this.register(ssc, java.nio.channels.SelectionKey.OP_ACCEPT);
-		this.accept_pending.push({ sd: ssc, userdata: userdata });
-		return ssc;
+		this.register(sd, java.nio.channels.SelectionKey.OP_ACCEPT);
+		this.accept_pending.push({ sd: sd, userdata: userdata });
+		return sd;
 	},
 	connect: function(address, port, userdata) {
-		var sc = java.nio.channels.SocketChannel.open();
-		sc.configureBlocking(false);
-		this.register(sc, java.nio.channels.SelectionKey.OP_CONNECT);
-		sc.connect(java.net.InetSocketAddress(address, port));
-		this.connect_pending.push({ sd: sc, userdata: userdata });
-		return sc;
+		var sd = java.nio.channels.SocketChannel.open();
+		sd.configureBlocking(false);
+		this.register(sd, java.nio.channels.SelectionKey.OP_CONNECT);
+		sd.connect(java.net.InetSocketAddress(address, port));
+		this.connect_pending.push({ sd: sd, userdata: userdata });
+		return sd;
 	},
 	recv: function(sd, userdata) {
 		sd.configureBlocking(false);
