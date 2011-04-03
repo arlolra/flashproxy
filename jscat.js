@@ -51,15 +51,19 @@ var connector = {
 		if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
 			== java.nio.channels.SelectionKey.OP_ACCEPT) {
 			this.op_accept(channel);
+			/* For accept only, do not unregister the selection key. */
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
 			== java.nio.channels.SelectionKey.OP_CONNECT) {
 			this.op_connect(channel);
+			this.unregister(channel, java.nio.channels.SelectionKey.OP_CONNECT);
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_READ)
 			== java.nio.channels.SelectionKey.OP_READ) {
 			this.op_read(channel);
+			this.unregister(channel, java.nio.channels.SelectionKey.OP_READ);
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_WRITE)
 			== java.nio.channels.SelectionKey.OP_WRITE) {
 			this.op_write(channel);
+			this.unregister(channel, java.nio.channels.SelectionKey.OP_WRITE);
 		} else {
 			throw new Error("Unknown selection key op.");
 		}
@@ -73,7 +77,6 @@ var connector = {
 			port: c.getPort(),
 			client: c.channel,
 		});
-		/* For accept only, do not unregister the selection key. */
 	},
 	op_connect: function(channel) {
 		if (channel.isConnectionPending())
@@ -84,7 +87,6 @@ var connector = {
 			address: channel.socket().getInetAddress().getHostAddress(),
 			port: channel.socket().getPort(),
 		});
-		this.unregister(channel, java.nio.channels.SelectionKey.OP_CONNECT);
 	},
 	op_read: function(channel) {
 		this.read_buf.clear();
@@ -99,14 +101,12 @@ var connector = {
 			sd: channel,
 			data: data,
 		});
-		this.unregister(channel, java.nio.channels.SelectionKey.OP_READ);
 	},
 	op_write: function(channel) {
 		this.events.push({
 			type: "send",
 			sd: channel,
 		});
-		this.unregister(channel, java.nio.channels.SelectionKey.OP_WRITE);
 	},
 
 	wait_for_event: function() {
