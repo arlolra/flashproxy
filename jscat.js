@@ -117,8 +117,7 @@ var connector = {
 	listen: function(address, port, userdata) {
 		var sd = java.nio.channels.ServerSocketChannel.open();
 		sd.configureBlocking(false);
-		var s = sd.socket();
-		s.bind(java.net.InetSocketAddress(port));
+		sd.socket().bind(java.net.InetSocketAddress(port));
 		this.register(sd, java.nio.channels.SelectionKey.OP_ACCEPT);
 		this.accept_pending.push({ sd: sd, userdata: userdata });
 		return sd;
