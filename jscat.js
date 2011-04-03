@@ -15,6 +15,7 @@ var connector = {
 	accept_pending: [],
 	connect_pending: [],
 	read_pending: [],
+	write_pending: [],
 
 	get_pending: function(pending_list, sd, keep) {
 		for (var i = 0; i < pending_list.length; i++) {
@@ -25,6 +26,12 @@ var connector = {
 				return pending;
 			}
 		}
+	},
+	bytebuffer_to_string: function(bb) {
+		return String(new java.lang.String(java.util.Arrays.copyOf(bb.array(), bb.position())));
+	},
+	string_to_bytebuffer: function(s) {
+		return java.nio.ByteBuffer.wrap(new java.lang.String(s).getBytes("ISO-8859-1"));
 	},
 
 	wait_for_event: function() {
@@ -58,11 +65,19 @@ var connector = {
 			== java.nio.channels.SelectionKey.OP_READ) {
 			ev.type = "recv";
 			ev.sd = channel;
+			this.read_buf.clear();
 			var n = channel.read(this.read_buf);
 			pending = this.get_pending(this.read_pending, channel);
 			ev.userdata = pending.userdata;
-			ev.data = "dummy";
+			ev.data = this.bytebuffer_to_string(this.read_buf);
 			channel.register(this.selector, key.interestOps() & ~java.nio.channels.SelectionKey.OP_READ);
+		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_WRITE)
+			== java.nio.channels.SelectionKey.OP_WRITE) {
+			ev.type = "send";
+			ev.sd = channel;
+			pending = this.get_pending(this.write_pending, channel);
+			ev.userdata = pending.userdata;
+			channel.register(this.selector, key.interestOps() & ~java.nio.channels.SelectionKey.OP_WRITE);
 		} else {
 			io.print("Unknown selection key op.");
 			io.quit();
@@ -93,6 +108,11 @@ var connector = {
 		return sd;
 	},
 	send: function(sd, data, userdata) {
+		sd.configureBlocking(false);
+		sd.register(this.selector, java.nio.channels.SelectionKey.OP_WRITE);
+		sd.write(this.string_to_bytebuffer(data));
+		this.write_pending.push({ sd: sd, data: data, userdata: userdata });
+		return sd;
 	},
 	close: function(sd, userdata) {
 	},
