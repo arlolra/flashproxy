@@ -1,5 +1,34 @@
+REPLACEMENTS = {
+	"\\": "\\\\",
+	"\"": "\\\"",
+	"\n": "\\n",
+	"\t": "\\t",
+	"\r": "\\r",
+};
+QUOTE_REGEXP = new RegExp("[\\s\\S]", "gm");
+function pad(s, n) {
+	while (s.length < n)
+		s = "0" + s;
+	return s;
+}
+function quote_repl(c) {
+	var r, n;
+
+	r = REPLACEMENTS[c];
+	if (r)
+		return r;
+
+	n = c.charCodeAt(0);
+	if (n >= 256)
+		return "\\u" + pad(n.toString(16), 4);
+	else if (n < 32 || n >= 127)
+		return "\\x" + pad(n.toString(16), 2);
+
+	return c;
+}
+
 function quote(s) {
-	return "\"" + s.replace(/([\\\"])/, "\\$1") + "\"";
+	return "\"" + s.replace(QUOTE_REGEXP, quote_repl) + "\"";
 }
 
 function maybe_quote(s) {
