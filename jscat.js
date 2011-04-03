@@ -11,8 +11,10 @@ var io = {
 
 var connector = {
 	selector: java.nio.channels.Selector.open(),
+	read_buf: java.nio.ByteBuffer.allocate(1024),
 	accept_pending: [],
 	connect_pending: [],
+	read_pending: [],
 
 	get_pending: function(pending_list, sd, keep) {
 		for (var i = 0; i < pending_list.length; i++) {
@@ -51,7 +53,16 @@ var connector = {
 			ev.sd = channel;
 			pending = this.get_pending(this.connect_pending, channel);
 			ev.userdata = pending.userdata;
-			key.cancel();
+			channel.register(this.selector, key.interestOps() & ~java.nio.channels.SelectionKey.OP_CONNECT);
+		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_READ)
+			== java.nio.channels.SelectionKey.OP_READ) {
+			ev.type = "recv";
+			ev.sd = channel;
+			var n = channel.read(this.read_buf);
+			pending = this.get_pending(this.read_pending, channel);
+			ev.userdata = pending.userdata;
+			ev.data = "dummy";
+			channel.register(this.selector, key.interestOps() & ~java.nio.channels.SelectionKey.OP_READ);
 		} else {
 			io.print("Unknown selection key op.");
 			io.quit();
@@ -76,6 +87,10 @@ var connector = {
 		return sc;
 	},
 	recv: function(sd, userdata) {
+		sd.configureBlocking(false);
+		sd.register(this.selector, java.nio.channels.SelectionKey.OP_READ);
+		this.read_pending.push({ sd: sd, userdata: userdata });
+		return sd;
 	},
 	send: function(sd, data, userdata) {
 	},
@@ -112,6 +127,7 @@ while (true) {
 		break;
 	case "recv":
 		connector.send(ev.userdata, ev.data);
+		connector.recv(ev.sd, ev.userdata);
 		break;
 	case "close":
 		var peer = peers[ev.sd];
