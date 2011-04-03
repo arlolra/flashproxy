@@ -12,12 +12,14 @@ var io = {
 var connector = {
 	selector: java.nio.channels.Selector.open(),
 	read_buf: java.nio.ByteBuffer.allocate(1024),
+	write_bufs: {},
 	events: [],
 
 	/* Register/unregister descriptors and operations with the selector.
 	   These assume that only one ops of each type is registered per
 	   descriptor; for example, you can't register two read events, because
-	   when one is unregistered it will unregister the other. */
+	   when one is unregistered it will unregister the other. The exception
+	   to this is that there may be multiple write events per descriptor. */
 	register: function(sd, ops) {
 		var key = sd.keyFor(this.selector);
 		var current_ops = 0;
@@ -38,24 +40,28 @@ var connector = {
 		return java.nio.ByteBuffer.wrap(new java.lang.String(s).getBytes("ISO-8859-1"));
 	},
 
+	s_sd: function(sd) {
+		var s = sd.socket();
+		return [s.getLocalAddress().getHostAddress(),
+			s.getLocalPort(),
+			s.getInetAddress().getHostAddress(),
+			s.getPort()].join("\0");
+	},
+
 	handle_selection_key: function(key) {
 		var channel = key.channel();
 		if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
 			== java.nio.channels.SelectionKey.OP_ACCEPT) {
 			this.op_accept(channel);
-			/* For accept only, do not unregister the selection key. */
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_CONNECT)
 			== java.nio.channels.SelectionKey.OP_CONNECT) {
 			this.op_connect(channel);
-			this.unregister(channel, java.nio.channels.SelectionKey.OP_CONNECT);
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_READ)
 			== java.nio.channels.SelectionKey.OP_READ) {
 			this.op_read(channel);
-			this.unregister(channel, java.nio.channels.SelectionKey.OP_READ);
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_WRITE)
 			== java.nio.channels.SelectionKey.OP_WRITE) {
 			this.op_write(channel);
-			this.unregister(channel, java.nio.channels.SelectionKey.OP_WRITE);
 		} else {
 			throw new Error("Unknown selection key op.");
 		}
@@ -69,6 +75,7 @@ var connector = {
 			port: c.getPort(),
 			client: c.channel,
 		});
+		/* For accept only, do not unregister the selection key. */
 	},
 	op_connect: function(channel) {
 		try {
@@ -88,6 +95,7 @@ var connector = {
 			address: channel.socket().getInetAddress().getHostAddress(),
 			port: channel.socket().getPort(),
 		});
+		this.unregister(channel, java.nio.channels.SelectionKey.OP_CONNECT);
 	},
 	op_read: function(channel) {
 		this.read_buf.clear();
@@ -111,12 +119,33 @@ var connector = {
 			sd: channel,
 			data: data,
 		});
+		this.unregister(channel, java.nio.channels.SelectionKey.OP_READ);
 	},
 	op_write: function(channel) {
-		this.events.push({
-			type: "send",
-			sd: channel,
-		});
+		var write_bufs = this.write_bufs[this.s_sd(channel)];
+		try {
+			var n = channel.write(write_bufs[0]);
+		} catch (error) {
+			this.events.push({
+				type: "send",
+				sd: channel,
+				error: error,
+			});
+			return;
+		}
+		/* Each buffer in our write_bufs queue corresponds to one write
+		   event. Don't signal completion until an entire buffer is
+		   exhausted. */
+		if (write_bufs[0].remaining() == 0) {
+			this.events.push({
+				type: "send",
+				sd: channel,
+				n: write_bufs[0].position(),
+			});
+			write_bufs.shift();
+		}
+		if (write_bufs.length == 0)
+			this.unregister(channel, java.nio.channels.SelectionKey.OP_WRITE);
 	},
 
 	wait_for_event: function() {
@@ -166,19 +195,14 @@ var connector = {
 	},
 	send: function(sd, data) {
 		sd.configureBlocking(false);
-		try {
-			sd.write(this.string_to_bytebuffer(data));
-			this.register(sd, java.nio.channels.SelectionKey.OP_WRITE);
-		} catch (error) {
-			this.events.push({
-				type: "send",
-				sd: sd,
-				error: error,
-			});
-		}
+		var key = this.s_sd(sd);
+		this.write_bufs[key] = this.write_bufs[key] || [];
+		this.write_bufs[key].push(this.string_to_bytebuffer(data));
+		this.register(sd, java.nio.channels.SelectionKey.OP_WRITE);
 		return sd;
 	},
 	close: function(sd) {
+		delete this.write_bufs[this.s_sd(sd)];
 		sd.close();
 	},
 };
