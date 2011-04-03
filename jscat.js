@@ -23,14 +23,12 @@ var connector = {
 		var current_ops = 0;
 		if (key)
 			current_ops = key.interestOps();
-		return sd.register(this.selector, current_ops | ops);
+		sd.register(this.selector, current_ops | ops);
 	},
 	unregister: function(sd, ops) {
 		var key = sd.keyFor(this.selector);
-		var current_ops = 0;
-		if (key)
-			current_ops = key.interestOps();
-		return sd.register(this.selector, current_ops & ~ops);
+		if (key && key.isValid())
+			sd.register(this.selector, key.interestOps() & ~ops);
 	},
 
 	bytebuffer_to_string: function(bb) {
