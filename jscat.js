@@ -38,12 +38,6 @@ var connector = {
 		return java.nio.ByteBuffer.wrap(new java.lang.String(s).getBytes("ISO-8859-1"));
 	},
 
-	/* Stringify/serialize a socket descriptor. */
-	s_sd: function(sd) {
-		var s = sd.socket();
-		return s["class"] + "\0" + s.getInetAddress().getHostAddress() + "\0" + s.getPort();
-	},
-
 	handle_selection_key: function(key) {
 		var channel = key.channel();
 		if ((key.readyOps() & java.nio.channels.SelectionKey.OP_ACCEPT)
