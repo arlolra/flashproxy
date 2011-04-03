@@ -77,8 +77,17 @@ var connector = {
 		});
 	},
 	op_connect: function(channel) {
-		if (channel.isConnectionPending())
-			channel.finishConnect();
+		try {
+			if (channel.isConnectionPending())
+				channel.finishConnect();
+		} catch (error) {
+			this.events.push({
+				type: "connect",
+				sd: channel,
+				error: error,
+			});
+			return;
+		}
 		this.events.push({
 			type: "connect",
 			sd: channel,
@@ -88,7 +97,16 @@ var connector = {
 	},
 	op_read: function(channel) {
 		this.read_buf.clear();
-		var n = channel.read(this.read_buf);
+		try {
+			var n = channel.read(this.read_buf);
+		} catch (error) {
+			this.events.push({
+				type: "recv",
+				sd: channel,
+				error: error,
+			});
+			return;
+		}
 		var data;
 		if (n == -1)
 			data = undefined;
@@ -126,15 +144,25 @@ var connector = {
 	listen: function(address, port) {
 		var sd = java.nio.channels.ServerSocketChannel.open();
 		sd.configureBlocking(false);
-		sd.socket().bind(java.net.InetSocketAddress(port));
-		this.register(sd, java.nio.channels.SelectionKey.OP_ACCEPT);
+		try {
+			sd.socket().bind(java.net.InetSocketAddress(port));
+			this.register(sd, java.nio.channels.SelectionKey.OP_ACCEPT);
+		} catch (error) {
+			this.events.push({
+				type: "accept",
+				sd: sd,
+				error: error,
+				address: address,
+				port: port,
+			});
+		}
 		return sd;
 	},
 	connect: function(address, port) {
 		var sd = java.nio.channels.SocketChannel.open();
 		sd.configureBlocking(false);
-		this.register(sd, java.nio.channels.SelectionKey.OP_CONNECT);
 		sd.connect(java.net.InetSocketAddress(address, port));
+		this.register(sd, java.nio.channels.SelectionKey.OP_CONNECT);
 		return sd;
 	},
 	recv: function(sd) {
@@ -144,8 +172,16 @@ var connector = {
 	},
 	send: function(sd, data) {
 		sd.configureBlocking(false);
-		this.register(sd, java.nio.channels.SelectionKey.OP_WRITE);
-		sd.write(this.string_to_bytebuffer(data));
+		try {
+			sd.write(this.string_to_bytebuffer(data));
+			this.register(sd, java.nio.channels.SelectionKey.OP_WRITE);
+		} catch (error) {
+			this.events.push({
+				type: "send",
+				sd: sd,
+				error: error,
+			});
+		}
 		return sd;
 	},
 	close: function(sd) {
@@ -239,7 +275,7 @@ function event_loop() {
 			throw new Error("Unknown event type \"" + ev.type + "\".");
 		}
 		/* Add standard arguments. */
-		args = [ev.sd, pending.userdata].concat(args);
+		args = [ev.sd, ev.error, pending.userdata].concat(args);
 		if (pending.callback)
 			pending.callback.apply(null, args);
 	}
@@ -254,20 +290,35 @@ var LOCAL_PORT = 9998;
 var DIRECTORY_ADDRESS = "localhost";
 var DIRECTORY_PORT = 9999;
 
-function accept_handler(sd, userdata, client, address, port) {
+function accept_handler(sd, error, userdata, client, address, port) {
+	if (error) {
+		io.print("Error listening on " + address + ":" + port + ": " + error.message);
+		return;
+	}
 	io.print("Connection from " + address + ":" + port + ".");
 	/* Pass the client as userdata. */
 	connect(DIRECTORY_ADDRESS, DIRECTORY_PORT, connect_handler, client);
 }
 
-function connect_handler(sd, userdata, address, port) {
+function connect_handler(sd, error, userdata, address, port) {
+	if (error) {
+		io.print("Error in connect: " + error.message);
+		close(userdata);
+		return;
+	}
 	io.print("Connection to " + address + ":" + port + ".");
 	/* Queue initial read events. */
 	recv(sd, recv_handler, userdata);
 	recv(userdata, recv_handler, sd);
 }
 
-function recv_handler(sd, userdata, data) {
+function recv_handler(sd, error, userdata, data) {
+	if (error) {
+		io.print("Error in recv: " + error.message);
+		close(sd);
+		close(userdata);
+		return;
+	}
 	if (data == undefined) {
 		close(sd);
 		close(userdata);
