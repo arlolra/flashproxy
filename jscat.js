@@ -54,6 +54,12 @@ var connector = {
 		return java.nio.ByteBuffer.wrap(new java.lang.String(s).getBytes("ISO-8859-1"));
 	},
 
+	/* Stringify/serialize a socket descriptor. */
+	s_sd: function(sd) {
+		var s = sd.socket();
+		return s["class"] + "\0" + s.getInetAddress().getHostAddress() + "\0" + s.getPort();
+	},
+
 	wait_for_event: function() {
 		var n;
 		do {
@@ -83,13 +89,17 @@ var connector = {
 			this.unregister(channel, java.nio.channels.SelectionKey.OP_CONNECT);
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_READ)
 			== java.nio.channels.SelectionKey.OP_READ) {
-			ev.type = "recv";
 			ev.sd = channel;
+			pending = this.get_pending(this.read_pending, channel);
 			this.read_buf.clear();
 			var n = channel.read(this.read_buf);
-			pending = this.get_pending(this.read_pending, channel);
-			ev.userdata = pending.userdata;
-			ev.data = this.bytebuffer_to_string(this.read_buf);
+			if (n == -1) {
+				ev.type = "eof";
+			} else {
+				ev.type = "recv";
+				ev.userdata = pending.userdata;
+				ev.data = this.bytebuffer_to_string(this.read_buf);
+			}
 			this.unregister(channel, java.nio.channels.SelectionKey.OP_READ);
 		} else if ((key.readyOps() & java.nio.channels.SelectionKey.OP_WRITE)
 			== java.nio.channels.SelectionKey.OP_WRITE) {
@@ -135,6 +145,16 @@ var connector = {
 		return sd;
 	},
 	close: function(sd, userdata) {
+		while (this.get_pending(this.accept_pending, sd))
+			;
+		while (this.get_pending(this.connect_pending, sd))
+			;
+		while (this.get_pending(this.read_pending, sd))
+			;
+		while (this.get_pending(this.write_pending, sd))
+			;
+		sd.close();
+		sd.keyFor(this.selector).cancel();
 	},
 };
 
@@ -159,8 +179,8 @@ while (true) {
 		connector.connect(DIRECTORY_ADDRESS, DIRECTORY_PORT, ev.sd);
 		break;
 	case "connect":
-		peers[ev.sd] = ev.userdata;
-		peers[ev.userdata] = ev.sd;
+		peers[connector.s_sd(ev.sd)] = ev.userdata;
+		peers[connector.s_sd(ev.userdata)] = ev.sd;
 		/* Queue initial read events. */
 		connector.recv(ev.sd, ev.userdata);
 		connector.recv(ev.userdata, ev.sd);
@@ -169,11 +189,14 @@ while (true) {
 		connector.send(ev.userdata, ev.data);
 		connector.recv(ev.sd, ev.userdata);
 		break;
-	case "close":
-		var peer = peers[ev.sd];
-		connector.close(peer[ev.sd]);
-		delete peers[ev.sd];
-		delete peers[peer];
+	case "eof":
+		connector.close(ev.sd);
+		var peer = peers[connector.s_sd(ev.sd)];
+		if (peer) {
+			connector.close(peer);
+			delete peers[connector.s_sd(ev.sd)];
+			delete peers[connector.s_sd(peer)];
+		}
 		break;
 	case "error":
 		io.quit();
