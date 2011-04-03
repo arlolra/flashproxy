@@ -272,8 +272,8 @@ function event_loop() {
 		var pending, args;
 		switch (ev.type) {
 		case "accept":
-			/* accept events are persistent; don't remove pending
-			   except on error. */
+			/* "accept" events are persistent; don't remove pending
+			   except on closing. */
 			pending = this.get_pending(this.accept_pending, ev.sd, true);
 			args = [ev.client, ev.address, ev.port];
 			break;
