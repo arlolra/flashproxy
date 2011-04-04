@@ -1,0 +1,13 @@
+http://www.mozilla.org/rhino/download.html
+Unpack rhino1_7R2.zip into ~/rhino1_7R2.
+
+ncat -lk 9999 -v
+
+cd jscat
+./jscat
+
+ncat localhost 9998 -v
+
+jscat listens on port 9998. On accepting a connection it connects to
+localhost:9999 and starts relaying data back and forth. More than one
+connection can be made at a time.
