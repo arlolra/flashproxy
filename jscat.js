@@ -319,7 +319,7 @@ function event_loop() {
 }
 
 
-io.print("jscat starting.")
+io.print("jscat starting.");
 
 var LOCAL_ADDRESS = "0.0.0.0";
 var LOCAL_PORT = 9998;
