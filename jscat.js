@@ -9,6 +9,17 @@ var io = {
 	},
 };
 
+/* The platform-specific details of socket operations are encapsulated within a
+   connector structure.
+
+   The public functions of a connector are wait_for_event, listen, connect,
+   send, recv, and close. listen, connect, send, and recv schedule asynchronous
+   operations to be run; the results come one at a time from wait_for_event. The
+   functions return a "descriptor," an opaque value that can be used to
+   distinguish connections. (In this implementation it is just a Java
+   SocketChannel object.) listen and connect are the only ways to create new
+   descriptors. */
+
 var connector = {
 	selector: java.nio.channels.Selector.open(),
 	read_buf: java.nio.ByteBuffer.allocate(1024),
@@ -148,6 +159,9 @@ var connector = {
 			this.unregister(channel, java.nio.channels.SelectionKey.OP_WRITE);
 	},
 
+	/* Block until something happens. Return an object with a "type" member
+	   indicating the type of event and other members appropriate for the
+	   type. */
 	wait_for_event: function() {
 		while (true) {
 			if (this.events.length > 0)
@@ -164,6 +178,9 @@ var connector = {
 			this.selector.selectedKeys().clear();
 		}
 	},
+	/* Begin listening on address and port. Note that events resulting from
+	   this function have type "accept", not "listen". Listening is
+	   persistent once started. */
 	listen: function(address, port) {
 		var sd = java.nio.channels.ServerSocketChannel.open();
 		sd.configureBlocking(false);
@@ -201,6 +218,7 @@ var connector = {
 		this.register(sd, java.nio.channels.SelectionKey.OP_WRITE);
 		return sd;
 	},
+	/* Close a descriptor and cancel its pending events. */
 	close: function(sd) {
 		function filter_inplace(l, f) {
 			var i, j;
@@ -227,6 +245,7 @@ var connector = {
 };
 
 
+/* Maps from descriptors to callbacks and userdata. */
 accept_pending = [];
 connect_pending = [];
 recv_pending = [];
@@ -246,6 +265,8 @@ function get_pending(pending_list, id, keep) {
 		}
 	}
 }
+
+/* These are the portable socket operations that wrap a connector. */
 
 function listen(address, port, callback, userdata) {
 	var sd = connector.listen(address, port);
@@ -283,6 +304,7 @@ function close(sd) {
 	connector.close(sd);
 };
 
+/* Wait for events and call registered callbacks. */
 function event_loop() {
 	while (true) {
 		var ev = connector.wait_for_event();
