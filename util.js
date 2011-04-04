@@ -50,10 +50,18 @@ function repr(x, max_depth) {
 		while (i.hasNext())
 			elems.push(repr(i.next()));
 		return x["class"] + ":[ " + elems.join(", ") + " ]";
+	} else if (typeof x == "object" && /^\s*function Array/.test(String(x.constructor))) {
+		// Looks like an array.
+		if (max_depth <= 0)
+			return "[...]";
+		var elems = [];
+		for (var i = 0; i < x.length; i++)
+			elems.push(repr(x[i], max_depth - 1));
+		return "[ " + elems.join(", ") + " ]";
+	} else if (typeof x == "object" && "hashCode" in x) {
+		// Guess that it's a Java object.
+		return String(x);
 	} else if (typeof x == "object") {
-		if ("hashCode" in x)
-			// Guess that it's a Java object.
-			return String(x);
 		if (max_depth <= 0)
 			return "{...}";
 		var elems = [];
