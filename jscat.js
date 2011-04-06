@@ -260,7 +260,7 @@ function get_pending(pending_list, id, keep) {
 		if (pending_list[i].id == id) {
 			var pending = pending_list[i];
 			if (!keep)
-				pending_list.splice(i, 1)[0];
+				pending_list.splice(i, 1);
 			return pending.data;
 		}
 	}
