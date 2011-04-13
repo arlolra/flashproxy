@@ -44,9 +44,10 @@ package
                 puts("s1 Security error: " + e.text + ".");
             });
             s1.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
-                var bytes:ByteArray;
+                var bytes:ByteArray = new ByteArray();
                 puts("s1 progress: " + e.bytesLoaded + ".");
                 s1.readBytes(bytes, 0, e.bytesLoaded);
+                puts("s1 bytes length: " + bytes.length + ".");
                 s2.writeBytes(bytes);
             });
 
@@ -63,9 +64,10 @@ package
                 puts("s2 Security error: " + e.text + ".");
             });
             s2.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
-                var bytes:ByteArray;
+                var bytes:ByteArray = new ByteArray();
                 puts("s2 progress: " + e.bytesLoaded + ".");
                 s2.readBytes(bytes, 0, e.bytesLoaded);
+                puts("s2 bytes length: " + bytes.length + ".");
                 s1.writeBytes(bytes);
             });
 
