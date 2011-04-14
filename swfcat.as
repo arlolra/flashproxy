@@ -21,6 +21,7 @@ package
         private function puts(s:String):void
         {
             output_text.appendText(s + "\n");
+            output_text.scrollV = output_text.maxScrollV;
         }
 
         public function swfcat()
