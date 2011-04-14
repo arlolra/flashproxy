@@ -11,6 +11,11 @@ package
 
     public class swfcat extends Sprite
     {
+        private const TOR_ADDRESS:String = "upload.bamsoftware.com";
+        private const TOR_PORT:int = 9001;
+        private const CLIENT_ADDRESS:String = "192.168.0.2";
+        private const CLIENT_PORT:int = 9001;
+
         private var output_text:TextField;
 
         private function puts(s:String):void
@@ -28,55 +33,51 @@ package
             output_text.textColor = 0x44CC44;
             addChild(output_text);
 
-            var s1:Socket = new Socket();
-            var s2:Socket = new Socket();
+            var s_t:Socket = new Socket();
+            var s_c:Socket = new Socket();
 
-            s1.addEventListener(Event.CONNECT, function (e:Event):void {
-                puts("s1 Connected.");
+            s_t.addEventListener(Event.CONNECT, function (e:Event):void {
+                puts("Tor: connected.");
             });
-            s1.addEventListener(Event.CLOSE, function (e:Event):void {
-                puts("s1 Closed.");
+            s_t.addEventListener(Event.CLOSE, function (e:Event):void {
+                puts("Tor: closed.");
             });
-            s1.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
-                puts("s1 IO error: " + e.text + ".");
+            s_t.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
+                puts("Tor: I/O error: " + e.text + ".");
             });
-            s1.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
-                puts("s1 Security error: " + e.text + ".");
+            s_t.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
+                puts("Tor: security error: " + e.text + ".");
             });
-            s1.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
+            s_t.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
                 var bytes:ByteArray = new ByteArray();
-                puts("s1 progress: " + e.bytesLoaded + ".");
-                s1.readBytes(bytes, 0, e.bytesLoaded);
-                puts("s1 bytes length: " + bytes.length + ".");
-                s2.writeBytes(bytes);
+                s_t.readBytes(bytes, 0, e.bytesLoaded);
+                puts("Tor: read " + bytes.length + ".");
+                s_c.writeBytes(bytes);
             });
 
-            s2.addEventListener(Event.CONNECT, function (e:Event):void {
-                puts("s2 Connected.");
+            s_c.addEventListener(Event.CONNECT, function (e:Event):void {
+                puts("Client: connected.");
             });
-            s2.addEventListener(Event.CLOSE, function (e:Event):void {
-                puts("s2 Closed.");
+            s_c.addEventListener(Event.CLOSE, function (e:Event):void {
+                puts("Client: closed.");
             });
-            s2.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
-                puts("s2 IO error: " + e.text + ".");
+            s_c.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
+                puts("Client: I/O error: " + e.text + ".");
             });
-            s2.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
-                puts("s2 Security error: " + e.text + ".");
+            s_c.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
+                puts("Client: security error: " + e.text + ".");
             });
-            s2.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
+            s_c.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
                 var bytes:ByteArray = new ByteArray();
-                puts("s2 progress: " + e.bytesLoaded + ".");
-                s2.readBytes(bytes, 0, e.bytesLoaded);
-                puts("s2 bytes length: " + bytes.length + ".");
-                s1.writeBytes(bytes);
+                s_c.readBytes(bytes, 0, e.bytesLoaded);
+                puts("Client: read " + bytes.length + ".");
+                s_t.writeBytes(bytes);
             });
 
-            puts("Requesting connection.");
-
-            s1.connect("10.32.16.133", 9998);
-            s2.connect("10.32.16.133", 9999);
-
-            puts("Connection requested.");
+            puts("Tor: connecting.");
+            s_t.connect(TOR_ADDRESS, TOR_PORT);
+            puts("Client: connecting.");
+            s_c.connect(CLIENT_ADDRESS, CLIENT_PORT);
         }
     }
 }
