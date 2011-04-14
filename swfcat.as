@@ -33,6 +33,37 @@ package
             output_text.textColor = 0x44CC44;
             addChild(output_text);
 
+            puts("Starting.");
+            // Wait until the query string parameters are loaded.
+            this.loaderInfo.addEventListener(Event.COMPLETE, loaderinfo_complete);
+        }
+
+        private function loaderinfo_complete(e:Event):void
+        {
+            var client_spec:String, parts:Array;
+            var client_address:String, client_port:int;
+
+            puts("Parameters loaded.");
+            client_spec = this.loaderInfo.parameters["client"];
+            if (!client_spec) {
+                puts("Error: no \"client\" specification provided.");
+                return;
+            }
+            puts("Client spec: \"" + client_spec + "\"");
+            parts = client_spec.split(":", 2);
+            if (parts.length != 2 || !parseInt(parts[1])) {
+                puts("Error: client spec must be in the form \"host:port\".");
+                return;
+            }
+            client_address = parts[0];
+            client_port = parseInt(parts[1]);
+
+            go(TOR_ADDRESS, TOR_PORT, client_address, client_port);
+        }
+
+        private function go(tor_address:String, tor_port:int,
+            client_address:String, client_port:int):void
+        {
             var s_t:Socket = new Socket();
             var s_c:Socket = new Socket();
 
@@ -74,10 +105,10 @@ package
                 s_t.writeBytes(bytes);
             });
 
-            puts("Tor: connecting.");
-            s_t.connect(TOR_ADDRESS, TOR_PORT);
-            puts("Client: connecting.");
-            s_c.connect(CLIENT_ADDRESS, CLIENT_PORT);
+            puts("Tor: connecting to " + tor_address + ":" + tor_port + ".");
+            s_t.connect(tor_address, tor_port);
+            puts("Client: connecting to " + client_address + ":" + client_port + ".");
+            s_c.connect(client_address, client_port);
         }
     }
 }
