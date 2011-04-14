@@ -11,7 +11,7 @@ package
 
     public class swfcat extends Sprite
     {
-        private const TOR_ADDRESS:String = "upload.bamsoftware.com";
+        private const TOR_ADDRESS:String = "173.255.221.44";
         private const TOR_PORT:int = 9001;
         private const CLIENT_ADDRESS:String = "192.168.0.2";
         private const CLIENT_PORT:int = 9001;
