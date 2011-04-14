@@ -1,13 +1,11 @@
-http://www.mozilla.org/rhino/download.html
-Unpack rhino1_7R2.zip into ~/rhino1_7R2.
+http://opensource.adobe.com/wiki/display/flexsdk/Flex+SDK
 
-ncat -lk 9999 -v
+Install the Flex SDK and put its bin directory in your PATH.
 
-cd jscat
-./jscat
+To build, run
 
-ncat localhost 9998 -v
+$ mxmlc swfcat.as
 
-jscat listens on port 9998. On accepting a connection it connects to
-localhost:9999 and starts relaying data back and forth. More than one
-connection can be made at a time.
+To serve a crossdomain.xml file, use a netcat server such as Ncat:
+
+# ncat -lkv 843 --sh-exec "cat crossdomain.xml"
