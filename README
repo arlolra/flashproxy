@@ -1,11 +1,25 @@
 http://opensource.adobe.com/wiki/display/flexsdk/Flex+SDK
-
 Install the Flex SDK and put its bin directory in your PATH.
 
 To build, run
 
-$ mxmlc swfcat.as
+$ make
 
-To serve a crossdomain.xml file, use a netcat server such as Ncat:
+Copy the swfcat.swf file to a web server.
 
-# ncat -lkv 843 --sh-exec "cat crossdomain.xml"
+Both the Tor client and the Tor relay (whose address is hardcoded in
+swfcat.as) must serve a crossdomain policy in order to accept Flash
+connections. The crossdomaind.py program does this.
+
+On the client, set up a server to shuttle data between the Flash
+connection and the local Tor. At the moment we use Ncat for this.
+
+$ ncat -lv --max-conns 2 --broker 9001
+
+Visit the swfcat.swf file in a web browser, appending the query string
+"?client=X.X.X.X:9001", where X.X.X.X is the client address.
+
+Then, start Tor on the client, with this configuration:
+
+UseBridges 1
+Bridge 127.0.0.1:9001
