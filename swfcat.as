@@ -16,6 +16,14 @@ package
 
         private var output_text:TextField;
 
+        // Socket to Tor relay.
+        private var s_t:Socket;
+        // Socket to client.
+        private var s_c:Socket;
+
+        private var client_address:String;
+        private var client_port:int;
+
         private function puts(s:String):void
         {
             output_text.appendText(s + "\n");
@@ -40,7 +48,6 @@ package
         private function loaderinfo_complete(e:Event):void
         {
             var client_spec:String, parts:Array;
-            var client_address:String, client_port:int;
 
             puts("Parameters loaded.");
             client_spec = this.loaderInfo.parameters["client"];
@@ -57,45 +64,71 @@ package
             client_address = parts[0];
             client_port = parseInt(parts[1]);
 
-            go(TOR_ADDRESS, TOR_PORT, client_address, client_port);
+            go(TOR_ADDRESS, TOR_PORT);
         }
 
-        private function go(tor_address:String, tor_port:int,
-            client_address:String, client_port:int):void
+        /* We connect first to the Tor relay; once that happens we connect to
+           the client; and when both connections exist we begin relaying data. */
+        private function go(tor_address:String, tor_port:int):void
         {
-            var s_t:Socket = new Socket();
-            var s_c:Socket = new Socket();
+            s_t = new Socket();
 
-            s_t.addEventListener(Event.CONNECT, function (e:Event):void {
-                puts("Tor: connected.");
-            });
+            s_t.addEventListener(Event.CONNECT, tor_connected);
             s_t.addEventListener(Event.CLOSE, function (e:Event):void {
                 puts("Tor: closed.");
+                if (s_c.connected)
+                    s_c.close();
             });
             s_t.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
                 puts("Tor: I/O error: " + e.text + ".");
+                if (s_c.connected)
+                    s_c.close();
             });
             s_t.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
                 puts("Tor: security error: " + e.text + ".");
+                if (s_c.connected)
+                    s_c.close();
             });
+
+            puts("Tor: connecting to " + tor_address + ":" + tor_port + ".");
+            s_t.connect(tor_address, tor_port);
+        }
+
+        private function tor_connected(e:Event):void
+        {
+            s_c = new Socket();
+
+            puts("Tor: connected.");
+            s_c.addEventListener(Event.CONNECT, client_connected);
+            s_c.addEventListener(Event.CLOSE, function (e:Event):void {
+                puts("Client: closed.");
+                if (s_t.connected)
+                    s_t.close();
+            });
+            s_c.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
+                puts("Client: I/O error: " + e.text + ".");
+                if (s_t.connected)
+                    s_t.close();
+            });
+            s_c.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
+                puts("Client: security error: " + e.text + ".");
+                if (s_t.connected)
+                    s_t.close();
+            });
+
+            puts("Client: connecting to " + client_address + ":" + client_port + ".");
+            s_c.connect(client_address, client_port);
+        }
+
+        private function client_connected(e:Event):void
+        {
+            puts("Client: connected.");
+
             s_t.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
                 var bytes:ByteArray = new ByteArray();
                 s_t.readBytes(bytes, 0, e.bytesLoaded);
                 puts("Tor: read " + bytes.length + ".");
                 s_c.writeBytes(bytes);
-            });
-
-            s_c.addEventListener(Event.CONNECT, function (e:Event):void {
-                puts("Client: connected.");
-            });
-            s_c.addEventListener(Event.CLOSE, function (e:Event):void {
-                puts("Client: closed.");
-            });
-            s_c.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
-                puts("Client: I/O error: " + e.text + ".");
-            });
-            s_c.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
-                puts("Client: security error: " + e.text + ".");
             });
             s_c.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
                 var bytes:ByteArray = new ByteArray();
@@ -103,11 +136,6 @@ package
                 puts("Client: read " + bytes.length + ".");
                 s_t.writeBytes(bytes);
             });
-
-            puts("Tor: connecting to " + tor_address + ":" + tor_port + ".");
-            s_t.connect(tor_address, tor_port);
-            puts("Client: connecting to " + client_address + ":" + client_port + ".");
-            s_c.connect(client_address, client_port);
         }
     }
 }
