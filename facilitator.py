@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import SocketServer
+import sys
 from collections import deque
 
 class FaciTCPHandler(SocketServer.BaseRequestHandler):
@@ -27,9 +28,13 @@ class FaciTCPHandler(SocketServer.BaseRequestHandler):
 			print "Bad request"
 			self.request.send("Bad request")
 
-HOST, PORT = "127.0.0.1", 8000
+HOST = sys.argv[1]
+PORT = int(sys.argv[2])
 
+# Setup the server
 server = SocketServer.TCPServer((HOST, PORT), FaciTCPHandler)
 
-# Single threaded serving of requests...
+print "Starting Facilitator on " + str((HOST, PORT)) + "..."
+
+# Run server... Single threaded serving of requests...
 server.serve_forever()
