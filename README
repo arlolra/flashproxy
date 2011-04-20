@@ -28,8 +28,19 @@ Bridge 127.0.0.1:9001
 To start the facilitator on address ADDR and port PORT:
 ./facilitator.py ADDR PORT
 
-Sending "POST" to the facilitator over TCP registers your address
-and port (the ones you used to connect).
+The facilitator acts like an HTTP server. For a client to register
+with the facilitator, they send an HTTP POST request to the server
+like this:
 
-Sending "GET" gets an unserved client and sends it back formatted
-as: "192.168.1.102:8888"
+POST / HTTP/1.0
+
+client=192.168.0.102:8888
+
+Sending an HTTP GET request gets a client from a server like this:
+
+to the server:
+GET /
+
+from the server:
+192.168.0.102:8888
+
