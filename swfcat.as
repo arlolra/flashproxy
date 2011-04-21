@@ -160,7 +160,7 @@ package
 		/* Need to parse the bytes to get the new client. Fill out client_address and client_port */
             });
 	   
-	    s_f.writeUTFBytes("GET / HTTP/1.0");
+	    s_f.writeUTFBytes("GET / HTTP/1.0\r\n\r\n");
 	    s_f.flush();
 
         }
