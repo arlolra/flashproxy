@@ -18,11 +18,16 @@ package
 
         // Socket to Tor relay.
         private var s_t:Socket;
+	// Socket to Facilitator.
+	private var s_f:Socket;
         // Socket to client.
         private var s_c:Socket;
 
-        private var client_address:String;
-        private var client_port:int;
+        private var fac_address:String;
+        private var fac_port:int;
+
+	private var client_address:String;
+	private var client_port:int;
 
         private function puts(s:String):void
         {
@@ -47,28 +52,29 @@ package
 
         private function loaderinfo_complete(e:Event):void
         {
-            var client_spec:String, parts:Array;
+            var fac_spec:String, parts:Array;
 
             puts("Parameters loaded.");
-            client_spec = this.loaderInfo.parameters["client"];
-            if (!client_spec) {
-                puts("Error: no \"client\" specification provided.");
+            fac_spec = this.loaderInfo.parameters["facilitator"];
+            if (!fac_spec) {
+                puts("Error: no \"facilitator\" specification provided.");
                 return;
             }
-            puts("Client spec: \"" + client_spec + "\"");
-            parts = client_spec.split(":", 2);
+            puts("Facilitator spec: \"" + fac_spec + "\"");
+            parts = fac_spec.split(":", 2);
             if (parts.length != 2 || !parseInt(parts[1])) {
-                puts("Error: client spec must be in the form \"host:port\".");
+                puts("Error: Facilitator spec must be in the form \"host:port\".");
                 return;
             }
-            client_address = parts[0];
-            client_port = parseInt(parts[1]);
+            fac_address = parts[0];
+            fac_port = parseInt(parts[1]); 
 
             go(TOR_ADDRESS, TOR_PORT);
         }
 
         /* We connect first to the Tor relay; once that happens we connect to
-           the client; and when both connections exist we begin relaying data. */
+           the facilitator to get a client address; once we have the address
+	   of a waiting client then we connect to the client and BAM! we're in business. */
         private function go(tor_address:String, tor_port:int):void
         {
             s_t = new Socket();
@@ -96,7 +102,29 @@ package
 
         private function tor_connected(e:Event):void
         {
-            s_c = new Socket();
+	    /* Got a connection to tor, now let's get served a client from the facilitator */
+            s_f = new Socket();
+
+            puts("Tor: connected.");
+            s_f.addEventListener(Event.CONNECT, fac_connected);
+            s_f.addEventListener(Event.CLOSE, function (e:Event):void {
+                puts("Facilitator: closed connection.");
+            });
+            s_f.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
+                puts("Facilitator: I/O error: " + e.text + ".");
+                if (s_t.connected)
+                    s_t.close();
+            });
+            s_f.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
+                puts("Facilitator: security error: " + e.text + ".");
+                if (s_t.connected)
+                    s_t.close();
+            });
+
+            puts("Facilitator: connecting to " + fac_address + ":" + fac_port + ".");
+            s_f.connect(fac_address, fac_port);
+
+            /*s_c = new Socket();
 
             puts("Tor: connected.");
             s_c.addEventListener(Event.CONNECT, client_connected);
@@ -117,7 +145,24 @@ package
             });
 
             puts("Client: connecting to " + client_address + ":" + client_port + ".");
-            s_c.connect(client_address, client_port);
+            s_c.connect(client_address, client_port);*/
+        }
+        
+	private function fac_connected(e:Event):void
+        {
+            puts("Facilitator: connected.");
+
+            s_f.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
+                var client_spec:String = new String();
+		client_spec = s_f.readUTF();
+                puts("Facilitator: got \"" + client_spec + "\"");
+                //s_c.writeBytes(bytes);
+		/* Need to parse the bytes to get the new client. Fill out client_address and client_port */
+            });
+	   
+	    s_f.writeUTFBytes("GET / HTTP/1.0");
+	    s_f.flush();
+
         }
 
         private function client_connected(e:Event):void
