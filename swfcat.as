@@ -154,7 +154,7 @@ package
 
             s_f.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
                 var client_spec:String = new String();
-		client_spec = s_f.readMultiByte(0, "utf-8");
+		client_spec = s_f.readMultiByte(e.bytesLoaded, "utf-8");
                 puts("Facilitator: got \"" + client_spec + "\"");
                 //s_c.writeBytes(bytes);
 		/* Need to parse the bytes to get the new client. Fill out client_address and client_port */
