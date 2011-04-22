@@ -161,8 +161,6 @@ package
             });
 	   
 	    s_f.writeUTFBytes("GET / HTTP/1.0\r\n\r\n");
-	    s_f.flush();
-
         }
 
         private function client_connected(e:Event):void
