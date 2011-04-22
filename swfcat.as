@@ -154,10 +154,12 @@ package
 
             s_f.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
                 var client_spec:String = new String();
+		var parts:Array;
+
 		client_spec = s_f.readMultiByte(e.bytesLoaded, "utf-8");
                 puts("Facilitator: got \"" + client_spec + "\"");
 
-                parts = fac_spec.split(":", 2);
+                parts = client_spec.split(":", 2);
                 if (parts.length != 2 || !parseInt(parts[1])) {
                    puts("Error: Facilitator spec must be in the form \"host:port\".");
                    return;
@@ -170,7 +172,7 @@ package
                 client_port = parseInt(parts[1]); 
 
             	puts("Client: connecting to " + client_address + ":" + client_port + ".");
-            	s_c.connect(client_address, client_port);*/
+            	s_c.connect(client_address, client_port);
 
             });
 	   
