@@ -156,8 +156,22 @@ package
                 var client_spec:String = new String();
 		client_spec = s_f.readMultiByte(e.bytesLoaded, "utf-8");
                 puts("Facilitator: got \"" + client_spec + "\"");
-                //s_c.writeBytes(bytes);
-		/* Need to parse the bytes to get the new client. Fill out client_address and client_port */
+
+                parts = fac_spec.split(":", 2);
+                if (parts.length != 2 || !parseInt(parts[1])) {
+                   puts("Error: Facilitator spec must be in the form \"host:port\".");
+                   return;
+                }
+		if (parts[0] == "0.0.0.0" && parseInt(parts[1]) == 0) {
+		   puts("Error: Facilitator has no clients.");
+		   return;
+		}
+                client_address = parts[0];
+                client_port = parseInt(parts[1]); 
+
+            	puts("Client: connecting to " + client_address + ":" + client_port + ".");
+            	s_c.connect(client_address, client_port);*/
+
             });
 	   
 	    s_f.writeUTFBytes("GET / HTTP/1.0\r\n\r\n");
