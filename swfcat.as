@@ -11,8 +11,12 @@ package
 
     public class swfcat extends Sprite
     {
-        private const TOR_ADDRESS:String = "173.255.221.44";
-        private const TOR_PORT:int = 9001;
+        /* David's relay (nickname 3VXRyxz67OeRoqHn) that also serves a
+           crossdomain policy. */
+        private const DEFAULT_TOR_ADDR:Object = {
+            host: "173.255.221.44",
+            port: 9001
+        };
 
         private var output_text:TextField;
 
@@ -24,6 +28,7 @@ package
         private var s_c:Socket;
 
         private var fac_addr:Object;
+        private var tor_addr:Object;
 
         private function puts(s:String):void
         {
@@ -49,6 +54,7 @@ package
         private function loaderinfo_complete(e:Event):void
         {
             var fac_spec:String;
+            var tor_spec:String;
 
             puts("Parameters loaded.");
             fac_spec = this.loaderInfo.parameters["facilitator"];
@@ -63,13 +69,15 @@ package
                 return;
             }
 
-            go(TOR_ADDRESS, TOR_PORT);
+            tor_addr = DEFAULT_TOR_ADDR;
+
+            go();
         }
 
         /* We connect first to the Tor relay; once that happens we connect to
            the facilitator to get a client address; once we have the address
            of a waiting client then we connect to the client and BAM! we're in business. */
-        private function go(tor_address:String, tor_port:int):void
+        private function go():void
         {
             s_t = new Socket();
 
@@ -90,8 +98,8 @@ package
                     s_c.close();
             });
 
-            puts("Tor: connecting to " + tor_address + ":" + tor_port + ".");
-            s_t.connect(tor_address, tor_port);
+            puts("Tor: connecting to " + tor_addr.host + ":" + tor_addr.port + ".");
+            s_t.connect(tor_addr.host, tor_addr.port);
         }
 
         private function tor_connected(e:Event):void
