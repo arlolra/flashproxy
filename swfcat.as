@@ -152,7 +152,7 @@ package
 
                 puts("Client: connecting to " + client_addr.host + ":" + client_addr.port + ".");
                 s_c.connect(client_addr.host, client_addr.port);
-
+                s_c.addEventListener(Event.CONNECT, client_connected);
             });
 
             s_f.writeUTFBytes("GET / HTTP/1.0\r\n\r\n");
