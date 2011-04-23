@@ -16,7 +16,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 			self.request.send(client)
 		else:
 			print "Client list is empty"
-			self.request.send("Client list empty")
+			self.request.send("0.0.0.0:0")
 	
 	def do_POST(self):
 		print "From " + str(self.client_address) + " received: POST:",
