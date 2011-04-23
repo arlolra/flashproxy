@@ -23,11 +23,7 @@ package
         // Socket to client.
         private var s_c:Socket;
 
-        private var fac_address:String;
-        private var fac_port:int;
-
-        private var client_address:String;
-        private var client_port:int;
+        private var fac_addr:Object;
 
         private function puts(s:String):void
         {
@@ -52,7 +48,7 @@ package
 
         private function loaderinfo_complete(e:Event):void
         {
-            var fac_spec:String, parts:Array;
+            var fac_spec:String;
 
             puts("Parameters loaded.");
             fac_spec = this.loaderInfo.parameters["facilitator"];
@@ -61,13 +57,11 @@ package
                 return;
             }
             puts("Facilitator spec: \"" + fac_spec + "\"");
-            parts = fac_spec.split(":", 2);
-            if (parts.length != 2 || !parseInt(parts[1])) {
+            fac_addr = parse_addr_spec(fac_spec);
+            if (!fac_addr) {
                 puts("Error: Facilitator spec must be in the form \"host:port\".");
                 return;
             }
-            fac_address = parts[0];
-            fac_port = parseInt(parts[1]);
 
             go(TOR_ADDRESS, TOR_PORT);
         }
@@ -121,8 +115,8 @@ package
                     s_t.close();
             });
 
-            puts("Facilitator: connecting to " + fac_address + ":" + fac_port + ".");
-            s_f.connect(fac_address, fac_port);
+            puts("Facilitator: connecting to " + fac_addr.host + ":" + fac_addr.port + ".");
+            s_f.connect(fac_addr.host, fac_addr.port);
         }
 
         private function fac_connected(e:Event):void
@@ -130,26 +124,24 @@ package
             puts("Facilitator: connected.");
 
             s_f.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
-                var client_spec:String = new String();
-                var parts:Array;
+                var client_spec:String;
+                var client_addr:Object;
 
                 client_spec = s_f.readMultiByte(e.bytesLoaded, "utf-8");
                 puts("Facilitator: got \"" + client_spec + "\"");
 
-                parts = client_spec.split(":", 2);
-                if (parts.length != 2 || !parseInt(parts[1])) {
-                    puts("Error: Facilitator spec must be in the form \"host:port\".");
+                client_addr = parse_addr_spec(client_spec);
+                if (!client_addr) {
+                    puts("Error: Client spec must be in the form \"host:port\".");
                     return;
                 }
-                if (parts[0] == "0.0.0.0" && parseInt(parts[1]) == 0) {
+                if (client_addr.host == "0.0.0.0" && client_addr.port == 0) {
                     puts("Error: Facilitator has no clients.");
                     return;
                 }
-                client_address = parts[0];
-                client_port = parseInt(parts[1]);
 
-                puts("Client: connecting to " + client_address + ":" + client_port + ".");
-                s_c.connect(client_address, client_port);
+                puts("Client: connecting to " + client_addr.host + ":" + client_addr.port + ".");
+                s_c.connect(client_addr.host, client_addr.port);
 
             });
 
@@ -172,6 +164,21 @@ package
                 puts("Client: read " + bytes.length + ".");
                 s_t.writeBytes(bytes);
             });
+        }
+
+        private static function parse_addr_spec(spec:String):Object
+        {
+            var parts:Array;
+            var addr:Object;
+
+            parts = spec.split(":", 2);
+            if (parts.length != 2 || !parseInt(parts[1]))
+                return null;
+            addr = {}
+            addr.host = parts[0];
+            addr.port = parseInt(parts[1]);
+
+            return addr;
         }
     }
 }
