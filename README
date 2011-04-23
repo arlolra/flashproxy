@@ -39,7 +39,7 @@ client=192.168.0.102:8888
 Sending an HTTP GET request gets a client from a server like this:
 
 to the server:
-GET /
+GET / HTTP/1.0
 
 from the server:
 192.168.0.102:8888
