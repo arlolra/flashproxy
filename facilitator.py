@@ -28,18 +28,26 @@ class Reg(object):
 		return cmp((self.af, self.host, self.port), (other.af, other.host, other.port))
 
 	@staticmethod
-	def parse(spec):
-		m = re.match(r'^\[(.*)\]:(\d+)$', spec)
+	def parse(spec, defhost = None, defport = None):
+		host = None
+		port = None
+		m = re.match(r'^\[(.+)\]:(\d*)$', spec)
 		if m:
 			host, port = m.groups()
 			af = socket.AF_INET6
 		else:
-			m = re.match(r'^(.*):(\d+)$', spec)
+			m = re.match(r'^(.*):(\d*)$', spec)
 			if m:
 				host, port = m.groups()
-				af = socket.AF_INET
-			else:
-				raise ValueError("Bad address specification \"%s\"" % spec)
+				if host:
+					af = socket.AF_INET
+				else:
+					# Has to be guessed from format of defhost.
+					af = 0
+		host = host or defhost
+		port = port or defport
+		if not (host and port):
+			raise ValueError("Bad address specification \"%s\"" % spec)
 
 		try:
 			addrs = socket.getaddrinfo(host, port, af, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
@@ -86,7 +94,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 		val = client_specs[0]
 
 		try:
-			reg = Reg.parse(val)
+			reg = Reg.parse(val, self.client_address[0])
 		except ValueError, e:
 			print "Can't parse client \"%s\": %s" % (val, str(e))
 			return

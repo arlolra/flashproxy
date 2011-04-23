@@ -8,7 +8,7 @@ import urllib
 PROXY_LISTEN_ADDRESS = ("0.0.0.0", 9000)
 TOR_LISTEN_ADDRESS = ("0.0.0.0", 9001)
 FACILITATOR_ADDR_SPEC = "localhost:9002"
-CLIENT_ADDR_SPEC = "192.168.0.2:9000"
+CLIENT_ADDR_SPEC = ":9000"
 
 proxy_s = socket.socket()
 proxy_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
