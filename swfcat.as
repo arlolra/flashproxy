@@ -174,6 +174,8 @@ package
             });
         }
 
+        /* Parse an address in the form "host:port". Returns an Object with
+           keys "host" (String) and "port" (int). Returns null on error. */
         private static function parse_addr_spec(spec:String):Object
         {
             var parts:Array;
