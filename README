@@ -1,50 +1,88 @@
-http://opensource.adobe.com/wiki/display/flexsdk/Flex+SDK
+== Introduction
 
-Install the Flex SDK and put its bin directory in your PATH.
+This is a set of tools that make it possible to connect Tor through an
+Adobe Flash proxy running on another computer. The Flash proxy can be
+run just by opening a web page in a computer that has Flash Player
+installed.
 
+There are five main parts. Our terminology for each part is in quotes.
+1. The Tor "client," running on someone's localhost.
+2. A "connector," which waits for connections from the Flash proxy and
+   the Tor client, and joins them together.
+3. A Flash "proxy," running in someone's web browser. This piece is
+   called swfcat because it is like a netcat implemented in Flash.
+4. A "facilitator," a pseudo-HTTP server that keeps a list of clients
+   that want a connection, and hands them out to proxies.
+5. A Tor "relay," which is just a normal Tor relay except that its host
+   must also serve a Flash crossdomain policy.
+
+== Quick start
+
+=== Building
+
+Download the (free software) Flex SDK.
+	http://opensource.adobe.com/wiki/display/flexsdk/Flex+SDK
+Put its bin directory in your PATH. The important executable is mxmlc.
 To build, run
+	$ make
+Copy the resulting swfcat.swf file to a web server.
 
-$ make
+On the computer that will be the facilitator, run
+        sudo ./crossdomaind.py
+	./facilitator.py
+crossdomaind.py needs to be run on any server that will accept
+connections from a Flash proxy. It serves a chunk of data on port 843.
+The facilitator runs on port 9002 by default.
 
-Copy the swfcat.swf file to a web server.
+On the client, run
+        sudo ./crossdomaind.py
+	./connector.py -f <FACILITATOR_IP>
+Replace <FACILITATOR_IP> with the IP address of the facilitator. The
+connector informs the facilitator that it wants a connection, then
+listens on 0.0.0.0:9000 and 127.0.0.1:9001. The Flash proxy will connect
+on port 9000 and the local Tor will connect on 9001.
 
-Both the Tor client and the Tor relay (whose address is hardcoded in
-swfcat.as) must serve a crossdomain policy in order to accept Flash
-connections. The crossdomaind.py program does this.
+In a browser somewhere, open swfcat.swf and pass a parameter telling it
+the facilitator to use, for example
+	http://www.example.com/swfcat.swf?facilitator=<FACILITATOR_IP>:9002
+The facilitator will return the client address that was registered by
+connector.py, and the Flash proxy will open a connection to a hardcoded
+Tor relay and the given client.
 
-On the client, set up a server to shuttle data between the Flash
-connection and the local Tor. At the moment we use Ncat for this.
+Back on the client, start crossdomaind.py:
+        sudo ./crossdomaind.py
+Then start Tor with the following configuration:
+	UseBridges 1
+	Bridge 127.0.0.1:9001
 
-$ ncat -lv --max-conns 2 --broker 9001
+You will be able to see byte counts flowing in the browser displaying
+swfcat.swf, and eventually be able to build a circuit.
 
-Visit the swfcat.swf file in a web browser, appending the query string
-"?client=X.X.X.X:9001", where X.X.X.X is the client address.
+== Rationale
 
-Then, start Tor on the client, with this configuration:
+The purpose of this project is to create many, generally ephemeral
+bridge IP addresses, with the goal of outpacing a censor's ability to
+block them. Rather than increasing the number of bridges at static
+addresses, we aim to make existing bridges reachable by a larger and
+changing pool of addresses.
 
-UseBridges 1
-Bridge 127.0.0.1:9001
+== Design notes
 
-To start the facilitator on address ADDR and port PORT:
-./facilitator.py ADDR PORT
+The Tor relay address is hardcoded in swfcat.as. It could be any relay,
+with the caveat that the server also has to serve a crossdomain policy.
 
-The facilitator acts like an HTTP server. For a client to register
-with the facilitator, they send an HTTP POST request to the server
-like this:
+Clients register with the facilitator by sending an HTTP-like message:
+	POST / HTTP/1.0\r\n
+	\r\n
+	client=:9000
 
-POST / HTTP/1.0
+The Flash proxy also gets a client address using something like HTTP:
+	GET / HTTP/1.0\r\n
+	\r\n
+The server sends back an address specification (no HTTP header):
+	192.168.0.102:8888
 
-client=192.168.0.102:8888
-
-Sending an HTTP GET request gets a client from a server like this:
-
-to the server:
-GET / HTTP/1.0
-
-from the server:
-192.168.0.102:8888
-
-=== ActionScript programming
+== ActionScript programming
 
 A good tutorial on ActionScript programming with the Flex tools, with
 sample code:
