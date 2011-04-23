@@ -3,17 +3,16 @@
 import getopt
 import socket
 import sys
+import xml.sax.saxutils
 
 DEFAULT_ADDRESS = "0.0.0.0"
 DEFAULT_PORT = 843
-
-POLICY = """\
-<cross-domain-policy>
-<allow-access-from domain="*" to-ports="*"/>
-</cross-domain-policy>
-\0"""
+DEFAULT_DOMAIN = "*"
+DEFAULT_PORTS = "*"
 
 class options(object):
+    domain = DEFAULT_DOMAIN
+    ports = DEFAULT_PORTS
     pass
 
 def usage(f = sys.stdout):
@@ -21,14 +20,28 @@ def usage(f = sys.stdout):
 Usage: %(progname)s <OPTIONS> [HOST] [PORT]
 Serve a Flash crossdomain policy. By default HOST is %(addr)s
 and PORT is %(port)d.
-  -h, --help  show this help.\
+  -d, --domain=DOMAIN  limit access to the given DOMAIN (default %(domain)s).
+  -h, --help           show this help.
+  -p, --ports=PORTS    limit access to the given PORTS (default %(ports)s).
 """ % {"progname": sys.argv[0], "addr": DEFAULT_ADDRESS, "port": DEFAULT_PORT }
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "h", ["help"])
+def make_policy(domain, ports):
+    return """\
+<cross-domain-policy>
+<allow-access-from domain="%s" to-ports="%s"/>
+</cross-domain-policy>
+\0""" % (xml.sax.saxutils.escape(domain), xml.sax.saxutils.escape(ports))
+
+opts, args = getopt.gnu_getopt(sys.argv[1:], "d:hp:", ["domain", "help", "ports"])
 for o, a in opts:
     if o == "-h" or o == "--help":
         usage()
         sys.exit()
+    elif o == "-d" or o == "--domain":
+        options.domain = a
+    elif o == "-p" or o == "--ports":
+        options.ports = a
+
 if len(args) == 0:
     address = (DEFAULT_ADDRESS, DEFAULT_PORT)
 elif len(args) == 1:
@@ -43,6 +56,8 @@ else:
     usage(sys.stderr)
     sys.exit(1)
 
+policy = make_policy(options.domain, options.ports)
+
 addrinfo = socket.getaddrinfo(address[0], address[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
 
 s = socket.socket(addrinfo[0], addrinfo[1], addrinfo[2])
@@ -51,5 +66,5 @@ s.bind(addrinfo[4])
 s.listen(10)
 while True:
     (c, c_addr) = s.accept()
-    c.sendall(POLICY)
+    c.sendall(policy)
     c.close()
