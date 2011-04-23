@@ -1,11 +1,28 @@
 #!/usr/bin/env python
 
 import BaseHTTPServer
+import getopt
 import cgi
 import re
 import sys
 import socket
 from collections import deque
+
+DEFAULT_ADDRESS = "0.0.0.0"
+DEFAULT_PORT = 9002
+
+def usage(f = sys.stdout):
+	print >> f, """\
+Usage: %(progname)s <OPTIONS> [HOST] [PORT]
+Flash bridge facilitator: Register client addresses with HTTP POST requests
+and serve them out again with HTTP GET. Listen on HOST and PORT, by default
+%(addr)s %(port)d.
+  -h, --help		   show this help.\
+""" % {
+	"progname": sys.argv[0],
+	"addr": DEFAULT_ADDRESS,
+	"port": DEFAULT_PORT,
+}
 
 REGS = deque()
 
@@ -105,13 +122,30 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 		else:
 			print "Registration " + str(reg) + " already present. Registrations: " + str(len(REGS))
 
-HOST = sys.argv[1]
-PORT = int(sys.argv[2])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "h", ["help"])
+for o, a in opts:
+	if o == "-h" or o == "--help":
+		usage()
+		sys.exit()
+
+if len(args) == 0:
+	address = (DEFAULT_ADDRESS, DEFAULT_PORT)
+elif len(args) == 1:
+	# Either HOST or PORT may be omitted; figure out which one.
+	if args[0].isdigit():
+		address = (DEFAULT_ADDRESS, args[0])
+	else:
+		address = (args[0], DEFAULT_PORT)
+elif len(args) == 2:
+	address = (args[0], args[1])
+else:
+	usage(sys.stderr)
+	sys.exit(1)
 
 # Setup the server
-server = BaseHTTPServer.HTTPServer((HOST, PORT), Handler)
+server = BaseHTTPServer.HTTPServer(address, Handler)
 
-print "Starting Facilitator on " + str((HOST, PORT)) + "..."
+print "Starting Facilitator on " + str(address) + "..."
 
 # Run server... Single threaded serving of requests...
 server.serve_forever()
