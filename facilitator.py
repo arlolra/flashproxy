@@ -6,19 +6,60 @@ import sys
 import socket
 from collections import deque
 
-class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
-	client_list = deque()	
+REGS = deque()
 
+class Reg(object):
+	def __init__(self, host, port):
+		self.host = host
+		self.port = port
+
+	def __unicode__(self):
+		return u"%s:%d" % (self.host, self.port)
+
+	def __str__(self):
+		return unicode(self).encode("UTF-8")
+
+	@staticmethod
+	def parse(spec):
+		addr, port_s = spec.split(":")
+
+		addr = addr.strip()
+		port_s = port_s.strip()
+
+		try:
+			socket.inet_aton(addr)
+		except socket.error:
+			raise ValueError("Bad IP address: \"%s\"" % addr)
+
+		# Additional checks on the IP address, since socket.inet_aton
+		# is a little too lax
+		if(len(addr.split(".")) != 4):
+			raise ValueError("Bad IP address: \"%s\"" % addr)
+
+		try:
+			port = int(port_s)
+		except ValueError:
+			raise ValueError("Bad port number: \"%s\"" % port_s)
+
+		return Reg(addr, port)
+
+def fetch_reg():
+	"""Get a client registration, or None if none is available."""
+	if not REGS:
+		return None
+	return REGS.popleft()
+
+class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 	def do_GET(self):
 		print "From " + str(self.client_address) + " received: GET:",
-		if(self.client_list):
-			client = self.client_list.popleft()
-			print "Handing out " + client + ". Clients: " + str(len(self.client_list))
-			self.request.send(client)
+		reg = fetch_reg()
+		if reg:
+			print "Handing out " + str(reg) + ". Clients: " + str(len(REGS))
+			self.request.send(str(reg))
 		else:
-			print "Client list is empty"
-			self.request.send("Client list empty")
-	
+			print "Registration list is empty"
+			self.request.send("Registration list empty")
+
 	def do_POST(self):
 		print "From " + str(self.client_address) + " received: POST:",
 		data = self.rfile.readline().strip()
@@ -35,36 +76,14 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 			return
 		val = client_specs[0]
 
-		if(len(val.split(":")) != 2):
-			print "Bad request, expected client=addr:port"
-			return
-
-		addr, port = val.split(":")	
-		
-		addr = addr.strip()
-		port = port.strip()	
-
 		try:
-			socket.inet_aton(addr)
-		except socket.error:
-			print "Bad IP address: " + addr
+			reg = Reg.parse(val)
+		except ValueError, e:
+			print "Can't parse client \"%s\": %s" % (val, str(e))
 			return
 
-		# Additional checks on the IP address, since socket.inet_aton
-		# is a little too lax
-		if(len(addr.split(".")) != 4):
-			print "Bad IP address: " + addr
-			return
-
-		try:
-			int(port)
-		except:
-			print "Bad port number: " + port
-			return
-
-		client = addr + ":" + port
-		self.client_list.append(client)
-		print "Client " + client + " added. Clients: " + str(len(self.client_list))
+		REGS.append(reg)
+		print "Registration " + str(reg) + " added. Registrations: " + str(len(REGS))
 
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
