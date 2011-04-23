@@ -2,6 +2,7 @@
 
 import BaseHTTPServer
 import cgi
+import re
 import sys
 import socket
 from collections import deque
@@ -9,39 +10,44 @@ from collections import deque
 REGS = deque()
 
 class Reg(object):
-	def __init__(self, host, port):
+	def __init__(self, af, host, port):
+		self.af = af
 		self.host = host
 		self.port = port
 
 	def __unicode__(self):
-		return u"%s:%d" % (self.host, self.port)
+		if self.af == socket.AF_INET6:
+			return u"[%s]:%d" % (self.host, self.port)
+		else:
+			return u"%s:%d" % (self.host, self.port)
 
 	def __str__(self):
 		return unicode(self).encode("UTF-8")
 
 	@staticmethod
 	def parse(spec):
-		addr, port_s = spec.split(":")
-
-		addr = addr.strip()
-		port_s = port_s.strip()
-
-		try:
-			socket.inet_aton(addr)
-		except socket.error:
-			raise ValueError("Bad IP address: \"%s\"" % addr)
-
-		# Additional checks on the IP address, since socket.inet_aton
-		# is a little too lax
-		if(len(addr.split(".")) != 4):
-			raise ValueError("Bad IP address: \"%s\"" % addr)
+		m = re.match(r'^\[(.*)\]:(\d+)$', spec)
+		if m:
+			host, port = m.groups()
+			af = socket.AF_INET6
+		else:
+			m = re.match(r'^(.*):(\d+)$', spec)
+			if m:
+				host, port = m.groups()
+				af = socket.AF_INET
+			else:
+				raise ValueError("Bad address specification \"%s\"" % spec)
 
 		try:
-			port = int(port_s)
-		except ValueError:
-			raise ValueError("Bad port number: \"%s\"" % port_s)
+			addrs = socket.getaddrinfo(host, port, af, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+		except socket.gaierror, e:
+			raise ValueError("Bad host or port: \"%s\" \"%s\": %s" % (host, port, str(e)))
+		if not addrs:
+			raise ValueError("Bad host or port: \"%s\" \"%s\"" % (host, port))
 
-		return Reg(addr, port)
+		af = addrs[0][0]
+		host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
+		return Reg(af, host, int(port))
 
 def fetch_reg():
 	"""Get a client registration, or None if none is available."""
