@@ -24,6 +24,9 @@ class Reg(object):
 	def __str__(self):
 		return unicode(self).encode("UTF-8")
 
+	def __cmp__(self, other):
+		return cmp((self.af, self.host, self.port), (other.af, other.host, other.port))
+
 	@staticmethod
 	def parse(spec):
 		m = re.match(r'^\[(.*)\]:(\d+)$', spec)
@@ -88,8 +91,11 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 			print "Can't parse client \"%s\": %s" % (val, str(e))
 			return
 
-		REGS.append(reg)
-		print "Registration " + str(reg) + " added. Registrations: " + str(len(REGS))
+		if reg not in list(REGS):
+			REGS.append(reg)
+			print "Registration " + str(reg) + " added. Registrations: " + str(len(REGS))
+		else:
+			print "Registration " + str(reg) + " already present. Registrations: " + str(len(REGS))
 
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
