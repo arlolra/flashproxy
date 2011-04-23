@@ -44,3 +44,10 @@ GET / HTTP/1.0
 from the server:
 192.168.0.102:8888
 
+=== ActionScript programming
+
+A good tutorial on ActionScript programming with the Flex tools, with
+sample code:
+
+http://www.senocular.com/flash/tutorials/as3withmxmlc/
+http://www.senocular.com/flash/tutorials/as3withmxmlc/AS3Flex2b3StarterFiles.zip
