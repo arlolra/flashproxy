@@ -129,6 +129,8 @@ package
 
         private function fac_connected(e:Event):void
         {
+            s_c = new Socket();
+
             puts("Facilitator: connected.");
 
             s_f.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
