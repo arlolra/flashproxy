@@ -1,82 +1,182 @@
 #!/usr/bin/env python
 
+import getopt
 import httplib
+import re
 import select
 import socket
+import sys
 import urllib
 
-PROXY_LISTEN_ADDRESS = ("0.0.0.0", 9000)
-TOR_LISTEN_ADDRESS = ("0.0.0.0", 9001)
-FACILITATOR_ADDR_SPEC = "localhost:9002"
-CLIENT_ADDR_SPEC = ":9000"
+DEFAULT_REMOTE_ADDRESS = "0.0.0.0"
+DEFAULT_REMOTE_PORT = 9000
+DEFAULT_LOCAL_ADDRESS = "localhost"
+DEFAULT_LOCAL_PORT = 9001
+DEFAULT_FACILITATOR_PORT = 9002
 
-proxy_s = socket.socket()
-proxy_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-proxy_s.bind(PROXY_LISTEN_ADDRESS)
-proxy_s.listen(10)
-proxy_s.setblocking(0)
+def usage(f = sys.stdout):
+    print >> f, """\
+Usage: %(progname)s -f FACILITATOR[:PORT] [LOCAL][:PORT] [REMOTE][:PORT]
+Wait for connections on a local and a remote port. When any pair of connections
+exists, data is ferried between them until one side is closed. By default
+LOCAL is "%(local)s" and REMOTE is "%(remote)s".
 
-tor_s = socket.socket()
-tor_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-tor_s.bind(TOR_LISTEN_ADDRESS)
-tor_s.listen(10)
-tor_s.setblocking(0)
+If the -f option is given, then the REMOTE address is advertised to the given
+FACILITATOR.
+  -f, --facilitator=HOST[:PORT]  advertise willingness to receive connections to
+                                   HOST:PORT. By default PORT is %(fac_port)d.
+  -h, --help                     show this help.\
+""" % {
+    "progname": sys.argv[0],
+    "local": format_addr((DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)),
+    "remote": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
+    "fac_port": DEFAULT_FACILITATOR_PORT,
+}
 
-proxy_pool = []
-tor_pool = []
+def parse_addr_spec(spec, defhost = None, defport = None):
+    host = None
+    port = None
+    m = None
+    # IPv6 syntax.
+    if not m:
+        m = re.match(r'^\[(.+)\]:(\d+)$', spec)
+        if m:
+            host, port = m.groups()
+            af = socket.AF_INET6
+    if not m:
+        m = re.match(r'^\[(.+)\]:?$', spec)
+        if m:
+            host, = m.groups()
+            af = socket.AF_INET6
+    # IPv4 syntax.
+    if not m:
+        m = re.match(r'^(.+):(\d+)$', spec)
+        if m:
+            host, port = m.groups()
+            af = socket.AF_INET
+    if not m:
+        m = re.match(r'^:?(\d+)$', spec)
+        if m:
+            port, = m.groups()
+            af = 0
+    if not m:
+        host = spec
+        af = 0
+    host = host or defhost
+    port = port or defport
+    if not (host and port):
+        raise ValueError("Bad address specification \"%s\"" % spec)
+    return host, int(port)
 
-proxy_for = {}
-tor_for = {}
+def format_addr(addr):
+    host, port = addr
+    if not host:
+        return u":%d" % port
+    # Numeric IPv6 address?
+    try:
+        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+        af = addrs[0][0]
+    except socket.gaierror, e:
+        af = 0
+    if af == socket.AF_INET6:
+        return u"[%s]:%d" % (host, port)
+    else:
+        return u"%s:%d" % (host, port)
 
-def register():
-    http = httplib.HTTPConnection(FACILITATOR_ADDR_SPEC)
-    http.request("POST", "/", urllib.urlencode({"client": CLIENT_ADDR_SPEC}))
+facilitator_addr = None
+
+opts, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator", "help"])
+for o, a in opts:
+    if o == "-f" or o == "--facilitator":
+        facilitator_addr = parse_addr_spec(a, None, DEFAULT_FACILITATOR_PORT)
+    elif o == "-h" or o == "--help":
+        usage()
+        sys.exit()
+
+if len(args) == 0:
+    local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+    remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+elif len(args) == 1:
+    local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+    remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+elif len(args) == 2:
+    local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+    remote_addr = parse_addr_spec(args[1], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+else:
+    usage(sys.stderr)
+    sys.exit(1)
+
+def listen_socket(addr):
+    """Return a nonblocking socket listenting on the given address."""
+    addrinfo = socket.getaddrinfo(addr[0], addr[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
+    s = socket.socket(addrinfo[0], addrinfo[1], addrinfo[2])
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(addr)
+    s.listen(10)
+    s.setblocking(0)
+    return s
+
+def register(addr, port):
+    spec = format_addr((None, port))
+    print "Registering \"%s\" with %s." % (spec, format_addr(addr))
+    http = httplib.HTTPConnection(*addr)
+    http.request("POST", "/", urllib.urlencode({"client": spec}))
     http.close()
 
 def match_proxies():
-    while proxy_pool and tor_pool:
-        proxy = proxy_pool.pop(0)
-        tor = tor_pool.pop(0)
-        proxy_addr, proxy_port = proxy.getpeername()
-        tor_addr, tor_port = tor.getpeername()
-        print "Linking %s:%d and %s:%d." % (proxy_addr, proxy_port, tor_addr, tor_port)
-        proxy_for[tor] = proxy
-        tor_for[proxy] = tor
+    while local_pool and remote_pool:
+        remote = remote_pool.pop(0)
+        local = local_pool.pop(0)
+        remote_addr, remote_port = remote.getpeername()
+        local_addr, local_port = local.getpeername()
+        print "Linking %s and %s." % (format_addr(local.getpeername()), format_addr(remote.getpeername()))
+        remote_for[local] = remote
+        local_for[remote] = local
 
-register()
+local_s = listen_socket(local_addr)
+remote_s = listen_socket(remote_addr)
+
+local_pool = []
+remote_pool = []
+
+local_for = {}
+remote_for = {}
+
+if facilitator_addr:
+    register(facilitator_addr, remote_addr[1])
 
 while True:
-    rset = [proxy_s, tor_s] + proxy_for.keys() + tor_for.keys()
+    rset = [remote_s, local_s] + remote_for.keys() + local_for.keys()
     rset, _, _ = select.select(rset, [], [])
     for fd in rset:
-        if fd == proxy_s:
-            proxy_c, addr = fd.accept()
-            print "Proxy connection from %s:%d." % addr
-            proxy_pool.append(proxy_c)
-        elif fd == tor_s:
-            tor_c, addr = fd.accept()
-            print "Tor connection from %s:%d." % addr
-            tor_pool.append(tor_c)
-        elif fd in tor_for:
-            tor = tor_for[fd]
+        if fd == remote_s:
+            remote_c, addr = fd.accept()
+            print "Remote connection from %s." % format_addr(addr)
+            remote_pool.append(remote_c)
+        elif fd == local_s:
+            local_c, addr = fd.accept()
+            print "Local connection from %s." % format_addr(addr)
+            local_pool.append(local_c)
+        elif fd in local_for:
+            local = local_for[fd]
             data = fd.recv(1024)
             if not data:
-                print "EOF from proxy %s:%d." % fd.getpeername()
+                print "EOF from remote %s." % format_addr(fd.getpeername())
                 fd.close()
-                tor.close()
-                del tor_for[fd]
-                del proxy_for[tor]
+                local.close()
+                del local_for[fd]
+                del remote_for[local]
             else:
-                tor.sendall(data)
-        elif fd in proxy_for:
-            proxy = proxy_for[fd]
+                local.sendall(data)
+        elif fd in remote_for:
+            remote = remote_for[fd]
             data = fd.recv(1024)
             if not data:
-                print "EOF from Tor %s:%d." % fd.getpeername()
+                print "EOF from local %s." % format_addr(fd.getpeername())
                 fd.close()
-                proxy.close()
-                del proxy_for[fd]
-                del tor_for[proxy]
+                remote.close()
+                del remote_for[fd]
+                del local_for[remote]
             else:
-                proxy.sendall(data)
+                remote.sendall(data)
         match_proxies()
