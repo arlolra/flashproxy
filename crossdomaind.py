@@ -16,7 +16,7 @@ class options(object):
     pass
 
 def usage(f = sys.stdout):
-    print """\
+    print >> f, """\
 Usage: %(progname)s <OPTIONS> [HOST] [PORT]
 Serve a Flash crossdomain policy. By default HOST is \"%(addr)s\"
 and PORT is %(port)d.
