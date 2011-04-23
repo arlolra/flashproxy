@@ -71,6 +71,9 @@ changing pool of addresses.
 The Tor relay address is hardcoded in swfcat.as. It could be any relay,
 with the caveat that the server also has to serve a crossdomain policy.
 
+The Tor client needs to be able to listen for an incoming connection,
+which generally means not being behind NAT.
+
 Clients register with the facilitator by sending an HTTP-like message:
 	POST / HTTP/1.0\r\n
 	\r\n
