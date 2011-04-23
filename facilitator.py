@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import BaseHTTPServer
+import cgi
 import sys
 import socket
 from collections import deque
@@ -23,15 +24,17 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 		self.data = self.rfile.readline().strip()
 		print self.data + " :",
 		
-		if(len(self.data.split("=")) != 2):
-			print "Bad request, expected client=addr:port"
+		try:
+			vals = cgi.parse_qs(self.data, False, True)
+		except ValueError, e:
+			print "Syntax error in POST:", str(e)
 			return
 
-		var, val = self.data.split("=")
-
-		if(var != "client"):
-			print "Bad request, expected client=addr:port"
+		client_specs = vals.get("client")
+		if client_specs is None or len(client_specs) != 1:
+			print "In POST: need exactly one \"client\" param"
 			return
+		val = client_specs[0]
 
 		if(len(val.split(":")) != 2):
 			print "Bad request, expected client=addr:port"
