@@ -21,11 +21,10 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 	
 	def do_POST(self):
 		print "From " + str(self.client_address) + " received: POST:",
-		self.data = self.rfile.readline().strip()
-		print self.data + " :",
-		
+		data = self.rfile.readline().strip()
+		print data + " :",
 		try:
-			vals = cgi.parse_qs(self.data, False, True)
+			vals = cgi.parse_qs(data, False, True)
 		except ValueError, e:
 			print "Syntax error in POST:", str(e)
 			return
