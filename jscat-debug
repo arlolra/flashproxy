@@ -1,3 +1,0 @@
-#!/bin/sh
-
-java -classpath ~/rhino1_7R2/build/classes org.mozilla.javascript.tools.debugger.Main jscat.js "$*"
