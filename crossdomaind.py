@@ -18,12 +18,18 @@ class options(object):
 def usage(f = sys.stdout):
     print """\
 Usage: %(progname)s <OPTIONS> [HOST] [PORT]
-Serve a Flash crossdomain policy. By default HOST is %(addr)s
+Serve a Flash crossdomain policy. By default HOST is \"%(addr)s\"
 and PORT is %(port)d.
-  -d, --domain=DOMAIN  limit access to the given DOMAIN (default %(domain)s).
+  -d, --domain=DOMAIN  limit access to the given DOMAIN (default \"%(domain)s\").
   -h, --help           show this help.
-  -p, --ports=PORTS    limit access to the given PORTS (default %(ports)s).
-""" % {"progname": sys.argv[0], "addr": DEFAULT_ADDRESS, "port": DEFAULT_PORT }
+  -p, --ports=PORTS    limit access to the given PORTS (default \"%(ports)s\").\
+""" % {
+    "progname": sys.argv[0],
+    "addr": DEFAULT_ADDRESS,
+    "port": DEFAULT_PORT,
+    "domain": DEFAULT_DOMAIN,
+    "ports": DEFAULT_PORTS,
+}
 
 def make_policy(domain, ports):
     return """\
