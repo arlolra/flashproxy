@@ -1,76 +1,151 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import BaseHTTPServer
+import getopt
+import cgi
+import re
 import sys
 import socket
 from collections import deque
 
-class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
-	client_list = deque()	
+DEFAULT_ADDRESS = "0.0.0.0"
+DEFAULT_PORT = 9002
 
+def usage(f = sys.stdout):
+	print >> f, """\
+Usage: %(progname)s <OPTIONS> [HOST] [PORT]
+Flash bridge facilitator: Register client addresses with HTTP POST requests
+and serve them out again with HTTP GET. Listen on HOST and PORT, by default
+%(addr)s %(port)d.
+  -h, --help		   show this help.\
+""" % {
+	"progname": sys.argv[0],
+	"addr": DEFAULT_ADDRESS,
+	"port": DEFAULT_PORT,
+}
+
+REGS = deque()
+
+class Reg(object):
+	def __init__(self, af, host, port):
+		self.af = af
+		self.host = host
+		self.port = port
+
+	def __unicode__(self):
+		if self.af == socket.AF_INET6:
+			return u"[%s]:%d" % (self.host, self.port)
+		else:
+			return u"%s:%d" % (self.host, self.port)
+
+	def __str__(self):
+		return unicode(self).encode("UTF-8")
+
+	def __cmp__(self, other):
+		return cmp((self.af, self.host, self.port), (other.af, other.host, other.port))
+
+	@staticmethod
+	def parse(spec, defhost = None, defport = None):
+		host = None
+		port = None
+		m = re.match(r'^\[(.+)\]:(\d*)$', spec)
+		if m:
+			host, port = m.groups()
+			af = socket.AF_INET6
+		else:
+			m = re.match(r'^(.*):(\d*)$', spec)
+			if m:
+				host, port = m.groups()
+				if host:
+					af = socket.AF_INET
+				else:
+					# Has to be guessed from format of defhost.
+					af = 0
+		host = host or defhost
+		port = port or defport
+		if not (host and port):
+			raise ValueError("Bad address specification \"%s\"" % spec)
+
+		try:
+			addrs = socket.getaddrinfo(host, port, af, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+		except socket.gaierror, e:
+			raise ValueError("Bad host or port: \"%s\" \"%s\": %s" % (host, port, str(e)))
+		if not addrs:
+			raise ValueError("Bad host or port: \"%s\" \"%s\"" % (host, port))
+
+		af = addrs[0][0]
+		host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
+		return Reg(af, host, int(port))
+
+def fetch_reg():
+	"""Get a client registration, or None if none is available."""
+	if not REGS:
+		return None
+	return REGS.popleft()
+
+class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 	def do_GET(self):
 		print "From " + str(self.client_address) + " received: GET:",
-		if(self.client_list):
-			client = self.client_list.popleft()
-			print "Handing out " + client + ". Clients: " + str(len(self.client_list))
-			self.request.send(client)
+		reg = fetch_reg()
+		if reg:
+			print "Handing out " + str(reg) + ". Clients: " + str(len(REGS))
+			self.request.send(str(reg))
 		else:
-			print "Client list is empty"
-			self.request.send("0.0.0.0:0")
-	
+			print "Registration list is empty"
+			self.request.send("Registration list empty")
+
 	def do_POST(self):
 		print "From " + str(self.client_address) + " received: POST:",
-		self.data = self.rfile.readline().strip()
-		print self.data + " :",
-		
-		if(len(self.data.split("=")) != 2):
-			print "Bad request, expected client=addr:port"
+		data = self.rfile.readline().strip()
+		print data + " :",
+		try:
+			vals = cgi.parse_qs(data, False, True)
+		except ValueError, e:
+			print "Syntax error in POST:", str(e)
 			return
 
-		var, val = self.data.split("=")
-
-		if(var != "client"):
-			print "Bad request, expected client=addr:port"
+		client_specs = vals.get("client")
+		if client_specs is None or len(client_specs) != 1:
+			print "In POST: need exactly one \"client\" param"
 			return
-
-		if(len(val.split(":")) != 2):
-			print "Bad request, expected client=addr:port"
-			return
-
-		addr, port = val.split(":")	
-		
-		addr = addr.strip()
-		port = port.strip()	
+		val = client_specs[0]
 
 		try:
-			socket.inet_aton(addr)
-		except socket.error:
-			print "Bad IP address: " + addr
+			reg = Reg.parse(val, self.client_address[0])
+		except ValueError, e:
+			print "Can't parse client \"%s\": %s" % (val, str(e))
 			return
 
-		# Additional checks on the IP address, since socket.inet_aton
-		# is a little too lax
-		if(len(addr.split(".")) != 4):
-			print "Bad IP address: " + addr
-			return
+		if reg not in list(REGS):
+			REGS.append(reg)
+			print "Registration " + str(reg) + " added. Registrations: " + str(len(REGS))
+		else:
+			print "Registration " + str(reg) + " already present. Registrations: " + str(len(REGS))
 
-		try:
-			int(port)
-		except:
-			print "Bad port number: " + port
-			return
+opts, args = getopt.gnu_getopt(sys.argv[1:], "h", ["help"])
+for o, a in opts:
+	if o == "-h" or o == "--help":
+		usage()
+		sys.exit()
 
-		client = addr + ":" + port
-		self.client_list.append(client)
-		print "Client " + client + " added. Clients: " + str(len(self.client_list))
-
-HOST = sys.argv[1]
-PORT = int(sys.argv[2])
+if len(args) == 0:
+	address = (DEFAULT_ADDRESS, DEFAULT_PORT)
+elif len(args) == 1:
+	# Either HOST or PORT may be omitted; figure out which one.
+	if args[0].isdigit():
+		address = (DEFAULT_ADDRESS, args[0])
+	else:
+		address = (args[0], DEFAULT_PORT)
+elif len(args) == 2:
+	address = (args[0], args[1])
+else:
+	usage(sys.stderr)
+	sys.exit(1)
 
 # Setup the server
-server = BaseHTTPServer.HTTPServer((HOST, PORT), Handler)
+server = BaseHTTPServer.HTTPServer(address, Handler)
 
-print "Starting Facilitator on " + str((HOST, PORT)) + "..."
+print "Starting Facilitator on " + str(address) + "..."
 
 # Run server... Single threaded serving of requests...
 server.serve_forever()

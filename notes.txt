@@ -1,3 +1,5 @@
 == Things to do
 
-Rate limiting.
+Bandwidth rate limiting in swfcat.
+
+Limit rate of registration in facilitator, maybe just one reg per IP.
