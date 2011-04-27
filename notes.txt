@@ -3,3 +3,10 @@
 Bandwidth rate limiting in swfcat.
 
 Limit rate of registration in facilitator, maybe just one reg per IP.
+
+Could be useful to have a swfcatsim.py program. This would simulate
+a swfcat instance (perhaps without the crossdomain stuff), providing
+a bridge with a lifetime randomly chosen from some distribution. (For
+example: "simulate proxies connecting according to this Poisson
+distribution and staying connected according to this exponential
+distribution.")
