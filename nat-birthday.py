@@ -10,8 +10,15 @@ import sys
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %s [-a|-b] [OPTIONS] REMOTE\
-""" % sys.argv[0]
+Usage: %s [-a|-b] [OPTIONS] REMOTE
+UDP NAT traversal based on randomly generating port numbers. Run with
+-a on one host, then with -b on the other.
+  -a       bind to random local ports, connect to static remote port.
+  -b       bind to static local port, connect to random remote ports.
+  -h       show this help.
+  -n N     let N packet be outstanding at once (default %d).
+  -p PORT  use PORT as the static port (default %d).\
+""" % (sys.argv[0], N, PORT)
 
 MAGIC = "MAGIC_STREAM_START"
 
@@ -70,12 +77,15 @@ def main_b(remote):
         print addr
         s.sendto("hello", 0, addr)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "abn:p:")
+opts, args = getopt.gnu_getopt(sys.argv[1:], "abhn:p:")
 for o, a in opts:
     if o == "-a":
         SIDE = 0
     elif o == "-b":
         SIDE = 1
+    elif o == "-h":
+        usage()
+        sys.exit()
     elif o == "-n":
         N = int(a)
     elif o == "-p":
