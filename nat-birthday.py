@@ -98,7 +98,6 @@ except ValueError:
     sys.exit(1)
 
 addrinfo = socket.getaddrinfo(remote_hostname, 0, socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-print addrinfo
 
 if SIDE is None:
     usage(sys.stderr)
