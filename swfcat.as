@@ -23,8 +23,6 @@ package
         // Socket to facilitator.
         private var s_f:Socket;
 
-        private var fac_addr:Object;
-
         public function puts(s:String):void
         {
             output_text.appendText(s + "\n");
@@ -49,7 +47,7 @@ package
         private function loaderinfo_complete(e:Event):void
         {
             var fac_spec:String;
-            var tor_spec:String;
+            var fac_addr:Object;
 
             puts("Parameters loaded.");
             fac_spec = this.loaderInfo.parameters["facilitator"];
@@ -64,11 +62,11 @@ package
                 return;
             }
 
-            main();
+            main(fac_addr);
         }
 
         /* The main logic begins here, after start-up issues are taken care of. */
-        private function main():void
+        private function main(fac_addr:Object):void
         {
             s_f = new Socket();
 
