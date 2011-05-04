@@ -64,10 +64,11 @@ package
                 return;
             }
 
-            go();
+            main();
         }
 
-        private function go():void
+        /* The main logic begins here, after start-up issues are taken care of. */
+        private function main():void
         {
             s_f = new Socket();
 
