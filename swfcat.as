@@ -18,10 +18,10 @@ package
             port: 9001
         };
 
-        private var output_text:TextField;
-
         // Socket to facilitator.
         private var s_f:Socket;
+
+        private var output_text:TextField;
 
         public function puts(s:String):void
         {
