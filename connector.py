@@ -157,6 +157,8 @@ while True:
             local_c, addr = fd.accept()
             print "Local connection from %s." % format_addr(addr)
             local_pool.append(local_c)
+            if facilitator_addr:
+                register(facilitator_addr, remote_addr[1])
         elif fd in local_for:
             local = local_for[fd]
             data = fd.recv(1024)
