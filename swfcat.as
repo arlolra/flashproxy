@@ -120,7 +120,7 @@ package
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
             proxy_pair.connect();
 
-            setTimeout(main, 1000); 
+            setTimeout(main, 1000);
         }
 
         /* Parse an address in the form "host:port". Returns an Object with
