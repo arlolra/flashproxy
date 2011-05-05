@@ -10,6 +10,7 @@ package
     import flash.utils.ByteArray;
     import flash.utils.setTimeout;
 
+    [SWF(width="400", height="300")]
     public class swfcat extends Sprite
     {
         /* David's bridge (nickname eRYaZuvY02FpExln) that also serves a
