@@ -5,8 +5,11 @@ import httplib
 import re
 import select
 import socket
+import struct
 import sys
+import time
 import urllib
+import xml.sax.saxutils
 
 DEFAULT_REMOTE_ADDRESS = "0.0.0.0"
 DEFAULT_REMOTE_PORT = 9000
@@ -106,6 +109,19 @@ else:
     usage(sys.stderr)
     sys.exit(1)
 
+
+class RemotePending(object):
+    """A class encapsulating a socket and a time of connection."""
+    def __init__(self, fd):
+        self.fd = fd
+        self.birthday = time.time()
+
+    def fileno(self):
+        return self.fd.fileno()
+
+    def is_expired(self, timeout):
+        return time.time() - self.birthday > timeout
+
 def listen_socket(addr):
     """Return a nonblocking socket listening on the given address."""
     addrinfo = socket.getaddrinfo(addr[0], addr[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
@@ -116,6 +132,105 @@ def listen_socket(addr):
     s.setblocking(0)
     return s
 
+# How long to wait for a crossdomain policy request before deciding that this is
+# a normal socket.
+CROSSDOMAIN_TIMEOUT = 2.0
+
+# Local socket, accepting SOCKS requests from localhost
+local_s = listen_socket(local_addr)
+# Remote socket, accepting both crossdomain policy requests and remote proxy
+# connections.
+remote_s = listen_socket(remote_addr)
+
+# Sockets that may be crossdomain policy requests or may be normal remote
+# connections.
+crossdomain_pending = []
+# Remote connection sockets.
+remotes = []
+# New local sockets waiting to finish their SOCKS negotiation.
+socks_pending = []
+# Local Tor sockets, after SOCKS negotiation.
+locals = []
+
+# Bidirectional mapping between local sockets and remote sockets.
+local_for = {}
+remote_for = {}
+
+
+def handle_policy_request(fd):
+    print "handle_policy_request"
+    addr = fd.getpeername()
+    data = fd.recv(100)
+    if data == "<policy-file-request/>\0":
+        print "Sending crossdomain policy to %s." % format_addr(addr)
+        fd.sendall("""
+<cross-domain-policy>
+<allow-access-from domain="*" to-ports="%s"/>
+</cross-domain-policy>
+\0""" % xml.sax.saxutils.escape(str(remote_addr[1])))
+    elif data == "":
+        print "No data from %s." % format_addr(addr)
+    else:
+        print "Unexpected data from %s." % format_addr(addr)
+
+def grab_string(s, pos):
+    """Grab a NUL-terminated string from the given string, starting at the given
+    offset. Return (pos, str) tuple, or (pos, None) on error."""
+    i = pos
+    while i < len(s):
+        if s[i] == '\0':
+            return (i + 1, s[pos:i])
+        i += 1
+    return pos, None
+
+def parse_socks_request(data):
+    try:
+        ver, cmd, dport, o1, o2, o3, o4 = struct.unpack(">BBHBBBB", data[:8])
+    except struct.error:
+        print "Couldn't unpack SOCKS4 header."
+        return None
+    if ver != 4:
+        print "SOCKS header has wrong version (%d)." % ver
+        return None
+    if cmd != 1:
+        print "SOCKS header had wrong command (%d)." % cmd
+        return None
+    pos, userid = grab_string(data, 8)
+    if userid is None:
+        print "Couldn't read userid from SOCKS header."
+        return None
+    if o1 == 0 and o2 == 0 and o3 == 0 and o4 != 0:
+        pos, dest = grab_string(data, pos)
+        if dest is None:
+            print "Couldn't read destination from SOCKS4a header."
+            return None
+    else:
+        dest = "%d.%d.%d.%d" % (o1, o2, o3, o4)
+    return dest, dport
+
+def handle_socks_request(fd):
+    print "handle_socks_request"
+    addr = fd.getpeername()
+    data = fd.recv(100)
+    dest_addr = parse_socks_request(data)
+    if dest_addr is None:
+        # Error reply.
+        fd.sendall(struct.pack(">BBHBBBB", 0, 91, 0, 0, 0, 0, 0))
+        return False
+    print "Got SOCKS request for %s." % format_addr(dest_addr)
+    fd.sendall(struct.pack(">BBHBBBB", 0, 90, dest_addr[1], 127, 0, 0, 1))
+    return True
+
+def handle_remote_connection(fd):
+    print "handle_remote_connection"
+    match_proxies()
+
+def handle_local_connection(fd):
+    print "handle_local_connection"
+    if facilitator_addr:
+        register(facilitator_addr, remote_addr[1])
+    match_proxies()
+
 def register(addr, port):
     spec = format_addr((None, port))
     print "Registering \"%s\" with %s." % (spec, format_addr(addr))
@@ -124,44 +239,49 @@ def register(addr, port):
     http.close()
 
 def match_proxies():
-    while local_pool and remote_pool:
-        remote = remote_pool.pop(0)
-        local = local_pool.pop(0)
+    print "locals:", locals
+    print "remotes:", remotes
+    while locals and remotes:
+        remote = remotes.pop(0)
+        local = locals.pop(0)
         remote_addr, remote_port = remote.getpeername()
         local_addr, local_port = local.getpeername()
         print "Linking %s and %s." % (format_addr(local.getpeername()), format_addr(remote.getpeername()))
         remote_for[local] = remote
         local_for[remote] = local
 
-local_s = listen_socket(local_addr)
-remote_s = listen_socket(remote_addr)
-
-local_pool = []
-remote_pool = []
-
-local_for = {}
-remote_for = {}
-
 if facilitator_addr:
     register(facilitator_addr, remote_addr[1])
 
 while True:
-    rset = [remote_s, local_s] + remote_for.keys() + local_for.keys() + remote_pool
-    rset, _, _ = select.select(rset, [], [])
+    rset = [remote_s, local_s] + crossdomain_pending + socks_pending + remote_for.keys() + local_for.keys() + remotes
+    rset, _, _ = select.select(rset, [], [], CROSSDOMAIN_TIMEOUT)
     for fd in rset:
         if fd == remote_s:
             remote_c, addr = fd.accept()
             print "Remote connection from %s." % format_addr(addr)
-            remote_pool.append(remote_c)
+            crossdomain_pending.append(RemotePending(remote_c))
         elif fd == local_s:
             local_c, addr = fd.accept()
             print "Local connection from %s." % format_addr(addr)
-            local_pool.append(local_c)
+            socks_pending.append(local_c)
             if facilitator_addr:
                 register(facilitator_addr, remote_addr[1])
+        elif fd in crossdomain_pending:
+            print "Data from crossdomain-pending %s." % format_addr(addr)
+            handle_policy_request(fd.fd)
+            fd.fd.close()
+            crossdomain_pending.remove(fd)
+        elif fd in socks_pending:
+            print "SOCKS request from %s." % format_addr(addr)
+            if handle_socks_request(fd):
+                locals.append(fd)
+                handle_local_connection(fd)
+            socks_pending.remove(fd)
         elif fd in local_for:
             local = local_for[fd]
             data = fd.recv(1024)
+            print "remote", len(data)
             if not data:
                 print "EOF from remote %s." % format_addr(fd.getpeername())
                 fd.close()
@@ -175,6 +295,7 @@ while True:
         elif fd in remote_for:
             remote = remote_for[fd]
             data = fd.recv(1024)
+            print "local", len(data)
             if not data:
                 print "EOF from local %s." % format_addr(fd.getpeername())
                 fd.close()
@@ -183,12 +304,20 @@ while True:
                 del local_for[remote]
             else:
                 remote.sendall(data)
-        elif fd in remote_pool:
+        elif fd in remotes:
             data = fd.recv(1024)
             if not data:
                 print "EOF from unconnected remote %s." % format_addr(fd.getpeername())
             else:
                 print "Data from unconnected remote %s." % format_addr(fd.getpeername())
             fd.close()
-            remote_pool.remove(fd)
+            remotes.remove(fd)
         match_proxies()
+    while crossdomain_pending:
+        pending = crossdomain_pending[0]
+        if not pending.is_expired(CROSSDOMAIN_TIMEOUT):
+            break
+        print "Expired pending crossdomain from %s." % format_addr(pending.fd.getpeername())
+        crossdomain_pending.pop(0)
+        remotes.append(pending.fd)
+        handle_remote_connection(pending.fd)
