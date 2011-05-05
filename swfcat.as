@@ -19,6 +19,9 @@ package
             port: 9001
         };
 
+        // Milliseconds.
+        private const FACILITATOR_POLL_INTERVAL:int = 1000;
+
         // Socket to facilitator.
         private var s_f:Socket;
 
@@ -108,19 +111,19 @@ package
             client_addr = parse_addr_spec(client_spec);
             if (!client_addr) {
                 puts("Error: Client spec must be in the form \"host:port\".");
-                setTimeout(main, 1000);
+                setTimeout(main, FACILITATOR_POLL_INTERVAL);
                 return;
             }
             if (client_addr.host == "0.0.0.0" && client_addr.port == 0) {
                 puts("Error: Facilitator has no clients.");
-                setTimeout(main, 1000);
+                setTimeout(main, FACILITATOR_POLL_INTERVAL);
                 return;
             }
 
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
             proxy_pair.connect();
 
-            setTimeout(main, 1000);
+            setTimeout(main, FACILITATOR_POLL_INTERVAL);
         }
 
         /* Parse an address in the form "host:port". Returns an Object with
