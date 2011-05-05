@@ -1,6 +1,6 @@
 MXMLC ?= mxmlc
 
-TARGETS = swfcat.swf Proxy.swf
+TARGETS = swfcat.swf Connector.swf
 
 all: $(TARGETS)
 
