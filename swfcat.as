@@ -10,7 +10,7 @@ package
     import flash.utils.ByteArray;
     import flash.utils.setTimeout;
 
-    [SWF(width="400", height="300")]
+    [SWF(width="640", height="480")]
     public class swfcat extends Sprite
     {
         /* David's bridge (nickname eRYaZuvY02FpExln) that also serves a
@@ -40,8 +40,8 @@ package
         public function swfcat()
         {
             output_text = new TextField();
-            output_text.width = 400;
-            output_text.height = 300;
+            output_text.width = 640;
+            output_text.height = 480;
             output_text.background = true;
             output_text.backgroundColor = 0x001f0f;
             output_text.textColor = 0x44CC44;
