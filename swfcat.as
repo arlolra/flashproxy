@@ -20,7 +20,7 @@ package
         };
 
         // Milliseconds.
-        private const FACILITATOR_POLL_INTERVAL:int = 1000;
+        private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
         // Socket to facilitator.
         private var s_f:Socket;
