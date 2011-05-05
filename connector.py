@@ -239,8 +239,6 @@ def register(addr, port):
     http.close()
 
 def match_proxies():
-    print "locals:", locals
-    print "remotes:", remotes
     while locals and remotes:
         remote = remotes.pop(0)
         local = locals.pop(0)
@@ -281,7 +279,6 @@ while True:
         elif fd in local_for:
             local = local_for[fd]
             data = fd.recv(1024)
-            print "remote", len(data)
             if not data:
                 print "EOF from remote %s." % format_addr(fd.getpeername())
                 fd.close()
@@ -295,7 +292,6 @@ while True:
         elif fd in remote_for:
             remote = remote_for[fd]
             data = fd.recv(1024)
-            print "local", len(data)
             if not data:
                 print "EOF from local %s." % format_addr(fd.getpeername())
                 fd.close()
