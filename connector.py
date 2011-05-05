@@ -146,7 +146,7 @@ if facilitator_addr:
     register(facilitator_addr, remote_addr[1])
 
 while True:
-    rset = [remote_s, local_s] + remote_for.keys() + local_for.keys()
+    rset = [remote_s, local_s] + remote_for.keys() + local_for.keys() + remote_pool
     rset, _, _ = select.select(rset, [], [])
     for fd in rset:
         if fd == remote_s:
@@ -183,4 +183,12 @@ while True:
                 del local_for[remote]
             else:
                 remote.sendall(data)
+        elif fd in remote_pool:
+            data = fd.recv(1024)
+            if not data:
+                print "EOF from unconnected remote %s." % format_addr(fd.getpeername())
+            else:
+                print "Data from unconnected remote %s." % format_addr(fd.getpeername())
+            fd.close()
+            remote_pool.remove(fd)
         match_proxies()
