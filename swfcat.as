@@ -78,6 +78,7 @@ package
             s_f.addEventListener(Event.CONNECT, fac_connected);
             s_f.addEventListener(Event.CLOSE, function (e:Event):void {
                 puts("Facilitator: closed connection.");
+                setTimeout(main, FACILITATOR_POLL_INTERVAL);
             });
             s_f.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
                 puts("Facilitator: I/O error: " + e.text + ".");
@@ -111,19 +112,15 @@ package
             client_addr = parse_addr_spec(client_spec);
             if (!client_addr) {
                 puts("Error: Client spec must be in the form \"host:port\".");
-                setTimeout(main, FACILITATOR_POLL_INTERVAL);
                 return;
             }
             if (client_addr.host == "0.0.0.0" && client_addr.port == 0) {
                 puts("Error: Facilitator has no clients.");
-                setTimeout(main, FACILITATOR_POLL_INTERVAL);
                 return;
             }
 
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
             proxy_pair.connect();
-
-            setTimeout(main, FACILITATOR_POLL_INTERVAL);
         }
 
         /* Parse an address in the form "host:port". Returns an Object with
