@@ -8,6 +8,7 @@ package
     import flash.events.ProgressEvent;
     import flash.events.SecurityErrorEvent;
     import flash.utils.ByteArray;
+    import flash.utils.setTimeout;
 
     public class swfcat extends Sprite
     {
@@ -22,6 +23,8 @@ package
         private var s_f:Socket;
 
         private var output_text:TextField;
+
+        private var fac_addr:Object;
 
         public function puts(s:String):void
         {
@@ -47,7 +50,6 @@ package
         private function loaderinfo_complete(e:Event):void
         {
             var fac_spec:String;
-            var fac_addr:Object;
 
             puts("Parameters loaded.");
             fac_spec = this.loaderInfo.parameters["facilitator"];
@@ -62,11 +64,11 @@ package
                 return;
             }
 
-            main(fac_addr);
+            main();
         }
 
         /* The main logic begins here, after start-up issues are taken care of. */
-        private function main(fac_addr:Object):void
+        private function main():void
         {
             s_f = new Socket();
 
@@ -106,15 +108,19 @@ package
             client_addr = parse_addr_spec(client_spec);
             if (!client_addr) {
                 puts("Error: Client spec must be in the form \"host:port\".");
+                setTimeout(main, 1000);
                 return;
             }
             if (client_addr.host == "0.0.0.0" && client_addr.port == 0) {
                 puts("Error: Facilitator has no clients.");
+                setTimeout(main, 1000);
                 return;
             }
 
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
             proxy_pair.connect();
+
+            setTimeout(main, 1000); 
         }
 
         /* Parse an address in the form "host:port". Returns an Object with
