@@ -100,7 +100,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 			self.request.send(str(reg))
 		else:
 			print "Registration list is empty"
-			self.request.send("Registration list empty")
 
 	def do_POST(self):
 		print "From " + str(self.client_address) + " received: POST:",
