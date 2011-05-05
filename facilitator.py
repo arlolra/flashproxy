@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import BaseHTTPServer
+import SocketServer
 import getopt
 import cgi
 import re
@@ -77,6 +78,13 @@ class Reg(object):
 		host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
 		return Reg(af, host, int(port))
 
+def add_reg(reg):
+	if reg not in list(REGS):
+		REGS.append(reg)
+		print "Registration " + str(reg) + " added. Registrations: " + str(len(REGS))
+	else:
+		print "Registration " + str(reg) + " already present. Registrations: " + str(len(REGS))
+
 def fetch_reg():
 	"""Get a client registration, or None if none is available."""
 	if not REGS:
@@ -116,11 +124,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 			print "Can't parse client \"%s\": %s" % (val, str(e))
 			return
 
-		if reg not in list(REGS):
-			REGS.append(reg)
-			print "Registration " + str(reg) + " added. Registrations: " + str(len(REGS))
-		else:
-			print "Registration " + str(reg) + " already present. Registrations: " + str(len(REGS))
+		add_reg(reg)
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "h", ["help"])
 for o, a in opts:
@@ -142,10 +146,15 @@ else:
 	usage(sys.stderr)
 	sys.exit(1)
 
+class Server(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
+	pass
+
 # Setup the server
-server = BaseHTTPServer.HTTPServer(address, Handler)
+server = Server(address, Handler)
 
 print "Starting Facilitator on " + str(address) + "..."
 
-# Run server... Single threaded serving of requests...
-server.serve_forever()
+try:
+	server.serve_forever()
+except KeyboardInterrupt:
+	sys.exit(0)
