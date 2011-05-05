@@ -168,6 +168,8 @@ while True:
                 local.close()
                 del local_for[fd]
                 del remote_for[local]
+                if facilitator_addr:
+                    register(facilitator_addr, remote_addr[1])
             else:
                 local.sendall(data)
         elif fd in remote_for:
