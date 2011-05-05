@@ -107,7 +107,7 @@ else:
     sys.exit(1)
 
 def listen_socket(addr):
-    """Return a nonblocking socket listenting on the given address."""
+    """Return a nonblocking socket listening on the given address."""
     addrinfo = socket.getaddrinfo(addr[0], addr[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
     s = socket.socket(addrinfo[0], addrinfo[1], addrinfo[2])
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

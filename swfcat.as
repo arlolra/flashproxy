@@ -114,6 +114,7 @@ package
             }
 
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
+            proxy_pair.connect();
         }
 
         /* Parse an address in the form "host:port". Returns an Object with
