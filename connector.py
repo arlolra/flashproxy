@@ -24,6 +24,10 @@ Wait for connections on a local and a remote port. When any pair of connections
 exists, data is ferried between them until one side is closed. By default
 LOCAL is "%(local)s" and REMOTE is "%(remote)s".
 
+The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
+request are ignored and the local connection is always joined to a remote
+connection.
+
 If the -f option is given, then the REMOTE address is advertised to the given
 FACILITATOR.
   -f, --facilitator=HOST[:PORT]  advertise willingness to receive connections to
@@ -219,6 +223,7 @@ def handle_socks_request(fd):
         return False
     print "Got SOCKS request for %s." % format_addr(dest_addr)
     fd.sendall(struct.pack(">BBHBBBB", 0, 90, dest_addr[1], 127, 0, 0, 1))
+    # Note we throw away the requested address and port.
     return True
 
 def handle_remote_connection(fd):
