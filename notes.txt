@@ -4,6 +4,11 @@ Bandwidth rate limiting in swfcat.
 
 Limit rate of registration in facilitator, maybe just one reg per IP.
 
+We need to solve the problem of potential changing fingerprints when
+reconnecting through a new proxy. Tor remembers the host fingerprint
+from the first connection (to the bridge it thinks is at 127.0.0.1) and
+balks at connecting to the same address with a different fingerprint.
+
 Could be useful to have a swfcatsim.py program. This would simulate
 a swfcat instance (perhaps without the crossdomain stuff), providing
 a bridge with a lifetime randomly chosen from some distribution. (For
