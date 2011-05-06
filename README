@@ -18,6 +18,10 @@ There are five main parts. Our terminology for each part is in quotes.
 
 == Quick start
 
+A demonstration page that doesn't require building anything is here:
+
+http://www.stanford.edu/~dcf/tor/
+
 === Building
 
 Download the (free software) Flex SDK.
