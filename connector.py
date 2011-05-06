@@ -275,6 +275,8 @@ while True:
             if handle_socks_request(fd):
                 locals.append(fd)
                 handle_local_connection(fd)
+            else:
+                fd.close()
             socks_pending.remove(fd)
         elif fd in local_for:
             local = local_for[fd]
