@@ -35,12 +35,13 @@ connections from a Flash proxy. It serves a chunk of data on port 843.
 The facilitator runs on port 9002 by default.
 
 On the client, run
-        sudo ./crossdomaind.py
 	./connector.py -f <FACILITATOR_IP>
-Replace <FACILITATOR_IP> with the IP address of the facilitator. The
-connector informs the facilitator that it wants a connection, then
-listens on 0.0.0.0:9000 and 127.0.0.1:9001. The Flash proxy will connect
-on port 9000 and the local Tor will connect on 9001.
+Replace <FACILITATOR_IP> with the IP address of the facilitator. (If you
+are running the facilitator locally, be sure to use an external IP
+address, not 127.0.0.1.) The connector informs the facilitator that it
+wants a connection, then listens on 0.0.0.0:9000 and 127.0.0.1:9001. The
+Flash proxy will connect on port 9000 and the local Tor will connect on
+9001.
 
 In a browser somewhere, open swfcat.swf and pass a parameter telling it
 the facilitator to use, for example
@@ -49,11 +50,10 @@ The facilitator will return the client address that was registered by
 connector.py, and the Flash proxy will open a connection to a hardcoded
 Tor relay and the given client.
 
-Back on the client, start crossdomaind.py:
-        sudo ./crossdomaind.py
-Then start Tor with the following configuration:
+Back on the client, start Tor with the following configuration:
 	UseBridges 1
 	Bridge 127.0.0.1:9001
+	Socks4Proxy 127.0.0.1:9001
 
 You will be able to see byte counts flowing in the browser displaying
 swfcat.swf, and eventually be able to build a circuit.
