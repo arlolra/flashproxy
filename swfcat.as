@@ -109,7 +109,7 @@ package
             var proxy_pair:Object;
 
             client_spec = s_f.readMultiByte(e.bytesLoaded, "utf-8");
-            puts("Facilitator: got \"" + client_spec + "\"");
+            puts("Facilitator: got \"" + client_spec + "\".");
 
             client_addr = parse_addr_spec(client_spec);
             if (!client_addr) {
