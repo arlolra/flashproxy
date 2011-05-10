@@ -1,6 +1,6 @@
 MXMLC ?= mxmlc
 
-TARGETS = swfcat.swf Connector.swf
+TARGETS = swfcat.swf com/rtmfpcat/rtmfpcat.swf
 
 all: $(TARGETS)
 
