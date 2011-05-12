@@ -65,7 +65,7 @@ package
         this.loaderInfo.addEventListener(Event.COMPLETE, onLoaderInfoComplete);
       }
       
-      protected function puts(s:String):void
+      private function puts(s:String):void
       {
           output_text.appendText(s + "\n");
           output_text.scrollV = output_text.maxScrollV;
