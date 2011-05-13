@@ -21,6 +21,10 @@ package
             host: "69.164.193.231",
             port: 9001
         };
+        private const DEFAULT_FACILITATOR_ADDR:Object = {
+            host: "173.255.221.44",
+            port: 9002
+        };
 
         // Milliseconds.
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
@@ -71,15 +75,15 @@ package
                 addChild(new BadgeImage());
 
             fac_spec = this.loaderInfo.parameters["facilitator"];
-            if (!fac_spec) {
-                puts("Error: no \"facilitator\" specification provided.");
-                return;
-            }
-            puts("Facilitator spec: \"" + fac_spec + "\"");
-            fac_addr = parse_addr_spec(fac_spec);
-            if (!fac_addr) {
-                puts("Error: Facilitator spec must be in the form \"host:port\".");
-                return;
+            if (fac_spec) {
+                puts("Facilitator spec: \"" + fac_spec + "\"");
+                fac_addr = parse_addr_spec(fac_spec);
+                if (!fac_addr) {
+                    puts("Error: Facilitator spec must be in the form \"host:port\".");
+                    return;
+                }
+            } else {
+                fac_addr = DEFAULT_FACILITATOR_ADDR;
             }
 
             main();
