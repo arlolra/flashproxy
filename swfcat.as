@@ -32,6 +32,9 @@ package
 
         private var fac_addr:Object;
 
+        [Embed(source="badge.png")]
+        private var BadgeImage:Class;
+
         public function puts(s:String):void
         {
             output_text.appendText(s + "\n");
@@ -50,7 +53,6 @@ package
             output_text.background = true;
             output_text.backgroundColor = 0x001f0f;
             output_text.textColor = 0x44CC44;
-            addChild(output_text);
 
             puts("Starting.");
             // Wait until the query string parameters are loaded.
@@ -62,6 +64,12 @@ package
             var fac_spec:String;
 
             puts("Parameters loaded.");
+
+            if (this.loaderInfo.parameters["debug"])
+                addChild(output_text);
+            else
+                addChild(new BadgeImage());
+
             fac_spec = this.loaderInfo.parameters["facilitator"];
             if (!fac_spec) {
                 puts("Error: no \"facilitator\" specification provided.");
