@@ -1,6 +1,8 @@
 package
 {
     import flash.display.Sprite;
+    import flash.display.StageAlign;
+    import flash.display.StageScaleMode;
     import flash.text.TextField;
     import flash.net.Socket;
     import flash.events.Event;
@@ -10,7 +12,6 @@ package
     import flash.utils.ByteArray;
     import flash.utils.setTimeout;
 
-    [SWF(width="640", height="480")]
     public class swfcat extends Sprite
     {
         /* David's bridge (nickname eRYaZuvY02FpExln) that also serves a
@@ -39,9 +40,13 @@ package
 
         public function swfcat()
         {
+            // Absolute positioning.
+            stage.scaleMode = StageScaleMode.NO_SCALE;
+            stage.align = StageAlign.TOP_LEFT;
+
             output_text = new TextField();
-            output_text.width = 640;
-            output_text.height = 480;
+            output_text.width = stage.stageWidth;
+            output_text.height = stage.stageHeight;
             output_text.background = true;
             output_text.backgroundColor = 0x001f0f;
             output_text.textColor = 0x44CC44;
