@@ -52,7 +52,7 @@ package
             output_text.height = stage.stageHeight;
             output_text.background = true;
             output_text.backgroundColor = 0x001f0f;
-            output_text.textColor = 0x44CC44;
+            output_text.textColor = 0x44cc44;
 
             puts("Starting.");
             // Wait until the query string parameters are loaded.
