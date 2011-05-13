@@ -1,6 +1,8 @@
 package
 {
     import flash.display.Sprite;
+    import flash.display.StageAlign;
+    import flash.display.StageScaleMode;
     import flash.text.TextField;
     import flash.net.Socket;
     import flash.events.Event;
@@ -10,7 +12,6 @@ package
     import flash.utils.ByteArray;
     import flash.utils.setTimeout;
 
-    [SWF(width="640", height="480")]
     public class swfcat extends Sprite
     {
         /* David's bridge (nickname eRYaZuvY02FpExln) that also serves a
@@ -19,6 +20,10 @@ package
             // host: "173.255.221.44", 3VXRyxz67OeRoqHn
             host: "69.164.193.231",
             port: 9001
+        };
+        private const DEFAULT_FACILITATOR_ADDR:Object = {
+            host: "173.255.221.44",
+            port: 9002
         };
 
         // Milliseconds.
@@ -31,6 +36,9 @@ package
 
         private var fac_addr:Object;
 
+        [Embed(source="badge.png")]
+        private var BadgeImage:Class;
+
         public function puts(s:String):void
         {
             output_text.appendText(s + "\n");
@@ -39,13 +47,16 @@ package
 
         public function swfcat()
         {
+            // Absolute positioning.
+            stage.scaleMode = StageScaleMode.NO_SCALE;
+            stage.align = StageAlign.TOP_LEFT;
+
             output_text = new TextField();
-            output_text.width = 640;
-            output_text.height = 480;
+            output_text.width = stage.stageWidth;
+            output_text.height = stage.stageHeight;
             output_text.background = true;
             output_text.backgroundColor = 0x001f0f;
-            output_text.textColor = 0x44CC44;
-            addChild(output_text);
+            output_text.textColor = 0x44cc44;
 
             puts("Starting.");
             // Wait until the query string parameters are loaded.
@@ -57,16 +68,22 @@ package
             var fac_spec:String;
 
             puts("Parameters loaded.");
+
+            if (this.loaderInfo.parameters["debug"])
+                addChild(output_text);
+            else
+                addChild(new BadgeImage());
+
             fac_spec = this.loaderInfo.parameters["facilitator"];
-            if (!fac_spec) {
-                puts("Error: no \"facilitator\" specification provided.");
-                return;
-            }
-            puts("Facilitator spec: \"" + fac_spec + "\"");
-            fac_addr = parse_addr_spec(fac_spec);
-            if (!fac_addr) {
-                puts("Error: Facilitator spec must be in the form \"host:port\".");
-                return;
+            if (fac_spec) {
+                puts("Facilitator spec: \"" + fac_spec + "\"");
+                fac_addr = parse_addr_spec(fac_spec);
+                if (!fac_addr) {
+                    puts("Error: Facilitator spec must be in the form \"host:port\".");
+                    return;
+                }
+            } else {
+                fac_addr = DEFAULT_FACILITATOR_ADDR;
             }
 
             main();

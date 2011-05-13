@@ -49,7 +49,7 @@ Flash proxy will connect on port 9000 and the local Tor will connect on
 
 In a browser somewhere, open swfcat.swf and pass a parameter telling it
 the facilitator to use, for example
-	http://www.example.com/swfcat.swf?facilitator=<FACILITATOR_IP>:9002
+	http://www.example.com/swfcat.swf?facilitator=<FACILITATOR_IP>:9002&debug=1
 The facilitator will return the client address that was registered by
 connector.py, and the Flash proxy will open a connection to a hardcoded
 Tor relay and the given client.
