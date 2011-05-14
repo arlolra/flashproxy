@@ -36,6 +36,21 @@ def log(msg):
     print >> log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
     log_file.flush()
 
+def format_addr(addr):
+    host, port = addr
+    if not host:
+        return u":%d" % port
+    # Numeric IPv6 address?
+    try:
+        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+        af = addrs[0][0]
+    except socket.gaierror, e:
+        af = 0
+    if af == socket.AF_INET6:
+        return u"[%s]:%d" % (host, port)
+    else:
+        return u"%s:%d" % (host, port)
+
 class Reg(object):
     def __init__(self, af, host, port):
         self.af = af
