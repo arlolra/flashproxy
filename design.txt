@@ -8,11 +8,11 @@ Design of Flash proxies
 1. Overview and background
 
   We assume the existence of an adversary powerful enough to enumerate
-  and block all public and non-public (bridge) relays. We assume that
-  there is a relatively unrestricted portion of the Internet, addresses
-  in which can both connect to public Tor relays and receive connections
-  from restricted users.
-
+  and block all public and non-public (bridge) relays. For users facing
+  such an adversary, we assume there exists a subset of reachable hosts
+  that themselves can reach the Tor network. We call this subset the
+  unrestricted Internet.
+  
   A browser-based proxy (Flash proxy), running in a web page in the
   unrestricted Internet, proxies connections between the restricted
   Internet and the Tor network. These proxies are expected to be
