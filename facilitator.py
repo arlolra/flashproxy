@@ -13,6 +13,7 @@ from collections import deque
 
 DEFAULT_ADDRESS = "0.0.0.0"
 DEFAULT_PORT = 9002
+DEFAULT_LOG_FILENAME = "facilitator.log"
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -22,16 +23,18 @@ Usage: %(progname)s <OPTIONS> [HOST] [PORT]
 Flash bridge facilitator: Register client addresses with HTTP POST requests
 and serve them out again with HTTP GET. Listen on HOST and PORT, by default
 %(addr)s %(port)d.
-  -d, --debug         don't daemonize.
+  -d, --debug         don't daemonize, log to stdout.
   -h, --help          show this help.
-  -l, --log FILENAME  write log to FILENAME (default stdout).\
+  -l, --log FILENAME  write log to FILENAME (default \"%(log)s\").\
 """ % {
     "progname": sys.argv[0],
     "addr": DEFAULT_ADDRESS,
     "port": DEFAULT_PORT,
+    "log": DEFAULT_LOG_FILENAME,
 }
 
 class options (object):
+    log_filename = DEFAULT_LOG_FILENAME
     log_file = sys.stdout
     daemonize = True
 
@@ -164,11 +167,17 @@ opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:", ["debug", "help", "log="])
 for o, a in opts:
     if o == "-d" or o == "--debug":
         options.daemonize = False
+        options.log_filename = None
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
     elif o == "-l" or o == "--log":
-        options.log_file = open(a, "a")
+        options.log_filename = a
+
+if options.log_filename:
+    options.log_file = open(options.log_filename, "a")
+else:
+    options.log_file = sys.stdout
 
 if len(args) == 0:
     address = (DEFAULT_ADDRESS, DEFAULT_PORT)
