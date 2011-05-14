@@ -36,8 +36,8 @@ package
 
         private var fac_addr:Object;
 
-        [Embed(source="badge.png")]
-        private var BadgeImage:Class;
+        //[Embed(source="badge.png")]
+        //private var BadgeImage:Class;
 
         public function puts(s:String):void
         {
@@ -71,8 +71,8 @@ package
 
             if (this.loaderInfo.parameters["debug"])
                 addChild(output_text);
-            else
-                addChild(new BadgeImage());
+            //else
+              //  addChild(new BadgeImage());
 
             fac_spec = this.loaderInfo.parameters["facilitator"];
             if (fac_spec) {
@@ -168,6 +168,7 @@ import flash.events.ProgressEvent;
 import flash.events.SecurityErrorEvent;
 import flash.net.Socket;
 import flash.utils.ByteArray;
+import flash.utils.setInterval;
 
 /* An instance of a client-relay connection. */
 class ProxyPair
@@ -184,6 +185,19 @@ class ProxyPair
 
     // Parent swfcat, for UI updates.
     private var ui:swfcat;
+    
+    // Proxy transfer rate limit in KB/s
+    private var rate_limit:uint;
+    
+    // Default limit is 10KB/s
+    private const DEFAULT_RATE_LIMIT:uint = 10000;
+    
+    private var curr_rate:Number;
+    private var historical_rate:Number;
+    private var lifetime:uint;
+    
+    // in milliseconds
+    private const DEFAULT_RATE_TIMEOUT:uint = 1000;
 
     private function log(msg:String):void
     {
@@ -197,11 +211,16 @@ class ProxyPair
             "," + this.addr_r.host + ":" + this.addr_r.port + ">";
     }
 
-    public function ProxyPair(ui:swfcat, addr_c:Object, addr_r:Object)
+    public function ProxyPair(ui:swfcat, addr_c:Object, addr_r:Object, rate_limit:uint = DEFAULT_RATE_LIMIT)
     {
         this.ui = ui;
         this.addr_c = addr_c;
         this.addr_r = addr_r;
+        this.rate_limit = rate_limit;
+        this.curr_rate = 0.0;
+        this.historical_rate = 0.0;
+        this.lifetime = 0;
+        setInterval(update_transfer_rate, DEFAULT_RATE_TIMEOUT)
     }
 
     public function connect():void
@@ -259,18 +278,53 @@ class ProxyPair
     private function client_connected(e:Event):void
     {
         log("Client: connected.");
-
-        s_r.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
-            var bytes:ByteArray = new ByteArray();
-            s_r.readBytes(bytes, 0, e.bytesLoaded);
-            log("Tor: read " + bytes.length + ".");
-            s_c.writeBytes(bytes);
-        });
-        s_c.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
-            var bytes:ByteArray = new ByteArray();
-            s_c.readBytes(bytes, 0, e.bytesLoaded);
-            log("Client: read " + bytes.length + ".");
-            s_r.writeBytes(bytes);
-        });
+        add_data_listeners();
+    }
+    
+    private function add_data_listeners():void
+    {
+      s_r.addEventListener(ProgressEvent.SOCKET_DATA, transfer_to_client);
+      s_c.addEventListener(ProgressEvent.SOCKET_DATA, transfer_to_relay);
+    }
+    
+    private function remove_data_listeners():void
+    {
+      s_r.removeEventListener(ProgressEvent.SOCKET_DATA, transfer_to_client);
+      s_c.removeEventListener(ProgressEvent.SOCKET_DATA, transfer_to_relay);
+    }
+    
+    private function transfer_to_client(e:ProgressEvent):void
+    {
+      log("Tor: read " + e.bytesLoaded + ".");
+      transfer_bytes(s_r, s_c, e.bytesLoaded);
+    }
+    
+    private function transfer_to_relay(e:ProgressEvent):void
+    {
+      log("Client: read " + e.bytesLoaded + ".");
+      transfer_bytes(s_c, s_r, e.bytesLoaded);
+    }
+    
+    private function transfer_bytes(src:Socket, dst:Socket, num_bytes:uint):void
+    {
+      var bytes:ByteArray = new ByteArray();
+      src.readBytes(bytes, 0, num_bytes);
+      dst.writeBytes(bytes);
+      curr_rate += num_bytes;
+      if (rate_limit_exceeded()) remove_data_listeners();
+    }
+    
+    private function rate_limit_exceeded():Boolean
+    {
+      return curr_rate > rate_limit;
+    }
+    
+    private function update_transfer_rate():void
+    {
+      lifetime++;
+      historical_rate = (0.7 * historical_rate + 0.3 * curr_rate) / lifetime;
+      curr_rate = historical_rate;
+      log("Historical rate: " + historical_rate);
+      log("Current rate: " + curr_rate);
     }
 }
