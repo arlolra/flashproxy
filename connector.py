@@ -17,6 +17,10 @@ DEFAULT_LOCAL_ADDRESS = "127.0.0.1"
 DEFAULT_LOCAL_PORT = 9001
 DEFAULT_FACILITATOR_PORT = 9002
 
+# We accept up to this many bytes from a local socket not yet matched with a
+# remote before disconnecting it.
+UNCONNECTED_LOCAL_BUFFER_LIMIT = 10240
+
 def usage(f = sys.stdout):
     print >> f, """\
 Usage: %(progname)s -f FACILITATOR[:PORT] [LOCAL][:PORT] [REMOTE][:PORT]
@@ -125,6 +129,17 @@ class RemotePending(object):
 
     def is_expired(self, timeout):
         return time.time() - self.birthday > timeout
+
+class BufferSocket(object):
+    """A class encapsulating a socket and a buffer of data received on it. The
+    buffer stores data that has been read to make the socket selectable
+    again."""
+    def __init__(self, fd):
+        self.fd = fd
+        self.buf = ""
+
+    def fileno(self):
+        return self.fd.fileno()
 
 def listen_socket(addr):
     """Return a nonblocking socket listening on the given address."""
@@ -248,16 +263,18 @@ def match_proxies():
         remote = remotes.pop(0)
         local = locals.pop(0)
         remote_addr, remote_port = remote.getpeername()
-        local_addr, local_port = local.getpeername()
-        print "Linking %s and %s." % (format_addr(local.getpeername()), format_addr(remote.getpeername()))
-        remote_for[local] = remote
-        local_for[remote] = local
+        local_addr, local_port = local.fd.getpeername()
+        print "Linking %s and %s." % (format_addr(local.fd.getpeername()), format_addr(remote.getpeername()))
+        if local.buf:
+            remote.sendall(local.buf)
+        remote_for[local.fd] = remote
+        local_for[remote] = local.fd
 
 if facilitator_addr:
     register(facilitator_addr, remote_addr[1])
 
 while True:
-    rset = [remote_s, local_s] + crossdomain_pending + socks_pending + remote_for.keys() + local_for.keys() + remotes
+    rset = [remote_s, local_s] + crossdomain_pending + socks_pending + remote_for.keys() + local_for.keys() + locals + remotes
     rset, _, _ = select.select(rset, [], [], CROSSDOMAIN_TIMEOUT)
     for fd in rset:
         if fd == remote_s:
@@ -278,7 +295,7 @@ while True:
         elif fd in socks_pending:
             print "SOCKS request from %s." % format_addr(addr)
             if handle_socks_request(fd):
-                locals.append(fd)
+                locals.append(BufferSocket(fd))
                 handle_local_connection(fd)
             else:
                 fd.close()
@@ -307,6 +324,19 @@ while True:
                 del local_for[remote]
             else:
                 remote.sendall(data)
+        elif fd in locals:
+            data = fd.fd.recv(1024)
+            if not data:
+                print "EOF from unconnected local %s with %d bytes buffered." % (format_addr(fd.fd.getpeername()), len(fd.buf))
+                locals.remove(fd)
+                fd.fd.close()
+            else:
+                print "Data from unconnected remote %s (%d bytes)." % (format_addr(fd.fd.getpeername()), len(data))
+                fd.buf += data
+                if len(fd.buf) >= UNCONNECTED_LOCAL_BUFFER_LIMIT:
+                    print "Refusing to buffer more than %d bytes from local %s." % (UNCONNECTED_LOCAL_BUFFER_LIMIT, format_addr(fd.fd.getpeername()))
+                    locals.remove(fd)
+                    fd.fd.close()
         elif fd in remotes:
             data = fd.recv(1024)
             if not data:
