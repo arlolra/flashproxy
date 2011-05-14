@@ -17,6 +17,11 @@ DEFAULT_LOG_FILENAME = "facilitator.log"
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+class options(object):
+    log_filename = DEFAULT_LOG_FILENAME
+    log_file = sys.stdout
+    daemonize = True
+
 def usage(f = sys.stdout):
     print >> f, """\
 Usage: %(progname)s <OPTIONS> [HOST] [PORT]
@@ -32,11 +37,6 @@ and serve them out again with HTTP GET. Listen on HOST and PORT, by default
     "port": DEFAULT_PORT,
     "log": DEFAULT_LOG_FILENAME,
 }
-
-class options (object):
-    log_filename = DEFAULT_LOG_FILENAME
-    log_file = sys.stdout
-    daemonize = True
 
 REGS = deque()
 

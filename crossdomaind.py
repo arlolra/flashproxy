@@ -15,7 +15,6 @@ class options(object):
     daemonize = False
     domain = DEFAULT_DOMAIN
     ports = DEFAULT_PORTS
-    pass
 
 def usage(f = sys.stdout):
     print >> f, """\
