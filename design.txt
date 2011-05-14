@@ -26,6 +26,10 @@ Design of Flash proxies
   initiate outgoing connections, not receive incoming ones. The Flash
   proxy can only connect to external hosts by connecting directly to
   them. The other significant restriction is that the proxy cannot
+  connect to just any destination: Adobe Flash player requires the
+  server to provide a "crossdomain policy" allowing access. A third, but
+  less important, restriction is that browser-based networking does not
+  provide low-level socket access such as control of source address.
 
 2. Components
 
