@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import getopt
+import os
 import socket
 import sys
 import xml.sax.saxutils
@@ -11,6 +12,7 @@ DEFAULT_DOMAIN = "*"
 DEFAULT_PORTS = "*"
 
 class options(object):
+    daemonize = False
     domain = DEFAULT_DOMAIN
     ports = DEFAULT_PORTS
     pass
@@ -20,6 +22,7 @@ def usage(f = sys.stdout):
 Usage: %(progname)s <OPTIONS> [HOST] [PORT]
 Serve a Flash crossdomain policy. By default HOST is \"%(addr)s\"
 and PORT is %(port)d.
+  --daemon             daemonize (Unix only).
   -d, --domain=DOMAIN  limit access to the given DOMAIN (default \"%(domain)s\").
   -h, --help           show this help.
   -p, --ports=PORTS    limit access to the given PORTS (default \"%(ports)s\").\
@@ -38,9 +41,11 @@ def make_policy(domain, ports):
 </cross-domain-policy>
 \0""" % (xml.sax.saxutils.escape(domain), xml.sax.saxutils.escape(ports))
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "d:hp:", ["domain", "help", "ports"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "d:hp:", ["daemon", "domain", "help", "ports"])
 for o, a in opts:
-    if o == "-h" or o == "--help":
+    if o == "--daemon":
+        options.daemonize = True
+    elif o == "-h" or o == "--help":
         usage()
         sys.exit()
     elif o == "-d" or o == "--domain":
@@ -70,6 +75,11 @@ s = socket.socket(addrinfo[0], addrinfo[1], addrinfo[2])
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.bind(addrinfo[4])
 s.listen(10)
+
+if options.daemonize:
+    if os.fork() != 0:
+        sys.exit(0)
+
 while True:
     (c, c_addr) = s.accept()
     c.sendall(policy)

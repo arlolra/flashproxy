@@ -46,23 +46,23 @@ def parse_addr_spec(spec, defhost = None, defport = None):
     m = None
     # IPv6 syntax.
     if not m:
-        m = re.match(r'^\[(.+)\]:(\d+)$', spec)
+        m = re.match(ur'^\[(.+)\]:(\d+)$', spec)
         if m:
             host, port = m.groups()
             af = socket.AF_INET6
     if not m:
-        m = re.match(r'^\[(.+)\]:?$', spec)
+        m = re.match(ur'^\[(.+)\]:?$', spec)
         if m:
             host, = m.groups()
             af = socket.AF_INET6
     # IPv4 syntax.
     if not m:
-        m = re.match(r'^(.+):(\d+)$', spec)
+        m = re.match(ur'^(.+):(\d+)$', spec)
         if m:
             host, port = m.groups()
             af = socket.AF_INET
     if not m:
-        m = re.match(r'^:?(\d+)$', spec)
+        m = re.match(ur'^:?(\d+)$', spec)
         if m:
             port, = m.groups()
             af = 0
