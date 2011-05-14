@@ -151,6 +151,10 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             log(u"client %s regs %s -> %s (already present)" % (format_addr(self.client_address), val, unicode(reg)))
         log(u"num regs %d" % len(REGS))
 
+    def log_message(self, format, *args):
+        msg = format % args
+        log(u"message from HTTP handler for %s: %s" % (format_addr(self.client_address), repr(msg)))
+
 opts, args = getopt.gnu_getopt(sys.argv[1:], "hl:", ["help", "log="])
 for o, a in opts:
     if o == "-h" or o == "--help":
