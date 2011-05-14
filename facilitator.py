@@ -105,9 +105,9 @@ class Reg(object):
 def add_reg(reg):
     if reg not in list(REGS):
         REGS.append(reg)
-        log("Registration " + str(reg) + " added. Registrations: " + str(len(REGS)))
+        return True
     else:
-        log("Registration " + str(reg) + " already present. Registrations: " + str(len(REGS)))
+        return False
 
 def fetch_reg():
     """Get a client registration, or None if none is available."""
@@ -117,37 +117,39 @@ def fetch_reg():
 
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
-        line = "From " + str(self.client_address) + " received: GET:"
         reg = fetch_reg()
         if reg:
-            line += " Handing out " + str(reg) + ". Clients: " + str(len(REGS))
+            log(u"proxy %s gets %s" % (format_addr(self.client_address), unicode(reg)))
             self.request.send(str(reg))
         else:
-            line += " Registration list is empty"
-        log(line)
+            log(u"proxy %s gets none" % format_addr(self.client_address))
+        log(u"num regs %d" % len(REGS))
 
     def do_POST(self):
         data = self.rfile.readline().strip()
-        log("From " + str(self.client_address) + " received: POST: " + data + " :")
         try:
             vals = cgi.parse_qs(data, False, True)
         except ValueError, e:
-            log("Syntax error in POST: %s" % str(e))
+            log(u"client %s POST syntax error: %s" % (format_addr(self.client_address), repr(str(e))))
             return
 
         client_specs = vals.get("client")
         if client_specs is None or len(client_specs) != 1:
-            log("In POST: need exactly one \"client\" param")
+            log(u"client %s missing \"client\" param" % format_addr(self.client_address))
             return
         val = client_specs[0]
 
         try:
             reg = Reg.parse(val, self.client_address[0])
         except ValueError, e:
-            log("Can't parse client \"%s\": %s" % (val, str(e)))
+            log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(val), repr(str(e))))
             return
 
-        add_reg(reg)
+        if add_reg(reg):
+            log(u"client %s regs %s -> %s" % (format_addr(self.client_address), val, unicode(reg)))
+        else:
+            log(u"client %s regs %s -> %s (already present)" % (format_addr(self.client_address), val, unicode(reg)))
+        log(u"num regs %d" % len(REGS))
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "hl:", ["help", "log="])
 for o, a in opts:
@@ -177,7 +179,7 @@ class Server(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
 # Setup the server
 server = Server(address, Handler)
 
-log("Starting Facilitator on " + str(address) + "...")
+log(u"start on %s" % format_addr(address))
 
 try:
     server.serve_forever()
