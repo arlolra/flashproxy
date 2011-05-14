@@ -4,6 +4,7 @@ import BaseHTTPServer
 import SocketServer
 import getopt
 import cgi
+import os
 import re
 import sys
 import socket
@@ -21,6 +22,7 @@ Usage: %(progname)s <OPTIONS> [HOST] [PORT]
 Flash bridge facilitator: Register client addresses with HTTP POST requests
 and serve them out again with HTTP GET. Listen on HOST and PORT, by default
 %(addr)s %(port)d.
+  -d, --debug         don't daemonize.
   -h, --help          show this help.
   -l, --log FILENAME  write log to FILENAME (default stdout).\
 """ % {
@@ -29,12 +31,15 @@ and serve them out again with HTTP GET. Listen on HOST and PORT, by default
     "port": DEFAULT_PORT,
 }
 
-log_file = sys.stdout
+class options (object):
+    log_file = sys.stdout
+    daemonize = True
+
 REGS = deque()
 
 def log(msg):
-    print >> log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
-    log_file.flush()
+    print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
+    options.log_file.flush()
 
 def format_addr(addr):
     host, port = addr
@@ -155,13 +160,15 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         msg = format % args
         log(u"message from HTTP handler for %s: %s" % (format_addr(self.client_address), repr(msg)))
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "hl:", ["help", "log="])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:", ["debug", "help", "log="])
 for o, a in opts:
-    if o == "-h" or o == "--help":
+    if o == "-d" or o == "--debug":
+        options.daemonize = False
+    elif o == "-h" or o == "--help":
         usage()
         sys.exit()
     elif o == "-l" or o == "--log":
-        log_file = open(a, "a")
+        options.log_file = open(a, "a")
 
 if len(args) == 0:
     address = (DEFAULT_ADDRESS, DEFAULT_PORT)
@@ -184,6 +191,11 @@ class Server(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
 server = Server(address, Handler)
 
 log(u"start on %s" % format_addr(address))
+
+if options.daemonize:
+    log(u"daemonizing")
+    if os.fork() != 0:
+        sys.exit(0)
 
 try:
     server.serve_forever()
