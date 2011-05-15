@@ -10,7 +10,6 @@ import socket
 import sys
 import threading
 import time
-from collections import deque
 
 DEFAULT_ADDRESS = "0.0.0.0"
 DEFAULT_PORT = 9002
@@ -38,8 +37,6 @@ and serve them out again with HTTP GET. Listen on HOST and PORT, by default
     "port": DEFAULT_PORT,
     "log": DEFAULT_LOG_FILENAME,
 }
-
-REGS = deque()
 
 log_lock = threading.Lock()
 def log(msg):
@@ -111,28 +108,49 @@ class Reg(object):
         host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
         return Reg(host, int(port))
 
-def add_reg(reg):
-    if reg not in list(REGS):
-        REGS.append(reg)
-        return True
-    else:
-        return False
+class RegSet(object):
+    def __init__(self):
+        self.set = []
+        self.cv = threading.Condition()
 
-def fetch_reg():
-    """Get a client registration, or None if none is available."""
-    if not REGS:
-        return None
-    return REGS.popleft()
+    def add(self, reg):
+        self.cv.acquire()
+        try:
+            if reg not in list(self.set):
+                self.set.append(reg)
+                self.cv.notify()
+                return True
+            else:
+                return False
+        finally:
+            self.cv.release()
+
+    def fetch(self):
+        self.cv.acquire()
+        try:
+            if not self.set:
+                return None
+            return self.set.pop(0)
+        finally:
+            self.cv.release()
+
+    def __len__(self):
+        self.cv.acquire()
+        try:
+            return len(self.set)
+        finally:
+            self.cv.release()
 
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
-        reg = fetch_reg()
+        log(u"proxy %s connects" % format_addr(self.client_address))
+
+        reg = REGS.fetch()
         if reg:
-            log(u"proxy %s gets %s" % (format_addr(self.client_address), unicode(reg)))
+            log(u"proxy %s gets %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
             self.request.send(str(reg))
         else:
             log(u"proxy %s gets none" % format_addr(self.client_address))
-        log(u"num regs %d" % len(REGS))
 
     def do_POST(self):
         data = self.rfile.readline().strip()
@@ -154,15 +172,17 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(val), repr(str(e))))
             return
 
-        if add_reg(reg):
-            log(u"client %s regs %s -> %s" % (format_addr(self.client_address), val, unicode(reg)))
+        log(u"client %s regs %s -> %s" % (format_addr(self.client_address), val, unicode(reg)))
+        if REGS.add(reg):
+            log(u"client %s %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
         else:
-            log(u"client %s regs %s -> %s (already present)" % (format_addr(self.client_address), val, unicode(reg)))
-        log(u"num regs %d" % len(REGS))
+            log(u"client %s %s (already present, now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
 
     def log_message(self, format, *args):
         msg = format % args
         log(u"message from HTTP handler for %s: %s" % (format_addr(self.client_address), repr(msg)))
+
+REGS = RegSet()
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:", ["debug", "help", "log="])
 for o, a in opts:
