@@ -8,6 +8,7 @@ import os
 import re
 import socket
 import sys
+import threading
 import time
 from collections import deque
 
@@ -40,9 +41,14 @@ and serve them out again with HTTP GET. Listen on HOST and PORT, by default
 
 REGS = deque()
 
+log_lock = threading.Lock()
 def log(msg):
-    print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
-    options.log_file.flush()
+    log_lock.acquire()
+    try:
+        print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
+        options.log_file.flush()
+    finally:
+        log_lock.release()
 
 def format_addr(addr):
     host, port = addr
