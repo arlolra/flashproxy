@@ -2,12 +2,12 @@
 
 import BaseHTTPServer
 import SocketServer
-import getopt
 import cgi
+import getopt
 import os
 import re
-import sys
 import socket
+import sys
 import time
 from collections import deque
 
