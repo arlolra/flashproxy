@@ -362,3 +362,4 @@ while True:
         remotes.append(pending.fd)
         handle_remote_connection(pending.fd)
         report_pending()
+    sys.stdout.flush()
