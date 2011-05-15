@@ -251,6 +251,10 @@ def handle_local_connection(fd):
         register(facilitator_addr, remote_addr[1])
     match_proxies()
 
+def report_pending():
+    print "locals  (%d): %s" % (len(locals), [format_addr(x.fd.getpeername()) for x in locals])
+    print "remotes (%d): %s" % (len(remotes), [format_addr(x.getpeername()) for x in remotes])
+
 def register(addr, port):
     spec = format_addr((None, port))
     print "Registering \"%s\" with %s." % (spec, format_addr(addr))
@@ -300,6 +304,7 @@ while True:
             else:
                 fd.close()
             socks_pending.remove(fd)
+            report_pending()
         elif fd in local_for:
             local = local_for[fd]
             data = fd.recv(1024)
@@ -337,6 +342,7 @@ while True:
                     print "Refusing to buffer more than %d bytes from local %s." % (UNCONNECTED_LOCAL_BUFFER_LIMIT, format_addr(fd.fd.getpeername()))
                     locals.remove(fd)
                     fd.fd.close()
+            report_pending()
         elif fd in remotes:
             data = fd.recv(1024)
             if not data:
@@ -345,6 +351,7 @@ while True:
                 print "Data from unconnected remote %s." % format_addr(fd.getpeername())
             fd.close()
             remotes.remove(fd)
+            report_pending()
         match_proxies()
     while crossdomain_pending:
         pending = crossdomain_pending[0]
@@ -354,3 +361,4 @@ while True:
         crossdomain_pending.pop(0)
         remotes.append(pending.fd)
         handle_remote_connection(pending.fd)
+        report_pending()
