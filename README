@@ -59,6 +59,11 @@ Back on the client, start Tor with the following configuration:
 	Bridge 127.0.0.1:9001
 	Socks4Proxy 127.0.0.1:9001
 
+If you see messages like
+	[notice] Bootstrapped 10%: Finishing handshake with directory server.
+	[notice] no known bridge descriptors running yet; stalling
+try deleting the files in ~/.tor or /var/lib/tor.
+
 You will be able to see byte counts flowing in the browser displaying
 swfcat.swf, and eventually be able to build a circuit.
 
