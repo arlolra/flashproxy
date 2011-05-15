@@ -12,7 +12,7 @@ Design of Flash proxies
   such an adversary, we assume there exists a subset of reachable hosts
   that themselves can reach the Tor network. We call this subset the
   unrestricted Internet.
-  
+
   A browser-based proxy (Flash proxy), running in a web page in the
   unrestricted Internet, proxies connections between the restricted
   Internet and the Tor network. These proxies are expected to be
