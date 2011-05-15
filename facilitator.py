@@ -60,22 +60,18 @@ def format_addr(addr):
         return u"%s:%d" % (host, port)
 
 class Reg(object):
-    def __init__(self, af, host, port):
-        self.af = af
+    def __init__(self, host, port):
         self.host = host
         self.port = port
 
     def __unicode__(self):
-        if self.af == socket.AF_INET6:
-            return u"[%s]:%d" % (self.host, self.port)
-        else:
-            return u"%s:%d" % (self.host, self.port)
+        return format_addr((self.host, self.port))
 
     def __str__(self):
         return unicode(self).encode("UTF-8")
 
     def __cmp__(self, other):
-        return cmp((self.af, self.host, self.port), (other.af, other.host, other.port))
+        return cmp((self.host, self.port), (other.host, other.port))
 
     @staticmethod
     def parse(spec, defhost = None, defport = None):
@@ -106,9 +102,8 @@ class Reg(object):
         if not addrs:
             raise ValueError("Bad host or port: \"%s\" \"%s\"" % (host, port))
 
-        af = addrs[0][0]
         host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
-        return Reg(af, host, int(port))
+        return Reg(host, int(port))
 
 def add_reg(reg):
     if reg not in list(REGS):
