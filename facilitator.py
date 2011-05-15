@@ -153,7 +153,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             log(u"proxy %s gets none" % format_addr(self.client_address))
 
     def do_POST(self):
-        data = self.rfile.readline().strip()
+        data = self.rfile.readline(1024).strip()
         try:
             vals = cgi.parse_qs(data, False, True)
         except ValueError, e:
