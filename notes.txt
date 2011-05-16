@@ -2,6 +2,8 @@
 
 Make the facilitator inform the proxy which relay to use.
 
+Nice if the facilitator can serve /crossdomain.xml.
+
 Bandwidth rate limiting in swfcat.
 
 Limit rate of registration in facilitator, maybe just one reg per IP.
