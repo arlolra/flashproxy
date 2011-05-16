@@ -14,11 +14,10 @@ package
 
     public class swfcat extends Sprite
     {
-        /* David's bridge (nickname eRYaZuvY02FpExln) that also serves a
+        /* David's relay (nickname 3VXRyxz67OeRoqHn) that also serves a
            crossdomain policy. */
         private const DEFAULT_TOR_ADDR:Object = {
-            // host: "173.255.221.44", 3VXRyxz67OeRoqHn
-            host: "69.164.193.231",
+            host: "173.255.221.44",
             port: 9001
         };
         private const DEFAULT_FACILITATOR_ADDR:Object = {
