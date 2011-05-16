@@ -18,6 +18,8 @@ DEFAULT_LOCAL_PORT = 9001
 DEFAULT_FACILITATOR_PORT = 9002
 
 class options(object):
+    local_addr = None
+    remote_addr = None
     facilitator_addr = None
 
 # We accept up to this many bytes from a local socket not yet matched with a
@@ -106,14 +108,14 @@ for o, a in opts:
         sys.exit()
 
 if len(args) == 0:
-    local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-    remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+    options.local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+    options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 elif len(args) == 1:
-    local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-    remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+    options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+    options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 elif len(args) == 2:
-    local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-    remote_addr = parse_addr_spec(args[1], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+    options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+    options.remote_addr = parse_addr_spec(args[1], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 else:
     usage(sys.stderr)
     sys.exit(1)
@@ -157,10 +159,10 @@ def listen_socket(addr):
 CROSSDOMAIN_TIMEOUT = 2.0
 
 # Local socket, accepting SOCKS requests from localhost
-local_s = listen_socket(local_addr)
+local_s = listen_socket(options.local_addr)
 # Remote socket, accepting both crossdomain policy requests and remote proxy
 # connections.
-remote_s = listen_socket(remote_addr)
+remote_s = listen_socket(options.remote_addr)
 
 # Sockets that may be crossdomain policy requests or may be normal remote
 # connections.
@@ -187,7 +189,7 @@ def handle_policy_request(fd):
 <cross-domain-policy>
 <allow-access-from domain="*" to-ports="%s"/>
 </cross-domain-policy>
-\0""" % xml.sax.saxutils.escape(str(remote_addr[1])))
+\0""" % xml.sax.saxutils.escape(str(options.remote_addr[1])))
     elif data == "":
         print "No data from %s." % format_addr(addr)
     else:
@@ -248,7 +250,7 @@ def handle_remote_connection(fd):
 
 def handle_local_connection(fd):
     print "handle_local_connection"
-    register(remote_addr[1])
+    register(options.remote_addr[1])
     match_proxies()
 
 def report_pending():
@@ -277,7 +279,7 @@ def match_proxies():
         remote_for[local.fd] = remote
         local_for[remote] = local.fd
 
-register(remote_addr[1])
+register(options.remote_addr[1])
 
 while True:
     rset = [remote_s, local_s] + crossdomain_pending + socks_pending + remote_for.keys() + local_for.keys() + locals + remotes
@@ -291,7 +293,7 @@ while True:
             local_c, addr = fd.accept()
             print "Local connection from %s." % format_addr(addr)
             socks_pending.append(local_c)
-            register(remote_addr[1])
+            register(options.remote_addr[1])
         elif fd in crossdomain_pending:
             print "Data from crossdomain-pending %s." % format_addr(addr)
             handle_policy_request(fd.fd)
@@ -315,7 +317,7 @@ while True:
                 local.close()
                 del local_for[fd]
                 del remote_for[local]
-                register(remote_addr[1])
+                register(options.remote_addr[1])
             else:
                 local.sendall(data)
         elif fd in remote_for:
