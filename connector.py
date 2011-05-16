@@ -336,7 +336,7 @@ while True:
                 locals.remove(fd)
                 fd.fd.close()
             else:
-                print "Data from unconnected remote %s (%d bytes)." % (format_addr(fd.fd.getpeername()), len(data))
+                print "Data from unconnected local %s (%d bytes)." % (format_addr(fd.fd.getpeername()), len(data))
                 fd.buf += data
                 if len(fd.buf) >= UNCONNECTED_LOCAL_BUFFER_LIMIT:
                     print "Refusing to buffer more than %d bytes from local %s." % (UNCONNECTED_LOCAL_BUFFER_LIMIT, format_addr(fd.fd.getpeername()))
