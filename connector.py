@@ -17,6 +17,9 @@ DEFAULT_LOCAL_ADDRESS = "127.0.0.1"
 DEFAULT_LOCAL_PORT = 9001
 DEFAULT_FACILITATOR_PORT = 9002
 
+class options(object):
+    facilitator_addr = None
+
 # We accept up to this many bytes from a local socket not yet matched with a
 # remote before disconnecting it.
 UNCONNECTED_LOCAL_BUFFER_LIMIT = 10240
@@ -94,12 +97,10 @@ def format_addr(addr):
     else:
         return u"%s:%d" % (host, port)
 
-facilitator_addr = None
-
 opts, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator", "help"])
 for o, a in opts:
     if o == "-f" or o == "--facilitator":
-        facilitator_addr = parse_addr_spec(a, None, DEFAULT_FACILITATOR_PORT)
+        options.facilitator_addr = parse_addr_spec(a, None, DEFAULT_FACILITATOR_PORT)
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
@@ -247,8 +248,8 @@ def handle_remote_connection(fd):
 
 def handle_local_connection(fd):
     print "handle_local_connection"
-    if facilitator_addr:
-        register(facilitator_addr, remote_addr[1])
+    if options.facilitator_addr:
+        register(options.facilitator_addr, remote_addr[1])
     match_proxies()
 
 def report_pending():
@@ -274,8 +275,8 @@ def match_proxies():
         remote_for[local.fd] = remote
         local_for[remote] = local.fd
 
-if facilitator_addr:
-    register(facilitator_addr, remote_addr[1])
+if options.facilitator_addr:
+    register(options.facilitator_addr, remote_addr[1])
 
 while True:
     rset = [remote_s, local_s] + crossdomain_pending + socks_pending + remote_for.keys() + local_for.keys() + locals + remotes
@@ -289,8 +290,8 @@ while True:
             local_c, addr = fd.accept()
             print "Local connection from %s." % format_addr(addr)
             socks_pending.append(local_c)
-            if facilitator_addr:
-                register(facilitator_addr, remote_addr[1])
+            if options.facilitator_addr:
+                register(options.facilitator_addr, remote_addr[1])
         elif fd in crossdomain_pending:
             print "Data from crossdomain-pending %s." % format_addr(addr)
             handle_policy_request(fd.fd)
@@ -314,8 +315,8 @@ while True:
                 local.close()
                 del local_for[fd]
                 del remote_for[local]
-                if facilitator_addr:
-                    register(facilitator_addr, remote_addr[1])
+                if options.facilitator_addr:
+                    register(options.facilitator_addr, remote_addr[1])
             else:
                 local.sendall(data)
         elif fd in remote_for:
