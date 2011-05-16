@@ -248,20 +248,22 @@ def handle_remote_connection(fd):
 
 def handle_local_connection(fd):
     print "handle_local_connection"
-    if options.facilitator_addr:
-        register(options.facilitator_addr, remote_addr[1])
+    register(remote_addr[1])
     match_proxies()
 
 def report_pending():
     print "locals  (%d): %s" % (len(locals), [format_addr(x.fd.getpeername()) for x in locals])
     print "remotes (%d): %s" % (len(remotes), [format_addr(x.getpeername()) for x in remotes])
 
-def register(addr, port):
+def register(port):
+    if options.facilitator_addr is None:
+        return False
     spec = format_addr((None, port))
-    print "Registering \"%s\" with %s." % (spec, format_addr(addr))
-    http = httplib.HTTPConnection(*addr)
+    print "Registering \"%s\" with %s." % (spec, format_addr(options.facilitator_addr))
+    http = httplib.HTTPConnection(*options.facilitator_addr)
     http.request("POST", "/", urllib.urlencode({"client": spec}))
     http.close()
+    return True
 
 def match_proxies():
     while locals and remotes:
@@ -275,8 +277,7 @@ def match_proxies():
         remote_for[local.fd] = remote
         local_for[remote] = local.fd
 
-if options.facilitator_addr:
-    register(options.facilitator_addr, remote_addr[1])
+register(remote_addr[1])
 
 while True:
     rset = [remote_s, local_s] + crossdomain_pending + socks_pending + remote_for.keys() + local_for.keys() + locals + remotes
@@ -290,8 +291,7 @@ while True:
             local_c, addr = fd.accept()
             print "Local connection from %s." % format_addr(addr)
             socks_pending.append(local_c)
-            if options.facilitator_addr:
-                register(options.facilitator_addr, remote_addr[1])
+            register(remote_addr[1])
         elif fd in crossdomain_pending:
             print "Data from crossdomain-pending %s." % format_addr(addr)
             handle_policy_request(fd.fd)
@@ -315,8 +315,7 @@ while True:
                 local.close()
                 del local_for[fd]
                 del remote_for[local]
-                if options.facilitator_addr:
-                    register(options.facilitator_addr, remote_addr[1])
+                register(remote_addr[1])
             else:
                 local.sendall(data)
         elif fd in remote_for:
