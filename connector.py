@@ -99,7 +99,7 @@ def format_addr(addr):
     else:
         return u"%s:%d" % (host, port)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator", "help"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "help"])
 for o, a in opts:
     if o == "-f" or o == "--facilitator":
         options.facilitator_addr = parse_addr_spec(a, None, DEFAULT_FACILITATOR_PORT)
