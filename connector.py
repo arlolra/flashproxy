@@ -2,6 +2,7 @@
 
 import getopt
 import httplib
+import os
 import re
 import select
 import socket
@@ -26,6 +27,7 @@ class options(object):
 
     log_filename = None
     log_file = sys.stdout
+    daemonize = False
 
 # We accept up to this many bytes from a local socket not yet matched with a
 # remote before disconnecting it.
@@ -44,6 +46,7 @@ connection.
 
 If the -f option is given, then the REMOTE address is advertised to the given
 FACILITATOR.
+  --daemon                       daemonize (Unix only).
   -f, --facilitator=HOST[:PORT]  advertise willingness to receive connections to
                                    HOST:PORT. By default PORT is %(fac_port)d.
   -h, --help                     show this help.
@@ -109,9 +112,11 @@ def format_addr(addr):
     else:
         return u"%s:%d" % (host, port)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:", ["facilitator=", "help", "log="])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:", ["daemon", "facilitator=", "help", "log="])
 for o, a in opts:
-    if o == "-f" or o == "--facilitator":
+    if o == "--daemon":
+        options.daemonize = True
+    elif o == "-f" or o == "--facilitator":
         options.facilitator_addr = parse_addr_spec(a, None, DEFAULT_FACILITATOR_PORT)
     elif o == "-h" or o == "--help":
         usage()
@@ -295,6 +300,11 @@ def match_proxies():
             remote.sendall(local.buf)
         remote_for[local.fd] = remote
         local_for[remote] = local.fd
+
+if options.daemonize:
+    log(u"Daemonizing.")
+    if os.fork() != 0:
+        sys.exit(0)
 
 register()
 
