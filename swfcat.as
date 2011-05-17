@@ -138,6 +138,9 @@ package
             }
 
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
+            proxy_pair.addEventListener(Event.COMPLETE, function():void {
+                proxy_pair.log("Complete.");
+            })
             proxy_pair.connect();
         }
 
@@ -162,6 +165,7 @@ package
 
 import flash.display.Sprite;
 import flash.events.Event;
+import flash.events.EventDispatcher;
 import flash.events.IOErrorEvent;
 import flash.events.ProgressEvent;
 import flash.events.SecurityErrorEvent;
@@ -169,7 +173,7 @@ import flash.net.Socket;
 import flash.utils.ByteArray;
 
 /* An instance of a client-relay connection. */
-class ProxyPair
+class ProxyPair extends EventDispatcher
 {
     // Address ({host, port}) of client.
     private var addr_c:Object;
@@ -212,16 +216,19 @@ class ProxyPair
             log("Tor: closed.");
             if (s_c.connected)
                 s_c.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
         s_r.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
             log("Tor: I/O error: " + e.text + ".");
             if (s_c.connected)
                 s_c.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
         s_r.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
             log("Tor: security error: " + e.text + ".");
             if (s_c.connected)
                 s_c.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
 
         log("Tor: connecting to " + addr_r.host + ":" + addr_r.port + ".");
@@ -239,16 +246,19 @@ class ProxyPair
             log("Client: closed.");
             if (s_r.connected)
                 s_r.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
         s_c.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
             log("Client: I/O error: " + e.text + ".");
             if (s_r.connected)
                 s_r.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
         s_c.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
             log("Client: security error: " + e.text + ".");
             if (s_r.connected)
                 s_r.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
 
         log("Client: connecting to " + addr_c.host + ":" + addr_c.port + ".");
