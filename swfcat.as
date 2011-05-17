@@ -188,13 +188,13 @@ class ProxyPair extends EventDispatcher
     // Parent swfcat, for UI updates.
     private var ui:swfcat;
 
-    private function log(msg:String):void
+    public function log(msg:String):void
     {
         ui.puts(id() + ": " + msg)
     }
 
     // String describing this pair for output.
-    private function id():String
+    public function id():String
     {
         return "<" + this.addr_c.host + ":" + this.addr_c.port +
             "," + this.addr_r.host + ":" + this.addr_r.port + ">";
