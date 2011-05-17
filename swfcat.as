@@ -138,9 +138,9 @@ package
             }
 
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
-            proxy_pair.addEventListener(Event.COMPLETE, function():void {
+            proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
-            })
+            });
             proxy_pair.connect();
         }
 
