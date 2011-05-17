@@ -289,6 +289,17 @@ def register():
     http.close()
     return True
 
+def proxy_chunk(fd_r, fd_w, label):
+    data = fd_r.recv(1024)
+    if not data:
+        log(u"EOF from %s %s." % (label, format_addr(fd_r.getpeername())))
+        fd_r.close()
+        fd_w.close()
+        return False
+    else:
+        fd_w.sendall(data)
+        return True
+
 def match_proxies():
     while locals and remotes:
         remote = remotes.pop(0)
@@ -337,27 +348,16 @@ while True:
             report_pending()
         elif fd in local_for:
             local = local_for[fd]
-            data = fd.recv(1024)
-            if not data:
-                log(u"EOF from remote %s." % format_addr(fd.getpeername()))
-                fd.close()
-                local.close()
+            if not proxy_chunk(fd, local, "remote"):
                 del local_for[fd]
                 del remote_for[local]
                 register()
-            else:
-                local.sendall(data)
         elif fd in remote_for:
             remote = remote_for[fd]
-            data = fd.recv(1024)
-            if not data:
-                log(u"EOF from local %s." % format_addr(fd.getpeername()))
-                fd.close()
-                remote.close()
+            if not proxy_chunk(fd, remote, "local"):
                 del remote_for[fd]
                 del local_for[remote]
-            else:
-                remote.sendall(data)
+                register()
         elif fd in locals:
             data = fd.fd.recv(1024)
             if not data:
