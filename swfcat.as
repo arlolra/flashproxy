@@ -25,6 +25,8 @@ package
             port: 9002
         };
 
+        private const MAX_NUM_PROXY_PAIRS:uint = 1;
+
         // Milliseconds.
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
@@ -34,6 +36,8 @@ package
         private var output_text:TextField;
 
         private var fac_addr:Object;
+
+        private var num_proxy_pairs:int = 0;
 
         [Embed(source="badge.png")]
         private var BadgeImage:Class;
@@ -91,6 +95,11 @@ package
         /* The main logic begins here, after start-up issues are taken care of. */
         private function main():void
         {
+            if (num_proxy_pairs >= MAX_NUM_PROXY_PAIRS) {
+                setTimeout(main, FACILITATOR_POLL_INTERVAL);
+                return;
+            }
+
             s_f = new Socket();
 
             s_f.addEventListener(Event.CONNECT, fac_connected);
@@ -137,9 +146,11 @@ package
                 return;
             }
 
+            num_proxy_pairs++;
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
             proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
+                num_proxy_pairs--;
             });
             proxy_pair.connect();
         }
