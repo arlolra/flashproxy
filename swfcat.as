@@ -39,7 +39,11 @@ package
 
         private var fac_addr:Object;
 
+        /* Number of proxy pairs currently connected (up to
+           MAX_NUM_PROXY_PAIRS). */
         private var num_proxy_pairs:int = 0;
+        /* Number of proxy pairs ever connected. */
+        private var total_proxy_pairs:int = 0;
 
         /* Badge with a client counter */
         [Embed(source="badge_con_counter.png")]
@@ -55,10 +59,10 @@ package
 
         public function update_client_count():void
         {
-            if (String(num_proxy_pairs).length == 1)
-                client_count_tf.text = "0" + String(num_proxy_pairs);
+            if (String(total_proxy_pairs).length == 1)
+                client_count_tf.text = "0" + String(total_proxy_pairs);
             else
-                client_count_tf.text = String(num_proxy_pairs);
+                client_count_tf.text = String(total_proxy_pairs);
         }
 
         public function swfcat()
@@ -178,16 +182,16 @@ package
             }
 
             num_proxy_pairs++;
+            total_proxy_pairs++;
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
-            
-            /* Update the client count on the badge. */
-            update_client_count();
-            
             proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
                 num_proxy_pairs--;
             });
             proxy_pair.connect();
+
+            /* Update the client count on the badge. */
+            update_client_count();
         }
 
         /* Parse an address in the form "host:port". Returns an Object with
