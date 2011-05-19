@@ -55,8 +55,10 @@ package
         /* Badge with a client counter */
         [Embed(source="badge.png")]
         private var BadgeImage:Class;
-        private var client_count_tf:TextField;
-        private var client_count_fmt:TextFormat;
+        private var tot_client_count_tf:TextField;
+        private var tot_client_count_fmt:TextFormat;
+        private var cur_client_count_tf:TextField;
+        private var cur_client_count_fmt:TextFormat;
 
         public function puts(s:String):void
         {
@@ -66,10 +68,16 @@ package
 
         public function update_client_count():void
         {
+            /* Update total client count. */
             if (String(total_proxy_pairs).length == 1)
-                client_count_tf.text = "0" + String(total_proxy_pairs);
+                tot_client_count_tf.text = "0" + String(total_proxy_pairs);
             else
-                client_count_tf.text = String(total_proxy_pairs);
+                tot_client_count_tf.text = String(total_proxy_pairs);
+
+            /* Update current client count. */
+            cur_client_count_tf.text = "";
+            for(var i:Number=0; i<num_proxy_pairs; i++)
+                cur_client_count_tf.appendText(".");;
         }
 
         public function swfcat()
@@ -86,19 +94,34 @@ package
             output_text.textColor = 0x44cc44;
 
             /* Setup client counter for badge. */
-            client_count_fmt = new TextFormat();
-            client_count_fmt.color = 0xFFFFFF;
-            client_count_fmt.align = "center";
-            client_count_fmt.font = "courier-new";
-            client_count_fmt.bold = true;
-            client_count_fmt.size = 10;
-            client_count_tf = new TextField();
-            client_count_tf.width = 20;
-            client_count_tf.height = 17;
-            client_count_tf.background = false;
-            client_count_tf.defaultTextFormat = client_count_fmt;
-            client_count_tf.x=47;
-            client_count_tf.y=3;
+            tot_client_count_fmt = new TextFormat();
+            tot_client_count_fmt.color = 0xFFFFFF;
+            tot_client_count_fmt.align = "center";
+            tot_client_count_fmt.font = "courier-new";
+            tot_client_count_fmt.bold = true;
+            tot_client_count_fmt.size = 10;
+            tot_client_count_tf = new TextField();
+            tot_client_count_tf.width = 20;
+            tot_client_count_tf.height = 17;
+            tot_client_count_tf.background = false;
+            tot_client_count_tf.defaultTextFormat = tot_client_count_fmt;
+            tot_client_count_tf.x=47;
+            tot_client_count_tf.y=0;
+
+            cur_client_count_fmt = new TextFormat();
+            cur_client_count_fmt.color = 0xFFFFFF;
+            cur_client_count_fmt.align = "center";
+            cur_client_count_fmt.font = "courier-new";
+            cur_client_count_fmt.bold = true;
+            cur_client_count_fmt.size = 10;
+            cur_client_count_tf = new TextField();
+            cur_client_count_tf.width = 20;
+            cur_client_count_tf.height = 17;
+            cur_client_count_tf.background = false;
+            cur_client_count_tf.defaultTextFormat = cur_client_count_fmt;
+            cur_client_count_tf.x=47;
+            cur_client_count_tf.y=6;
+
 
             /* Update the client counter on badge. */
             update_client_count();
@@ -125,7 +148,8 @@ package
                 addChild(new BadgeImage());
                 /* Tried unsuccessfully to add counter to badge. */
                 /* For now, need two addChilds :( */
-                addChild(client_count_tf);
+                addChild(tot_client_count_tf);
+                addChild(cur_client_count_tf);
             }
 
             fac_spec = this.loaderInfo.parameters["facilitator"];
@@ -195,15 +219,19 @@ package
 
             num_proxy_pairs++;
             total_proxy_pairs++;
+            /* Update the client count on the badge. */
+            update_client_count();
+
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
             proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
+                
                 num_proxy_pairs--;
+                /* Update the client count on the badge. */
+                update_client_count();
             });
             proxy_pair.connect();
 
-            /* Update the client count on the badge. */
-            update_client_count();
         }
 
         /* Parse an address in the form "host:port". Returns an Object with
