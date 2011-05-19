@@ -4,6 +4,7 @@ package
     import flash.display.StageAlign;
     import flash.display.StageScaleMode;
     import flash.text.TextField;
+    import flash.text.TextFormat;
     import flash.net.Socket;
     import flash.events.Event;
     import flash.events.IOErrorEvent;
@@ -33,19 +34,31 @@ package
         // Socket to facilitator.
         private var s_f:Socket;
 
+        /* TextField for debug output. */
         private var output_text:TextField;
 
         private var fac_addr:Object;
 
         private var num_proxy_pairs:int = 0;
 
-        [Embed(source="badge.png")]
+        /* Badge with a client counter */
+        [Embed(source="badge_con_counter.png")]
         private var BadgeImage:Class;
+        private var client_count_tf:TextField;
+        private var client_count_fmt:TextFormat;
 
         public function puts(s:String):void
         {
             output_text.appendText(s + "\n");
             output_text.scrollV = output_text.maxScrollV;
+        }
+
+        public function update_client_count():void
+        {
+            if (String(num_proxy_pairs).length == 1)
+                client_count_tf.text = "0" + String(num_proxy_pairs);
+            else
+                client_count_tf.text = String(num_proxy_pairs);
         }
 
         public function swfcat()
@@ -61,6 +74,24 @@ package
             output_text.backgroundColor = 0x001f0f;
             output_text.textColor = 0x44cc44;
 
+            /* Setup client counter for badge. */
+            client_count_fmt = new TextFormat();
+            client_count_fmt.color = 0xFFFFFF;
+            client_count_fmt.align = "center";
+            client_count_fmt.font = "courier-new";
+            client_count_fmt.bold = true;
+            client_count_fmt.size = 10;
+            client_count_tf = new TextField();
+            client_count_tf.width = 20;
+            client_count_tf.height = 17;
+            client_count_tf.background = false;
+            client_count_tf.defaultTextFormat = client_count_fmt;
+            client_count_tf.x=47;
+            client_count_tf.y=3;
+
+            /* Update the client counter on badge. */
+            update_client_count();
+
             puts("Starting.");
             // Wait until the query string parameters are loaded.
             this.loaderInfo.addEventListener(Event.COMPLETE, loaderinfo_complete);
@@ -74,8 +105,12 @@ package
 
             if (this.loaderInfo.parameters["debug"])
                 addChild(output_text);
-            else
+            else {
                 addChild(new BadgeImage());
+                /* Tried unsuccessfully to add counter to badge. */
+                /* For now, need two addChilds :( */
+                addChild(client_count_tf);
+            }
 
             fac_spec = this.loaderInfo.parameters["facilitator"];
             if (fac_spec) {
@@ -148,6 +183,10 @@ package
 
             num_proxy_pairs++;
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
+            
+            /* Update the client count on the badge. */
+            update_client_count();
+            
             proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
                 num_proxy_pairs--;
