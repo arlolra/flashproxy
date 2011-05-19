@@ -293,7 +293,7 @@ def proxy_chunk(fd_r, fd_w, label):
     try:
         data = fd_r.recv(1024)
     except socket.error, e: # Can be "Connection reset by peer".
-        log(u"Socket error from %s %s: %s" % (label, format_addr(fd_r.getpeername()), repr(str(e))))
+        log(u"Socket error from %s: %s" % (label, repr(str(e))))
         fd_w.close()
         return False
     if not data:
