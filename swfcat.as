@@ -176,10 +176,6 @@ package
                 puts("Error: Client spec must be in the form \"host:port\".");
                 return;
             }
-            if (client_addr.host == "0.0.0.0" && client_addr.port == 0) {
-                puts("Error: Facilitator has no clients.");
-                return;
-            }
 
             num_proxy_pairs++;
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
