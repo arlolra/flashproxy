@@ -31,6 +31,11 @@ package
         // Milliseconds.
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
+        // Bytes per second.
+        public const RATE_LIMIT:Number = 10 * 1024;
+        // Seconds.
+        private const RATE_LIMIT_HISTORY:Number = 5.0;
+
         // Socket to facilitator.
         private var s_f:Socket;
 
@@ -44,6 +49,8 @@ package
         private var num_proxy_pairs:int = 0;
         /* Number of proxy pairs ever connected. */
         private var total_proxy_pairs:int = 0;
+
+        public var rate_limit:RateLimit;
 
         /* Badge with a client counter */
         [Embed(source="badge_con_counter.png")]
@@ -95,6 +102,8 @@ package
 
             /* Update the client counter on badge. */
             update_client_count();
+
+            rate_limit = new RateLimit(RATE_LIMIT * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
 
             puts("Starting.");
             // Wait until the query string parameters are loaded.
@@ -221,6 +230,60 @@ import flash.events.ProgressEvent;
 import flash.events.SecurityErrorEvent;
 import flash.net.Socket;
 import flash.utils.ByteArray;
+import flash.utils.clearTimeout;
+import flash.utils.getTimer;
+import flash.utils.setTimeout;
+
+class RateLimit
+{
+    private var amount:Number;
+    private var capacity:Number;
+    private var time:Number;
+    private var last_update:uint;
+
+    public function RateLimit(capacity:Number, time:Number)
+    {
+        this.amount = 0.0;
+        /* capacity / time is the rate we are aiming for. */
+        this.capacity = capacity;
+        this.time = time;
+        this.last_update = getTimer();
+    }
+
+    private function age():void
+    {
+        var now:uint;
+        var delta:Number;
+
+        now = getTimer();
+        delta = (now - last_update) / 1000.0;
+        last_update = now;
+
+        amount -= delta * capacity / time;
+        if (amount < 0.0)
+            amount = 0.0;
+    }
+
+    public function update(n:Number):Boolean
+    {
+        age();
+        amount += n;
+
+        return amount <= capacity;
+    }
+
+    public function when():Number
+    {
+        age();
+        return (amount - capacity) / (capacity / time);
+    }
+
+    public function is_limited():Boolean
+    {
+        age();
+        return amount > capacity;
+    }
+}
 
 /* An instance of a client-relay connection. */
 class ProxyPair extends EventDispatcher
@@ -235,8 +298,14 @@ class ProxyPair extends EventDispatcher
     // Socket to relay.
     private var s_r:Socket;
 
-    // Parent swfcat, for UI updates.
+    // Parent swfcat, for UI updates and rate meter.
     private var ui:swfcat;
+
+    // Pending byte read counts for relay and client sockets.
+    private var r2c_schedule:Array;
+    private var c2r_schedule:Array;
+    // Callback id.
+    private var flush_id:uint;
 
     public function log(msg:String):void
     {
@@ -255,6 +324,9 @@ class ProxyPair extends EventDispatcher
         this.ui = ui;
         this.addr_c = addr_c;
         this.addr_r = addr_r;
+
+        this.c2r_schedule = [];
+        this.r2c_schedule = [];
     }
 
     public function connect():void
@@ -315,21 +387,53 @@ class ProxyPair extends EventDispatcher
         s_c.connect(addr_c.host, addr_c.port);
     }
 
+    private function relay_to_client(e:ProgressEvent):void
+    {
+        r2c_schedule.push(e.bytesLoaded);
+        flush();
+    }
+
+    private function client_to_relay(e:ProgressEvent):void
+    {
+        c2r_schedule.push(e.bytesLoaded);
+        flush();
+    }
+
     private function client_connected(e:Event):void
     {
         log("Client: connected.");
 
-        s_r.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
-            var bytes:ByteArray = new ByteArray();
-            s_r.readBytes(bytes, 0, e.bytesLoaded);
-            log("Tor: read " + bytes.length + ".");
-            s_c.writeBytes(bytes);
-        });
-        s_c.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
-            var bytes:ByteArray = new ByteArray();
-            s_c.readBytes(bytes, 0, e.bytesLoaded);
-            log("Client: read " + bytes.length + ".");
-            s_r.writeBytes(bytes);
-        });
+        s_r.addEventListener(ProgressEvent.SOCKET_DATA, relay_to_client);
+        s_c.addEventListener(ProgressEvent.SOCKET_DATA, client_to_relay);
+    }
+
+    private function transfer_chunk(s_from:Socket, s_to:Socket, n:uint,
+        label:String):void
+    {
+        var bytes:ByteArray;
+
+        bytes = new ByteArray();
+        s_from.readBytes(bytes, 0, n);
+        s_to.writeBytes(bytes);
+        ui.rate_limit.update(n);
+        log(label + ": read " + bytes.length + ".");
+    }
+
+    /* Send as much data as the rate limit currently allows. */
+    private function flush():void
+    {
+        while (!ui.rate_limit.is_limited() &&
+               (r2c_schedule.length > 0 || c2r_schedule.length > 0)) {
+            if (r2c_schedule.length > 0)
+                transfer_chunk(s_r, s_c, r2c_schedule.shift(), "Tor");
+            if (c2r_schedule.length > 0)
+                transfer_chunk(s_c, s_r, c2r_schedule.shift(), "Client");
+        }
+        if (flush_id)
+            clearTimeout(flush_id);
+        flush_id = undefined;
+        /* Call again when safe, if necessary. */
+        if (r2c_schedule.length > 0 || c2r_schedule.length > 0)
+            flush_id = setTimeout(flush, ui.rate_limit.when() * 1000);
     }
 }
