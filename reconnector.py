@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-import sys
-import re
-import socket
 import getopt
-import select
-import urllib
 import httplib
+import re
+import select
+import socket
+import sys
+import urllib
 
 DEFAULT_RELAY_ADDRESS   = "localhost"
 DEFAULT_RELAY_PORT      = 9001

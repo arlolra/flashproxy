@@ -2,20 +2,25 @@
 
 import BaseHTTPServer
 import SocketServer
-import getopt
 import cgi
+import getopt
 import os
 import re
-import sys
 import socket
+import sys
+import threading
 import time
-from collections import deque
 
 DEFAULT_ADDRESS = "0.0.0.0"
 DEFAULT_PORT = 9002
 DEFAULT_LOG_FILENAME = "facilitator.log"
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+class options(object):
+    log_filename = DEFAULT_LOG_FILENAME
+    log_file = sys.stdout
+    daemonize = True
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -33,16 +38,14 @@ and serve them out again with HTTP GET. Listen on HOST and PORT, by default
     "log": DEFAULT_LOG_FILENAME,
 }
 
-class options (object):
-    log_filename = DEFAULT_LOG_FILENAME
-    log_file = sys.stdout
-    daemonize = True
-
-REGS = deque()
-
+log_lock = threading.Lock()
 def log(msg):
-    print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
-    options.log_file.flush()
+    log_lock.acquire()
+    try:
+        print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
+        options.log_file.flush()
+    finally:
+        log_lock.release()
 
 def format_addr(addr):
     host, port = addr
@@ -60,22 +63,18 @@ def format_addr(addr):
         return u"%s:%d" % (host, port)
 
 class Reg(object):
-    def __init__(self, af, host, port):
-        self.af = af
+    def __init__(self, host, port):
         self.host = host
         self.port = port
 
     def __unicode__(self):
-        if self.af == socket.AF_INET6:
-            return u"[%s]:%d" % (self.host, self.port)
-        else:
-            return u"%s:%d" % (self.host, self.port)
+        return format_addr((self.host, self.port))
 
     def __str__(self):
         return unicode(self).encode("UTF-8")
 
     def __cmp__(self, other):
-        return cmp((self.af, self.host, self.port), (other.af, other.host, other.port))
+        return cmp((self.host, self.port), (other.host, other.port))
 
     @staticmethod
     def parse(spec, defhost = None, defport = None):
@@ -106,35 +105,55 @@ class Reg(object):
         if not addrs:
             raise ValueError("Bad host or port: \"%s\" \"%s\"" % (host, port))
 
-        af = addrs[0][0]
         host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
-        return Reg(af, host, int(port))
+        return Reg(host, int(port))
 
-def add_reg(reg):
-    if reg not in list(REGS):
-        REGS.append(reg)
-        return True
-    else:
-        return False
+class RegSet(object):
+    def __init__(self):
+        self.set = []
+        self.cv = threading.Condition()
 
-def fetch_reg():
-    """Get a client registration, or None if none is available."""
-    if not REGS:
-        return None
-    return REGS.popleft()
+    def add(self, reg):
+        self.cv.acquire()
+        try:
+            if reg not in list(self.set):
+                self.set.append(reg)
+                self.cv.notify()
+                return True
+            else:
+                return False
+        finally:
+            self.cv.release()
+
+    def fetch(self):
+        self.cv.acquire()
+        try:
+            if not self.set:
+                return None
+            return self.set.pop(0)
+        finally:
+            self.cv.release()
+
+    def __len__(self):
+        self.cv.acquire()
+        try:
+            return len(self.set)
+        finally:
+            self.cv.release()
 
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
-        reg = fetch_reg()
+        log(u"proxy %s connects" % format_addr(self.client_address))
+
+        reg = REGS.fetch()
         if reg:
-            log(u"proxy %s gets %s" % (format_addr(self.client_address), unicode(reg)))
+            log(u"proxy %s gets %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
             self.request.send(str(reg))
         else:
             log(u"proxy %s gets none" % format_addr(self.client_address))
-        log(u"num regs %d" % len(REGS))
 
     def do_POST(self):
-        data = self.rfile.readline().strip()
+        data = self.rfile.readline(1024).strip()
         try:
             vals = cgi.parse_qs(data, False, True)
         except ValueError, e:
@@ -153,15 +172,17 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(val), repr(str(e))))
             return
 
-        if add_reg(reg):
-            log(u"client %s regs %s -> %s" % (format_addr(self.client_address), val, unicode(reg)))
+        log(u"client %s regs %s -> %s" % (format_addr(self.client_address), val, unicode(reg)))
+        if REGS.add(reg):
+            log(u"client %s %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
         else:
-            log(u"client %s regs %s -> %s (already present)" % (format_addr(self.client_address), val, unicode(reg)))
-        log(u"num regs %d" % len(REGS))
+            log(u"client %s %s (already present, now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
 
     def log_message(self, format, *args):
         msg = format % args
         log(u"message from HTTP handler for %s: %s" % (format_addr(self.client_address), repr(msg)))
+
+REGS = RegSet()
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:", ["debug", "help", "log="])
 for o, a in opts:

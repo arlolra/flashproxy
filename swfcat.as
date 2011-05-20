@@ -4,6 +4,7 @@ package
     import flash.display.StageAlign;
     import flash.display.StageScaleMode;
     import flash.text.TextField;
+    import flash.text.TextFormat;
     import flash.net.Socket;
     import flash.events.Event;
     import flash.events.IOErrorEvent;
@@ -14,11 +15,10 @@ package
 
     public class swfcat extends Sprite
     {
-        /* David's bridge (nickname eRYaZuvY02FpExln) that also serves a
+        /* David's relay (nickname 3VXRyxz67OeRoqHn) that also serves a
            crossdomain policy. */
         private const DEFAULT_TOR_ADDR:Object = {
-            // host: "173.255.221.44", 3VXRyxz67OeRoqHn
-            host: "69.164.193.231",
+            host: "173.255.221.44",
             port: 9001
         };
         private const DEFAULT_FACILITATOR_ADDR:Object = {
@@ -26,23 +26,51 @@ package
             port: 9002
         };
 
+        private const MAX_NUM_PROXY_PAIRS:uint = 1;
+
         // Milliseconds.
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
         // Socket to facilitator.
         private var s_f:Socket;
 
+        /* TextField for debug output. */
         private var output_text:TextField;
 
         private var fac_addr:Object;
 
-        //[Embed(source="badge.png")]
-        //private var BadgeImage:Class;
+        /* Number of proxy pairs currently connected (up to
+           MAX_NUM_PROXY_PAIRS). */
+        private var num_proxy_pairs:int = 0;
+        /* Number of proxy pairs ever connected. */
+        private var total_proxy_pairs:int = 0;
+
+        /* Badge with a client counter */
+        [Embed(source="badge_con_counter.png")]
+        private var BadgeImage:Class;
+        private var tot_client_count_tf:TextField;
+        private var tot_client_count_fmt:TextFormat;
+        private var cur_client_count_tf:TextField;
+        private var cur_client_count_fmt:TextFormat;
 
         public function puts(s:String):void
         {
             output_text.appendText(s + "\n");
             output_text.scrollV = output_text.maxScrollV;
+        }
+
+        public function update_client_count():void
+        {
+            /* Update total client count. */
+            if (String(total_proxy_pairs).length == 1)
+                tot_client_count_tf.text = "0" + String(total_proxy_pairs);
+            else
+                tot_client_count_tf.text = String(total_proxy_pairs);
+
+            /* Update current client count. */
+            cur_client_count_tf.text = "";
+            for(var i:Number=0; i<num_proxy_pairs; i++)
+                cur_client_count_tf.appendText(".");;
         }
 
         public function swfcat()
@@ -58,6 +86,39 @@ package
             output_text.backgroundColor = 0x001f0f;
             output_text.textColor = 0x44cc44;
 
+            /* Setup client counter for badge. */
+            tot_client_count_fmt = new TextFormat();
+            tot_client_count_fmt.color = 0xFFFFFF;
+            tot_client_count_fmt.align = "center";
+            tot_client_count_fmt.font = "courier-new";
+            tot_client_count_fmt.bold = true;
+            tot_client_count_fmt.size = 10;
+            tot_client_count_tf = new TextField();
+            tot_client_count_tf.width = 20;
+            tot_client_count_tf.height = 17;
+            tot_client_count_tf.background = false;
+            tot_client_count_tf.defaultTextFormat = tot_client_count_fmt;
+            tot_client_count_tf.x=47;
+            tot_client_count_tf.y=0;
+
+            cur_client_count_fmt = new TextFormat();
+            cur_client_count_fmt.color = 0xFFFFFF;
+            cur_client_count_fmt.align = "center";
+            cur_client_count_fmt.font = "courier-new";
+            cur_client_count_fmt.bold = true;
+            cur_client_count_fmt.size = 10;
+            cur_client_count_tf = new TextField();
+            cur_client_count_tf.width = 20;
+            cur_client_count_tf.height = 17;
+            cur_client_count_tf.background = false;
+            cur_client_count_tf.defaultTextFormat = cur_client_count_fmt;
+            cur_client_count_tf.x=47;
+            cur_client_count_tf.y=6;
+
+
+            /* Update the client counter on badge. */
+            update_client_count();
+
             puts("Starting.");
             // Wait until the query string parameters are loaded.
             this.loaderInfo.addEventListener(Event.COMPLETE, loaderinfo_complete);
@@ -71,8 +132,13 @@ package
 
             if (this.loaderInfo.parameters["debug"])
                 addChild(output_text);
-            //else
-              //  addChild(new BadgeImage());
+            else {
+                addChild(new BadgeImage());
+                /* Tried unsuccessfully to add counter to badge. */
+                /* For now, need two addChilds :( */
+                addChild(tot_client_count_tf);
+                addChild(cur_client_count_tf);
+            }
 
             fac_spec = this.loaderInfo.parameters["facilitator"];
             if (fac_spec) {
@@ -92,6 +158,11 @@ package
         /* The main logic begins here, after start-up issues are taken care of. */
         private function main():void
         {
+            if (num_proxy_pairs >= MAX_NUM_PROXY_PAIRS) {
+                setTimeout(main, FACILITATOR_POLL_INTERVAL);
+                return;
+            }
+
             s_f = new Socket();
 
             s_f.addEventListener(Event.CONNECT, fac_connected);
@@ -133,13 +204,22 @@ package
                 puts("Error: Client spec must be in the form \"host:port\".");
                 return;
             }
-            if (client_addr.host == "0.0.0.0" && client_addr.port == 0) {
-                puts("Error: Facilitator has no clients.");
-                return;
-            }
+
+            num_proxy_pairs++;
+            total_proxy_pairs++;
+            /* Update the client count on the badge. */
+            update_client_count();
 
             proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
+            proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
+                proxy_pair.log("Complete.");
+                
+                num_proxy_pairs--;
+                /* Update the client count on the badge. */
+                update_client_count();
+            });
             proxy_pair.connect();
+
         }
 
         /* Parse an address in the form "host:port". Returns an Object with
@@ -163,6 +243,7 @@ package
 
 import flash.display.Sprite;
 import flash.events.Event;
+import flash.events.EventDispatcher;
 import flash.events.IOErrorEvent;
 import flash.events.ProgressEvent;
 import flash.events.SecurityErrorEvent;
@@ -171,7 +252,7 @@ import flash.utils.ByteArray;
 import flash.utils.setInterval;
 
 /* An instance of a client-relay connection. */
-class ProxyPair
+class ProxyPair extends EventDispatcher
 {
     // Address ({host, port}) of client.
     private var addr_c:Object;
@@ -199,13 +280,13 @@ class ProxyPair
     // in milliseconds
     private const DEFAULT_RATE_TIMEOUT:uint = 1000;
 
-    private function log(msg:String):void
+    public function log(msg:String):void
     {
         ui.puts(id() + ": " + msg)
     }
 
     // String describing this pair for output.
-    private function id():String
+    public function id():String
     {
         return "<" + this.addr_c.host + ":" + this.addr_c.port +
             "," + this.addr_r.host + ":" + this.addr_r.port + ">";
@@ -232,16 +313,19 @@ class ProxyPair
             log("Tor: closed.");
             if (s_c.connected)
                 s_c.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
         s_r.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
             log("Tor: I/O error: " + e.text + ".");
             if (s_c.connected)
                 s_c.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
         s_r.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
             log("Tor: security error: " + e.text + ".");
             if (s_c.connected)
                 s_c.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
 
         log("Tor: connecting to " + addr_r.host + ":" + addr_r.port + ".");
@@ -259,16 +343,19 @@ class ProxyPair
             log("Client: closed.");
             if (s_r.connected)
                 s_r.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
         s_c.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
             log("Client: I/O error: " + e.text + ".");
             if (s_r.connected)
                 s_r.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
         s_c.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
             log("Client: security error: " + e.text + ".");
             if (s_r.connected)
                 s_r.close();
+            dispatchEvent(new Event(Event.COMPLETE));
         });
 
         log("Client: connecting to " + addr_c.host + ":" + addr_c.port + ".");

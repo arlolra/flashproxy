@@ -38,6 +38,10 @@ crossdomaind.py needs to be run on any server that will accept
 connections from a Flash proxy. It serves a chunk of data on port 843.
 The facilitator runs on port 9002 by default.
 
+The client needs to be running a version of Tor that supports the
+Socks4Proxy configuration. This means version 0.2.2.1-alpha or
+later--not the current stable release.
+
 On the client, run
 	./connector.py -f <FACILITATOR_IP>
 Replace <FACILITATOR_IP> with the IP address of the facilitator. (If you
@@ -58,6 +62,11 @@ Back on the client, start Tor with the following configuration:
 	UseBridges 1
 	Bridge 127.0.0.1:9001
 	Socks4Proxy 127.0.0.1:9001
+
+If you see messages like
+	[notice] Bootstrapped 10%: Finishing handshake with directory server.
+	[notice] no known bridge descriptors running yet; stalling
+try deleting the files in ~/.tor or /var/lib/tor.
 
 You will be able to see byte counts flowing in the browser displaying
 swfcat.swf, and eventually be able to build a circuit.

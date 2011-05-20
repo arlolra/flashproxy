@@ -2,6 +2,7 @@
 
 import getopt
 import httplib
+import os
 import re
 import select
 import socket
@@ -13,9 +14,24 @@ import xml.sax.saxutils
 
 DEFAULT_REMOTE_ADDRESS = "0.0.0.0"
 DEFAULT_REMOTE_PORT = 9000
-DEFAULT_LOCAL_ADDRESS = "localhost"
+DEFAULT_LOCAL_ADDRESS = "127.0.0.1"
 DEFAULT_LOCAL_PORT = 9001
 DEFAULT_FACILITATOR_PORT = 9002
+
+LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+class options(object):
+    local_addr = None
+    remote_addr = None
+    facilitator_addr = None
+
+    log_filename = None
+    log_file = sys.stdout
+    daemonize = False
+
+# We accept up to this many bytes from a local socket not yet matched with a
+# remote before disconnecting it.
+UNCONNECTED_LOCAL_BUFFER_LIMIT = 10240
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -30,15 +46,21 @@ connection.
 
 If the -f option is given, then the REMOTE address is advertised to the given
 FACILITATOR.
+  --daemon                       daemonize (Unix only).
   -f, --facilitator=HOST[:PORT]  advertise willingness to receive connections to
                                    HOST:PORT. By default PORT is %(fac_port)d.
-  -h, --help                     show this help.\
+  -h, --help                     show this help.
+  -l, --log FILENAME             write log to FILENAME (default stdout).\
 """ % {
     "progname": sys.argv[0],
     "local": format_addr((DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)),
     "remote": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
     "fac_port": DEFAULT_FACILITATOR_PORT,
 }
+
+def log(msg):
+    print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
+    options.log_file.flush()
 
 def parse_addr_spec(spec, defhost = None, defport = None):
     host = None
@@ -90,28 +112,35 @@ def format_addr(addr):
     else:
         return u"%s:%d" % (host, port)
 
-facilitator_addr = None
-
-opts, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator", "help"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:", ["daemon", "facilitator=", "help", "log="])
 for o, a in opts:
-    if o == "-f" or o == "--facilitator":
-        facilitator_addr = parse_addr_spec(a, None, DEFAULT_FACILITATOR_PORT)
+    if o == "--daemon":
+        options.daemonize = True
+    elif o == "-f" or o == "--facilitator":
+        options.facilitator_addr = parse_addr_spec(a, None, DEFAULT_FACILITATOR_PORT)
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
+    elif o == "-l" or o == "--log":
+        options.log_filename = a
 
 if len(args) == 0:
-    local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-    remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+    options.local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+    options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 elif len(args) == 1:
-    local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-    remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+    options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+    options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 elif len(args) == 2:
-    local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-    remote_addr = parse_addr_spec(args[1], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+    options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+    options.remote_addr = parse_addr_spec(args[1], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 else:
     usage(sys.stderr)
     sys.exit(1)
+
+if options.log_filename:
+    options.log_file = open(options.log_filename, "a")
+else:
+    options.log_file = sys.stdout
 
 
 class RemotePending(object):
@@ -125,6 +154,17 @@ class RemotePending(object):
 
     def is_expired(self, timeout):
         return time.time() - self.birthday > timeout
+
+class BufferSocket(object):
+    """A class encapsulating a socket and a buffer of data received on it. The
+    buffer stores data that has been read to make the socket selectable
+    again."""
+    def __init__(self, fd):
+        self.fd = fd
+        self.buf = ""
+
+    def fileno(self):
+        return self.fd.fileno()
 
 def listen_socket(addr):
     """Return a nonblocking socket listening on the given address."""
@@ -141,10 +181,10 @@ def listen_socket(addr):
 CROSSDOMAIN_TIMEOUT = 2.0
 
 # Local socket, accepting SOCKS requests from localhost
-local_s = listen_socket(local_addr)
+local_s = listen_socket(options.local_addr)
 # Remote socket, accepting both crossdomain policy requests and remote proxy
 # connections.
-remote_s = listen_socket(remote_addr)
+remote_s = listen_socket(options.remote_addr)
 
 # Sockets that may be crossdomain policy requests or may be normal remote
 # connections.
@@ -162,20 +202,20 @@ remote_for = {}
 
 
 def handle_policy_request(fd):
-    print "handle_policy_request"
+    log(u"handle_policy_request")
     addr = fd.getpeername()
     data = fd.recv(100)
     if data == "<policy-file-request/>\0":
-        print "Sending crossdomain policy to %s." % format_addr(addr)
+        log(u"Sending crossdomain policy to %s." % format_addr(addr))
         fd.sendall("""
 <cross-domain-policy>
 <allow-access-from domain="*" to-ports="%s"/>
 </cross-domain-policy>
-\0""" % xml.sax.saxutils.escape(str(remote_addr[1])))
+\0""" % xml.sax.saxutils.escape(str(options.remote_addr[1])))
     elif data == "":
-        print "No data from %s." % format_addr(addr)
+        log(u"No data from %s." % format_addr(addr))
     else:
-        print "Unexpected data from %s." % format_addr(addr)
+        log(u"Unexpected data from %s." % format_addr(addr))
 
 def grab_string(s, pos):
     """Grab a NUL-terminated string from the given string, starting at the given
@@ -191,29 +231,29 @@ def parse_socks_request(data):
     try:
         ver, cmd, dport, o1, o2, o3, o4 = struct.unpack(">BBHBBBB", data[:8])
     except struct.error:
-        print "Couldn't unpack SOCKS4 header."
+        log(u"Couldn't unpack SOCKS4 header.")
         return None
     if ver != 4:
-        print "SOCKS header has wrong version (%d)." % ver
+        log(u"SOCKS header has wrong version (%d)." % ver)
         return None
     if cmd != 1:
-        print "SOCKS header had wrong command (%d)." % cmd
+        log(u"SOCKS header had wrong command (%d)." % cmd)
         return None
     pos, userid = grab_string(data, 8)
     if userid is None:
-        print "Couldn't read userid from SOCKS header."
+        log(u"Couldn't read userid from SOCKS header.")
         return None
     if o1 == 0 and o2 == 0 and o3 == 0 and o4 != 0:
         pos, dest = grab_string(data, pos)
         if dest is None:
-            print "Couldn't read destination from SOCKS4a header."
+            log(u"Couldn't read destination from SOCKS4a header.")
             return None
     else:
         dest = "%d.%d.%d.%d" % (o1, o2, o3, o4)
     return dest, dport
 
 def handle_socks_request(fd):
-    print "handle_socks_request"
+    log(u"handle_socks_request")
     addr = fd.getpeername()
     data = fd.recv(100)
     dest_addr = parse_socks_request(data)
@@ -221,106 +261,138 @@ def handle_socks_request(fd):
         # Error reply.
         fd.sendall(struct.pack(">BBHBBBB", 0, 91, 0, 0, 0, 0, 0))
         return False
-    print "Got SOCKS request for %s." % format_addr(dest_addr)
+    log(u"Got SOCKS request for %s." % format_addr(dest_addr))
     fd.sendall(struct.pack(">BBHBBBB", 0, 90, dest_addr[1], 127, 0, 0, 1))
     # Note we throw away the requested address and port.
     return True
 
 def handle_remote_connection(fd):
-    print "handle_remote_connection"
+    log(u"handle_remote_connection")
     match_proxies()
 
 def handle_local_connection(fd):
-    print "handle_local_connection"
-    if facilitator_addr:
-        register(facilitator_addr, remote_addr[1])
+    log(u"handle_local_connection")
+    register()
     match_proxies()
 
-def register(addr, port):
-    spec = format_addr((None, port))
-    print "Registering \"%s\" with %s." % (spec, format_addr(addr))
-    http = httplib.HTTPConnection(*addr)
+def report_pending():
+    log(u"locals  (%d): %s" % (len(locals), [format_addr(x.fd.getpeername()) for x in locals]))
+    log(u"remotes (%d): %s" % (len(remotes), [format_addr(x.getpeername()) for x in remotes]))
+
+def register():
+    if options.facilitator_addr is None:
+        return False
+    spec = format_addr((None, options.remote_addr[1]))
+    log(u"Registering \"%s\" with %s." % (spec, format_addr(options.facilitator_addr)))
+    http = httplib.HTTPConnection(*options.facilitator_addr)
     http.request("POST", "/", urllib.urlencode({"client": spec}))
     http.close()
+    return True
+
+def proxy_chunk(fd_r, fd_w, label):
+    try:
+        data = fd_r.recv(1024)
+    except socket.error, e: # Can be "Connection reset by peer".
+        log(u"Socket error from %s: %s" % (label, repr(str(e))))
+        fd_w.close()
+        return False
+    if not data:
+        log(u"EOF from %s %s." % (label, format_addr(fd_r.getpeername())))
+        fd_r.close()
+        fd_w.close()
+        return False
+    else:
+        fd_w.sendall(data)
+        return True
 
 def match_proxies():
     while locals and remotes:
         remote = remotes.pop(0)
         local = locals.pop(0)
         remote_addr, remote_port = remote.getpeername()
-        local_addr, local_port = local.getpeername()
-        print "Linking %s and %s." % (format_addr(local.getpeername()), format_addr(remote.getpeername()))
-        remote_for[local] = remote
-        local_for[remote] = local
+        local_addr, local_port = local.fd.getpeername()
+        log(u"Linking %s and %s." % (format_addr(local.fd.getpeername()), format_addr(remote.getpeername())))
+        if local.buf:
+            remote.sendall(local.buf)
+        remote_for[local.fd] = remote
+        local_for[remote] = local.fd
 
-if facilitator_addr:
-    register(facilitator_addr, remote_addr[1])
+if options.daemonize:
+    log(u"Daemonizing.")
+    if os.fork() != 0:
+        sys.exit(0)
+
+register()
 
 while True:
-    rset = [remote_s, local_s] + crossdomain_pending + socks_pending + remote_for.keys() + local_for.keys() + remotes
+    rset = [remote_s, local_s] + crossdomain_pending + socks_pending + remote_for.keys() + local_for.keys() + locals + remotes
     rset, _, _ = select.select(rset, [], [], CROSSDOMAIN_TIMEOUT)
     for fd in rset:
         if fd == remote_s:
             remote_c, addr = fd.accept()
-            print "Remote connection from %s." % format_addr(addr)
+            log(u"Remote connection from %s." % format_addr(addr))
             crossdomain_pending.append(RemotePending(remote_c))
         elif fd == local_s:
             local_c, addr = fd.accept()
-            print "Local connection from %s." % format_addr(addr)
+            log(u"Local connection from %s." % format_addr(addr))
             socks_pending.append(local_c)
-            if facilitator_addr:
-                register(facilitator_addr, remote_addr[1])
+            register()
         elif fd in crossdomain_pending:
-            print "Data from crossdomain-pending %s." % format_addr(addr)
+            log(u"Data from crossdomain-pending %s." % format_addr(addr))
             handle_policy_request(fd.fd)
             fd.fd.close()
             crossdomain_pending.remove(fd)
         elif fd in socks_pending:
-            print "SOCKS request from %s." % format_addr(addr)
+            log(u"SOCKS request from %s." % format_addr(addr))
             if handle_socks_request(fd):
-                locals.append(fd)
+                locals.append(BufferSocket(fd))
                 handle_local_connection(fd)
             else:
                 fd.close()
             socks_pending.remove(fd)
+            report_pending()
         elif fd in local_for:
             local = local_for[fd]
-            data = fd.recv(1024)
-            if not data:
-                print "EOF from remote %s." % format_addr(fd.getpeername())
-                fd.close()
-                local.close()
+            if not proxy_chunk(fd, local, "remote"):
                 del local_for[fd]
                 del remote_for[local]
-                if facilitator_addr:
-                    register(facilitator_addr, remote_addr[1])
-            else:
-                local.sendall(data)
+                register()
         elif fd in remote_for:
             remote = remote_for[fd]
-            data = fd.recv(1024)
-            if not data:
-                print "EOF from local %s." % format_addr(fd.getpeername())
-                fd.close()
-                remote.close()
+            if not proxy_chunk(fd, remote, "local"):
                 del remote_for[fd]
                 del local_for[remote]
+                register()
+        elif fd in locals:
+            data = fd.fd.recv(1024)
+            if not data:
+                log(u"EOF from unconnected local %s with %d bytes buffered." % (format_addr(fd.fd.getpeername()), len(fd.buf)))
+                locals.remove(fd)
+                fd.fd.close()
             else:
-                remote.sendall(data)
+                log(u"Data from unconnected local %s (%d bytes)." % (format_addr(fd.fd.getpeername()), len(data)))
+                fd.buf += data
+                if len(fd.buf) >= UNCONNECTED_LOCAL_BUFFER_LIMIT:
+                    log(u"Refusing to buffer more than %d bytes from local %s." % (UNCONNECTED_LOCAL_BUFFER_LIMIT, format_addr(fd.fd.getpeername())))
+                    locals.remove(fd)
+                    fd.fd.close()
+            report_pending()
         elif fd in remotes:
             data = fd.recv(1024)
             if not data:
-                print "EOF from unconnected remote %s." % format_addr(fd.getpeername())
+                log(u"EOF from unconnected remote %s." % format_addr(fd.getpeername()))
             else:
-                print "Data from unconnected remote %s." % format_addr(fd.getpeername())
+                log(u"Data from unconnected remote %s." % format_addr(fd.getpeername()))
             fd.close()
             remotes.remove(fd)
+            report_pending()
         match_proxies()
     while crossdomain_pending:
         pending = crossdomain_pending[0]
         if not pending.is_expired(CROSSDOMAIN_TIMEOUT):
             break
-        print "Expired pending crossdomain from %s." % format_addr(pending.fd.getpeername())
+        log(u"Expired pending crossdomain from %s." % format_addr(pending.fd.getpeername()))
         crossdomain_pending.pop(0)
         remotes.append(pending.fd)
         handle_remote_connection(pending.fd)
+        report_pending()
