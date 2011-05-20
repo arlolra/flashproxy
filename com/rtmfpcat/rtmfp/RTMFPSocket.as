@@ -1,3 +1,13 @@
+/* RTMFPSocket abstraction
+ * Author: Nate Hardison, May 2011
+ * 
+ * This code is heavily based off of BelugaFile, an open-source
+ * Air file-transfer application written by Nicholas Bliyk.
+ * Website: http://www.belugafile.com/
+ * Source: http://code.google.com/p/belugafile/ 
+ *
+ */
+
 package rtmfp
 {
     import flash.events.Event;
