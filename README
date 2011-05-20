@@ -87,16 +87,18 @@ with the caveat that the server also has to serve a crossdomain policy.
 The Tor client needs to be able to listen for an incoming connection,
 which generally means not being behind NAT.
 
-Clients register with the facilitator by sending an HTTP-like message:
+Clients register with the facilitator by sending an HTTP message:
 	POST / HTTP/1.0\r\n
 	\r\n
 	client=:9000
-
-The Flash proxy also gets a client address using something like HTTP:
+The Flash proxy also gets a client address over HTTP:
 	GET / HTTP/1.0\r\n
 	\r\n
-The server sends back an address specification (no HTTP header):
-	192.168.0.102:8888
+The server sends back an address specification in an HTTP respose.
+	HTTP/1.0 200 OK\r\n
+	Server: BaseHTTP/0.3 Python/2.5.2\r\n
+	\r\n
+	client=1.2.3.4%3A9000
 
 == ActionScript programming
 

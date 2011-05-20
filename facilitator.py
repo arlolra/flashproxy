@@ -10,6 +10,7 @@ import socket
 import sys
 import threading
 import time
+import urllib
 
 DEFAULT_ADDRESS = "0.0.0.0"
 DEFAULT_PORT = 9002
@@ -193,20 +194,23 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         reg = REGS.fetch()
         if reg:
             log(u"proxy %s gets %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
-            self.request.send(str(reg))
+            self.send_client(reg)
         else:
             log(u"proxy %s gets none" % format_addr(self.client_address))
+            self.send_client(None)
 
     def do_POST(self):
         data = self.rfile.readline(1024).strip()
         try:
             vals = cgi.parse_qs(data, False, True)
         except ValueError, e:
+            self.send_error(400)
             log(u"client %s POST syntax error: %s" % (format_addr(self.client_address), repr(str(e))))
             return
 
         client_specs = vals.get("client")
         if client_specs is None or len(client_specs) != 1:
+            self.send_error(400)
             log(u"client %s missing \"client\" param" % format_addr(self.client_address))
             return
         val = client_specs[0]
@@ -214,6 +218,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             reg = Reg.parse(val, self.client_address[0])
         except ValueError, e:
+            self.send_error(400)
             log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(val), repr(str(e))))
             return
 
@@ -223,9 +228,31 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             log(u"client %s %s (already present, now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
 
+        self.send_response(200)
+        self.end_headers()
+
+    def send_error(self, code, message = None):
+        self.send_response(code)
+        self.end_headers()
+        if message:
+            self.wfile.write(message)
+
     def log_message(self, format, *args):
         msg = format % args
         log(u"message from HTTP handler for %s: %s" % (format_addr(self.client_address), repr(msg)))
+
+    def send_client(self, reg):
+        if reg:
+            client_str = str(reg)
+        else:
+            # Send an empty string rather than a 404 or similar because Flash
+            # Player's URLLoader can't always distinguish a 404 from, say,
+            # "server not found."
+            client_str = ""
+        self.send_response(200)
+        self.send_header("Content-Type", "x-www-form-urlencoded")
+        self.end_headers()
+        self.request.send(urllib.urlencode({"client": client_str}))
 
 REGS = RegSet()
 
