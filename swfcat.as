@@ -31,7 +31,7 @@ package
         // Milliseconds.
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
-        // Bytes per second.
+        // Bytes per second. Set to undefined to disable limit.
         public const RATE_LIMIT:Number = 10 * 1024;
         // Seconds.
         private const RATE_LIMIT_HISTORY:Number = 5.0;
@@ -103,7 +103,10 @@ package
             /* Update the client counter on badge. */
             update_client_count();
 
-            rate_limit = new RateLimit(RATE_LIMIT * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
+            if (RATE_LIMIT)
+                rate_limit = new BucketRateLimit(RATE_LIMIT * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
+            else
+                rate_limit = new RateUnlimit();
 
             puts("Starting.");
             // Wait until the query string parameters are loaded.
@@ -236,12 +239,56 @@ import flash.utils.setTimeout;
 
 class RateLimit
 {
+    public function RateLimit()
+    {
+    }
+
+    public function update(n:Number):Boolean
+    {
+        return true;
+    }
+
+    public function when():Number
+    {
+        return 0.0;
+    }
+
+    public function is_limited():Boolean
+    {
+        return false;
+    }
+}
+
+class RateUnlimit extends RateLimit
+{
+    public function RateUnlimit()
+    {
+    }
+
+    public override function update(n:Number):Boolean
+    {
+        return true;
+    }
+
+    public override function when():Number
+    {
+        return 0.0;
+    }
+
+    public override function is_limited():Boolean
+    {
+        return false;
+    }
+}
+
+class BucketRateLimit extends RateLimit
+{
     private var amount:Number;
     private var capacity:Number;
     private var time:Number;
     private var last_update:uint;
 
-    public function RateLimit(capacity:Number, time:Number)
+    public function BucketRateLimit(capacity:Number, time:Number)
     {
         this.amount = 0.0;
         /* capacity / time is the rate we are aiming for. */
@@ -264,7 +311,7 @@ class RateLimit
             amount = 0.0;
     }
 
-    public function update(n:Number):Boolean
+    public override function update(n:Number):Boolean
     {
         age();
         amount += n;
@@ -272,13 +319,13 @@ class RateLimit
         return amount <= capacity;
     }
 
-    public function when():Number
+    public override function when():Number
     {
         age();
         return (amount - capacity) / (capacity / time);
     }
 
-    public function is_limited():Boolean
+    public override function is_limited():Boolean
     {
         age();
         return amount > capacity;
