@@ -352,6 +352,7 @@ class ProxyPair extends EventDispatcher
                 s_c.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
+        s_r.addEventListener(ProgressEvent.SOCKET_DATA, relay_to_client);
 
         log("Tor: connecting to " + addr_r.host + ":" + addr_r.port + ".");
         s_r.connect(addr_r.host, addr_r.port);
@@ -382,6 +383,7 @@ class ProxyPair extends EventDispatcher
                 s_r.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
+        s_c.addEventListener(ProgressEvent.SOCKET_DATA, client_to_relay);
 
         log("Client: connecting to " + addr_c.host + ":" + addr_c.port + ".");
         s_c.connect(addr_c.host, addr_c.port);
@@ -402,9 +404,6 @@ class ProxyPair extends EventDispatcher
     private function client_connected(e:Event):void
     {
         log("Client: connected.");
-
-        s_r.addEventListener(ProgressEvent.SOCKET_DATA, relay_to_client);
-        s_c.addEventListener(ProgressEvent.SOCKET_DATA, client_to_relay);
     }
 
     private function transfer_chunk(s_from:Socket, s_to:Socket, n:uint,
@@ -422,6 +421,14 @@ class ProxyPair extends EventDispatcher
     /* Send as much data as the rate limit currently allows. */
     private function flush():void
     {
+        if (flush_id)
+            clearTimeout(flush_id);
+        flush_id = undefined;
+
+        if (!(s_r.connected && s_c.connected))
+            /* Can't do anything until both sockets are connected. */
+            return;
+
         while (!ui.rate_limit.is_limited() &&
                (r2c_schedule.length > 0 || c2r_schedule.length > 0)) {
             if (r2c_schedule.length > 0)
@@ -429,9 +436,7 @@ class ProxyPair extends EventDispatcher
             if (c2r_schedule.length > 0)
                 transfer_chunk(s_c, s_r, c2r_schedule.shift(), "Client");
         }
-        if (flush_id)
-            clearTimeout(flush_id);
-        flush_id = undefined;
+
         /* Call again when safe, if necessary. */
         if (r2c_schedule.length > 0 || c2r_schedule.length > 0)
             flush_id = setTimeout(flush, ui.rate_limit.when() * 1000);
