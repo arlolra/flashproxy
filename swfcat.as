@@ -32,7 +32,7 @@ package
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
         // Bytes per second. Set to undefined to disable limit.
-        public const RATE_LIMIT:Number = 10 * 1024;
+        public const RATE_LIMIT:Number = undefined;
         // Seconds.
         private const RATE_LIMIT_HISTORY:Number = 5.0;
 
