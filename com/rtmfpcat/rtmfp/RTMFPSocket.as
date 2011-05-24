@@ -67,6 +67,11 @@ package rtmfp
 			    connectionTimeout = setInterval(fail, DEFAULT_CONNECT_TIMEOUT);
         }
 
+        public function close():void
+        {
+          connection.close();
+        }
+
         public function get id():String
         {
           if (connection != null && connection.connected) {
