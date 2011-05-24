@@ -29,10 +29,10 @@ package
         port: 3333
       };
       
-      /* David's bridge (nickname eRYaZuvY02FpExln) that also serves a
+      /* David's relay (nickname 3VXRyxz67OeRoqHn) that also serves a
          crossdomain policy. */
       private const DEFAULT_TOR_PROXY_ADDR:Object = {
-        host: "69.164.193.231",
+        host: "173.255.221.44",
         port: 9001
       };
       
