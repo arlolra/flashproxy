@@ -1,7 +1,10 @@
 package
 {
     import flash.display.Sprite;
+    import flash.display.StageAlign;
+    import flash.display.StageScaleMode;
     import flash.text.TextField;
+    import flash.text.TextFormat;
     import flash.net.Socket;
     import flash.events.Event;
     import flash.events.EventDispatcher;
@@ -14,64 +17,68 @@ package
 
     import rtmfp.RTMFPSocket;
     import rtmfp.events.RTMFPSocketEvent;
-    import Utils;
 
     public class rtmfpcat extends Sprite
     {
-        /* Nate's facilitator -- also serving a crossdomain policy */
-        private const DEFAULT_FAC_ADDR:Object = {
-            host: "128.12.179.80",
-            port: 9002
-        };
-
-        private const DEFAULT_TOR_CLIENT_ADDR:Object = {
-            host: "127.0.0.1",
-            port: 3333
-        };
-
         /* David's relay (nickname 3VXRyxz67OeRoqHn) that also serves a
            crossdomain policy. */
         private const DEFAULT_TOR_PROXY_ADDR:Object = {
             host: "173.255.221.44",
             port: 9001
         };
+        /* Nate's facilitator -- also serving a crossdomain policy */
+        private const DEFAULT_FACILITATOR_ADDR:Object = {
+            host: "128.12.179.80",
+            port: 9002
+        };
+        private const DEFAULT_TOR_CLIENT_ADDR:Object = {
+            host: "127.0.0.1",
+            port: 3333
+        };
 
         // Milliseconds.
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
-        private var output_text:TextField;
-
+        // Socket to facilitator.
         private var s_f:Socket;
+        // Socket to RTMFP peer (flash proxy).
         private var s_r:RTMFPSocket;
+        // Socket to local Tor client.
         private var s_t:Socket;
+
+        /* TextField for debug output. */
+        private var output_text:TextField;
 
         private var fac_addr:Object;
         private var tor_addr:Object;
 
         private var proxy_mode:Boolean;
 
-        public function rtmfpcat()
-        {
-            output_text = new TextField();
-            output_text.width = 400;
-            output_text.height = 300;
-            output_text.background = true;
-            output_text.backgroundColor = 0x001f0f;
-            output_text.textColor = 0x44CC44;
-            addChild(output_text);
-
-            puts("Starting.");
-
-            this.loaderInfo.addEventListener(Event.COMPLETE, onLoaderInfoComplete);
-        }
-
-        private function puts(s:String):void
+        public function puts(s:String):void
         {
             output_text.appendText(s + "\n");
             output_text.scrollV = output_text.maxScrollV;
         }
 
-        private function onLoaderInfoComplete(e:Event):void
+        public function rtmfpcat()
+        {
+            // Absolute positioning.
+            stage.scaleMode = StageScaleMode.NO_SCALE;
+            stage.align = StageAlign.TOP_LEFT;
+
+            output_text = new TextField();
+            output_text.width = stage.stageWidth;
+            output_text.height = stage.stageHeight;
+            output_text.background = true;
+            output_text.backgroundColor = 0x001f0f;
+            output_text.textColor = 0x44cc44;
+
+            puts("Starting.");
+            // Wait until the query string parameters are loaded.
+            this.loaderInfo.addEventListener(Event.COMPLETE, loaderinfo_complete);
+        }
+
+        private function loaderinfo_complete(e:Event):void
         {
             var fac_spec:String;
             var tor_spec:String;
@@ -79,36 +86,38 @@ package
             puts("Parameters loaded.");
 
             proxy_mode = (this.loaderInfo.parameters["proxy"] != null);
+            addChild(output_text);
 
             fac_spec = this.loaderInfo.parameters["facilitator"];
-            if (!fac_spec) {
-                puts("No \"facilitator\" specification provided...using default.");
-                fac_addr = DEFAULT_FAC_ADDR;
-            } else {
+            if (fac_spec) {
                 puts("Facilitator spec: \"" + fac_spec + "\"");
-                fac_addr = Utils.parseAddrSpec(fac_spec);
-            }
-
-            if (!fac_addr) {
+                fac_addr = parse_addr_spec(fac_spec);
+                if (!fac_addr) {
                     puts("Error: Facilitator spec must be in the form \"host:port\".");
                     return;
+                }
+            } else {
+                fac_addr = DEFAULT_FACILITATOR_ADDR;
             }
 
             tor_spec = this.loaderInfo.parameters["tor"];
-            if (!tor_spec) {
-                puts("No Tor specification provided...using default.");
-                if (proxy_mode) tor_addr = DEFAULT_TOR_PROXY_ADDR;
-                else tor_addr = DEFAULT_TOR_CLIENT_ADDR;
+            if (tor_spec) {
+                puts("Tor spec: \"" + tor_spec + "\"");
+                tor_addr = parse_addr_spec(tor_spec);
+                if (!tor_addr) {
+                    puts("Error: Tor spec must be in the form \"host:port\".");
+                    return;
+                }
             } else {
-                puts("Tor spec: \"" + tor_spec + "\"")
-                tor_addr = Utils.parseAddrSpec(tor_spec);
+                tor_addr = DEFAULT_TOR_CLIENT_ADDR;
             }
 
-            if (!tor_addr) {
-                puts("Error: Tor spec must be in the form \"host:port\".");
-                return;
-            }
+            main();
+        }
 
+        /* The main logic begins here, after start-up issues are taken care of. */
+        private function main():void
+        {
             establishRTMFPConnection();
         }
 
@@ -203,6 +212,23 @@ package
             });
 
             s_f.connect(fac_addr.host, fac_addr.port);
+        }
+
+        /* Parse an address in the form "host:port". Returns an Object with
+           keys "host" (String) and "port" (int). Returns null on error. */
+        private static function parse_addr_spec(spec:String):Object
+        {
+            var parts:Array;
+            var addr:Object;
+
+            parts = spec.split(":", 2);
+            if (parts.length != 2 || !parseInt(parts[1]))
+                return null;
+            addr = {}
+            addr.host = parts[0];
+            addr.port = parseInt(parts[1]);
+
+            return addr;
         }
     }
 }
