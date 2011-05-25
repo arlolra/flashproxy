@@ -69,7 +69,7 @@ package rtmfp
 
         public function close():void
         {
-            connection.close();
+          connection.close();
         }
 
         public function get id():String
