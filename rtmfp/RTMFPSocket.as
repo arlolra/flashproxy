@@ -1,10 +1,10 @@
 /* RTMFPSocket abstraction
  * Author: Nate Hardison, May 2011
- * 
+ *
  * This code is heavily based off of BelugaFile, an open-source
  * Air file-transfer application written by Nicholas Bliyk.
  * Website: http://www.belugafile.com/
- * Source: http://code.google.com/p/belugafile/ 
+ * Source: http://code.google.com/p/belugafile/
  *
  */
 
@@ -22,7 +22,7 @@ package rtmfp
     import flash.utils.clearInterval;
     import flash.utils.setInterval;
     import flash.utils.setTimeout;
-    
+
     import rtmfp.RTMFPSocketClient;
     import rtmfp.events.RTMFPSocketEvent;
 
@@ -40,23 +40,23 @@ package rtmfp
         private static const DEFAULT_CIRRUS_ADDRESS:String = "rtmfp://p2p.rtmfp.net";
         private static const DEFAULT_CIRRUS_KEY:String = RTMFP::CIRRUS_KEY;
         private static const DEFAULT_CONNECT_TIMEOUT:uint = 4000;
-    
+
         /* Connection to the Cirrus rendezvous service */
         private var connection:NetConnection;
-    
+
         /* ID of the peer to connect to */
         private var peerID:String;
-    
+
         /* Data streams to be established with peer */
         private var sendStream:NetStream;
         private var recvStream:NetStream;
-        
+
         /* Timeouts */
         private var connectionTimeout:int;
         private var peerConnectTimeout:uint;
 
         public function RTMFPSocket(){}
-        
+
         public function connect(addr:String = DEFAULT_CIRRUS_ADDRESS, key:String = DEFAULT_CIRRUS_KEY):void
         {
             connection = new NetConnection();
@@ -69,7 +69,7 @@ package rtmfp
 
         public function close():void
         {
-          connection.close();
+            connection.close();
         }
 
         public function get id():String
@@ -77,15 +77,15 @@ package rtmfp
             if (connection != null && connection.connected) {
                 return connection.nearID;
             }
-          
+
             return null;
         }
-        
+
         public function get connected():Boolean
         {
             return (connection != null && connection.connected);
         }
-        
+
         public function readBytes(bytes:ByteArray):void
         {
             recvStream.client.bytes.readBytes(bytes);
@@ -95,7 +95,7 @@ package rtmfp
         {
             sendStream.send("dataAvailable", bytes);
         }
-        
+
         public function get peer():String
         {
             return this.peerID;
@@ -110,9 +110,9 @@ package rtmfp
             } else if (this.peerID == peerID) {
                 throw new Error("Already connected to peer " + peerID + ".");
             } else if (this.recvStream != null) {
-                throw new Error("Cannot connect to a second peer.");
+              throw new Error("Cannot connect to a second peer.");
             }
-          
+
             this.peerID = peerID;
 
             recvStream = new NetStream(connection, peerID);
@@ -124,7 +124,7 @@ package rtmfp
             recvStream.play(DATA);
             setTimeout(onPeerConnectTimeout, peerConnectTimeout, recvStream);
         }
-        
+
         private function startPublishStream():void
         {
             sendStream = new NetStream(connection, NetStream.DIRECT_CONNECTIONS);
@@ -134,66 +134,67 @@ package rtmfp
             sendStream.client = o;
             sendStream.publish(DATA);
         }
-        
+
         private function fail():void
         {
             clearInterval(connectionTimeout);
             dispatchEvent(new RTMFPSocketEvent(RTMFPSocketEvent.CONNECT_FAIL));
         }
-        
+
         private function onDataAvailable(event:ProgressEvent):void
         {
             dispatchEvent(event);
         }
-        
+
         private function onIOErrorEvent(event:IOErrorEvent):void
         {
             fail();
         }
-        
+
         private function onNetStatusEvent(event:NetStatusEvent):void
         {
             switch (event.info.code) {
-                case "NetConnection.Connect.Success" :
-                    clearInterval(connectionTimeout);
-                    startPublishStream();
-                    dispatchEvent(new RTMFPSocketEvent(RTMFPSocketEvent.CONNECT_SUCCESS));
-                    break;
-                case "NetStream.Connect.Success" :
-                    break;
-                case "NetStream.Publish.BadName" :
-                    fail();
-                    break;
-                case "NetStream.Connect.Closed" :
-                    // we've disconnected from the peer
-                    // can reset to accept another
-                    // clear the publish stream and re-publish another
-                    dispatchEvent(new RTMFPSocketEvent(RTMFPSocketEvent.PEER_DISCONNECTED, recvStream));
-                    break;
-            } 
+            case "NetConnection.Connect.Success" :
+                clearInterval(connectionTimeout);
+                startPublishStream();
+                dispatchEvent(new RTMFPSocketEvent(RTMFPSocketEvent.CONNECT_SUCCESS));
+                break;
+            case "NetStream.Connect.Success" :
+                break;
+            case "NetStream.Publish.BadName" :
+                fail();
+                break;
+            case "NetStream.Connect.Closed" :
+                // we've disconnected from the peer
+                // can reset to accept another
+                // clear the publish stream and re-publish another
+                dispatchEvent(new RTMFPSocketEvent(RTMFPSocketEvent.PEER_DISCONNECTED, recvStream));
+                break;
+            }
         }
-        
+
         private function onPeerConnect(peer:NetStream):Boolean
         {
             // establish a bidirectional stream with the peer
             if (peerID == null) {
                 this.peer = peer.farID;
             }
-          
+
             // disallow additional peers connecting to us
-            if (peer.farID != peerID) return false;
-          
+            if (peer.farID != peerID)
+                return false;
+
             peer.send("setPeerConnectAcknowledged");
             dispatchEvent(new RTMFPSocketEvent(RTMFPSocketEvent.PEER_CONNECTED, peer));
-          
+
             return true;
         }
-        
+
         private function onPeerConnectAcknowledged(event:Event):void
         {
             dispatchEvent(new RTMFPSocketEvent(RTMFPSocketEvent.PEERING_SUCCESS, recvStream));
         }
-        
+
         private function onPeerConnectTimeout(peer:NetStream):void
         {
             if (!recvStream.client) return;
@@ -201,31 +202,30 @@ package rtmfp
                 dispatchEvent(new RTMFPSocketEvent(RTMFPSocketEvent.PEERING_FAIL, recvStream));
             }
         }
-        
+
         private function onSecurityErrorEvent(event:SecurityErrorEvent):void
         {
             fail();
         }
-        
+
         private function onSendStreamEvent(event:NetStatusEvent):void
         {
             switch (event.info.code) {
-                case ("NetStream.Publish.Start") :
-                    dispatchEvent(new RTMFPSocketEvent(RTMFPSocketEvent.PUBLISH_START));
-                    break;
-                case ("NetStream.Play.Reset") :
-                case ("NetStream.Play.Start") :
-                    break;
+            case ("NetStream.Publish.Start") :
+                dispatchEvent(new RTMFPSocketEvent(RTMFPSocketEvent.PUBLISH_START));
+                break;
+            case ("NetStream.Play.Reset") :
+            case ("NetStream.Play.Start") :
+                break;
             }
         }
-
         private function onRecvStreamEvent(event:NetStatusEvent):void
         {
             switch (event.info.code) {
-                case ("NetStream.Publish.Start") :
-                case ("NetStream.Play.Reset") :
-                case ("NetStream.Play.Start") :
-                    break;
+            case ("NetStream.Publish.Start") :
+            case ("NetStream.Play.Reset") :
+            case ("NetStream.Play.Start") :
+                break;
             }
         }
     }
