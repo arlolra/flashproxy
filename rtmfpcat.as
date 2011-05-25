@@ -109,7 +109,10 @@ package
                     return;
                 }
             } else {
-                tor_addr = DEFAULT_TOR_CLIENT_ADDR;
+                if (proxy_mode)
+                    tor_addr = DEFAULT_TOR_PROXY_ADDR;
+                else
+                    tor_addr = DEFAULT_TOR_CLIENT_ADDR;
             }
 
             main();
