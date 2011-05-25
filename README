@@ -5,12 +5,24 @@ Adobe Flash proxy running on another computer. The Flash proxy can be
 run just by opening a web page in a computer that has Flash Player
 installed.
 
+This RTMFP version leverages the NAT-punching capabilities of Adobe's
+Cirrus server, making it possible for clients behind a NAT to still
+get access to Tor. The big operational difference between this version
+and the swfcat version is that now the client must maintain a rtmfpcat
+running in client mode open in his/her browser. The client's rtmfpcat
+talks to the rtmfpcat proxy running on another computer (location uncertain)
+via the UDP-based RTMFP to funnel data to a Tor relay/bridge.
+
 There are five main parts. Our terminology for each part is in quotes.
 1. The Tor "client," running on someone's localhost.
-2. A "connector," which waits for connections from the Flash proxy and
+2. A "connector," which waits for connections from the client's rtmfpcat and
    the Tor client, and joins them together.
 3. A Flash "proxy," running in someone's web browser. This piece is
-   called swfcat because it is like a netcat implemented in Flash.
+   called rtmfpcat (totally ripped off of swfcat) because it is like a
+   netcat implemented in Flash. The rtmfpcat exists on both the local
+   and remote ends since it's the easiest way to take advantage of RTMFP.
+   We could get rid of the client-side rtmfpcat by making the connector
+   speak RTMFP, but that's too much work for now. 
 4. A "facilitator," a pseudo-HTTP server that keeps a list of clients
    that want a connection, and hands them out to proxies.
 5. A Tor "relay," which is just a normal Tor relay except that its host
@@ -18,9 +30,7 @@ There are five main parts. Our terminology for each part is in quotes.
 
 == Quick start
 
-A demonstration page that doesn't require building anything is here:
-
-http://www.stanford.edu/~dcf/tor/
+Will put up a demo page soon.
 
 === Building
 
@@ -29,34 +39,40 @@ Download the (free software) Flex SDK.
 Put its bin directory in your PATH. The important executable is mxmlc.
 To build, run
 	$ make
-Copy the resulting swfcat.swf file to a web server.
+Copy the resulting rtmfpcat.swf file to a web server.
 
 On the computer that will be the facilitator, run
-        sudo ./crossdomaind.py
-	./facilitator.py
+     sudo ./crossdomaind.py
+	 ./facilitator.py
 crossdomaind.py needs to be run on any server that will accept
 connections from a Flash proxy. It serves a chunk of data on port 843.
-The facilitator runs on port 9002 by default.
+The facilitator runs on port 9002 by default. Note that this is a different
+facilitator script than the swfcat one, since this facilitator needs to
+deal with Cirrus client IDs instead of ip:port tuples.
 
 The client needs to be running a version of Tor that supports the
 Socks4Proxy configuration. This means version 0.2.2.1-alpha or
 later--not the current stable release.
 
 On the client, run
-	./connector.py -f <FACILITATOR_IP>
-Replace <FACILITATOR_IP> with the IP address of the facilitator. (If you
-are running the facilitator locally, be sure to use an external IP
-address, not 127.0.0.1.) The connector informs the facilitator that it
-wants a connection, then listens on 0.0.0.0:9000 and 127.0.0.1:9001. The
-Flash proxy will connect on port 9000 and the local Tor will connect on
-9001.
+	./connector.py
+This is a modified form of the swfcat connector.py that has different
+defaults, equivalent to passing 127.0.0.1:9001 for [LOCAL][:PORT] and
+127.0.0.1:3333 [REMOTE][:PORT] to the swfcat connector.
 
-In a browser somewhere, open swfcat.swf and pass a parameter telling it
-the facilitator to use, for example
-	http://www.example.com/swfcat.swf?facilitator=<FACILITATOR_IP>:9002&debug=1
-The facilitator will return the client address that was registered by
-connector.py, and the Flash proxy will open a connection to a hardcoded
-Tor relay and the given client.
+Also on the client, open up the browser to rtmfpcat.swf. Passing no
+arguments should give you good defaults (expects the facilitator running
+on Nate's server). rtmfpcat will connect to the Cirrus server to
+obtain a client ID which it then registers with the facilitator.
+
+In a browser somewhere, open rtmfpcat.swf and pass the "?proxy=true" query
+string, telling it to operate in proxy mode.
+	http://www.example.com/rtmfpcat.swf?proxy=true
+This rtmfpcat will also connect to the Cirrus server to obtain a client ID,
+and then it will ping the facilitator to check if there are any registered
+client IDs. If there is one, it will open a RTMFP connection (coordinated
+by the Cirrus server) to the client and an additional connection to a 
+hardcoded Tor relay (David's bridge, nicknamed eRYaZuvY02FpExln).
 
 Back on the client, start Tor with the following configuration:
 	UseBridges 1
@@ -68,8 +84,8 @@ If you see messages like
 	[notice] no known bridge descriptors running yet; stalling
 try deleting the files in ~/.tor or /var/lib/tor.
 
-You will be able to see byte counts flowing in the browser displaying
-swfcat.swf, and eventually be able to build a circuit.
+You will be able to see byte counts flowing in both browsers displaying
+rtmfpcat.swf (client and proxy), and eventually be able to build a circuit.
 
 == Rationale
 
@@ -81,22 +97,26 @@ changing pool of addresses.
 
 == Design notes
 
-The Tor relay address is hardcoded in swfcat.as. It could be any relay,
+The Tor relay address is hardcoded in rtmfpcat.as. It could be any relay,
 with the caveat that the server also has to serve a crossdomain policy.
 
-The Tor client needs to be able to listen for an incoming connection,
-which generally means not being behind NAT.
-
-Clients register with the facilitator by sending an HTTP-like message:
+Client rtmfpcats register with the facilitator by sending an HTTP-like message:
 	POST / HTTP/1.0\r\n
 	\r\n
-	client=:9000
+	client=<CIRRUS-CLIENT-ID>
 
-The Flash proxy also gets a client address using something like HTTP:
+The <CIRRUS-CLIENT-ID> is returned by Adobe's developer Cirrus server
+as soon as the rtfmpcat can connect to it. Each rtmfpcat needs to connect
+to a server like this to get one of these client IDs, since the Cirrus
+server uses these to coordinate RTMFP connections (including NAT punching).
+The need to communicate with a Cirrus server in addition to a facilitator is
+one of the major weaknesses of this design.
+
+The proxy rtmfpcat gets a client id using something like HTTP:
 	GET / HTTP/1.0\r\n
 	\r\n
-The server sends back an address specification (no HTTP header):
-	192.168.0.102:8888
+The server sends back an id specification (no HTTP header):
+    51ae8ed56c3705e4ad3755cdd3328c27720984778bfff71d9ec9f2647331d39b
 
 == ActionScript programming
 
