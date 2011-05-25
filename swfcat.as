@@ -53,7 +53,7 @@ package
         public var rate_limit:RateLimit;
 
         /* Badge with a client counter */
-        [Embed(source="badge_con_counter.png")]
+        [Embed(source="badge.png")]
         private var BadgeImage:Class;
         private var client_count_tf:TextField;
         private var client_count_fmt:TextFormat;
