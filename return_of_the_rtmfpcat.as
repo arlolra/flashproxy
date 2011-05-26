@@ -50,6 +50,9 @@ package
 
         private static const DEFAULT_CIRCON_TIMEOUT:uint = 4000;
 
+        /* Maximum connections. */
+        private const MAXIMUM_RCP_PAIRS:uint = 1;
+
         /* TextField for debug output. */
         private var output_text:TextField;
 
@@ -76,8 +79,8 @@ package
         /* Cirrus connection timeout ID. */
         private var circon_timeo_id:int;
 
-        /* Array of connection pairs */
-        private var con_pairs:Array;
+        /* Number of connected RTMFPConnectionPairs. */
+        private var rcp_pairs:uint;
 
         /* Put a string to the screen. */
         public function puts(s:String):void
@@ -98,6 +101,9 @@ package
             output_text.background = true;
             output_text.backgroundColor = 0x001f0f;
             output_text.textColor = 0x44cc44;
+
+            /* Initialize connection pair count. */
+            rcp_pairs = 0;
 
             puts("Meow!");
             puts("Starting.");
@@ -182,11 +188,13 @@ package
                 if(proxy_mode) {
 
                 } else {
-                    /* Listen for incoming RTMFP connections. */
-                    var s_r:RTMFPSocket = new RTMFPSocket(circon);
-                    s_r.addEventListener(Event.CONNECT, rtmfp_connect_event);
-                    s_r.listen();
+                    puts("Setting up listening RTMFPConnectionPair");
+                    var rcp:RTMFPConnectionPair = new RTMFPConnectionPair(circon, tor_addr, output_text);
+                    rcp.addEventListener(Event.CONNECT, rcp_connect_event);
+                    rcp.addEventListener(Event.CLOSE, rcp_close_event);
+                    rcp.listen();
 
+                    puts("Registering with facilitator");
                     /* Register ID with facilitator. */
                     register_id(circon.nearID, fac_addr);
                 }
@@ -207,9 +215,34 @@ package
             }
         }
 
-        private function rtmfp_connect_event(e:Event):void
+        private function rcp_connect_event(e:Event):void
         {
-           puts("VICTORY!"); 
+            puts("RTMFPConnectionPair connected");
+
+            rcp_pairs++;
+
+            if(proxy_mode) {
+
+            } else {
+                /* Setup listening RTMFPConnectionPair. */
+                if(rcp_pairs < MAXIMUM_RCP_PAIRS) {
+                    puts("Setting up listening RTMFPConnectionPair");
+                    var rcp:RTMFPConnectionPair = new RTMFPConnectionPair(circon, tor_addr, output_text);
+                    rcp.addEventListener(Event.CONNECT, rcp_connect_event);
+                    rcp.addEventListener(Event.CLOSE, rcp_close_event);
+                    rcp.listen();
+                }
+            }
+        }
+
+        private function rcp_close_event(e:Event):void
+        {
+            puts("RTMFPConnectionPair closed");
+
+            rcp_pairs--;
+
+            /* FIXME: Do I need to unregister the event listeners so
+             * that the system can garbage collect the rcp object? */
         }
 
         private function register_id(id:String, fac_addr:Object):void
@@ -270,6 +303,7 @@ import flash.utils.getTimer;
 import flash.utils.setTimeout;
 import flash.net.NetConnection;
 import flash.net.NetStream;
+import flash.text.TextField;
 
 class RTMFPSocket extends EventDispatcher
 {
@@ -284,9 +318,23 @@ class RTMFPSocket extends EventDispatcher
     private var send_stream:NetStream;
     private var recv_stream:NetStream;
 
-    public function RTMFPSocket(circon:NetConnection)
+    /* Keeps the state of our connectedness. */
+    public var connected:Boolean;
+
+    private var output_text:TextField;
+
+    /* Put a string to the screen. */
+    public function puts(s:String):void
+    {
+        output_text.appendText(s + "\n");
+        output_text.scrollV = output_text.maxScrollV;
+    }
+ 
+    public function RTMFPSocket(circon:NetConnection, output_text:TextField)
     {
         this.circon = circon;
+        this.output_text = output_text;
+        connected = false;
     }
 
     public function listen():void
@@ -300,12 +348,15 @@ class RTMFPSocket extends EventDispatcher
 
     private function send_stream_peer_connect(peer:NetStream):Boolean
     {
+        puts("RTMFPSocket: peer connecting...");
         recv_stream = new NetStream(circon, peer.farID);
         var client:RTMFPSocketClient = new RTMFPSocketClient();
         client.addEventListener(ProgressEvent.SOCKET_DATA, function (event:ProgressEvent):void {
             dispatchEvent(event);
         }, false, 0, true);
         client.addEventListener(RTMFPSocketClient.PEER_CONNECT_ACKNOWLEDGED, function (event:Event):void {
+            puts("RTMFPSocket: peer connected");
+            connected = true;
             dispatchEvent(new Event(Event.CONNECT));
         }, false, 0, true);
         recv_stream.client = client;
@@ -314,7 +365,23 @@ class RTMFPSocket extends EventDispatcher
         return true;
     }
 
+    public function readBytes(bytes:ByteArray):void
+    {
+        recv_stream.client.bytes.readBytes(bytes);
+    }
 
+    public function writeBytes(bytes:ByteArray):void
+    {
+        send_stream.send("dataAvailable", bytes);
+    }
+
+    public function close():void
+    {
+        puts("RTMFPSocket: closing...");
+        send_stream.close();
+        recv_stream.close();
+        connected = false;
+    }
 }
 
 dynamic class RTMFPSocketClient extends EventDispatcher
@@ -368,7 +435,83 @@ dynamic class RTMFPSocketClient extends EventDispatcher
 
 }
 
-class ConnectionPair extends EventDispatcher
+class RTMFPConnectionPair extends EventDispatcher
 {
+    private var circon:NetConnection;
+
+    private var tor_addr:Object;
+
+    private var s_r:RTMFPSocket;
+
+    private var s_t:Socket;
+
+    private var output_text:TextField;
+
+    /* Put a string to the screen. */
+    public function puts(s:String):void
+    {
+        output_text.appendText(s + "\n");
+        output_text.scrollV = output_text.maxScrollV;
+    }
+ 
+    public function RTMFPConnectionPair(circon:NetConnection, tor_addr:Object, output_text:TextField)
+    {
+        this.circon = circon;
+        this.tor_addr = tor_addr;
+        this.output_text = output_text;
+    }
+
+    public function listen():void
+    {
+        s_r = new RTMFPSocket(circon, output_text);
+        s_r.addEventListener(Event.CONNECT, rtmfp_connect_event);
+        s_r.addEventListener(Event.CLOSE, rtmfp_close_event);
+        s_r.listen();
+    }
+
+    private function rtmfp_connect_event(e:Event):void
+    {
+        puts("RTMFPConnectionPair: RTMFPSocket connected!");
+        puts("RTMFPConnectionPair: setting up tor connection...");
+
+        /* Setup tor connection linked to RTMFPSocket. */
+        s_t = new Socket();
+        s_t.addEventListener(Event.CONNECT, function (e:Event):void {
+            puts("RTMFPConnectionPair: Tor: connected to " + tor_addr.host + ":" + tor_addr.port + ".");
+            dispatchEvent(new Event(Event.CONNECT));
+        });
+        s_t.addEventListener(Event.CLOSE, function (e:Event):void {
+            puts("RTMFPConnectionPair: Tor: closed connection.");
+            /* Close other side of connection pair if it is open and
+             * dispatch close event. */
+            if(s_r.connected)
+                s_r.close();
+            dispatchEvent(new Event(Event.CLOSE));
+        });
+        s_t.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
+            puts("RTMFPConnectionPair: Tor: I/O error: " + e.text + ".");
+        });
+        s_t.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
+            var bytes:ByteArray = new ByteArray();
+            s_t.readBytes(bytes, 0, e.bytesLoaded);
+            puts("RTMFPConnectionPair: Tor: read " + bytes.length + " bytes.");
+            s_r.writeBytes(bytes);
+        });
+        s_t.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
+            puts("RTMFPConnectionPair: Tor: security error: " + e.text + ".");
+        });
+
+        s_t.connect(tor_addr.host, tor_addr.port);
+    }
+
+    private function rtmfp_close_event(e:Event):void
+    {
+       puts("RTMFPConnectionPair: RTMFPSocket closed connection"); 
+       /* Close other side of connection pair if it is open and dispatch
+        * close event. */
+       if(s_t.connected)
+           s_t.close();
+       dispatchEvent(new Event(Event.CLOSE)); 
+    }
 
 }
