@@ -76,6 +76,9 @@ package
         /* Cirrus connection timeout ID. */
         private var circon_timeo_id:int;
 
+        /* Array of connection pairs */
+        private var con_pairs:Array;
+
         /* Put a string to the screen. */
         public function puts(s:String):void
         {
@@ -175,6 +178,19 @@ package
                 puts("circon_netstatus_event: NetConnection.Connect.Success");
                 puts("Got id " + circon.nearID + ".");
                 clearInterval(circon_timeo_id);
+                
+                if(proxy_mode) {
+
+                } else {
+                    /* Listen for incoming RTMFP connections. */
+                    var s_r:RTMFPSocket = new RTMFPSocket(circon);
+                    s_r.addEventListener(Event.CONNECT, rtmfp_connect_event);
+                    s_r.listen();
+
+                    /* Register ID with facilitator. */
+                    register_id(circon.nearID, fac_addr);
+                }
+
                 break;
             case "NetStream.Connect.Success" :
                 puts("circon_netstatus_event: NetStream.Connect.Success");  
@@ -189,6 +205,32 @@ package
                 // clear the publish stream and re-publish another
                 break;
             }
+        }
+
+        private function rtmfp_connect_event(e:Event):void
+        {
+           puts("VICTORY!"); 
+        }
+
+        private function register_id(id:String, fac_addr:Object):void
+        {
+            var s_f:Socket = new Socket();
+            s_f.addEventListener(Event.CONNECT, function (e:Event):void {
+                puts("Facilitator: connected to " + fac_addr.host + ":" + fac_addr.port + ".");
+                puts("Registering id " + id);
+                s_f.writeUTFBytes("POST / HTTP/1.0\r\n\r\nclient=" + id + "\r\n");
+            });
+            s_f.addEventListener(Event.CLOSE, function (e:Event):void {
+                puts("Facilitator: connection closed.");
+            });
+            s_f.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
+                puts("Facilitator: I/O error: " + e.text + ".");
+            });
+            s_f.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
+                puts("Facilitator: security error: " + e.text + ".");
+            });
+
+            s_f.connect(fac_addr.host, fac_addr.port); 
         }
 
         private function circon_timeout():void
@@ -215,3 +257,118 @@ package
     }
 }
 
+import flash.display.Sprite;
+import flash.events.Event;
+import flash.events.EventDispatcher;
+import flash.events.IOErrorEvent;
+import flash.events.ProgressEvent;
+import flash.events.SecurityErrorEvent;
+import flash.net.Socket;
+import flash.utils.ByteArray;
+import flash.utils.clearTimeout;
+import flash.utils.getTimer;
+import flash.utils.setTimeout;
+import flash.net.NetConnection;
+import flash.net.NetStream;
+
+class RTMFPSocket extends EventDispatcher
+{
+    /* The name of the "media" to pass between peers. */
+    private static const DATA:String = "data";
+
+    /* Connection to the Cirrus rendezvous service.
+     * RTMFPSocket is established using this service. */
+    private var circon:NetConnection;
+
+    /* Unidirectional streams composing socket. */ 
+    private var send_stream:NetStream;
+    private var recv_stream:NetStream;
+
+    public function RTMFPSocket(circon:NetConnection)
+    {
+        this.circon = circon;
+    }
+
+    public function listen():void
+    {
+        send_stream = new NetStream(circon, NetStream.DIRECT_CONNECTIONS);
+        var client:Object = new Object();
+        client.onPeerConnect = send_stream_peer_connect;
+        send_stream.client = client;
+        send_stream.publish(DATA); 
+    }
+
+    private function send_stream_peer_connect(peer:NetStream):Boolean
+    {
+        recv_stream = new NetStream(circon, peer.farID);
+        var client:RTMFPSocketClient = new RTMFPSocketClient();
+        client.addEventListener(ProgressEvent.SOCKET_DATA, function (event:ProgressEvent):void {
+            dispatchEvent(event);
+        }, false, 0, true);
+        client.addEventListener(RTMFPSocketClient.PEER_CONNECT_ACKNOWLEDGED, function (event:Event):void {
+            dispatchEvent(new Event(Event.CONNECT));
+        }, false, 0, true);
+        recv_stream.client = client;
+        recv_stream.play(DATA);
+
+        return true;
+    }
+
+
+}
+
+dynamic class RTMFPSocketClient extends EventDispatcher
+{
+    public static const PEER_CONNECT_ACKNOWLEDGED:String = "peerConnectAcknowledged";
+
+    private var _bytes:ByteArray;
+    private var _peerID:String;
+    private var _peerConnectAcknowledged:Boolean;
+
+    public function RTMFPSocketClient()
+    {
+        super();
+        _bytes = new ByteArray();
+        _peerID = null;
+        _peerConnectAcknowledged = false;
+    }
+
+    public function get bytes():ByteArray
+    {
+        return _bytes;
+    }
+
+    public function dataAvailable(bytes:ByteArray):void
+    {
+        this._bytes.clear();
+        bytes.readBytes(this._bytes);
+        dispatchEvent(new ProgressEvent(ProgressEvent.SOCKET_DATA, false, false, this._bytes.bytesAvailable, this._bytes.length));
+    }
+
+    public function get peerConnectAcknowledged():Boolean
+    {
+        return _peerConnectAcknowledged;
+    }
+
+    public function setPeerConnectAcknowledged():void
+    {
+        _peerConnectAcknowledged = true;
+        dispatchEvent(new Event(PEER_CONNECT_ACKNOWLEDGED));
+    }
+
+    public function get peerID():String
+    {
+        return _peerID;
+    }
+
+    public function set peerID(id:String):void
+    {
+       _peerID = id;
+    }
+
+}
+
+class ConnectionPair extends EventDispatcher
+{
+
+}
