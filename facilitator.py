@@ -47,6 +47,41 @@ def log(msg):
     finally:
         log_lock.release()
 
+def parse_addr_spec(spec, defhost = None, defport = None):
+    host = None
+    port = None
+    m = None
+    # IPv6 syntax.
+    if not m:
+        m = re.match(ur'^\[(.+)\]:(\d+)$', spec)
+        if m:
+            host, port = m.groups()
+            af = socket.AF_INET6
+    if not m:
+        m = re.match(ur'^\[(.+)\]:?$', spec)
+        if m:
+            host, = m.groups()
+            af = socket.AF_INET6
+    # IPv4 syntax.
+    if not m:
+        m = re.match(ur'^(.+):(\d+)$', spec)
+        if m:
+            host, port = m.groups()
+            af = socket.AF_INET
+    if not m:
+        m = re.match(ur'^:?(\d+)$', spec)
+        if m:
+            port, = m.groups()
+            af = 0
+    if not m:
+        host = spec
+        af = 0
+    host = host or defhost
+    port = port or defport
+    if not (host and port):
+        raise ValueError("Bad address specification \"%s\"" % spec)
+    return af, host, int(port)
+
 def format_addr(addr):
     host, port = addr
     if not host:
@@ -62,50 +97,61 @@ def format_addr(addr):
     else:
         return u"%s:%d" % (host, port)
 
-class Reg(object):
-    def __init__(self, id):
-        self.id = id
+class TCPReg(object):
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
 
     def __unicode__(self):
-        return u"%s" % (self.id)
+        return format_addr((self.host, self.port))
 
     def __str__(self):
         return unicode(self).encode("UTF-8")
 
     def __cmp__(self, other):
-        return cmp((self.id), (other.id))
+        if isinstance(other, TCPReg):
+            return cmp((self.host, self.port), (other.host, other.port))
+        else:
+            return False
 
+class RTMFPReg(object):
+    def __init__(self, id):
+        self.id = id
+
+    def __unicode__(self):
+        return u"%s" % self.id
+
+    def __str__(self):
+        return unicode(self).encode("UTF-8")
+
+    def __cmp__(self, other):
+        if isinstance(other, RTMFPReg):
+            return cmp(self.id, other.id)
+        else:
+            return False
+
+class Reg(object):
     @staticmethod
     def parse(spec, defhost = None, defport = None):
-        host = None
-        port = None
-        m = re.match(r'^\[(.+)\]:(\d*)$', spec)
-        if m:
-            host, port = m.groups()
-            af = socket.AF_INET6
-        else:
-            m = re.match(r'^(.*):(\d*)$', spec)
-            if m:
-                host, port = m.groups()
-                if host:
-                    af = socket.AF_INET
-                else:
-                    # Has to be guessed from format of defhost.
-                    af = 0
-        host = host or defhost
-        port = port or defport
-        if not (host and port):
-            raise ValueError("Bad address specification \"%s\"" % spec)
-
         try:
-            addrs = socket.getaddrinfo(host, port, af, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
-        except socket.gaierror, e:
-            raise ValueError("Bad host or port: \"%s\" \"%s\": %s" % (host, port, str(e)))
-        if not addrs:
-            raise ValueError("Bad host or port: \"%s\" \"%s\"" % (host, port))
+            af, host, port = parse_addr_spec(spec, defhost, defport)
+        except ValueError:
+            pass
+        else:
+            try:
+                addrs = socket.getaddrinfo(host, port, af, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+            except socket.gaierror, e:
+                raise ValueError("Bad host or port: \"%s\" \"%s\": %s" % (host, port, str(e)))
+            if not addrs:
+                raise ValueError("Bad host or port: \"%s\" \"%s\"" % (host, port))
 
-        host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
-        return Reg(host, int(port))
+            host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
+            return TCPReg(host, int(port))
+
+        if re.match(ur'^[0-9A-Fa-f]{64}$', spec):
+            return RTMFPReg(spec)
+
+        raise ValueError("Bad spec format: %s" % repr(spec))
 
 class RegSet(object):
     def __init__(self):
@@ -166,7 +212,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         val = client_specs[0]
 
         try:
-            reg = Reg(val)
+            reg = Reg.parse(val, self.client_address[0])
         except ValueError, e:
             log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(val), repr(str(e))))
             return
