@@ -47,6 +47,41 @@ def log(msg):
     finally:
         log_lock.release()
 
+def parse_addr_spec(spec, defhost = None, defport = None):
+    host = None
+    port = None
+    m = None
+    # IPv6 syntax.
+    if not m:
+        m = re.match(ur'^\[(.+)\]:(\d+)$', spec)
+        if m:
+            host, port = m.groups()
+            af = socket.AF_INET6
+    if not m:
+        m = re.match(ur'^\[(.+)\]:?$', spec)
+        if m:
+            host, = m.groups()
+            af = socket.AF_INET6
+    # IPv4 syntax.
+    if not m:
+        m = re.match(ur'^(.+):(\d+)$', spec)
+        if m:
+            host, port = m.groups()
+            af = socket.AF_INET
+    if not m:
+        m = re.match(ur'^:?(\d+)$', spec)
+        if m:
+            port, = m.groups()
+            af = 0
+    if not m:
+        host = spec
+        af = 0
+    host = host or defhost
+    port = port or defport
+    if not (host and port):
+        raise ValueError("Bad address specification \"%s\"" % spec)
+    return af, host, int(port)
+
 def format_addr(addr):
     host, port = addr
     if not host:
@@ -78,26 +113,7 @@ class Reg(object):
 
     @staticmethod
     def parse(spec, defhost = None, defport = None):
-        host = None
-        port = None
-        m = re.match(r'^\[(.+)\]:(\d*)$', spec)
-        if m:
-            host, port = m.groups()
-            af = socket.AF_INET6
-        else:
-            m = re.match(r'^(.*):(\d*)$', spec)
-            if m:
-                host, port = m.groups()
-                if host:
-                    af = socket.AF_INET
-                else:
-                    # Has to be guessed from format of defhost.
-                    af = 0
-        host = host or defhost
-        port = port or defport
-        if not (host and port):
-            raise ValueError("Bad address specification \"%s\"" % spec)
-
+        af, host, port = parse_addr_spec(spec, defhost, defport)
         try:
             addrs = socket.getaddrinfo(host, port, af, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
         except socket.gaierror, e:
