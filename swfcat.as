@@ -152,19 +152,26 @@ package
                 addChild(cur_client_count_tf);
             }
 
-            fac_spec = this.loaderInfo.parameters["facilitator"];
-            if (fac_spec) {
-                puts("Facilitator spec: \"" + fac_spec + "\"");
-                fac_addr = parse_addr_spec(fac_spec);
-                if (!fac_addr) {
-                    puts("Error: Facilitator spec must be in the form \"host:port\".");
-                    return;
-                }
-            } else {
-                fac_addr = DEFAULT_FACILITATOR_ADDR;
+            fac_addr = get_param_addr("facilitator", DEFAULT_FACILITATOR_ADDR);
+            if (!fac_addr) {
+                puts("Error: Facilitator spec must be in the form \"host:port\".");
+                return;
             }
 
             main();
+        }
+
+        /* Get an address structure from the given movie parameter, or the given
+           default. Returns null on error. */
+        private function get_param_addr(param:String, default_addr:Object):Object
+        {
+            var spec:String, addr:Object;
+
+            spec = this.loaderInfo.parameters[param];
+            if (spec)
+                return parse_addr_spec(spec);
+            else
+                return default_addr;
         }
 
         /* The main logic begins here, after start-up issues are taken care of. */
