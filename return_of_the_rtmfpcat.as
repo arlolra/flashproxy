@@ -215,6 +215,8 @@ package
 
         private function poll_for_id():void
         {
+            puts("Facilitator: got " + rcp_pairs + " connections... polling for another");
+
             var s_f:Socket = new Socket();
             s_f.addEventListener(Event.CONNECT, function (e:Event):void {
                 puts("Facilitator: connected to " + fac_addr.host + ":" + fac_addr.port + ".");
@@ -239,7 +241,8 @@ package
                     /* Need to clear any outstanding timers to ensure
                      * that only one timer ever runs. */
                     clearTimeout(fac_poll_timeo_id);
-                    fac_poll_timeo_id = setTimeout(poll_for_id, FACILITATOR_POLL_INTERVAL); 
+                    if(rcp_pairs < MAXIMUM_RCP_PAIRS)
+                        fac_poll_timeo_id = setTimeout(poll_for_id, FACILITATOR_POLL_INTERVAL); 
                 }
             });
             s_f.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
