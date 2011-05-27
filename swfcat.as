@@ -43,6 +43,7 @@ package
         private var output_text:TextField;
 
         private var fac_addr:Object;
+        private var relay_addr:Object;
 
         /* Number of proxy pairs currently connected (up to
            MAX_NUM_PROXY_PAIRS). */
@@ -157,6 +158,11 @@ package
                 puts("Error: Facilitator spec must be in the form \"host:port\".");
                 return;
             }
+            relay_addr = get_param_addr("relay", DEFAULT_RELAY_ADDR);
+            if (!relay_addr) {
+                puts("Error: Relay spec must be in the form \"host:port\".");
+                return;
+            }
 
             main();
         }
@@ -229,7 +235,7 @@ package
             /* Update the client count on the badge. */
             update_client_count();
 
-            proxy_pair = new ProxyPair(this, client_addr, DEFAULT_RELAY_ADDR);
+            proxy_pair = new ProxyPair(this, client_addr, relay_addr);
             proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
                 
