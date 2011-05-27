@@ -17,7 +17,7 @@ package
     {
         /* David's relay (nickname 3VXRyxz67OeRoqHn) that also serves a
            crossdomain policy. */
-        private const DEFAULT_TOR_ADDR:Object = {
+        private const DEFAULT_RELAY_ADDR:Object = {
             host: "173.255.221.44",
             port: 9001
         };
@@ -222,7 +222,7 @@ package
             /* Update the client count on the badge. */
             update_client_count();
 
-            proxy_pair = new ProxyPair(this, client_addr, DEFAULT_TOR_ADDR);
+            proxy_pair = new ProxyPair(this, client_addr, DEFAULT_RELAY_ADDR);
             proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
                 
@@ -408,34 +408,34 @@ class ProxyPair extends EventDispatcher
     {
         s_r = new Socket();
 
-        s_r.addEventListener(Event.CONNECT, tor_connected);
+        s_r.addEventListener(Event.CONNECT, relay_connected);
         s_r.addEventListener(Event.CLOSE, function (e:Event):void {
-            log("Tor: closed.");
+            log("Relay: closed.");
             if (s_c.connected)
                 s_c.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
         s_r.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
-            log("Tor: I/O error: " + e.text + ".");
+            log("Relay: I/O error: " + e.text + ".");
             if (s_c.connected)
                 s_c.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
         s_r.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
-            log("Tor: security error: " + e.text + ".");
+            log("Relay: security error: " + e.text + ".");
             if (s_c.connected)
                 s_c.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
         s_r.addEventListener(ProgressEvent.SOCKET_DATA, relay_to_client);
 
-        log("Tor: connecting to " + addr_r.host + ":" + addr_r.port + ".");
+        log("Relay: connecting to " + addr_r.host + ":" + addr_r.port + ".");
         s_r.connect(addr_r.host, addr_r.port);
     }
 
-    private function tor_connected(e:Event):void
+    private function relay_connected(e:Event):void
     {
-        log("Tor: connected.");
+        log("Relay: connected.");
 
         s_c = new Socket();
 
@@ -507,7 +507,7 @@ class ProxyPair extends EventDispatcher
         while (!ui.rate_limit.is_limited() &&
                (r2c_schedule.length > 0 || c2r_schedule.length > 0)) {
             if (r2c_schedule.length > 0)
-                transfer_chunk(s_r, s_c, r2c_schedule.shift(), "Tor");
+                transfer_chunk(s_r, s_c, r2c_schedule.shift(), "Relay");
             if (c2r_schedule.length > 0)
                 transfer_chunk(s_c, s_r, c2r_schedule.shift(), "Client");
         }
