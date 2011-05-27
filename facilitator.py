@@ -259,13 +259,15 @@ else:
     usage(sys.stderr)
     sys.exit(1)
 
+addrinfo = socket.getaddrinfo(address[0], address[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
+
 class Server(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
     pass
 
 # Setup the server
-server = Server(address, Handler)
+server = Server(addrinfo[4], Handler)
 
-log(u"start on %s" % format_addr(address))
+log(u"start on %s" % format_addr(addrinfo[4]))
 
 if options.daemonize:
     log(u"daemonizing")
