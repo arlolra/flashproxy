@@ -32,7 +32,7 @@ To build, run
 Copy the resulting swfcat.swf file to a web server.
 
 On the computer that will be the facilitator, run
-        sudo ./crossdomaind.py
+	sudo ./crossdomaind.py
 	./facilitator.py
 crossdomaind.py needs to be run on any server that will accept
 connections from a Flash proxy. It serves a chunk of data on port 843.
