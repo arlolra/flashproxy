@@ -14,14 +14,12 @@ package
     import flash.events.ProgressEvent;
     import flash.events.SecurityErrorEvent;
     import flash.utils.ByteArray;
+    import flash.utils.clearTimeout;
     import flash.utils.setTimeout;
     import flash.utils.clearInterval;
     import flash.utils.setInterval;
     import flash.utils.setTimeout;
     import flash.net.NetConnection;
-
-    import rtmfp.RTMFPSocket;
-    import rtmfp.events.RTMFPSocketEvent;
 
     public class return_of_the_rtmfpcat extends Sprite
     {
@@ -423,11 +421,11 @@ class RTMFPSocket extends EventDispatcher
         send_stream.publish(DATA); 
 
         recv_stream = new NetStream(circon, clientID);
-        var client:RTMFPSocketClient = new RTMFPSocketClient();
-        client.addEventListener(ProgressEvent.SOCKET_DATA, function (event:ProgressEvent):void {
+        var client_rtmfp:RTMFPSocketClient = new RTMFPSocketClient();
+        client_rtmfp.addEventListener(ProgressEvent.SOCKET_DATA, function (event:ProgressEvent):void {
             dispatchEvent(event);
         }, false, 0, true);
-        recv_stream.client = client;
+        recv_stream.client = client_rtmfp;
         recv_stream.play(DATA);
     }
 
@@ -469,9 +467,9 @@ class RTMFPSocket extends EventDispatcher
     }
 
 
-    public function readBytes(bytes:ByteArray):void
+    public function readBytes(bytes:ByteArray, offset:uint = 0, length:uint = 0):void
     {
-        recv_stream.client.bytes.readBytes(bytes);
+        recv_stream.client.bytes.readBytes(bytes, offset, length);
     }
 
     public function writeBytes(bytes:ByteArray):void
