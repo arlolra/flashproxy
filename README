@@ -42,8 +42,8 @@ To build, run
 Copy the resulting rtmfpcat.swf file to a web server.
 
 On the computer that will be the facilitator, run
-     sudo ./crossdomaind.py
-	 ./facilitator.py
+	sudo ./crossdomaind.py
+	./facilitator.py
 crossdomaind.py needs to be run on any server that will accept
 connections from a Flash proxy. It serves a chunk of data on port 843.
 The facilitator runs on port 9002 by default. Note that this is a different

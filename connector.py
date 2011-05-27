@@ -29,9 +29,9 @@ class options(object):
     log_file = sys.stdout
     daemonize = False
 
-# We accept up to this many bytes from a local socket not yet matched with a
-# remote before disconnecting it.
-UNCONNECTED_LOCAL_BUFFER_LIMIT = 10240
+# We accept up to this many bytes from a socket not yet matched with a partner
+# before disconnecting it.
+UNCONNECTED_BUFFER_LIMIT = 10240
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -143,28 +143,19 @@ else:
     options.log_file = sys.stdout
 
 
-class RemotePending(object):
-    """A class encapsulating a socket and a time of connection."""
+class BufferSocket(object):
+    """A socket containing a time of creation and a buffer of data received. The
+    buffer stores data to make the socket selectable again."""
     def __init__(self, fd):
         self.fd = fd
         self.birthday = time.time()
+        self.buf = ""
 
-    def fileno(self):
-        return self.fd.fileno()
+    def __getattr__(self, name):
+        return getattr(self.fd, name)
 
     def is_expired(self, timeout):
         return time.time() - self.birthday > timeout
-
-class BufferSocket(object):
-    """A class encapsulating a socket and a buffer of data received on it. The
-    buffer stores data that has been read to make the socket selectable
-    again."""
-    def __init__(self, fd):
-        self.fd = fd
-        self.buf = ""
-
-    def fileno(self):
-        return self.fd.fileno()
 
 def listen_socket(addr):
     """Return a nonblocking socket listening on the given address."""
@@ -202,6 +193,8 @@ remote_for = {}
 
 
 def handle_policy_request(fd):
+    """Returns True iff the socket is still open and usable (wasn't a
+    crossdomain request and wasn't closed."""
     log(u"handle_policy_request")
     addr = fd.getpeername()
     data = fd.recv(100)
@@ -212,10 +205,13 @@ def handle_policy_request(fd):
 <allow-access-from domain="*" to-ports="%s"/>
 </cross-domain-policy>
 \0""" % xml.sax.saxutils.escape(str(options.remote_addr[1])))
+        return False
     elif data == "":
         log(u"No data from %s." % format_addr(addr))
+        return False
     else:
-        log(u"Unexpected data from %s." % format_addr(addr))
+        fd.buf += data
+        return True
 
 def grab_string(s, pos):
     """Grab a NUL-terminated string from the given string, starting at the given
@@ -276,7 +272,7 @@ def handle_local_connection(fd):
     match_proxies()
 
 def report_pending():
-    log(u"locals  (%d): %s" % (len(locals), [format_addr(x.fd.getpeername()) for x in locals]))
+    log(u"locals  (%d): %s" % (len(locals), [format_addr(x.getpeername()) for x in locals]))
     log(u"remotes (%d): %s" % (len(remotes), [format_addr(x.getpeername()) for x in remotes]))
 
 def register():
@@ -310,12 +306,14 @@ def match_proxies():
         remote = remotes.pop(0)
         local = locals.pop(0)
         remote_addr, remote_port = remote.getpeername()
-        local_addr, local_port = local.fd.getpeername()
-        log(u"Linking %s and %s." % (format_addr(local.fd.getpeername()), format_addr(remote.getpeername())))
+        local_addr, local_port = local.getpeername()
+        log(u"Linking %s and %s." % (format_addr(local.getpeername()), format_addr(remote.getpeername())))
         if local.buf:
             remote.sendall(local.buf)
-        remote_for[local.fd] = remote
-        local_for[remote] = local.fd
+        if remote.buf:
+            local.sendall(remote.buf)
+        remote_for[local.fd] = remote.fd
+        local_for[remote.fd] = local.fd
 
 if options.daemonize:
     log(u"Daemonizing.")
@@ -331,7 +329,7 @@ while True:
         if fd == remote_s:
             remote_c, addr = fd.accept()
             log(u"Remote connection from %s." % format_addr(addr))
-            crossdomain_pending.append(RemotePending(remote_c))
+            crossdomain_pending.append(BufferSocket(remote_c))
         elif fd == local_s:
             local_c, addr = fd.accept()
             log(u"Local connection from %s." % format_addr(addr))
@@ -339,9 +337,13 @@ while True:
             register()
         elif fd in crossdomain_pending:
             log(u"Data from crossdomain-pending %s." % format_addr(addr))
-            handle_policy_request(fd.fd)
-            fd.fd.close()
+            if handle_policy_request(fd):
+                remotes.append(fd)
+                handle_remote_connection(fd)
+            else:
+                fd.close()
             crossdomain_pending.remove(fd)
+            report_pending()
         elif fd in socks_pending:
             log(u"SOCKS request from %s." % format_addr(addr))
             if handle_socks_request(fd):
@@ -364,35 +366,40 @@ while True:
                 del local_for[remote]
                 register()
         elif fd in locals:
-            data = fd.fd.recv(1024)
+            data = fd.recv(1024)
             if not data:
-                log(u"EOF from unconnected local %s with %d bytes buffered." % (format_addr(fd.fd.getpeername()), len(fd.buf)))
+                log(u"EOF from unconnected local %s with %d bytes buffered." % (format_addr(fd.getpeername()), len(fd.buf)))
                 locals.remove(fd)
-                fd.fd.close()
+                fd.close()
             else:
-                log(u"Data from unconnected local %s (%d bytes)." % (format_addr(fd.fd.getpeername()), len(data)))
+                log(u"Data from unconnected local %s (%d bytes)." % (format_addr(fd.getpeername()), len(data)))
                 fd.buf += data
-                if len(fd.buf) >= UNCONNECTED_LOCAL_BUFFER_LIMIT:
-                    log(u"Refusing to buffer more than %d bytes from local %s." % (UNCONNECTED_LOCAL_BUFFER_LIMIT, format_addr(fd.fd.getpeername())))
+                if len(fd.buf) >= UNCONNECTED_BUFFER_LIMIT:
+                    log(u"Refusing to buffer more than %d bytes from local %s." % (UNCONNECTED_BUFFER_LIMIT, format_addr(fd.getpeername())))
                     locals.remove(fd)
-                    fd.fd.close()
+                    fd.close()
             report_pending()
         elif fd in remotes:
             data = fd.recv(1024)
             if not data:
-                log(u"EOF from unconnected remote %s." % format_addr(fd.getpeername()))
+                log(u"EOF from unconnected remote %s with %d bytes buffered." % (format_addr(fd.getpeername()), len(fd.buf)))
+                remotes.remove(fd)
+                fd.close()
             else:
-                log(u"Data from unconnected remote %s." % format_addr(fd.getpeername()))
-            fd.close()
-            remotes.remove(fd)
+                log(u"Data from unconnected remote %s (%d bytes)." % format_addr(fd.getpeername(), len(data)))
+                fd.buf += data
+                if len(fd.buf) >= UNCONNECTED_BUFFER_LIMIT:
+                    log(u"Refusing to buffer more than %d bytes from local %s." % (UNCONNECTED_BUFFER_LIMIT, format_addr(fd.getpeername())))
+                    remotes.remove(fd)
+                    fd.close()
             report_pending()
         match_proxies()
     while crossdomain_pending:
         pending = crossdomain_pending[0]
         if not pending.is_expired(CROSSDOMAIN_TIMEOUT):
             break
-        log(u"Expired pending crossdomain from %s." % format_addr(pending.fd.getpeername()))
+        log(u"Expired pending crossdomain from %s." % format_addr(pending.getpeername()))
         crossdomain_pending.pop(0)
-        remotes.append(pending.fd)
-        handle_remote_connection(pending.fd)
+        remotes.append(pending)
+        handle_remote_connection(pending)
         report_pending()

@@ -1,0 +1,19 @@
+This patch causes Tor to ignore bridge reachability failures. This is
+helpful when the bridge is only intermittently available, as when
+connecting through a flash proxy.
+
+diff --git src/or/circuitbuild.c src/or/circuitbuild.c
+index ac0df91..1794634 100644
+--- src/or/circuitbuild.c
++++ src/or/circuitbuild.c
+@@ -3855,6 +3855,10 @@ entry_guard_register_connect_status(const char *digest, int succeeded,
+   int idx = -1;
+   char buf[HEX_DIGEST_LEN+1];
+ 
++  /* Ignore bridge reachability problems. */
++  if (! succeeded)
++    return 0;
++
+   if (! entry_guards)
+     return 0;
+ 
