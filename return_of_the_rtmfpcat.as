@@ -37,16 +37,16 @@ package
         };
 
         /* Nate's facilitator -- also serving a crossdomain policy */
-        private const DEFAULT_FACILITATOR_ADDR:Object = {
-            host: "128.12.179.80",
-            port: 9002
-        };
+        //private const DEFAULT_FACILITATOR_ADDR:Object = {
+        //    host: "128.12.179.80",
+        //    port: 9002
+        //};
 
         /* David's facilitator. */
-        //private const DEFAULT_FACILITATOR_ADDR:Object = {
-        //    host: "tor-facilitator.bamsoftware.com",
-        //    port: 9006
-        //};
+        private const DEFAULT_FACILITATOR_ADDR:Object = {
+            host: "127.0.0.1",
+            port: 9002
+        };
        
         /* Cirrus server information. */
         private const DEFAULT_CIRRUS_ADDRESS:String = "rtmfp://p2p.rtmfp.net";
@@ -415,6 +415,7 @@ class RTMFPSocket extends EventDispatcher
             puts("RTMFPSocket: connected to peer");
             connected = true;
             dispatchEvent(new Event(Event.CONNECT));
+            peer.send("setPeerConnectAcknowledged");
             return true;
         };
         send_stream.client = client;
@@ -425,6 +426,10 @@ class RTMFPSocket extends EventDispatcher
         client_rtmfp.addEventListener(ProgressEvent.SOCKET_DATA, function (event:ProgressEvent):void {
             dispatchEvent(event);
         }, false, 0, true);
+        client_rtmfp.addEventListener(RTMFPSocketClient.PEER_CONNECT_ACKNOWLEDGED, function (event:Event):void {
+            /* Empty... here for symmetry. */
+        }, false, 0, true);
+ 
         recv_stream.client = client_rtmfp;
         recv_stream.play(DATA);
     }
@@ -444,6 +449,8 @@ class RTMFPSocket extends EventDispatcher
         }, false, 0, true);
         recv_stream.client = client;
         recv_stream.play(DATA);
+
+        peer.send("setPeerConnectAcknowledged");
 
         return true;
     }
@@ -486,6 +493,7 @@ class RTMFPSocket extends EventDispatcher
     }
 }
 
+[Event(name="peerConnectAcknowledged", type="flash.events.Event")]
 dynamic class RTMFPSocketClient extends EventDispatcher
 {
     public static const PEER_CONNECT_ACKNOWLEDGED:String = "peerConnectAcknowledged";
