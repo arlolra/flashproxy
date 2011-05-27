@@ -43,6 +43,12 @@ package
             host: "128.12.179.80",
             port: 9002
         };
+
+        /* David's facilitator. */
+        //private const DEFAULT_FACILITATOR_ADDR:Object = {
+        //    host: "tor-facilitator.bamsoftware.com",
+        //    port: 9006
+        //};
        
         /* Cirrus server information. */
         private const DEFAULT_CIRRUS_ADDRESS:String = "rtmfp://p2p.rtmfp.net";
@@ -181,7 +187,7 @@ package
         {
             switch (event.info.code) {
             case "NetConnection.Connect.Success" :
-                puts("circon_netstatus_event: NetConnection.Connect.Success");
+                puts("Cirrus server connection established.");
                 puts("Got id " + circon.nearID + ".");
                 clearInterval(circon_timeo_id);
                 
@@ -199,18 +205,6 @@ package
                     register_id(circon.nearID, fac_addr);
                 }
 
-                break;
-            case "NetStream.Connect.Success" :
-                puts("circon_netstatus_event: NetStream.Connect.Success");  
-                break;
-            case "NetStream.Publish.BadName" :
-                puts("circon_netstatus_event: NetStream.Publish.BadName");
-                break;
-            case "NetStream.Connect.Closed" :
-                puts("circon_netstatus_event: NetStream.Connect.Closed");
-                // we've disconnected from the peer
-                // can reset to accept another
-                // clear the publish stream and re-publish another
                 break;
             }
         }
@@ -250,7 +244,7 @@ package
             var s_f:Socket = new Socket();
             s_f.addEventListener(Event.CONNECT, function (e:Event):void {
                 puts("Facilitator: connected to " + fac_addr.host + ":" + fac_addr.port + ".");
-                puts("Registering id " + id);
+                puts("Facilitator: Registering id " + id);
                 s_f.writeUTFBytes("POST / HTTP/1.0\r\n\r\nclient=" + id + "\r\n");
             });
             s_f.addEventListener(Event.CLOSE, function (e:Event):void {
@@ -296,6 +290,7 @@ import flash.events.EventDispatcher;
 import flash.events.IOErrorEvent;
 import flash.events.ProgressEvent;
 import flash.events.SecurityErrorEvent;
+import flash.events.NetStatusEvent;
 import flash.net.Socket;
 import flash.utils.ByteArray;
 import flash.utils.clearTimeout;
@@ -335,6 +330,14 @@ class RTMFPSocket extends EventDispatcher
         this.circon = circon;
         this.output_text = output_text;
         connected = false;
+        
+        circon.addEventListener(NetStatusEvent.NET_STATUS, circon_netstatus_event);
+        circon.addEventListener(IOErrorEvent.IO_ERROR, function (e:Event):void { 
+            puts("RTMFPSocket: Cirrus connection had an IOErrorEvent.IO_ERROR event");
+        });
+        circon.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:Event):void {
+            puts("RTMFPSocket: Cirrus connection had a SecurityErrorEvent.SECURITY_ERROR");
+        });
     }
 
     public function listen():void
@@ -364,6 +367,25 @@ class RTMFPSocket extends EventDispatcher
 
         return true;
     }
+
+    private function circon_netstatus_event(event:NetStatusEvent):void
+    {
+        switch (event.info.code) {
+        case "NetStream.Connect.Closed" :
+            puts("RTMFPSocket: NetStream connection was closed");
+
+            if(connected)
+            {
+                send_stream.close();
+                recv_stream.close();
+                connected = false;
+                dispatchEvent(new Event(Event.CLOSE));
+            }
+
+            break;
+        }
+    }
+
 
     public function readBytes(bytes:ByteArray):void
     {
@@ -471,8 +493,8 @@ class RTMFPConnectionPair extends EventDispatcher
 
     private function rtmfp_connect_event(e:Event):void
     {
-        puts("RTMFPConnectionPair: RTMFPSocket connected!");
-        puts("RTMFPConnectionPair: setting up tor connection...");
+        puts("RTMFPConnectionPair: RTMFPSocket side connected!");
+        puts("RTMFPConnectionPair: setting up tor side connection...");
 
         /* Setup tor connection linked to RTMFPSocket. */
         s_t = new Socket();
