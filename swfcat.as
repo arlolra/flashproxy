@@ -6,6 +6,9 @@ package
     import flash.text.TextField;
     import flash.text.TextFormat;
     import flash.net.Socket;
+    import flash.net.URLLoader;
+    import flash.net.URLLoaderDataFormat;
+    import flash.net.URLRequest;
     import flash.events.Event;
     import flash.events.IOErrorEvent;
     import flash.events.ProgressEvent;
@@ -35,9 +38,6 @@ package
         public const RATE_LIMIT:Number = undefined;
         // Seconds.
         private const RATE_LIMIT_HISTORY:Number = 5.0;
-
-        // Socket to facilitator.
-        private var s_f:Socket;
 
         /* TextField for debug output. */
         private var output_text:TextField;
@@ -183,45 +183,49 @@ package
         /* The main logic begins here, after start-up issues are taken care of. */
         private function main():void
         {
+            var fac_url:String;
+            var loader:URLLoader;
+
             if (num_proxy_pairs >= MAX_NUM_PROXY_PAIRS) {
                 setTimeout(main, FACILITATOR_POLL_INTERVAL);
                 return;
             }
 
-            s_f = new Socket();
-
-            s_f.addEventListener(Event.CONNECT, fac_connected);
-            s_f.addEventListener(Event.CLOSE, function (e:Event):void {
-                puts("Facilitator: closed connection.");
-                setTimeout(main, FACILITATOR_POLL_INTERVAL);
-            });
-            s_f.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
+            loader = new URLLoader();
+            /* Get the x-www-form-urlencoded values. */
+            loader.dataFormat = URLLoaderDataFormat.VARIABLES;
+            loader.addEventListener(Event.COMPLETE, fac_complete);
+            loader.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
                 puts("Facilitator: I/O error: " + e.text + ".");
             });
-            s_f.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
+            loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
                 puts("Facilitator: security error: " + e.text + ".");
             });
 
-            puts("Facilitator: connecting to " + fac_addr.host + ":" + fac_addr.port + ".");
-            s_f.connect(fac_addr.host, fac_addr.port);
+            fac_url = "http://" + encodeURIComponent(fac_addr.host)
+                + ":" + encodeURIComponent(fac_addr.port) + "/";
+            puts("Facilitator: connecting to " + fac_url + ".");
+            loader.load(new URLRequest(fac_url));
         }
 
-        private function fac_connected(e:Event):void
+        private function fac_complete(e:Event):void
         {
-            puts("Facilitator: connected.");
-
-            s_f.addEventListener(ProgressEvent.SOCKET_DATA, fac_data);
-
-            s_f.writeUTFBytes("GET / HTTP/1.0\r\n\r\n");
-        }
-
-        private function fac_data(e:ProgressEvent):void
-        {
+            var loader:URLLoader;
             var client_spec:String;
             var client_addr:Object;
             var proxy_pair:Object;
 
-            client_spec = s_f.readMultiByte(e.bytesLoaded, "utf-8");
+            setTimeout(main, FACILITATOR_POLL_INTERVAL);
+
+            loader = e.target as URLLoader;
+            client_spec = loader.data.client;
+            if (client_spec == "") {
+                puts("No clients.");
+                return;
+            } else if (!client_spec) {
+                puts("Error: missing \"client\" in response.");
+                return;
+            }
             puts("Facilitator: got \"" + client_spec + "\".");
 
             client_addr = parse_addr_spec(client_spec);
