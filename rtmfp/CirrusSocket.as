@@ -49,6 +49,8 @@ package rtmfp
             connection.addEventListener(NetStatusEvent.NET_STATUS, on_net_status_event);
             connection.addEventListener(IOErrorEvent.IO_ERROR, on_io_error_event);
             connection.addEventListener(SecurityErrorEvent.SECURITY_ERROR, on_security_error_event);
+            
+            /* Set up a client object to handle the hello callback */
             var client:Object = new Object();
             client.onRelay = on_hello;
             connection.client = client;

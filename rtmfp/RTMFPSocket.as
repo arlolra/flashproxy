@@ -45,8 +45,7 @@ package rtmfp
         }
         
 		/* Tears down this RTMFPSocket, closing both its streams.
-		   To be used when destroying this object. If you just want
-		   to disconnect from a client, call disconnect() below */
+		   To be used when destroying this object. */
 		public function close():void
         {
             if (send_stream != null) {
@@ -81,19 +80,6 @@ package rtmfp
             return (recv_stream != null && recv_stream.client != null &&
                     RTMFPSocketClient(recv_stream.client).connect_acknowledged);
         }
-
-		public function disconnect():void
-		{
-			if (recv_stream != null) {
-				if (recv_stream.client != null) {
-					recv_stream.client.removeEventListener(ProgressEvent.SOCKET_DATA, on_data_available);
-					recv_stream.client.removeEventListener(RTMFPSocketClient.CONNECT_ACKNOWLEDGED, on_connect_acknowledged);
-				}
-				recv_stream.removeEventListener(NetStatusEvent.NET_STATUS, on_recv_stream_event);
-				recv_stream.close();
-				recv_stream = null;
-			}
-		}
 
 		/* In RTMFP, you open a listening socket by publishing a named
            stream that others can connect to instead of listening on a port.
@@ -131,7 +117,6 @@ package rtmfp
 				recv_stream.client.bytes.readBytes(bytes, offset, length);
 			}   
         }
-
 
         public function writeBytes(bytes:ByteArray):void
         {
