@@ -28,9 +28,8 @@ package rtmfp
 
         public function data_available(bytes:ByteArray):void
         {
-            this._bytes.clear();
-            bytes.readBytes(this._bytes);
-            dispatchEvent(new ProgressEvent(ProgressEvent.SOCKET_DATA, false, false, this._bytes.bytesAvailable, this._bytes.length));
+            bytes.readBytes(_bytes, _bytes.length, 0);
+            dispatchEvent(new ProgressEvent(ProgressEvent.SOCKET_DATA, false, false, _bytes.bytesAvailable, _bytes.bytesAvailable));
         }
 
         public function get connect_acknowledged():Boolean

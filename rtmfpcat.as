@@ -6,8 +6,7 @@ package
     import flash.text.TextField;
     import flash.text.TextFormat;
     import flash.events.Event;
-    import flash.utils.clearInterval;
-    import flash.utils.setInterval;
+    import flash.utils.setTimeout;
 
     import rtmfp.CirrusSocket;
     import rtmfp.FacilitatorSocket;
@@ -39,9 +38,8 @@ package
             port: 9001
         };
         
-        /* Poll facilitator every 3 sec if in proxy mode and haven't found
-           anyone to proxy */
-        private const DEFAULT_FAC_POLL_INTERVAL:uint = 3000;
+        /* Poll facilitator every 10 sec */
+        private const DEFAULT_FAC_POLL_INTERVAL:uint = 10000;
 
         // Socket to Cirrus server
         private var s_c:CirrusSocket;
@@ -53,8 +51,6 @@ package
         private var proxy_pairs:Array;
 
         private var proxy_mode:Boolean;
-
-        private var fac_poll_interval:uint;
 
         /* TextField for debug output. */
         private var output_text:TextField;
@@ -79,6 +75,12 @@ package
             puts("Starting.");
             // Wait until the query string parameters are loaded.
             this.loaderInfo.addEventListener(Event.COMPLETE, loaderinfo_complete);
+        }
+        
+        public function puts(s:String):void
+        {
+            output_text.appendText(s + "\n");
+            output_text.scrollV = output_text.maxScrollV;
         }
 
         private function loaderinfo_complete(e:Event):void
@@ -133,11 +135,7 @@ package
             s_c = new CirrusSocket();
             s_c.addEventListener(CirrusSocketEvent.CONNECT_SUCCESS, function (e:CirrusSocketEvent):void {
                 puts("Cirrus: connected with id " + s_c.id + ".");
-                if (proxy_mode) {
-                    fac_poll_interval = setInterval(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
-                } else {
-                    establish_facilitator_connection();
-                }
+                establish_facilitator_connection();
             });
             s_c.addEventListener(CirrusSocketEvent.CONNECT_FAILED, function (e:CirrusSocketEvent):void {
                 puts("Error: failed to connect to Cirrus.");
@@ -180,6 +178,7 @@ package
             });
             s_f.addEventListener(FacilitatorSocketEvent.CONNECT_FAILED, function (e:Event):void {
                 puts("Facilitator: connect failed.");
+                setTimeout(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
             });
             s_f.addEventListener(FacilitatorSocketEvent.CONNECT_CLOSED, function (e:Event):void {
                 puts("Facilitator: connect closed.");
@@ -188,16 +187,17 @@ package
             if (proxy_mode) {
                 s_f.addEventListener(FacilitatorSocketEvent.REGISTRATION_RECEIVED, function (e:FacilitatorSocketEvent):void {
                     puts("Facilitator: got registration " + e.client);
-                    clearInterval(fac_poll_interval);
                     start_proxy_pair();
                     s_c.send_hello(e.client);
                 });
                 s_f.addEventListener(FacilitatorSocketEvent.REGISTRATIONS_EMPTY, function (e:Event):void {
                     puts("Facilitator: no registrations available.");
+                    setTimeout(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
                 });
             } else {
                 s_f.addEventListener(FacilitatorSocketEvent.REGISTRATION_FAILED, function (e:Event):void {
                     puts("Facilitator: registration failed.");
+                    setTimeout(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
                 });
             }
             s_f.connect(fac_addr.host, fac_addr.port);
@@ -213,11 +213,7 @@ package
             p_p.addEventListener(Event.CLOSE, function (e:Event):void {
                 puts("ProxyPair: connection closed.");
                 p_p = null;
-                if (proxy_mode) {
-                    fac_poll_interval = setInterval(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
-                } else {
-                    establish_facilitator_connection();
-                }
+                establish_facilitator_connection();
             });
             p_p.listen(s_c.local_stream_name);
         }
@@ -237,12 +233,6 @@ package
             addr.port = parseInt(parts[1]);
 
             return addr;
-        }
-        
-        public function puts(s:String):void
-        {
-            output_text.appendText(s + "\n");
-            output_text.scrollV = output_text.maxScrollV;
         }
     }
 }
