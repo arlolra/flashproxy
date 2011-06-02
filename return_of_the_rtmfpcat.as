@@ -54,11 +54,15 @@ package
 
         private static const DEFAULT_CIRCON_TIMEOUT:uint = 4000;
 
+        private static const DEFAULT_PEER_CON_TIMEOUT:uint = 4000;
+
         /* Maximum connections. */
-        private const MAXIMUM_RCP_PAIRS:uint = 1;
+        private const DEFAULT_MAXIMUM_RCP_PAIRS:uint = 1;
 
         /* Milliseconds. */
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
+
+        private var max_rcp_pairs:uint;
 
         /* TextField for debug output. */
         private var output_text:TextField;
@@ -88,9 +92,20 @@ package
 
         /* Number of connected RTMFPConnectionPairs. */
         private var rcp_pairs:uint;
+        private var rcp_pairs_total:uint;
+
+        private var rtmfp_data_counter:uint;
 
         /* Keep track of facilitator polling timer. */
         private var fac_poll_timeo_id:uint;
+
+        /* Badge with a client counter */
+        [Embed(source="badge_con_counter.png")]
+        private var BadgeImage:Class;
+        private var tot_client_count_tf:TextField;
+        private var tot_client_count_fmt:TextFormat;
+        private var cur_client_count_tf:TextField;
+        private var cur_client_count_fmt:TextFormat;
 
         /* Put a string to the screen. */
         public function puts(s:String):void
@@ -98,7 +113,21 @@ package
             output_text.appendText(s + "\n");
             output_text.scrollV = output_text.maxScrollV;
         }
-        
+ 
+        public function update_client_count():void
+        {
+            /* Update total client count. */
+            if (String(rcp_pairs_total).length == 1)
+                tot_client_count_tf.text = "0" + String(rcp_pairs_total);
+            else
+                tot_client_count_tf.text = String(rcp_pairs_total);
+
+            /* Update current client count. */
+            cur_client_count_tf.text = "";
+            for(var i:Number=0; i<rcp_pairs; i++)
+                cur_client_count_tf.appendText(".");;
+        }
+
         public function return_of_the_rtmfpcat()
         {
             // Absolute positioning.
@@ -111,9 +140,44 @@ package
             output_text.background = true;
             output_text.backgroundColor = 0x001f0f;
             output_text.textColor = 0x44cc44;
+            
+            /* Setup client counter for badge. */
+            tot_client_count_fmt = new TextFormat();
+            tot_client_count_fmt.color = 0xFFFFFF;
+            tot_client_count_fmt.align = "center";
+            tot_client_count_fmt.font = "courier-new";
+            tot_client_count_fmt.bold = true;
+            tot_client_count_fmt.size = 10;
+            tot_client_count_tf = new TextField();
+            tot_client_count_tf.width = 20;
+            tot_client_count_tf.height = 17;
+            tot_client_count_tf.background = false;
+            tot_client_count_tf.defaultTextFormat = tot_client_count_fmt;
+            tot_client_count_tf.x=47;
+            tot_client_count_tf.y=0;
+
+            cur_client_count_fmt = new TextFormat();
+            cur_client_count_fmt.color = 0xFFFFFF;
+            cur_client_count_fmt.align = "center";
+            cur_client_count_fmt.font = "courier-new";
+            cur_client_count_fmt.bold = true;
+            cur_client_count_fmt.size = 10;
+            cur_client_count_tf = new TextField();
+            cur_client_count_tf.width = 20;
+            cur_client_count_tf.height = 17;
+            cur_client_count_tf.background = false;
+            cur_client_count_tf.defaultTextFormat = cur_client_count_fmt;
+            cur_client_count_tf.x=47;
+            cur_client_count_tf.y=6;
+
+            /* Update the client counter on badge. */
+            update_client_count();
 
             /* Initialize connection pair count. */
             rcp_pairs = 0;
+
+            /* Unique counter for RTMFP data publishing. */
+            rtmfp_data_counter = 0;
 
             puts("Meow!");
             puts("Starting.");
@@ -129,7 +193,16 @@ package
             puts("Parameters loaded.");
 
             proxy_mode = (this.loaderInfo.parameters["proxy"] != null);
-            addChild(output_text);
+            
+            if(this.loaderInfo.parameters["debug"] != null)
+                addChild(output_text);
+            
+            addChild(new BadgeImage());
+            /* Tried unsuccessfully to add counter to badge. */
+            /* For now, need two addChilds :( */
+            addChild(tot_client_count_tf);
+            addChild(cur_client_count_tf); 
+            
 
             fac_spec = this.loaderInfo.parameters["facilitator"];
             if (fac_spec) {
@@ -168,6 +241,14 @@ package
             else
                 cir_key = DEFAULT_CIRRUS_KEY;
 
+            if(this.loaderInfo.parameters["max_con"])
+                max_rcp_pairs = this.loaderInfo.parameters["max_con"];
+            else
+                max_rcp_pairs = DEFAULT_MAXIMUM_RCP_PAIRS;
+
+            if(this.loaderInfo.parameters["start"])
+                rtmfp_data_counter = this.loaderInfo.parameters["start"];
+
             main();
         }
 
@@ -202,11 +283,12 @@ package
                     var rcp:RTMFPConnectionPair = new RTMFPConnectionPair(circon, tor_addr, output_text);
                     rcp.addEventListener(Event.CONNECT, rcp_connect_event);
                     rcp.addEventListener(Event.CLOSE, rcp_close_event);
-                    rcp.listen();
+                    rcp.listen(String(rtmfp_data_counter));
 
-                    puts("Registering with facilitator");
-                    /* Register ID with facilitator. */
-                    register_id(circon.nearID, fac_addr);
+                    var reg_str:String = circon.nearID + ":" + String(rtmfp_data_counter);
+                    puts("Registering " + reg_str + " with facilitator");
+                    register_id(reg_str, fac_addr);
+                    rtmfp_data_counter++;
                 }
 
                 break;
@@ -229,19 +311,31 @@ package
                 puts("Facilitator: I/O error: " + e.text + ".");
             });
             s_f.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
-                var clientID:String = s_f.readMultiByte(e.bytesLoaded, "utf-8");
-                puts("Facilitator: got \"" + clientID + "\"");
-                if (clientID != "Registration list empty") {
-                    puts("Connecting to " + clientID + ".");
+                var client:String = s_f.readMultiByte(e.bytesLoaded, "utf-8");
+                puts("Facilitator: got \"" + client + "\"");
+                if (client != "Registration list empty") {
+                    puts("Connecting to " + client + ".");
+
+                    var client_id:String = client.split(":")[0];
+                    var client_data:String = client.split(":")[1];
+
+                    clearTimeout(fac_poll_timeo_id);
+
                     var rcp:RTMFPConnectionPair = new RTMFPConnectionPair(circon, tor_addr, output_text);
                     rcp.addEventListener(Event.CONNECT, rcp_connect_event);
+                    rcp.addEventListener(Event.UNLOAD, function (e:Event):void {
+                        /* Failed to connect to peer... continue loop. */
+                        puts("RTMFPConnectionPair: Timed out connecting to peer!");
+                        if(rcp_pairs < max_rcp_pairs)
+                            poll_for_id();
+                    });
                     rcp.addEventListener(Event.CLOSE, rcp_close_event);
-                    rcp.connect(clientID);
+                    rcp.connect(client_id, client_data, DEFAULT_PEER_CON_TIMEOUT);
                 } else {
                     /* Need to clear any outstanding timers to ensure
                      * that only one timer ever runs. */
                     clearTimeout(fac_poll_timeo_id);
-                    if(rcp_pairs < MAXIMUM_RCP_PAIRS)
+                    if(rcp_pairs < max_rcp_pairs)
                         fac_poll_timeo_id = setTimeout(poll_for_id, FACILITATOR_POLL_INTERVAL); 
                 }
             });
@@ -258,19 +352,27 @@ package
             puts("RTMFPConnectionPair connected");
 
             rcp_pairs++;
+            rcp_pairs_total++;
+
+            /* Update the client count on the badge. */
+            update_client_count();
 
             if(proxy_mode) {
-                if(rcp_pairs < MAXIMUM_RCP_PAIRS) {
+                if(rcp_pairs < max_rcp_pairs) {
                     poll_for_id();
                 }
             } else {
                 /* Setup listening RTMFPConnectionPair. */
-                if(rcp_pairs < MAXIMUM_RCP_PAIRS) {
+                if(rcp_pairs < max_rcp_pairs) {
                     puts("Setting up listening RTMFPConnectionPair");
                     var rcp:RTMFPConnectionPair = new RTMFPConnectionPair(circon, tor_addr, output_text);
                     rcp.addEventListener(Event.CONNECT, rcp_connect_event);
                     rcp.addEventListener(Event.CLOSE, rcp_close_event);
-                    rcp.listen();
+                    rcp.listen(String(rtmfp_data_counter));
+                    var reg_str:String = circon.nearID + ":" + String(rtmfp_data_counter);
+                    puts("Registering " + reg_str + " with facilitator");
+                    register_id(reg_str, fac_addr);
+                    rtmfp_data_counter++;
                 }
             }
         }
@@ -281,19 +383,26 @@ package
 
             rcp_pairs--;
 
+            /* Update the client count on the badge. */
+            update_client_count();
+
             /* FIXME: Do I need to unregister the event listeners so
              * that the system can garbage collect the rcp object? */
             if(proxy_mode) {
-                if(rcp_pairs < MAXIMUM_RCP_PAIRS) {
+                if(rcp_pairs < max_rcp_pairs) {
                     poll_for_id();
                 }
             } else {
-                if(rcp_pairs < MAXIMUM_RCP_PAIRS) {
+                if(rcp_pairs < max_rcp_pairs) {
                     puts("Setting up listening RTMFPConnectionPair");
                     var rcp:RTMFPConnectionPair = new RTMFPConnectionPair(circon, tor_addr, output_text);
                     rcp.addEventListener(Event.CONNECT, rcp_connect_event);
                     rcp.addEventListener(Event.CLOSE, rcp_close_event);
-                    rcp.listen(); 
+                    rcp.listen(String(rtmfp_data_counter));
+                    var reg_str:String = circon.nearID + ":" + String(rtmfp_data_counter);
+                    puts("Registering " + reg_str + " with facilitator");
+                    register_id(reg_str, fac_addr);
+                    rtmfp_data_counter++; 
                 }
             }
         }
@@ -362,7 +471,7 @@ import flash.text.TextField;
 class RTMFPSocket extends EventDispatcher
 {
     /* The name of the "media" to pass between peers. */
-    private static const DATA:String = "data";
+    private var data:String;
 
     /* Connection to the Cirrus rendezvous service.
      * RTMFPSocket is established using this service. */
@@ -374,6 +483,8 @@ class RTMFPSocket extends EventDispatcher
 
     /* Keeps the state of our connectedness. */
     public var connected:Boolean;
+
+    private var connect_timeo_id:uint;
 
     private var output_text:TextField;
 
@@ -399,22 +510,37 @@ class RTMFPSocket extends EventDispatcher
         });
     }
 
-    public function listen():void
+    public function listen(data:String):void
     {
+        this.data = data;
+
         send_stream = new NetStream(circon, NetStream.DIRECT_CONNECTIONS);
         var client:Object = new Object();
         client.onPeerConnect = send_stream_peer_connect;
         send_stream.client = client;
-        send_stream.publish(DATA); 
+        send_stream.publish(data); 
     }
 
-    public function connect(clientID:String):void
+    private function connect_timeout():void
+    {
+        puts("RTMFPSocket: Timed out connecting to peer");
+        close();
+        /* OK this is not so nice, because I wanted an Event.TIMEOUT event, but flash gives us none such event :( */
+        dispatchEvent(new Event(Event.UNLOAD));
+    }
+
+    public function connect(clientID:String, data:String, timeout:uint):void
     {
         puts("RTMFPSocket: connecting to peer...");
+
+        connect_timeo_id = setTimeout(connect_timeout, timeout);
+
+        this.data = data;
 
         send_stream = new NetStream(circon, NetStream.DIRECT_CONNECTIONS);
         var client:Object = new Object();
         client.onPeerConnect = function (peer:NetStream):Boolean {
+            clearTimeout(connect_timeo_id);
             puts("RTMFPSocket: connected to peer");
             connected = true;
             dispatchEvent(new Event(Event.CONNECT));
@@ -422,7 +548,7 @@ class RTMFPSocket extends EventDispatcher
             return true;
         };
         send_stream.client = client;
-        send_stream.publish(DATA); 
+        send_stream.publish(data); 
 
         recv_stream = new NetStream(circon, clientID);
         var client_rtmfp:RTMFPSocketClient = new RTMFPSocketClient();
@@ -434,7 +560,7 @@ class RTMFPSocket extends EventDispatcher
         }, false, 0, true);
  
         recv_stream.client = client_rtmfp;
-        recv_stream.play(DATA);
+        recv_stream.play(data);
     }
 
     private function send_stream_peer_connect(peer:NetStream):Boolean
@@ -451,7 +577,7 @@ class RTMFPSocket extends EventDispatcher
             dispatchEvent(new Event(Event.CONNECT));
         }, false, 0, true);
         recv_stream.client = client;
-        recv_stream.play(DATA);
+        recv_stream.play(data);
 
         peer.send("setPeerConnectAcknowledged");
 
@@ -574,20 +700,50 @@ class RTMFPConnectionPair extends EventDispatcher
         this.output_text = output_text;
     }
 
-    public function connect(clientID:String):void
+    public function connect(clientID:String, rtmfp_data:String, timeout:uint):void
     {
         s_r = new RTMFPSocket(circon, output_text);
         s_r.addEventListener(Event.CONNECT, rtmfp_connect_event);
+        s_r.addEventListener(Event.UNLOAD, function (e:Event):void {
+            dispatchEvent(new Event(Event.UNLOAD));
+        });
+        s_r.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
+            /* It's possible that we receive data before we're connected
+             * to the tor-side of the connection. In this case we want
+             * to buffer the data. */
+            if(!s_t.connected) {
+                puts("MASSIVE ATTACK!");
+            } else {
+                var bytes:ByteArray = new ByteArray();
+                s_r.readBytes(bytes, 0, e.bytesLoaded);
+                puts("RTMFPConnectionPair: RTMFP: read " + bytes.length + " bytes.");
+                s_t.writeBytes(bytes);                
+            }
+        });
         s_r.addEventListener(Event.CLOSE, rtmfp_close_event);
-        s_r.connect(clientID);
+        s_r.connect(clientID, rtmfp_data, timeout);
     }
 
-    public function listen():void
+    public function listen(rtmfp_data:String):void
     {
         s_r = new RTMFPSocket(circon, output_text);
         s_r.addEventListener(Event.CONNECT, rtmfp_connect_event);
+        s_r.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
+            /* It's possible that we receive data before we're connected
+             * to the tor-side of the connection. In this case we want
+             * to buffer the data. */
+            if(!s_t.connected) {
+                puts("MASSIVE ATTACK!");
+            } else {
+                var bytes:ByteArray = new ByteArray();
+                s_r.readBytes(bytes, 0, e.bytesLoaded);
+                puts("RTMFPConnectionPair: RTMFP: read " + bytes.length + " bytes.");
+                s_t.writeBytes(bytes);                
+            }
+        });
+ 
         s_r.addEventListener(Event.CLOSE, rtmfp_close_event);
-        s_r.listen();
+        s_r.listen(rtmfp_data);
     }
 
     private function rtmfp_connect_event(e:Event):void
@@ -599,18 +755,6 @@ class RTMFPConnectionPair extends EventDispatcher
         s_t = new Socket();
         s_t.addEventListener(Event.CONNECT, function (e:Event):void {
             puts("RTMFPConnectionPair: Tor: connected to " + tor_addr.host + ":" + tor_addr.port + ".");
-            s_r.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
-                var bytes:ByteArray = new ByteArray();
-                s_r.readBytes(bytes, 0, e.bytesLoaded);
-                puts("RTMFPConnectionPair: RTMFP: read " + bytes.length + " bytes.");
-                s_t.writeBytes(bytes);
-            });
-            s_t.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
-                var bytes:ByteArray = new ByteArray();
-                s_t.readBytes(bytes, 0, e.bytesLoaded);
-                puts("RTMFPConnectionPair: Tor: read " + bytes.length + " bytes.");
-                s_r.writeBytes(bytes);
-            });
             dispatchEvent(new Event(Event.CONNECT));
         });
         s_t.addEventListener(Event.CLOSE, function (e:Event):void {
@@ -620,6 +764,12 @@ class RTMFPConnectionPair extends EventDispatcher
             if(s_r.connected)
                 s_r.close();
             dispatchEvent(new Event(Event.CLOSE));
+        });
+        s_t.addEventListener(ProgressEvent.SOCKET_DATA, function (e:ProgressEvent):void {
+            var bytes:ByteArray = new ByteArray();
+            s_t.readBytes(bytes, 0, e.bytesLoaded);
+            puts("RTMFPConnectionPair: Tor: read " + bytes.length + " bytes.");
+            s_r.writeBytes(bytes);
         });
         s_t.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
             puts("RTMFPConnectionPair: Tor: I/O error: " + e.text + ".");
