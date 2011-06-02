@@ -33,7 +33,7 @@ package
         
         /* David's relay (nickname 3VXRyxz67OeRoqHn) that also serves a
            crossdomain policy. */
-        private const DEFAULT_TOR_PROXY_ADDR:Object = {
+        private const DEFAULT_TOR_RELAY_ADDR:Object = {
             host: "173.255.221.44",
             port: 9001
         };
@@ -56,7 +56,7 @@ package
         private var output_text:TextField;
 
         private var fac_addr:Object;
-        private var tor_addr:Object;
+        private var relay_addr:Object;
 
         public function rtmfpcat()
         {
@@ -86,7 +86,7 @@ package
         private function loaderinfo_complete(e:Event):void
         {
             var fac_spec:String;
-            var tor_spec:String;
+            var relay_spec:String;
             
             puts("Parameters loaded.");
 
@@ -104,20 +104,20 @@ package
             } else {
                 fac_addr = DEFAULT_FACILITATOR_ADDR;
             }
-
-            tor_spec = this.loaderInfo.parameters["tor"];
-            if (tor_spec) {
-                puts("Tor spec: \"" + tor_spec + "\"");
-                tor_addr = parse_addr_spec(tor_spec);
-                if (!tor_addr) {
-                    puts("Error: Tor spec must be in the form \"host:port\".");
+            
+            relay_spec = this.loaderInfo.parameters["relay"];
+            if (relay_spec) {
+                puts("Relay spec: \"" + relay_spec + "\"");
+                relay_addr = parse_addr_spec(relay_spec);
+                if (!relay_addr) {
+                    puts("Error: Relay spec must be in the form \"host:port\".");
                     return;
                 }
             } else {
                 if (proxy_mode) {
-                    tor_addr = DEFAULT_TOR_PROXY_ADDR;
+                    relay_addr = DEFAULT_TOR_RELAY_ADDR;
                 } else {
-                    tor_addr = DEFAULT_TOR_CLIENT_ADDR;
+                    relay_addr = DEFAULT_TOR_CLIENT_ADDR;
                 }
             }
 
@@ -206,7 +206,7 @@ package
         private function start_proxy_pair():void
         {
             puts("Starting proxy pair on stream " + s_c.local_stream_name);
-            p_p = new ProxyPair(this, s_c, tor_addr.host, tor_addr.port);
+            p_p = new ProxyPair(this, s_c, relay_addr.host, relay_addr.port);
             p_p.addEventListener(Event.CONNECT, function (e:Event):void {
                 puts("ProxyPair: connected!");
             });
