@@ -1,6 +1,6 @@
 MXMLC ?= mxmlc
 
-TARGETS = rtmfpcat.swf return_of_the_rtmfpcat.swf
+TARGETS = rtmfpcat.swf
 
 all: $(TARGETS)
 

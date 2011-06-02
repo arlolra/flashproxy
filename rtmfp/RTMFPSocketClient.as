@@ -5,20 +5,20 @@ package rtmfp
     import flash.events.ProgressEvent;
     import flash.utils.ByteArray;
 
-    [Event(name="peerConnectAcknowledged", type="flash.events.Event")]
+    [Event(name=RTMFPSocketClient.CONNECT_ACKNOWLEDGED, type="flash.events.Event")]
     public dynamic class RTMFPSocketClient extends EventDispatcher {
-        public static const PEER_CONNECT_ACKNOWLEDGED:String = "peerConnectAcknowledged";
+        public static const DATA_AVAILABLE:String = "data_available";
+        public static const CONNECT_ACKNOWLEDGED:String = "connectAcknowledged";
+        public static const SET_CONNECT_ACKNOWLEDGED:String = "set_connect_acknowledged";
 
         private var _bytes:ByteArray;
-        private var _peerID:String;
-        private var _peerConnectAcknowledged:Boolean;
+        private var _connect_acknowledged:Boolean;
 
         public function RTMFPSocketClient()
         {
             super();
             _bytes = new ByteArray();
-            _peerID = null;
-            _peerConnectAcknowledged = false;
+            _connect_acknowledged = false;
         }
 
         public function get bytes():ByteArray
@@ -26,32 +26,22 @@ package rtmfp
             return _bytes;
         }
 
-        public function dataAvailable(bytes:ByteArray):void
+        public function data_available(bytes:ByteArray):void
         {
             this._bytes.clear();
             bytes.readBytes(this._bytes);
             dispatchEvent(new ProgressEvent(ProgressEvent.SOCKET_DATA, false, false, this._bytes.bytesAvailable, this._bytes.length));
         }
 
-        public function get peerConnectAcknowledged():Boolean
+        public function get connect_acknowledged():Boolean
         {
-            return _peerConnectAcknowledged;
+            return _connect_acknowledged;
         }
 
-        public function setPeerConnectAcknowledged():void
+        public function set_connect_acknowledged():void
         {
-            _peerConnectAcknowledged = true;
-            dispatchEvent(new Event(PEER_CONNECT_ACKNOWLEDGED));
-        }
-
-        public function get peerID():String
-        {
-            return _peerID;
-        }
-
-        public function set peerID(id:String):void
-        {
-            _peerID = id;
+            _connect_acknowledged = true;
+            dispatchEvent(new Event(CONNECT_ACKNOWLEDGED));
         }
     }
 }
