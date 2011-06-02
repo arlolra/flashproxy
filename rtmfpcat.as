@@ -49,6 +49,8 @@ package
         private var s_f:FacilitatorSocket;
         // Handle local-remote traffic
         private var p_p:ProxyPair;
+        
+        private var proxy_pairs:Array;
 
         private var proxy_mode:Boolean;
 
@@ -87,6 +89,7 @@ package
             puts("Parameters loaded.");
 
             proxy_mode = (this.loaderInfo.parameters["proxy"] != null);
+            proxy_pairs = new Array();
 
             fac_spec = this.loaderInfo.parameters["facilitator"];
             if (fac_spec) {

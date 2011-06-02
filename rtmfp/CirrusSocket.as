@@ -31,10 +31,10 @@ package rtmfp
     {
         private static const CONNECT_TIMEOUT:uint = 4000; // in milliseconds
 		
-		/* We'll append a unique number to the DATA_STREAM_PREFIX for each
+        /* We'll append a unique number to the DATA_STREAM_PREFIX for each
            new stream we create so that we have unique streams per player. */
         private static const DATA_STREAM_PREFIX:String = "DATA";   
-		private var data_stream_suffix:uint = 0;
+        private var data_stream_suffix:uint = 0;
 
         /* Connection to the Cirrus rendezvous service */
         public var connection:NetConnection;
@@ -94,18 +94,18 @@ package rtmfp
             return DATA_STREAM_PREFIX + data_stream_suffix;
         }
 
-		/* Sends a hello message to the Flash player with Cirrus ID "id" 
-		   We use this new call protocol outlined here:
-		   http://forums.adobe.com/thread/780788?tstart=0 */
-		public function send_hello(id:String):void
-		{
-			if (this.connected) {
-			    connection.call("relay", null, id, local_stream_name);
-		    } else {
-		        throw new Error("Cannot send hello: Cirrus socket not connected.");
-		    }
-		}
-		
+	/* Sends a hello message to the Flash player with Cirrus ID "id" 
+	   We use this new call protocol outlined here:
+	   http://forums.adobe.com/thread/780788?tstart=0 */
+	public function send_hello(id:String):void
+        {
+            if (this.connected) {
+                connection.call("relay", null, id, local_stream_name);
+            } else {
+                throw new Error("Cannot send hello: Cirrus socket not connected.");
+            }
+        }
+
 /*************************** PRIVATE HELPER FUNCTIONS *************************/		
 
         private function fail():void
