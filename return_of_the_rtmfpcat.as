@@ -100,7 +100,7 @@ package
         private var fac_poll_timeo_id:uint;
 
         /* Badge with a client counter */
-        [Embed(source="badge_con_counter.png")]
+        [Embed(source="badge.png")]
         private var BadgeImage:Class;
         private var tot_client_count_tf:TextField;
         private var tot_client_count_fmt:TextFormat;
