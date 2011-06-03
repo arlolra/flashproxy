@@ -223,7 +223,7 @@ package
                 puts("ProxyPair: connection closed.");
                 p_p = null;
                 if (proxy_mode && !debug_mode && badge != null) {
-                    badge.num_proxy_pairs++;
+                    badge.num_proxy_pairs--;
                 }
                 establish_facilitator_connection();
             });
