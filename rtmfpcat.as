@@ -166,22 +166,10 @@ package
 
         private function establish_facilitator_connection():void
         {
-            s_f = new FacilitatorSocket();
-            s_f.addEventListener(FacilitatorSocketEvent.CONNECT_SUCCESS, function (e:Event):void {
-                if (proxy_mode) {
-                    puts("Facilitator: getting registration.");
-                    s_f.get_registration();
-                } else {
-                    puts("Facilitator: posting registration.");
-                    s_f.post_registration(s_c.id);
-                }
-            });
+            s_f = new FacilitatorSocket(fac_addr.host, fac_addr.port);
             s_f.addEventListener(FacilitatorSocketEvent.CONNECT_FAILED, function (e:Event):void {
                 puts("Facilitator: connect failed.");
                 setTimeout(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
-            });
-            s_f.addEventListener(FacilitatorSocketEvent.CONNECT_CLOSED, function (e:Event):void {
-                puts("Facilitator: connect closed.");
             });
             
             if (proxy_mode) {
@@ -194,13 +182,16 @@ package
                     puts("Facilitator: no registrations available.");
                     setTimeout(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
                 });
+                puts("Facilitator: getting registration.");
+                s_f.get_registration();
             } else {
                 s_f.addEventListener(FacilitatorSocketEvent.REGISTRATION_FAILED, function (e:Event):void {
                     puts("Facilitator: registration failed.");
                     setTimeout(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
                 });
+                puts("Facilitator: posting registration.");
+                s_f.post_registration(s_c.id);
             }
-            s_f.connect(fac_addr.host, fac_addr.port);
         }
         
         private function start_proxy_pair():void

@@ -10,6 +10,7 @@ import socket
 import sys
 import threading
 import time
+import urllib
 
 DEFAULT_ADDRESS = "0.0.0.0"
 DEFAULT_PORT = 9002
@@ -190,31 +191,47 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         log(u"proxy %s connects" % format_addr(self.client_address))
 
+        if self.path == "/crossdomain.xml":
+            self.send_crossdomain()
+            return
+        
+        client = ""
         reg = REGS.fetch()
         if reg:
             log(u"proxy %s gets %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
-            self.request.send(str(reg))
+            client = str(reg)
         else:
             log(u"proxy %s gets none" % format_addr(self.client_address))
+            client = "Registration list empty"
+        
+        response = "client=%s" % urllib.quote(client)
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html')    
+        self.send_header('Content-Length', str(len(response)))
+        self.end_headers()
+        self.wfile.write(response)
 
     def do_POST(self):
-        data = self.rfile.readline(1024).strip()
-        try:
-            vals = cgi.parse_qs(data, False, True)
-        except ValueError, e:
-            log(u"client %s POST syntax error: %s" % (format_addr(self.client_address), repr(str(e))))
+        data = cgi.FieldStorage(fp = self.rfile, headers = self.headers, 
+                                environ = {'REQUEST_METHOD' : 'POST',
+                                           'CONTENT_TYPE' : self.headers['Content-Type']})
+
+        if self.path == "/crossdomain.xml":
+            self.send_crossdomain()
             return
 
-        client_specs = vals.get("client")
-        if client_specs is None or len(client_specs) != 1:
+        client_specs = data["client"]
+        if client_specs is None or client_specs.value is None:
             log(u"client %s missing \"client\" param" % format_addr(self.client_address))
+            self.send_error(404)
             return
-        val = client_specs[0]
+        val = client_specs.value
 
         try:
             reg = Reg.parse(val, self.client_address[0])
         except ValueError, e:
             log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(val), repr(str(e))))
+            self.send_error(404)
             return
 
         log(u"client %s regs %s -> %s" % (format_addr(self.client_address), val, unicode(reg)))
@@ -222,10 +239,30 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             log(u"client %s %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
         else:
             log(u"client %s %s (already present, now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
+        
+        response = ""
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html')
+        self.send_header('Content-Length', str(len(response)))
+        self.send_header('Connection', 'close')
+        self.end_headers()
+        self.wfile.write(response)
 
     def log_message(self, format, *args):
         msg = format % args
         log(u"message from HTTP handler for %s: %s" % (format_addr(self.client_address), repr(msg)))
+        
+    def send_crossdomain(self):
+        crossdomain = """\
+<cross-domain-policy>
+    <allow-access-from domain="*" to-ports="%s"/>
+</cross-domain-policy>\r\n""" % (address[1])
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/xml')
+        self.send_header('Content-Length', str(len(crossdomain)))
+        self.end_headers()
+        self.wfile.write(crossdomain)  
 
 REGS = RegSet()
 

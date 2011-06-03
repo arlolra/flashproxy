@@ -1,108 +1,94 @@
 package rtmfp
 {
-    import flash.net.Socket;
     import flash.events.Event;
     import flash.events.EventDispatcher;
+    import flash.events.HTTPStatusEvent;
     import flash.events.IOErrorEvent;
-    import flash.events.NetStatusEvent;
-    import flash.events.ProgressEvent;
     import flash.events.SecurityErrorEvent;
-    import flash.utils.clearInterval;
-    import flash.utils.setInterval;
+    import flash.net.URLLoader;
+    import flash.net.URLLoaderDataFormat;
+    import flash.net.URLRequest;
+    import flash.net.URLRequestMethod;
+    import flash.net.URLVariables;
+    import flash.system.Security;
     
     import rtmfp.events.FacilitatorSocketEvent;
     
-    [Event(name=FacilitatorSocketEvent.CONNECT_CLOSED, type="com.flashproxy.rtmfp.events.FacilitatorSocketEvent")]
     [Event(name=FacilitatorSocketEvent.CONNECT_FAILED, type="com.flashproxy.rtmfp.events.FacilitatorSocketEvent")]
-    [Event(name=FacilitatorSocketEvent.CONNECT_SUCCESS, type="com.flashproxy.rtmfp.events.FacilitatorSocketEvent")]
     [Event(name=FacilitatorSocketEvent.REGISTRATION_FAILED, type="com.flashproxy.rtmfp.events.FacilitatorSocketEvent")]
     [Event(name=FacilitatorSocketEvent.REGISTRATION_RECEIVED, type="com.flashproxy.rtmfp.events.FacilitatorSocketEvent")]
     [Event(name=FacilitatorSocketEvent.REGISTRATIONS_EMPTY, type="com.flashproxy.rtmfp.events.FacilitatorSocketEvent")]
     public class FacilitatorSocket extends EventDispatcher
     {
-        private var socket:Socket;
-        private var connected:Boolean;
-        private var connection_timeout:uint;
+        private var host:String;
+        private var port:uint;
         
-        public function FacilitatorSocket()
-        {
-            socket = null;
-            connected = false;
-        }
-        
-        public function close():void
-        {
-            connected = false;
-            if (socket != null) {
-                socket.removeEventListener(Event.CONNECT, on_connect_event);
-                socket.removeEventListener(Event.CLOSE, on_close_event);
-                socket.removeEventListener(IOErrorEvent.IO_ERROR, on_io_error_event);
-                socket.removeEventListener(ProgressEvent.SOCKET_DATA, on_progress_event);
-                socket.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, on_security_error_event);
-                if (connected) {
-                    socket.close();
-                }
-            }
-        }
-        
-        public function connect(host:String, port:uint):void
-        {
-            if (socket != null || connected) {
-                return;
-            }
-            
-            socket = new Socket();
-            socket.addEventListener(Event.CONNECT, on_connect_event);
-            socket.addEventListener(Event.CLOSE, on_close_event);
-            socket.addEventListener(IOErrorEvent.IO_ERROR, on_io_error_event);
-            socket.addEventListener(ProgressEvent.SOCKET_DATA, on_progress_event);
-            socket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, on_security_error_event);
-            socket.connect(host, port);
+        public function FacilitatorSocket(host:String, port:uint)
+        {   
+            this.host = host;
+            this.port = port; 
         }
         
         public function get_registration():void
         {
-            if (!connected) return;
-            socket.writeUTFBytes("GET / HTTP/1.0\r\n\r\n");
+            make_request(URLRequestMethod.GET);
         }
         
         public function post_registration(registration_data:String):void
-        {
-            if (!connected) return;
-            socket.writeUTFBytes("POST / HTTP/1.0\r\n\r\nclient=" + registration_data + "\r\n");
+        {    
+            var data:URLVariables = new URLVariables();
+            data.client = registration_data;
+            make_request(URLRequestMethod.POST, data);
         }
         
         private function fail():void
         {
-            clearInterval(connection_timeout);
             dispatchEvent(new FacilitatorSocketEvent(FacilitatorSocketEvent.CONNECT_FAILED));
         }
         
-        private function on_close_event(event:Event):void
+        private function make_request(method:String, data:URLVariables = null):void
         {
-            close();
-            dispatchEvent(new FacilitatorSocketEvent(FacilitatorSocketEvent.CONNECT_CLOSED));
+            var request:URLRequest = new URLRequest(url)
+            request.data = data;
+            request.method = method;
+
+            var url_loader:URLLoader = new URLLoader();
+            url_loader = new URLLoader();
+            url_loader.dataFormat = URLLoaderDataFormat.VARIABLES;
+            
+            url_loader.addEventListener(Event.COMPLETE, on_complete_event);
+            url_loader.addEventListener(HTTPStatusEvent.HTTP_STATUS, on_http_status_event);
+            url_loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, on_security_error_event);
+            url_loader.addEventListener(IOErrorEvent.IO_ERROR, on_io_error_event);
+            
+            url_loader.load(request);
         }
         
-        private function on_connect_event(event:Event):void
+        private function on_complete_event(event:Event):void
         {
-            connected = true;
-            dispatchEvent(new FacilitatorSocketEvent(FacilitatorSocketEvent.CONNECT_SUCCESS));
+            try {
+                var client_id:String = event.target.data.client;
+                if (client_id == "Registration list empty") {
+                    dispatchEvent(new FacilitatorSocketEvent(FacilitatorSocketEvent.REGISTRATIONS_EMPTY));
+                } else {
+                    dispatchEvent(new FacilitatorSocketEvent(FacilitatorSocketEvent.REGISTRATION_RECEIVED, client_id));
+                }
+            } catch (e:Error) {
+                /* error is thrown for POST when we don't care about
+                   the response anyways */
+            }
+            
+            event.target.close()
+        }
+        
+        private function on_http_status_event(event:HTTPStatusEvent):void
+        {
+            /* empty for now */
         }
         
         private function on_io_error_event(event:IOErrorEvent):void
         {
             fail();
-        }
-        
-        private function on_progress_event(event:ProgressEvent):void
-        {
-            var client_id:String = socket.readUTFBytes(event.bytesLoaded);
-            if (client_id == "Registration list empty") {
-                dispatchEvent(new FacilitatorSocketEvent(FacilitatorSocketEvent.REGISTRATIONS_EMPTY));
-            } else {
-                dispatchEvent(new FacilitatorSocketEvent(FacilitatorSocketEvent.REGISTRATION_RECEIVED, client_id));
-            }   
         }
 
         private function on_security_error_event(event:SecurityErrorEvent):void
@@ -110,6 +96,9 @@ package rtmfp
             fail();
         }
         
-        
+        private function get url():String
+        {
+            return "http://" + host + ":" + port;
+        }
     }
 }
