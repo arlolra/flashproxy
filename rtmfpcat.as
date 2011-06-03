@@ -50,47 +50,62 @@ package
         
         private var proxy_pairs:Array;
 
+        private var debug_mode:Boolean;
         private var proxy_mode:Boolean;
 
         /* TextField for debug output. */
         private var output_text:TextField;
+        
+        /* Badge for display */
+        private var badge:InternetFreedomBadge;
 
         private var fac_addr:Object;
         private var relay_addr:Object;
 
         public function rtmfpcat()
         {
+            proxy_mode = false;
+            debug_mode = false;
+            
             // Absolute positioning.
             stage.scaleMode = StageScaleMode.NO_SCALE;
             stage.align = StageAlign.TOP_LEFT;
-
-            output_text = new TextField();
-            output_text.width = stage.stageWidth;
-            output_text.height = stage.stageHeight;
-            output_text.background = true;
-            output_text.backgroundColor = 0x001f0f;
-            output_text.textColor = 0x44cc44;
-            addChild(output_text);
             
-            puts("Starting.");
             // Wait until the query string parameters are loaded.
             this.loaderInfo.addEventListener(Event.COMPLETE, loaderinfo_complete);
         }
         
         public function puts(s:String):void
         {
-            output_text.appendText(s + "\n");
-            output_text.scrollV = output_text.maxScrollV;
+            if (output_text != null) {
+                output_text.appendText(s + "\n");
+                output_text.scrollV = output_text.maxScrollV;
+            }
         }
 
         private function loaderinfo_complete(e:Event):void
         {
             var fac_spec:String;
             var relay_spec:String;
-            
-            puts("Parameters loaded.");
 
+            debug_mode = (this.loaderInfo.parameters["debug"] != null)
             proxy_mode = (this.loaderInfo.parameters["proxy"] != null);
+            if (proxy_mode && !debug_mode) {
+                badge = new InternetFreedomBadge(this);
+                badge.display();
+            } else {
+                output_text = new TextField();
+                output_text.width = stage.stageWidth;
+                output_text.height = stage.stageHeight;
+                output_text.background = true;
+                output_text.backgroundColor = 0x001f0f;
+                output_text.textColor = 0x44cc44;
+                addChild(output_text);
+            }
+            
+            puts("Starting: parameters loaded.");
+            
+            /* TODO: use this to have multiple proxies going at once */
             proxy_pairs = new Array();
 
             fac_spec = this.loaderInfo.parameters["facilitator"];
@@ -157,6 +172,9 @@ package
                 if (!proxy_mode) {
                     start_proxy_pair();
                     s_c.send_hello(e.peer);
+                } else if (!debug_mode && badge != null) {
+                    badge.total_proxy_pairs++;
+                    badge.num_proxy_pairs++;
                 }
                 p_p.connect(e.peer, e.stream);
             });
@@ -204,6 +222,9 @@ package
             p_p.addEventListener(Event.CLOSE, function (e:Event):void {
                 puts("ProxyPair: connection closed.");
                 p_p = null;
+                if (proxy_mode && !debug_mode && badge != null) {
+                    badge.num_proxy_pairs++;
+                }
                 establish_facilitator_connection();
             });
             p_p.listen(s_c.local_stream_name);
@@ -225,5 +246,108 @@ package
 
             return addr;
         }
+    }
+}
+
+import flash.text.TextField;
+import flash.text.TextFormat;
+
+class InternetFreedomBadge {
+    
+    private var ui:rtmfpcat;
+    
+    private var _num_proxy_pairs:uint;
+    private var _total_proxy_pairs:uint;
+    
+    [Embed(source="badge.png")]
+    private var BadgeImage:Class;
+    private var tot_client_count_tf:TextField;
+    private var tot_client_count_fmt:TextFormat;
+    private var cur_client_count_tf:TextField;
+    private var cur_client_count_fmt:TextFormat;
+    
+    public function InternetFreedomBadge(ui:rtmfpcat)
+    {
+        this.ui = ui;
+        _num_proxy_pairs = 0;
+        _total_proxy_pairs = 0;
+        
+        /* Setup client counter for badge. */
+        tot_client_count_fmt = new TextFormat();
+        tot_client_count_fmt.color = 0xFFFFFF;
+        tot_client_count_fmt.align = "center";
+        tot_client_count_fmt.font = "courier-new";
+        tot_client_count_fmt.bold = true;
+        tot_client_count_fmt.size = 10;
+        tot_client_count_tf = new TextField();
+        tot_client_count_tf.width = 20;
+        tot_client_count_tf.height = 17;
+        tot_client_count_tf.background = false;
+        tot_client_count_tf.defaultTextFormat = tot_client_count_fmt;
+        tot_client_count_tf.x=47;
+        tot_client_count_tf.y=0;
+
+        cur_client_count_fmt = new TextFormat();
+        cur_client_count_fmt.color = 0xFFFFFF;
+        cur_client_count_fmt.align = "center";
+        cur_client_count_fmt.font = "courier-new";
+        cur_client_count_fmt.bold = true;
+        cur_client_count_fmt.size = 10;
+        cur_client_count_tf = new TextField();
+        cur_client_count_tf.width = 20;
+        cur_client_count_tf.height = 17;
+        cur_client_count_tf.background = false;
+        cur_client_count_tf.defaultTextFormat = cur_client_count_fmt;
+        cur_client_count_tf.x=47;
+        cur_client_count_tf.y=6;
+
+        /* Update the client counter on badge. */
+        update_client_count();
+    }
+    
+    public function display():void
+    {
+        ui.addChild(new BadgeImage());
+        /* Tried unsuccessfully to add counter to badge. */
+        /* For now, need two addChilds :( */
+        ui.addChild(tot_client_count_tf);
+        ui.addChild(cur_client_count_tf);
+    }
+    
+    public function get num_proxy_pairs():uint
+    {
+        return _num_proxy_pairs;
+    }
+    
+    public function set num_proxy_pairs(amount:uint):void
+    {
+        _num_proxy_pairs = amount;
+        update_client_count();
+    }
+    
+    public function get total_proxy_pairs():uint
+    {
+        return _total_proxy_pairs;
+    }
+    
+    public function set total_proxy_pairs(amount:uint):void
+    {
+        _total_proxy_pairs = amount;
+        /* note: doesn't update, so be sure to update this
+           before you update num_proxy_pairs! */
+    }
+    
+    private function update_client_count():void
+    {
+        /* Update total client count. */
+        if (String(total_proxy_pairs).length == 1)
+            tot_client_count_tf.text = "0" + String(total_proxy_pairs);
+        else
+            tot_client_count_tf.text = String(total_proxy_pairs);
+
+        /* Update current client count. */
+        cur_client_count_tf.text = "";
+        for(var i:Number = 0; i < num_proxy_pairs; i++)
+            cur_client_count_tf.appendText(".");
     }
 }
