@@ -386,7 +386,7 @@ while True:
                 remotes.remove(fd)
                 fd.close()
             else:
-                log(u"Data from unconnected remote %s (%d bytes)." % format_addr(fd.getpeername(), len(data)))
+                log(u"Data from unconnected remote %s (%d bytes)." % format_addr(fd.getpeername()), len(data))
                 fd.buf += data
                 if len(fd.buf) >= UNCONNECTED_BUFFER_LIMIT:
                     log(u"Refusing to buffer more than %d bytes from local %s." % (UNCONNECTED_BUFFER_LIMIT, format_addr(fd.getpeername())))
