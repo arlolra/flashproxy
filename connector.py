@@ -13,7 +13,7 @@ import urllib
 import xml.sax.saxutils
 
 DEFAULT_REMOTE_ADDRESS = "127.0.0.1"
-DEFAULT_REMOTE_PORT = 3333
+DEFAULT_REMOTE_PORT = 9002
 DEFAULT_LOCAL_ADDRESS = "127.0.0.1"
 DEFAULT_LOCAL_PORT = 9001
 DEFAULT_FACILITATOR_PORT = 9002
@@ -281,7 +281,7 @@ def register():
     spec = format_addr((None, options.remote_addr[1]))
     log(u"Registering \"%s\" with %s." % (spec, format_addr(options.facilitator_addr)))
     http = httplib.HTTPConnection(*options.facilitator_addr)
-    http.request("POST", "/", urllib.urlencode({"client": spec}))
+    http.request("POST", "/", urllib.urlencode({"client": spec}), {"Content-Type":"application/x-www-form-urlencoded"})
     http.close()
     return True
 

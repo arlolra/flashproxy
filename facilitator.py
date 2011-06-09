@@ -11,6 +11,7 @@ import sys
 import threading
 import time
 import urllib
+import xml.sax.saxutils
 
 DEFAULT_ADDRESS = "0.0.0.0"
 DEFAULT_PORT = 9002
@@ -216,10 +217,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
                                 environ = {'REQUEST_METHOD' : 'POST',
                                            'CONTENT_TYPE' : self.headers['Content-Type']})
 
-        if self.path == "/crossdomain.xml":
-            self.send_crossdomain()
-            return
-
         client_specs = data["client"]
         if client_specs is None or client_specs.value is None:
             log(u"client %s missing \"client\" param" % format_addr(self.client_address))
@@ -257,7 +254,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         crossdomain = """\
 <cross-domain-policy>
     <allow-access-from domain="*" to-ports="%s"/>
-</cross-domain-policy>\r\n""" % (address[1])
+</cross-domain-policy>\r\n""" % xml.sax.saxutils.escape(str(address[1]))
         self.send_response(200)
         self.send_header('Content-Type', 'application/xml')
         self.send_header('Content-Length', str(len(crossdomain)))

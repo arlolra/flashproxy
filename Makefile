@@ -1,12 +1,10 @@
 MXMLC ?= mxmlc
 
-TARGETS = rtmfpcat.swf
+TARGETS = swfcat.swf
 
 all: $(TARGETS)
 
-swfcat.swf: badge.png
-
-%.swf: %.as
+%.swf: %.as badge.png
 	$(MXMLC) -output $@ -static-link-runtime-shared-libraries -define=RTMFP::CIRRUS_KEY,\"$(CIRRUS_KEY)\" $<
 
 clean:

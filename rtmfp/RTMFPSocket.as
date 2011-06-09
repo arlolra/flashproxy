@@ -48,7 +48,7 @@ package rtmfp
         
 	/* Tears down this RTMFPSocket, closing both its streams.
 	   To be used when destroying this object. */
-	public function close():void
+	 public function close():void
         {
             if (send_stream != null) {
                 s_c.connection.removeEventListener(NetStatusEvent.NET_STATUS, on_stream_disconnection_event);
