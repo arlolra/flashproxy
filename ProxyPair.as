@@ -32,7 +32,7 @@ package
         // Bytes per second. Set to undefined to disable limit.
         private const RATE_LIMIT:Number = undefined; //10000;
         // Seconds.
-        private const RATE_LIMIT_HISrelayY:Number = 5.0;
+        private const RATE_LIMIT_HISTORY:Number = 5.0;
         
         private var rate_limit:RateLimit;
         
@@ -51,7 +51,7 @@ package
             this.r2c_schedule = new Array();
             
             if (RATE_LIMIT)
-                rate_limit = new BucketRateLimit(RATE_LIMIT * RATE_LIMIT_HISrelayY, RATE_LIMIT_HISrelayY);
+                rate_limit = new BucketRateLimit(RATE_LIMIT * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
             else
                 rate_limit = new RateUnlimit();
                 
