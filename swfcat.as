@@ -8,14 +8,22 @@ package
     import flash.events.Event;
     import flash.utils.setTimeout;
 
+    import FacilitatorSocket;
+    import events.FacilitatorSocketEvent;
+    
+    import ProxyPair;
+    import RTMFPProxyPair;
+    import SQSProxyPair;
+    import TCPProxyPair;
+
     import rtmfp.CirrusSocket;
-    import rtmfp.FacilitatorSocket;
     import rtmfp.events.CirrusSocketEvent;
-    import rtmfp.events.FacilitatorSocketEvent;
 
     public class swfcat extends Sprite
     {
-        /* Adobe's Cirrus server and Nate's key */
+        /* Adobe's Cirrus server for RTMFP connections.
+           The Cirrus key is defined at compile time by
+           reading from the CIRRUS_KEY environment var. */
         private const DEFAULT_CIRRUS_ADDR:String = "rtmfp://p2p.rtmfp.net";
         private const DEFAULT_CIRRUS_KEY:String = RTMFP::CIRRUS_KEY;
         
@@ -25,6 +33,7 @@ package
             port: 9002
         };
         
+        /* Default Tor client to use in case of RTMFP connection */
         private const DEFAULT_TOR_CLIENT_ADDR:Object = {
             host: "127.0.0.1",
             port: 9002
@@ -122,6 +131,8 @@ package
                 fac_addr = DEFAULT_FACILITATOR_ADDR;
             }
             
+            /* TODO: modify this for the client so that it can specify
+               a relay for the proxy to use */
             relay_spec = this.loaderInfo.parameters["relay"];
             if (relay_spec) {
                 puts("Relay spec: \"" + relay_spec + "\"");
@@ -257,6 +268,14 @@ package
         private function rtmfp_proxy_pair_factory():ProxyPair
         {
             return new RTMFPProxyPair(this, s_c, s_c.local_stream_name);
+        }
+        
+        // currently is the same as TCPProxyPair
+        // could be interesting to see how this works
+        // can't imagine it will work terribly well...
+        private function sqs_proxy_pair_factory():ProxyPair
+        {
+            return new SQSProxyPair(this);
         }
         
         private function tcp_proxy_pair_factory():ProxyPair

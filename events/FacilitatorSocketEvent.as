@@ -1,4 +1,4 @@
-package rtmfp.events
+package events
 {
     import flash.events.Event;
 

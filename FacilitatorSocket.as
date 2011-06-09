@@ -1,4 +1,4 @@
-package rtmfp
+package
 {
     import flash.events.Event;
     import flash.events.EventDispatcher;
@@ -10,9 +10,8 @@ package rtmfp
     import flash.net.URLRequest;
     import flash.net.URLRequestMethod;
     import flash.net.URLVariables;
-    import flash.system.Security;
     
-    import rtmfp.events.FacilitatorSocketEvent;
+    import events.FacilitatorSocketEvent;
     
     [Event(name=FacilitatorSocketEvent.CONNECT_FAILED, type="com.flashproxy.rtmfp.events.FacilitatorSocketEvent")]
     [Event(name=FacilitatorSocketEvent.REGISTRATION_FAILED, type="com.flashproxy.rtmfp.events.FacilitatorSocketEvent")]
