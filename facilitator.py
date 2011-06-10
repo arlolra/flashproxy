@@ -219,29 +219,23 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_client(None)
 
     def do_POST(self):
-        data = self.rfile.readline(1024).strip()
-        try:
-            vals = cgi.parse_qs(data, False, True)
-        except ValueError, e:
-            self.send_error(400)
-            log(u"client %s POST syntax error: %s" % (format_addr(self.client_address), repr(str(e))))
-            return
+        data = cgi.FieldStorage(fp = self.rfile, headers = self.headers,
+            environ = {"REQUEST_METHOD": "POST"})
 
-        client_specs = vals.get("client")
-        if client_specs is None or len(client_specs) != 1:
+        client_spec = data.getfirst("client")
+        if client_spec is None:
             self.send_error(400)
             log(u"client %s missing \"client\" param" % format_addr(self.client_address))
             return
-        val = client_specs[0]
 
         try:
-            reg = Reg.parse(val, self.client_address[0])
+            reg = Reg.parse(client_spec, self.client_address[0])
         except ValueError, e:
             self.send_error(400)
-            log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(val), repr(str(e))))
+            log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(client_spec), repr(str(e))))
             return
 
-        log(u"client %s regs %s -> %s" % (format_addr(self.client_address), val, unicode(reg)))
+        log(u"client %s regs %s -> %s" % (format_addr(self.client_address), client_spec, unicode(reg)))
         if REGS.add(reg):
             log(u"client %s %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
         else:
