@@ -27,9 +27,9 @@ package
         private const DEFAULT_CIRRUS_ADDR:String = "rtmfp://p2p.rtmfp.net";
         private const DEFAULT_CIRRUS_KEY:String = RTMFP::CIRRUS_KEY;
         
-        /* Nate's facilitator -- serves a crossdomain policy */
+        /* David's facilitator. */
         private const DEFAULT_FACILITATOR_ADDR:Object = {
-            host: "128.12.179.80",
+            host: "173.255.221.44",
             port: 9002
         };
         
