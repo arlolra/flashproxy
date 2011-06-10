@@ -108,10 +108,11 @@ Design of Flash proxies
 
     client=[<address>]:<port>
 
-  (The facilitator sends back no data in response.) If the connector
-  omits the [<address>] part, the facilitator will automatically fill it
-  in based on the HTTP client address, which means the connector doesn't
-  have to know its external address.
+  The facilitator sends a 200 reply if the registration was successful
+  and an error status otherwise. If the connector omits the [<address>]
+  part, the facilitator will automatically fill it in based on the HTTP
+  client address, which means the connector doesn't have to know its
+  external address.
 
   The connector solves the impedance mismatch between the Tor client and
   the Flash proxy, both of which want to make outgoing connections to
@@ -127,8 +128,8 @@ Design of Flash proxies
 7. Behavior of the Flash proxy
 
   The Flash proxy polls the facilitator for client registrations. When
-  it receives a registration, it opens one connection to a Tor relay,
-  one to the given client, and begin proxying data between them.
+  it receives a registration, it opens one connection to the given Tor
+  relay, one to the given client, and begin proxying data between them.
 
   The proxy asks the facilitator for a registration with an HTTP GET
   request:
@@ -136,22 +137,21 @@ Design of Flash proxies
     GET / HTTP/1.0
 
 
-  The response is not really HTTP: the data follows immediately with no
-  HTTP header. An empty document means that there are no clients
-  registered. Otherwise, the response looks like this:
+  The response code is 200 and the body looks like this:
 
-    <address>:<port>
+    client=[<address>:<port>]&relay=<address>:<port>
 
-  Both <address> and <port> are required.
+  If <address>:<port> is missing, it means that there are no client
+  registrations for this proxy.
 
   The Flash proxy may serve more than one relay–client pair at once. It
   limits its own bandwidth to 10 KB/s (combined upload/download).
 
 8. Behavior of the facilitator
 
-  The faciliator is a pseudo-HTTP server that handles client POST
-  registrations and proxy GET requests according to the formats given
-  above. The facilitator listens on port 9002.
+  The faciliator is a HTTP server that handles client POST registrations
+  and proxy GET requests according to the formats given above. The
+  facilitator listens on port 9002.
 
   In the current implementation, the facilitator forgets a client
   registration after giving it to a Flash proxy. The client must

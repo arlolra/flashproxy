@@ -12,11 +12,13 @@ package events
         public static const REGISTRATIONS_EMPTY:String   = "registrationsEmpty";
         
         public var client:String;
+        public var relay:String;
 
-        public function FacilitatorSocketEvent(type:String, client:String = null, bubbles:Boolean = false, cancelable:Boolean = false)
+        public function FacilitatorSocketEvent(type:String, client:String = null, relay:String = null, bubbles:Boolean = false, cancelable:Boolean = false)
         {
             super(type, bubbles, cancelable);
             this.client = client;
+            this.relay = relay;
         }
     }
 }

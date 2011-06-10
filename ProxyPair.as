@@ -6,6 +6,7 @@ package
     import flash.events.IOErrorEvent;
     import flash.events.ProgressEvent;
     import flash.events.SecurityErrorEvent;
+    import flash.events.TextEvent;
     import flash.net.Socket;
     import flash.utils.ByteArray;
     import flash.utils.clearTimeout;
@@ -96,6 +97,17 @@ package
         {
             /* No-op: must be overridden by subclasses */
         }
+
+        protected function socket_error(message:String):Function
+        {
+            return function(e:Event):void {
+                if (e is TextEvent)
+                    log(message + ": " + (e as TextEvent).text + ".");
+                else
+                    log(message + ".");
+                close();
+            };
+        }
         
         private function setup_relay_socket():void
         {
@@ -106,18 +118,9 @@ package
                     dispatchEvent(new Event(Event.CONNECT));
                 }
             });
-            relay_socket.addEventListener(Event.CLOSE, function (e:Event):void {
-                log("Relay: closed connection.");
-                close();
-            });
-            relay_socket.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
-                log("Relay: I/O error: " + e.text + ".");
-                close();
-            });
-            relay_socket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
-                log("Relay: security error: " + e.text + ".");
-                close();
-            });
+            relay_socket.addEventListener(Event.CLOSE, socket_error("Relay: closed"));
+            relay_socket.addEventListener(IOErrorEvent.IO_ERROR, socket_error("Relay: I/O error"))
+            relay_socket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, socket_error("Relay: security error"))
             relay_socket.addEventListener(ProgressEvent.SOCKET_DATA, relay_to_client);
         }
         

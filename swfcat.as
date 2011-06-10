@@ -27,9 +27,8 @@ package
         private const DEFAULT_CIRRUS_ADDR:String = "rtmfp://p2p.rtmfp.net";
         private const DEFAULT_CIRRUS_KEY:String = RTMFP::CIRRUS_KEY;
         
-        /* David's facilitator. */
         private const DEFAULT_FACILITATOR_ADDR:Object = {
-            host: "173.255.221.44",
+            host: "tor-facilitator.bamsoftware.com",
             port: 9002
         };
         
@@ -37,13 +36,6 @@ package
         private const DEFAULT_TOR_CLIENT_ADDR:Object = {
             host: "127.0.0.1",
             port: 9002
-        };
-        
-        /* David's relay (nickname 3VXRyxz67OeRoqHn) that also serves a
-           crossdomain policy. */
-        private const DEFAULT_TOR_RELAY_ADDR:Object = {
-            host: "173.255.221.44",
-            port: 9001
         };
         
         /* Poll facilitator every 10 sec */
@@ -130,24 +122,6 @@ package
             } else {
                 fac_addr = DEFAULT_FACILITATOR_ADDR;
             }
-            
-            /* TODO: modify this for the client so that it can specify
-               a relay for the proxy to use */
-            relay_spec = this.loaderInfo.parameters["relay"];
-            if (relay_spec) {
-                puts("Relay spec: \"" + relay_spec + "\"");
-                relay_addr = parse_addr_spec(relay_spec);
-                if (!relay_addr) {
-                    puts("Error: Relay spec must be in the form \"host:port\".");
-                    return;
-                }
-            } else {
-                if (proxy_mode) {
-                    relay_addr = DEFAULT_TOR_RELAY_ADDR;
-                } else {
-                    relay_addr = DEFAULT_TOR_CLIENT_ADDR;
-                }
-            }
 
             main();
         }
@@ -191,6 +165,7 @@ package
                 /* if we're in proxy mode, we should have already set
                    up a proxy pair */
                 if (!proxy_mode) {
+                    relay_addr = DEFAULT_TOR_CLIENT_ADDR;
                     proxy_pair_factory = rtmfp_proxy_pair_factory;
                     start_proxy_pair();
                     s_c.send_hello(e.peer);
@@ -216,6 +191,7 @@ package
             if (proxy_mode) {
                 s_f.addEventListener(FacilitatorSocketEvent.REGISTRATION_RECEIVED, function (e:FacilitatorSocketEvent):void {
                     var client_addr:Object = parse_addr_spec(e.client);
+                    relay_addr = parse_addr_spec(e.relay);
                     if (client_addr == null) {
                         puts("Facilitator: got registration " + e.client);
                         proxy_pair_factory = rtmfp_proxy_pair_factory;

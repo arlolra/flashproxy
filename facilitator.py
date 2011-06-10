@@ -11,10 +11,11 @@ import sys
 import threading
 import time
 import urllib
-import xml.sax.saxutils
+import urlparse
 
 DEFAULT_ADDRESS = "0.0.0.0"
 DEFAULT_PORT = 9002
+DEFAULT_RELAY_PORT = 9001
 DEFAULT_LOG_FILENAME = "facilitator.log"
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -22,17 +23,26 @@ LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 class options(object):
     log_filename = DEFAULT_LOG_FILENAME
     log_file = sys.stdout
+    relay_spec = None
     daemonize = True
+
+    @staticmethod
+    def set_relay_spec(spec):
+        af, host, port = parse_addr_spec(spec, defport = DEFAULT_RELAY_PORT)
+        # Resolve to get an IP address.
+        addrs = socket.getaddrinfo(host, port, af)
+        options.relay_spec = format_addr(addrs[0][4])
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %(progname)s <OPTIONS> [HOST] [PORT]
+Usage: %(progname)s -r RELAY <OPTIONS> [HOST] [PORT]
 Flash bridge facilitator: Register client addresses with HTTP POST requests
 and serve them out again with HTTP GET. Listen on HOST and PORT, by default
 %(addr)s %(port)d.
   -d, --debug         don't daemonize, log to stdout.
   -h, --help          show this help.
-  -l, --log FILENAME  write log to FILENAME (default \"%(log)s\").\
+  -l, --log FILENAME  write log to FILENAME (default \"%(log)s\").
+  -r, --relay RELAY   send RELAY (host:port) to proxies as the relay to use.\
 """ % {
     "progname": sys.argv[0],
     "addr": DEFAULT_ADDRESS,
@@ -192,78 +202,92 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         log(u"proxy %s connects" % format_addr(self.client_address))
 
-        if self.path == "/crossdomain.xml":
+        path = urlparse.urlsplit(self.path)[2]
+
+        if path == u"/crossdomain.xml":
             self.send_crossdomain()
             return
-        
-        client = ""
+
         reg = REGS.fetch()
         if reg:
-            log(u"proxy %s gets %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
-            client = str(reg)
+            log(u"proxy %s gets %s, relay %s (now %d)" %
+                (format_addr(self.client_address), unicode(reg),
+                 options.relay_spec, len(REGS)))
+            self.send_client(reg)
         else:
             log(u"proxy %s gets none" % format_addr(self.client_address))
-            client = "Registration list empty"
-        
-        response = "client=%s" % urllib.quote(client)
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/html')    
-        self.send_header('Content-Length', str(len(response)))
-        self.end_headers()
-        self.wfile.write(response)
+            self.send_client(None)
 
     def do_POST(self):
-        data = cgi.FieldStorage(fp = self.rfile, headers = self.headers, 
-                                environ = {'REQUEST_METHOD' : 'POST',
-                                           'CONTENT_TYPE' : self.headers['Content-Type']})
+        data = cgi.FieldStorage(fp = self.rfile, headers = self.headers,
+            environ = {"REQUEST_METHOD": "POST"})
 
-        client_specs = data["client"]
-        if client_specs is None or client_specs.value is None:
+        client_spec = data.getfirst("client")
+        if client_spec is None:
+            self.send_error(400)
             log(u"client %s missing \"client\" param" % format_addr(self.client_address))
-            self.send_error(404)
             return
-        val = client_specs.value
 
         try:
-            reg = Reg.parse(val, self.client_address[0])
+            reg = Reg.parse(client_spec, self.client_address[0])
         except ValueError, e:
-            log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(val), repr(str(e))))
-            self.send_error(404)
+            self.send_error(400)
+            log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(client_spec), repr(str(e))))
             return
 
-        log(u"client %s regs %s -> %s" % (format_addr(self.client_address), val, unicode(reg)))
+        log(u"client %s regs %s -> %s" % (format_addr(self.client_address), client_spec, unicode(reg)))
         if REGS.add(reg):
             log(u"client %s %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
         else:
             log(u"client %s %s (already present, now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
-        
-        response = ""
 
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html')
-        self.send_header('Content-Length', str(len(response)))
-        self.send_header('Connection', 'close')
         self.end_headers()
-        self.wfile.write(response)
+
+    def send_crossdomain(self):
+        crossdomain = """\
+<cross-domain-policy>
+<allow-access-from domain="*"/>
+</cross-domain-policy>
+"""
+        self.send_response(200)
+        # Content-Type must be one of a few whitelisted types.
+        # http://www.adobe.com/devnet/flashplayer/articles/fplayer9_security.html#_Content-Type_Whitelist
+        self.send_header("Content-Type", "application/xml")
+        self.end_headers()
+        self.wfile.write(crossdomain)
+
+    def send_error(self, code, message = None):
+        self.send_response(code)
+        self.end_headers()
+        if message:
+            self.wfile.write(message)
 
     def log_message(self, format, *args):
         msg = format % args
         log(u"message from HTTP handler for %s: %s" % (format_addr(self.client_address), repr(msg)))
-        
-    def send_crossdomain(self):
-        crossdomain = """\
-<cross-domain-policy>
-    <allow-access-from domain="*" to-ports="%s"/>
-</cross-domain-policy>\r\n""" % xml.sax.saxutils.escape(str(address[1]))
+
+    def send_client(self, reg):
+        if reg:
+            client_str = str(reg)
+        else:
+            # Send an empty string rather than a 404 or similar because Flash
+            # Player's URLLoader can't always distinguish a 404 from, say,
+            # "server not found."
+            client_str = ""
         self.send_response(200)
-        self.send_header('Content-Type', 'application/xml')
-        self.send_header('Content-Length', str(len(crossdomain)))
+        self.send_header("Content-Type", "x-www-form-urlencoded")
         self.end_headers()
-        self.wfile.write(crossdomain)  
+
+        data = {}
+        data["client"] = client_str
+        data["relay"] = options.relay_spec
+        self.request.send(urllib.urlencode(data))
 
 REGS = RegSet()
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:", ["debug", "help", "log="])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:r:",
+    ["debug", "help", "log=", "relay="])
 for o, a in opts:
     if o == "-d" or o == "--debug":
         options.daemonize = False
@@ -273,11 +297,24 @@ for o, a in opts:
         sys.exit()
     elif o == "-l" or o == "--log":
         options.log_filename = a
+    elif o == "-r" or o == "--relay":
+        try:
+            options.set_relay_spec(a)
+        except socket.gaierror, e:
+            print >> sys.stderr, u"Can't resolve relay %s: %s" % (repr(a), str(e))
+            sys.exit(1)
 
 if options.log_filename:
     options.log_file = open(options.log_filename, "a")
 else:
     options.log_file = sys.stdout
+
+if not options.relay_spec:
+    print >> sys.stderr, """\
+The -r option is required. Give it the relay that will be sent to proxies.
+  -r HOST[:PORT]\
+"""
+    sys.exit(1)
 
 if len(args) == 0:
     address = (DEFAULT_ADDRESS, DEFAULT_PORT)
@@ -293,13 +330,16 @@ else:
     usage(sys.stderr)
     sys.exit(1)
 
+addrinfo = socket.getaddrinfo(address[0], address[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
+
 class Server(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
     pass
 
 # Setup the server
-server = Server(address, Handler)
+server = Server(addrinfo[4], Handler)
 
-log(u"start on %s" % format_addr(address))
+log(u"start on %s" % format_addr(addrinfo[4]))
+log(u"using relay address %s" % options.relay_spec)
 
 if options.daemonize:
     log(u"daemonizing")

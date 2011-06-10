@@ -102,10 +102,10 @@ changing pool of addresses.
 
 == Design notes
 
-The Tor relay address is hardcoded in rtmfpcat.as. It could be any relay,
-with the caveat that the server also has to serve a crossdomain policy.
+Any Tor relay can be used, as long as it also serves a crossdomain
+policy.
 
-Client rtmfpcats register with the facilitator by sending an HTTP-like message:
+Clients register with the facilitator by sending an HTTP message:
 	POST / HTTP/1.0\r\n
 	\r\n
 	client=<CIRRUS-CLIENT-ID>
@@ -117,11 +117,15 @@ server uses these to coordinate RTMFP connections (including NAT punching).
 The need to communicate with a Cirrus server in addition to a facilitator is
 one of the major weaknesses of this design.
 
-The proxy rtmfpcat gets a client id using something like HTTP:
+The Flash proxy also gets a client address over HTTP:
 	GET / HTTP/1.0\r\n
 	\r\n
-The server sends back an id specification (no HTTP header):
-    51ae8ed56c3705e4ad3755cdd3328c27720984778bfff71d9ec9f2647331d39b
+The server sends back address specifications of a client and a relay in
+an HTTP respose.
+	HTTP/1.0 200 OK\r\n
+	Server: BaseHTTP/0.3 Python/2.5.2\r\n
+	\r\n
+	client=<CIRRUS-CLIENT-ID>&relay=9.9.9.9:9001
 
 == ActionScript programming
 

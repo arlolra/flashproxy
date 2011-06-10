@@ -47,30 +47,31 @@ package
         
         private function make_request(method:String, data:URLVariables = null):void
         {
-            var request:URLRequest = new URLRequest(url)
+            var request:URLRequest;
+            var loader:URLLoader;
+
+            loader = new URLLoader();
+            /* Get the x-www-form-encoded-values. */
+            loader.dataFormat = URLLoaderDataFormat.VARIABLES;
+            loader.addEventListener(Event.COMPLETE, on_complete_event);
+            loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, on_security_error_event);
+            loader.addEventListener(IOErrorEvent.IO_ERROR, on_io_error_event);
+
+            request = new URLRequest(url);
             request.data = data;
             request.method = method;
-
-            var url_loader:URLLoader = new URLLoader();
-            url_loader = new URLLoader();
-            url_loader.dataFormat = URLLoaderDataFormat.VARIABLES;
-            
-            url_loader.addEventListener(Event.COMPLETE, on_complete_event);
-            url_loader.addEventListener(HTTPStatusEvent.HTTP_STATUS, on_http_status_event);
-            url_loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, on_security_error_event);
-            url_loader.addEventListener(IOErrorEvent.IO_ERROR, on_io_error_event);
-            
-            url_loader.load(request);
+            loader.load(request);
         }
         
         private function on_complete_event(event:Event):void
         {
             try {
                 var client_id:String = event.target.data.client;
-                if (client_id == "Registration list empty") {
+                var relay_addr:String = event.target.data.relay;
+                if (client_id == "") {
                     dispatchEvent(new FacilitatorSocketEvent(FacilitatorSocketEvent.REGISTRATIONS_EMPTY));
                 } else {
-                    dispatchEvent(new FacilitatorSocketEvent(FacilitatorSocketEvent.REGISTRATION_RECEIVED, client_id));
+                    dispatchEvent(new FacilitatorSocketEvent(FacilitatorSocketEvent.REGISTRATION_RECEIVED, client_id, relay_addr));
                 }
             } catch (e:Error) {
                 /* error is thrown for POST when we don't care about
@@ -78,11 +79,6 @@ package
             }
             
             event.target.close()
-        }
-        
-        private function on_http_status_event(event:HTTPStatusEvent):void
-        {
-            /* empty for now */
         }
         
         private function on_io_error_event(event:IOErrorEvent):void
@@ -97,7 +93,8 @@ package
         
         private function get url():String
         {
-            return "http://" + host + ":" + port;
+            return "http://" + encodeURIComponent(host)
+                + ":" + encodeURIComponent(port.toString()) + "/";
         }
     }
 }

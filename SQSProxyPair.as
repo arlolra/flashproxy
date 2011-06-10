@@ -68,18 +68,9 @@ package
                     dispatchEvent(new Event(Event.CONNECT));
                 }
             });
-            client_socket.addEventListener(Event.CLOSE, function (e:Event):void {
-                log("Client: closed.");
-                close();
-            });
-            client_socket.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
-                log("Client: I/O error: " + e.text + ".");
-                close();
-            });
-            client_socket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
-                log("Client: security error: " + e.text + ".");
-                close();
-            });
+            client_socket.addEventListener(Event.CLOSE, socket_error("Client: closed"));
+            client_socket.addEventListener(IOErrorEvent.IO_ERROR, socket_error("Client: I/O error"));
+            client_socket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, socket_error("Client: security error"))
             client_socket.addEventListener(ProgressEvent.SOCKET_DATA, client_to_relay);
         }
     }
