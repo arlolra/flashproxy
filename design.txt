@@ -128,8 +128,8 @@ Design of Flash proxies
 7. Behavior of the Flash proxy
 
   The Flash proxy polls the facilitator for client registrations. When
-  it receives a registration, it opens one connection to a Tor relay,
-  one to the given client, and begin proxying data between them.
+  it receives a registration, it opens one connection to the given Tor
+  relay, one to the given client, and begin proxying data between them.
 
   The proxy asks the facilitator for a registration with an HTTP GET
   request:
@@ -139,7 +139,7 @@ Design of Flash proxies
 
   The response code is 200 and the body looks like this:
 
-    client=[<address>:<port>]
+    client=[<address>:<port>]&relay=<address>:<port>
 
   If <address>:<port> is missing, it means that there are no client
   registrations for this proxy.

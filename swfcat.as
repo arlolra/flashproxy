@@ -18,12 +18,6 @@ package
 
     public class swfcat extends Sprite
     {
-        /* David's relay (nickname 3VXRyxz67OeRoqHn) that also serves a
-           crossdomain policy. */
-        private const DEFAULT_RELAY_ADDR:Object = {
-            host: "173.255.221.44",
-            port: 9001
-        };
         private const DEFAULT_FACILITATOR_ADDR:Object = {
             host: "tor-facilitator.bamsoftware.com",
             port: 9002
@@ -43,7 +37,6 @@ package
         private var output_text:TextField;
 
         private var fac_addr:Object;
-        private var relay_addr:Object;
 
         /* Number of proxy pairs currently connected (up to
            MAX_NUM_PROXY_PAIRS). */
@@ -158,11 +151,6 @@ package
                 puts("Error: Facilitator spec must be in the form \"host:port\".");
                 return;
             }
-            relay_addr = get_param_addr("relay", DEFAULT_RELAY_ADDR);
-            if (!relay_addr) {
-                puts("Error: Relay spec must be in the form \"host:port\".");
-                return;
-            }
 
             main();
         }
@@ -213,6 +201,8 @@ package
             var loader:URLLoader;
             var client_spec:String;
             var client_addr:Object;
+            var relay_spec:String;
+            var relay_addr:Object;
             var proxy_pair:Object;
 
             setTimeout(main, FACILITATOR_POLL_INTERVAL);
@@ -226,11 +216,22 @@ package
                 puts("Error: missing \"client\" in response.");
                 return;
             }
-            puts("Facilitator: got \"" + client_spec + "\".");
+            relay_spec = loader.data.relay;
+            if (!relay_spec) {
+                puts("Error: missing \"relay\" in response.");
+                return;
+            }
+            puts("Facilitator: got client:\"" + client_spec + "\" "
+                + "relay:\"" + relay_spec + "\".");
 
             client_addr = parse_addr_spec(client_spec);
             if (!client_addr) {
                 puts("Error: Client spec must be in the form \"host:port\".");
+                return;
+            }
+            relay_addr = parse_addr_spec(relay_spec);
+            if (!client_addr) {
+                puts("Error: Relay spec must be in the form \"host:port\".");
                 return;
             }
 
