@@ -429,19 +429,19 @@ class ProxyPair extends EventDispatcher
         s_r.addEventListener(Event.CONNECT, relay_connected);
         s_r.addEventListener(Event.CLOSE, function (e:Event):void {
             log("Relay: closed.");
-            if (s_c.connected)
+            if (s_c && s_c.connected)
                 s_c.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
         s_r.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
             log("Relay: I/O error: " + e.text + ".");
-            if (s_c.connected)
+            if (s_c && s_c.connected)
                 s_c.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
         s_r.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
             log("Relay: security error: " + e.text + ".");
-            if (s_c.connected)
+            if (s_c && s_c.connected)
                 s_c.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
@@ -460,19 +460,19 @@ class ProxyPair extends EventDispatcher
         s_c.addEventListener(Event.CONNECT, client_connected);
         s_c.addEventListener(Event.CLOSE, function (e:Event):void {
             log("Client: closed.");
-            if (s_r.connected)
+            if (s_r && s_r.connected)
                 s_r.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
         s_c.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
             log("Client: I/O error: " + e.text + ".");
-            if (s_r.connected)
+            if (s_r && s_r.connected)
                 s_r.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
         s_c.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
             log("Client: security error: " + e.text + ".");
-            if (s_r.connected)
+            if (s_r && s_r.connected)
                 s_r.close();
             dispatchEvent(new Event(Event.COMPLETE));
         });
