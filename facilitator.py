@@ -15,6 +15,7 @@ import urlparse
 
 DEFAULT_ADDRESS = "0.0.0.0"
 DEFAULT_PORT = 9002
+DEFAULT_RELAY_PORT = 9001
 DEFAULT_LOG_FILENAME = "facilitator.log"
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -22,17 +23,26 @@ LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 class options(object):
     log_filename = DEFAULT_LOG_FILENAME
     log_file = sys.stdout
+    relay_spec = None
     daemonize = True
+
+    @staticmethod
+    def set_relay_spec(spec):
+        af, host, port = parse_addr_spec(spec, defport = DEFAULT_RELAY_PORT)
+        # Resolve to get an IP address.
+        addrs = socket.getaddrinfo(host, port, af)
+        options.relay_spec = format_addr(addrs[0][4])
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %(progname)s <OPTIONS> [HOST] [PORT]
+Usage: %(progname)s -r RELAY <OPTIONS> [HOST] [PORT]
 Flash bridge facilitator: Register client addresses with HTTP POST requests
 and serve them out again with HTTP GET. Listen on HOST and PORT, by default
 %(addr)s %(port)d.
   -d, --debug         don't daemonize, log to stdout.
   -h, --help          show this help.
-  -l, --log FILENAME  write log to FILENAME (default \"%(log)s\").\
+  -l, --log FILENAME  write log to FILENAME (default \"%(log)s\").
+  -r, --relay RELAY   send RELAY (host:port) to proxies as the relay to use.\
 """ % {
     "progname": sys.argv[0],
     "addr": DEFAULT_ADDRESS,
@@ -200,7 +210,9 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         reg = REGS.fetch()
         if reg:
-            log(u"proxy %s gets %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
+            log(u"proxy %s gets %s, relay %s (now %d)" %
+                (format_addr(self.client_address), unicode(reg),
+                 options.relay_spec, len(REGS)))
             self.send_client(reg)
         else:
             log(u"proxy %s gets none" % format_addr(self.client_address))
@@ -272,11 +284,16 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "x-www-form-urlencoded")
         self.end_headers()
-        self.request.send(urllib.urlencode({"client": client_str}))
+
+        data = {}
+        data["client"] = client_str
+        data["relay"] = options.relay_spec
+        self.request.send(urllib.urlencode(data))
 
 REGS = RegSet()
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:", ["debug", "help", "log="])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:r:",
+    ["debug", "help", "log=", "relay="])
 for o, a in opts:
     if o == "-d" or o == "--debug":
         options.daemonize = False
@@ -286,11 +303,24 @@ for o, a in opts:
         sys.exit()
     elif o == "-l" or o == "--log":
         options.log_filename = a
+    elif o == "-r" or o == "--relay":
+        try:
+            options.set_relay_spec(a)
+        except socket.gaierror, e:
+            print >> sys.stderr, u"Can't resolve relay %s: %s" % (repr(a), str(e))
+            sys.exit(1)
 
 if options.log_filename:
     options.log_file = open(options.log_filename, "a")
 else:
     options.log_file = sys.stdout
+
+if not options.relay_spec:
+    print >> sys.stderr, """\
+The -r option is required. Give it the relay that will be sent to proxies.
+  -r HOST[:PORT]\
+"""
+    sys.exit(1)
 
 if len(args) == 0:
     address = (DEFAULT_ADDRESS, DEFAULT_PORT)
