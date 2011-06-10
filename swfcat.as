@@ -25,7 +25,7 @@ package
             port: 9001
         };
         private const DEFAULT_FACILITATOR_ADDR:Object = {
-            host: "173.255.221.44",
+            host: "tor-facilitator.bamsoftware.com",
             port: 9002
         };
 
