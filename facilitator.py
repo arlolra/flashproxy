@@ -345,6 +345,7 @@ class Server(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
 server = Server(addrinfo[4], Handler)
 
 log(u"start on %s" % format_addr(addrinfo[4]))
+log(u"using relay address %s" % options.relay_spec)
 
 if options.daemonize:
     log(u"daemonizing")
