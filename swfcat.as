@@ -37,6 +37,8 @@ package
             port: 9002
         };
 
+        private const MAX_NUM_PROXY_PAIRS:uint = 1;
+
         // Milliseconds.
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
@@ -54,82 +56,88 @@ package
         
         private var client_id:String;
         private var proxy_pair_factory:Function;
+        private var relay_addr:Object;
         
-        private var debug_mode:Boolean;
         private var proxy_mode:Boolean;
 
         /* TextField for debug output. */
         private var output_text:TextField;
-        
-        /* Badge for display */
+
+        /* UI shown when debug is off. */
         private var badge:Badge;
 
+        /* Number of proxy pairs currently connected (up to
+           MAX_NUM_PROXY_PAIRS). */
+        private var num_proxy_pairs:int = 0;
+
         private var fac_addr:Object;
-        private var relay_addr:Object;
 
         public var rate_limit:RateLimit;
 
+        public function puts(s:String):void
+        {
+            output_text.appendText(s + "\n");
+            output_text.scrollV = output_text.maxScrollV;
+        }
+
         public function swfcat()
         {
-            proxy_mode = false;
-            debug_mode = false;
-            
             // Absolute positioning.
             stage.scaleMode = StageScaleMode.NO_SCALE;
             stage.align = StageAlign.TOP_LEFT;
+
+            output_text = new TextField();
+            output_text.width = stage.stageWidth;
+            output_text.height = stage.stageHeight;
+            output_text.background = true;
+            output_text.backgroundColor = 0x001f0f;
+            output_text.textColor = 0x44cc44;
+
+            badge = new Badge();
 
             if (RATE_LIMIT)
                 rate_limit = new BucketRateLimit(RATE_LIMIT * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
             else
                 rate_limit = new RateUnlimit();
-            
+
+            puts("Starting.");
             // Wait until the query string parameters are loaded.
             this.loaderInfo.addEventListener(Event.COMPLETE, loaderinfo_complete);
-        }
-        
-        public function puts(s:String):void
-        {
-            if (output_text != null) {
-                output_text.appendText(s + "\n");
-                output_text.scrollV = output_text.maxScrollV;
-            }
         }
 
         private function loaderinfo_complete(e:Event):void
         {
             var fac_spec:String;
-            var relay_spec:String;
 
-            debug_mode = (this.loaderInfo.parameters["debug"] != null)
-            proxy_mode = (this.loaderInfo.parameters["proxy"] != null);
-            if (proxy_mode && !debug_mode) {
-                badge = new Badge();
-                addChild(badge);
-            } else {
-                output_text = new TextField();
-                output_text.width = stage.stageWidth;
-                output_text.height = stage.stageHeight;
-                output_text.background = true;
-                output_text.backgroundColor = 0x001f0f;
-                output_text.textColor = 0x44cc44;
+            puts("Parameters loaded.");
+
+            if (this.loaderInfo.parameters["debug"])
                 addChild(output_text);
-            }
-            
-            puts("Starting: parameters loaded.");
+            else
+                addChild(badge);
 
-            fac_spec = this.loaderInfo.parameters["facilitator"];
-            if (fac_spec) {
-                puts("Facilitator spec: \"" + fac_spec + "\"");
-                fac_addr = parse_addr_spec(fac_spec);
-                if (!fac_addr) {
-                    puts("Error: Facilitator spec must be in the form \"host:port\".");
-                    return;
-                }
-            } else {
-                fac_addr = DEFAULT_FACILITATOR_ADDR;
+            proxy_mode = (this.loaderInfo.parameters["proxy"] != null);
+
+            fac_addr = get_param_addr("facilitator", DEFAULT_FACILITATOR_ADDR);
+            if (!fac_addr) {
+                puts("Error: Facilitator spec must be in the form \"host:port\".");
+                return;
             }
 
             main();
+        }
+
+        /* Get an address structure from the given movie parameter, or the given
+           default. Returns null on error. */
+        private function get_param_addr(param:String, default_addr:Object):Object
+        {
+            var spec:String, addr:Object;
+
+            spec = this.loaderInfo.parameters[param];
+            if (spec)
+                return parse_addr_spec(spec);
+            else
+                return default_addr;
         }
 
         /* The main logic begins here, after start-up issues are taken care of. */
@@ -175,7 +183,8 @@ package
                     proxy_pair_factory = rtmfp_proxy_pair_factory;
                     start_proxy_pair();
                     s_c.send_hello(e.peer);
-                } else if (!debug_mode && badge != null) {
+                } else {
+                    num_proxy_pairs++;
                     badge.proxy_begin();
                 }
                 
@@ -238,7 +247,8 @@ package
             p_p.addEventListener(Event.CLOSE, function (e:Event):void {
                 puts("ProxyPair: connection closed.");
                 p_p = null;
-                if (proxy_mode && !debug_mode && badge != null) {
+                if (proxy_mode) {
+                    num_proxy_pairs--;
                     badge.proxy_end();
                 }
                 establish_facilitator_connection();
