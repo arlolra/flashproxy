@@ -55,8 +55,6 @@ package
         private var client_id:String;
         private var proxy_pair_factory:Function;
         
-        private var proxy_pairs:Array;
-
         private var debug_mode:Boolean;
         private var proxy_mode:Boolean;
 
@@ -118,9 +116,6 @@ package
             }
             
             puts("Starting: parameters loaded.");
-            
-            /* TODO: use this to have multiple proxies going at once */
-            proxy_pairs = new Array();
 
             fac_spec = this.loaderInfo.parameters["facilitator"];
             if (fac_spec) {
