@@ -37,9 +37,9 @@ package
             host: "127.0.0.1",
             port: 9002
         };
-        
-        /* Poll facilitator every 10 sec */
-        private const DEFAULT_FAC_POLL_INTERVAL:uint = 10000;
+
+        // Milliseconds.
+        private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
         // Socket to Cirrus server
         private var s_c:CirrusSocket;
@@ -185,7 +185,7 @@ package
             s_f = new FacilitatorSocket(fac_addr.host, fac_addr.port);
             s_f.addEventListener(FacilitatorSocketEvent.CONNECT_FAILED, function (e:Event):void {
                 puts("Facilitator: connect failed.");
-                setTimeout(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
+                setTimeout(establish_facilitator_connection, FACILITATOR_POLL_INTERVAL);
             });
             
             if (proxy_mode) {
@@ -210,14 +210,14 @@ package
                 });
                 s_f.addEventListener(FacilitatorSocketEvent.REGISTRATIONS_EMPTY, function (e:Event):void {
                     puts("Facilitator: no registrations available.");
-                    setTimeout(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
+                    setTimeout(establish_facilitator_connection, FACILITATOR_POLL_INTERVAL);
                 });
                 puts("Facilitator: getting registration.");
                 s_f.get_registration();
             } else {
                 s_f.addEventListener(FacilitatorSocketEvent.REGISTRATION_FAILED, function (e:Event):void {
                     puts("Facilitator: registration failed.");
-                    setTimeout(establish_facilitator_connection, DEFAULT_FAC_POLL_INTERVAL);
+                    setTimeout(establish_facilitator_connection, FACILITATOR_POLL_INTERVAL);
                 });
                 puts("Facilitator: posting registration.");
                 s_f.post_registration(s_c.id);
