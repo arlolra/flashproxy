@@ -41,6 +41,11 @@ package
         // Milliseconds.
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
+        // Bytes per second. Set to undefined to disable limit.
+        public const RATE_LIMIT:Number = undefined;
+        // Seconds.
+        private const RATE_LIMIT_HISTORY:Number = 5.0;
+
         // Socket to Cirrus server
         private var s_c:CirrusSocket;
         // Socket to facilitator.
@@ -65,6 +70,8 @@ package
         private var fac_addr:Object;
         private var relay_addr:Object;
 
+        public var rate_limit:RateLimit;
+
         public function swfcat()
         {
             proxy_mode = false;
@@ -73,6 +80,11 @@ package
             // Absolute positioning.
             stage.scaleMode = StageScaleMode.NO_SCALE;
             stage.align = StageAlign.TOP_LEFT;
+
+            if (RATE_LIMIT)
+                rate_limit = new BucketRateLimit(RATE_LIMIT * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
+            else
+                rate_limit = new RateUnlimit();
             
             // Wait until the query string parameters are loaded.
             this.loaderInfo.addEventListener(Event.COMPLETE, loaderinfo_complete);
@@ -279,6 +291,7 @@ package
 
 import flash.text.TextFormat;
 import flash.text.TextField;
+import flash.utils.getTimer;
 
 class Badge extends flash.display.Sprite
 {
@@ -358,5 +371,100 @@ class Badge extends flash.display.Sprite
         cur_client_count_tf.text = "";
         for(var i:Number = 0; i < num_proxy_pairs; i++)
             cur_client_count_tf.appendText(".");
+    }
+}
+
+class RateLimit
+{
+    public function RateLimit()
+    {
+    }
+
+    public function update(n:Number):Boolean
+    {
+        return true;
+    }
+
+    public function when():Number
+    {
+        return 0.0;
+    }
+
+    public function is_limited():Boolean
+    {
+        return false;
+    }
+}
+
+class RateUnlimit extends RateLimit
+{
+    public function RateUnlimit()
+    {
+    }
+
+    public override function update(n:Number):Boolean
+    {
+        return true;
+    }
+
+    public override function when():Number
+    {
+        return 0.0;
+    }
+
+    public override function is_limited():Boolean
+    {
+        return false;
+    }
+}
+
+class BucketRateLimit extends RateLimit
+{
+    private var amount:Number;
+    private var capacity:Number;
+    private var time:Number;
+    private var last_update:uint;
+
+    public function BucketRateLimit(capacity:Number, time:Number)
+    {
+        this.amount = 0.0;
+        /* capacity / time is the rate we are aiming for. */
+        this.capacity = capacity;
+        this.time = time;
+        this.last_update = getTimer();
+    }
+
+    private function age():void
+    {
+        var now:uint;
+        var delta:Number;
+
+        now = getTimer();
+        delta = (now - last_update) / 1000.0;
+        last_update = now;
+
+        amount -= delta * capacity / time;
+        if (amount < 0.0)
+            amount = 0.0;
+    }
+
+    public override function update(n:Number):Boolean
+    {
+        age();
+        amount += n;
+
+        return amount <= capacity;
+    }
+
+    public override function when():Number
+    {
+        age();
+        return (amount - capacity) / (capacity / time);
+    }
+
+    public override function is_limited():Boolean
+    {
+        age();
+        return amount > capacity;
     }
 }
