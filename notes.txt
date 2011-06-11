@@ -1,9 +1,5 @@
 == Things to do
 
-Make the facilitator inform the proxy which relay to use.
-
-Nice if the facilitator can serve /crossdomain.xml.
-
 Limit rate of registration in facilitator, maybe just one reg per IP.
 
 We need to solve the problem of potential changing fingerprints when

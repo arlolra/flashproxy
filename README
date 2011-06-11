@@ -28,9 +28,11 @@ There are five main parts. Our terminology for each part is in quotes.
 5. A Tor "relay," which is just a normal Tor relay except that its host
    must also serve a Flash crossdomain policy.
 
-== Quick start
+== Demonstration page
 
-Will put up a demo page soon.
+https://crypto.stanford.edu/flashproxy/
+
+== Quick start
 
 === Building
 
