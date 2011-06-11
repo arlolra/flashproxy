@@ -227,16 +227,16 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         client_spec = data.getfirst("client")
         if client_spec is None:
-            self.send_error(400)
             log(u"client %s missing \"client\" param" % client_addr_s)
+            self.send_error(400)
             return
 
         try:
             reg = Reg.parse(client_spec, self.client_address[0])
         except ValueError, e:
-            self.send_error(400)
             log(u"client %s syntax error in %s: %s"
                 % (client_addr_s, repr(client_spec), repr(str(e))))
+            self.send_error(400)
             return
 
         log(u"client %s regs %s -> %s"
