@@ -235,7 +235,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(client_spec), repr(str(e))))
             return
 
-        log(u"client %s regs %s -> %s" % (format_addr(self.client_address), client_spec, unicode(reg)))
+        log(u"client %s regs %s -> %s" % (format_addr(self.client_address), repr(client_spec), unicode(reg)))
         if REGS.add(reg):
             log(u"client %s %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
         else:
