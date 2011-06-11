@@ -60,7 +60,7 @@ package
         private var output_text:TextField;
         
         /* Badge for display */
-        private var badge:InternetFreedomBadge;
+        private var badge:Badge;
 
         private var fac_addr:Object;
         private var relay_addr:Object;
@@ -94,8 +94,8 @@ package
             debug_mode = (this.loaderInfo.parameters["debug"] != null)
             proxy_mode = (this.loaderInfo.parameters["proxy"] != null);
             if (proxy_mode && !debug_mode) {
-                badge = new InternetFreedomBadge(this);
-                badge.display();
+                badge = new Badge();
+                addChild(badge);
             } else {
                 output_text = new TextField();
                 output_text.width = stage.stageWidth;
@@ -170,8 +170,7 @@ package
                     start_proxy_pair();
                     s_c.send_hello(e.peer);
                 } else if (!debug_mode && badge != null) {
-                    badge.total_proxy_pairs++;
-                    badge.num_proxy_pairs++;
+                    badge.proxy_begin();
                 }
                 
                 p_p.client = {peer: e.peer, stream: e.stream};
@@ -234,7 +233,7 @@ package
                 puts("ProxyPair: connection closed.");
                 p_p = null;
                 if (proxy_mode && !debug_mode && badge != null) {
-                    badge.num_proxy_pairs--;
+                    badge.proxy_end();
                 }
                 establish_facilitator_connection();
             });
@@ -278,29 +277,25 @@ package
     }
 }
 
-import flash.text.TextField;
 import flash.text.TextFormat;
+import flash.text.TextField;
 
-class InternetFreedomBadge {
-    
-    private var ui:swfcat;
-    
-    private var _num_proxy_pairs:uint;
-    private var _total_proxy_pairs:uint;
-    
+class Badge extends flash.display.Sprite
+{
+    /* Number of proxy pairs currently connected. */
+    private var num_proxy_pairs:int = 0;
+    /* Number of proxy pairs ever connected. */
+    private var total_proxy_pairs:int = 0;
+
     [Embed(source="badge.png")]
     private var BadgeImage:Class;
     private var tot_client_count_tf:TextField;
     private var tot_client_count_fmt:TextFormat;
     private var cur_client_count_tf:TextField;
     private var cur_client_count_fmt:TextFormat;
-    
-    public function InternetFreedomBadge(ui:swfcat)
+
+    public function Badge()
     {
-        this.ui = ui;
-        _num_proxy_pairs = 0;
-        _total_proxy_pairs = 0;
-        
         /* Setup client counter for badge. */
         tot_client_count_fmt = new TextFormat();
         tot_client_count_fmt.color = 0xFFFFFF;
@@ -330,42 +325,27 @@ class InternetFreedomBadge {
         cur_client_count_tf.x=47;
         cur_client_count_tf.y=6;
 
+        addChild(new BadgeImage());
+        addChild(tot_client_count_tf);
+        addChild(cur_client_count_tf);
+
         /* Update the client counter on badge. */
         update_client_count();
     }
-    
-    public function display():void
+
+    public function proxy_begin():void
     {
-        ui.addChild(new BadgeImage());
-        /* Tried unsuccessfully to add counter to badge. */
-        /* For now, need two addChilds :( */
-        ui.addChild(tot_client_count_tf);
-        ui.addChild(cur_client_count_tf);
-    }
-    
-    public function get num_proxy_pairs():uint
-    {
-        return _num_proxy_pairs;
-    }
-    
-    public function set num_proxy_pairs(amount:uint):void
-    {
-        _num_proxy_pairs = amount;
+        num_proxy_pairs++;
+        total_proxy_pairs++;
         update_client_count();
     }
-    
-    public function get total_proxy_pairs():uint
+
+    public function proxy_end():void
     {
-        return _total_proxy_pairs;
+        num_proxy_pairs--;
+        update_client_count();
     }
-    
-    public function set total_proxy_pairs(amount:uint):void
-    {
-        _total_proxy_pairs = amount;
-        /* note: doesn't update, so be sure to update this
-           before you update num_proxy_pairs! */
-    }
-    
+
     private function update_client_count():void
     {
         /* Update total client count. */
