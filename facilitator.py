@@ -270,6 +270,12 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         if message:
             self.wfile.write(message)
 
+    def log_request(self, code):
+        addr_s = format_addr(self.client_address)
+        referer = self.headers.get("Referer") or "-"
+        log(u"resp %s %s %d %s"
+            % (addr_s, repr(self.requestline), code, repr(referer)))
+
     def log_message(self, format, *args):
         msg = format % args
         log(u"message from HTTP handler for %s: %s"
