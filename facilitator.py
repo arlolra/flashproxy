@@ -200,7 +200,9 @@ class RegSet(object):
 
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
-        log(u"proxy %s connects" % format_addr(self.client_address))
+        proxy_addr_s = format_addr(self.client_address)
+
+        log(u"proxy %s connects" % proxy_addr_s)
 
         path = urlparse.urlsplit(self.path)[2]
 
@@ -211,35 +213,40 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         reg = REGS.fetch()
         if reg:
             log(u"proxy %s gets %s, relay %s (now %d)" %
-                (format_addr(self.client_address), unicode(reg),
-                 options.relay_spec, len(REGS)))
+                (proxy_addr_s, unicode(reg), options.relay_spec, len(REGS)))
             self.send_client(reg)
         else:
-            log(u"proxy %s gets none" % format_addr(self.client_address))
+            log(u"proxy %s gets none" % proxy_addr_s)
             self.send_client(None)
 
     def do_POST(self):
+        client_addr_s = format_addr(self.client_address)
+
         data = cgi.FieldStorage(fp = self.rfile, headers = self.headers,
             environ = {"REQUEST_METHOD": "POST"})
 
         client_spec = data.getfirst("client")
         if client_spec is None:
             self.send_error(400)
-            log(u"client %s missing \"client\" param" % format_addr(self.client_address))
+            log(u"client %s missing \"client\" param" % client_addr_s)
             return
 
         try:
             reg = Reg.parse(client_spec, self.client_address[0])
         except ValueError, e:
             self.send_error(400)
-            log(u"client %s syntax error in %s: %s" % (format_addr(self.client_address), repr(client_spec), repr(str(e))))
+            log(u"client %s syntax error in %s: %s"
+                % (client_addr_s, repr(client_spec), repr(str(e))))
             return
 
-        log(u"client %s regs %s -> %s" % (format_addr(self.client_address), repr(client_spec), unicode(reg)))
+        log(u"client %s regs %s -> %s"
+            % (client_addr_s, repr(client_spec), unicode(reg)))
         if REGS.add(reg):
-            log(u"client %s %s (now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
+            log(u"client %s %s (now %d)"
+                % (client_addr_s, unicode(reg), len(REGS)))
         else:
-            log(u"client %s %s (already present, now %d)" % (format_addr(self.client_address), unicode(reg), len(REGS)))
+            log(u"client %s %s (already present, now %d)"
+                % (client_addr_s, unicode(reg), len(REGS)))
 
         self.send_response(200)
         self.end_headers()
@@ -265,7 +272,8 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         msg = format % args
-        log(u"message from HTTP handler for %s: %s" % (format_addr(self.client_address), repr(msg)))
+        log(u"message from HTTP handler for %s: %s"
+            % (format_addr(self.client_address), repr(msg)))
 
     def send_client(self, reg):
         if reg:
