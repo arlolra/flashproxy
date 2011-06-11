@@ -36,42 +36,21 @@ package
         /* TextField for debug output. */
         private var output_text:TextField;
 
-        private var fac_addr:Object;
+        /* UI shown when debug is off. */
+        private var badge:Badge;
 
         /* Number of proxy pairs currently connected (up to
            MAX_NUM_PROXY_PAIRS). */
         private var num_proxy_pairs:int = 0;
-        /* Number of proxy pairs ever connected. */
-        private var total_proxy_pairs:int = 0;
+
+        private var fac_addr:Object;
 
         public var rate_limit:RateLimit;
-
-        /* Badge with a client counter */
-        [Embed(source="badge.png")]
-        private var BadgeImage:Class;
-        private var tot_client_count_tf:TextField;
-        private var tot_client_count_fmt:TextFormat;
-        private var cur_client_count_tf:TextField;
-        private var cur_client_count_fmt:TextFormat;
 
         public function puts(s:String):void
         {
             output_text.appendText(s + "\n");
             output_text.scrollV = output_text.maxScrollV;
-        }
-
-        public function update_client_count():void
-        {
-            /* Update total client count. */
-            if (String(total_proxy_pairs).length == 1)
-                tot_client_count_tf.text = "0" + String(total_proxy_pairs);
-            else
-                tot_client_count_tf.text = String(total_proxy_pairs);
-
-            /* Update current client count. */
-            cur_client_count_tf.text = "";
-            for(var i:Number=0; i<num_proxy_pairs; i++)
-                cur_client_count_tf.appendText(".");;
         }
 
         public function swfcat()
@@ -87,38 +66,7 @@ package
             output_text.backgroundColor = 0x001f0f;
             output_text.textColor = 0x44cc44;
 
-            /* Setup client counter for badge. */
-            tot_client_count_fmt = new TextFormat();
-            tot_client_count_fmt.color = 0xFFFFFF;
-            tot_client_count_fmt.align = "center";
-            tot_client_count_fmt.font = "courier-new";
-            tot_client_count_fmt.bold = true;
-            tot_client_count_fmt.size = 10;
-            tot_client_count_tf = new TextField();
-            tot_client_count_tf.width = 20;
-            tot_client_count_tf.height = 17;
-            tot_client_count_tf.background = false;
-            tot_client_count_tf.defaultTextFormat = tot_client_count_fmt;
-            tot_client_count_tf.x=47;
-            tot_client_count_tf.y=0;
-
-            cur_client_count_fmt = new TextFormat();
-            cur_client_count_fmt.color = 0xFFFFFF;
-            cur_client_count_fmt.align = "center";
-            cur_client_count_fmt.font = "courier-new";
-            cur_client_count_fmt.bold = true;
-            cur_client_count_fmt.size = 10;
-            cur_client_count_tf = new TextField();
-            cur_client_count_tf.width = 20;
-            cur_client_count_tf.height = 17;
-            cur_client_count_tf.background = false;
-            cur_client_count_tf.defaultTextFormat = cur_client_count_fmt;
-            cur_client_count_tf.x=47;
-            cur_client_count_tf.y=6;
-
-
-            /* Update the client counter on badge. */
-            update_client_count();
+            badge = new Badge();
 
             if (RATE_LIMIT)
                 rate_limit = new BucketRateLimit(RATE_LIMIT * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
@@ -138,13 +86,8 @@ package
 
             if (this.loaderInfo.parameters["debug"])
                 addChild(output_text);
-            else {
-                addChild(new BadgeImage());
-                /* Tried unsuccessfully to add counter to badge. */
-                /* For now, need two addChilds :( */
-                addChild(tot_client_count_tf);
-                addChild(cur_client_count_tf);
-            }
+            else
+                addChild(badge);
 
             fac_addr = get_param_addr("facilitator", DEFAULT_FACILITATOR_ADDR);
             if (!fac_addr) {
@@ -236,17 +179,13 @@ package
             }
 
             num_proxy_pairs++;
-            total_proxy_pairs++;
-            /* Update the client count on the badge. */
-            update_client_count();
+            badge.proxy_begin();
 
             proxy_pair = new ProxyPair(this, client_addr, relay_addr);
             proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
-                
                 num_proxy_pairs--;
-                /* Update the client count on the badge. */
-                update_client_count();
+                badge.proxy_end();
             });
             proxy_pair.connect();
 
@@ -272,6 +211,8 @@ package
 }
 
 import flash.display.Sprite;
+import flash.text.TextFormat;
+import flash.text.TextField;
 import flash.events.Event;
 import flash.events.EventDispatcher;
 import flash.events.IOErrorEvent;
@@ -283,6 +224,87 @@ import flash.utils.ByteArray;
 import flash.utils.clearTimeout;
 import flash.utils.getTimer;
 import flash.utils.setTimeout;
+
+class Badge extends flash.display.Sprite
+{
+    /* Number of proxy pairs currently connected. */
+    private var num_proxy_pairs:int = 0;
+    /* Number of proxy pairs ever connected. */
+    private var total_proxy_pairs:int = 0;
+
+    [Embed(source="badge.png")]
+    private var BadgeImage:Class;
+    private var tot_client_count_tf:TextField;
+    private var tot_client_count_fmt:TextFormat;
+    private var cur_client_count_tf:TextField;
+    private var cur_client_count_fmt:TextFormat;
+
+    public function Badge()
+    {
+        /* Setup client counter for badge. */
+        tot_client_count_fmt = new TextFormat();
+        tot_client_count_fmt.color = 0xFFFFFF;
+        tot_client_count_fmt.align = "center";
+        tot_client_count_fmt.font = "courier-new";
+        tot_client_count_fmt.bold = true;
+        tot_client_count_fmt.size = 10;
+        tot_client_count_tf = new TextField();
+        tot_client_count_tf.width = 20;
+        tot_client_count_tf.height = 17;
+        tot_client_count_tf.background = false;
+        tot_client_count_tf.defaultTextFormat = tot_client_count_fmt;
+        tot_client_count_tf.x=47;
+        tot_client_count_tf.y=0;
+
+        cur_client_count_fmt = new TextFormat();
+        cur_client_count_fmt.color = 0xFFFFFF;
+        cur_client_count_fmt.align = "center";
+        cur_client_count_fmt.font = "courier-new";
+        cur_client_count_fmt.bold = true;
+        cur_client_count_fmt.size = 10;
+        cur_client_count_tf = new TextField();
+        cur_client_count_tf.width = 20;
+        cur_client_count_tf.height = 17;
+        cur_client_count_tf.background = false;
+        cur_client_count_tf.defaultTextFormat = cur_client_count_fmt;
+        cur_client_count_tf.x=47;
+        cur_client_count_tf.y=6;
+
+        addChild(new BadgeImage());
+        addChild(tot_client_count_tf);
+        addChild(cur_client_count_tf);
+
+        /* Update the client counter on badge. */
+        update_client_count();
+    }
+
+    public function proxy_begin():void
+    {
+        num_proxy_pairs++;
+        total_proxy_pairs++;
+        update_client_count();
+    }
+
+    public function proxy_end():void
+    {
+        num_proxy_pairs--;
+        update_client_count();
+    }
+
+    private function update_client_count():void
+    {
+        /* Update total client count. */
+        if (String(total_proxy_pairs).length == 1)
+            tot_client_count_tf.text = "0" + String(total_proxy_pairs);
+        else
+            tot_client_count_tf.text = String(total_proxy_pairs);
+
+        /* Update current client count. */
+        cur_client_count_tf.text = "";
+        for(var i:Number = 0; i < num_proxy_pairs; i++)
+            cur_client_count_tf.appendText(".");
+    }
+}
 
 class RateLimit
 {
