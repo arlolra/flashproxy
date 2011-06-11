@@ -13,7 +13,6 @@ package
     
     import ProxyPair;
     import RTMFPProxyPair;
-    import SQSProxyPair;
     import TCPProxyPair;
 
     import rtmfp.CirrusSocket;
@@ -255,14 +254,6 @@ package
         private function rtmfp_proxy_pair_factory():ProxyPair
         {
             return new RTMFPProxyPair(this, s_c, s_c.local_stream_name);
-        }
-        
-        // currently is the same as TCPProxyPair
-        // could be interesting to see how this works
-        // can't imagine it will work terribly well...
-        private function sqs_proxy_pair_factory():ProxyPair
-        {
-            return new SQSProxyPair(this);
         }
         
         private function tcp_proxy_pair_factory():ProxyPair
