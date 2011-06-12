@@ -14,6 +14,9 @@ package
     /* An instance of a client-relay connection. */
     public class ProxyPair extends EventDispatcher
     {
+        // Label for log messages.
+        public var name:String;
+
         // Socket to client.
         private var s_c:*;
         private var connect_c:Function;
@@ -33,13 +36,15 @@ package
 
         public function log(msg:String):void
         {
-            ui.puts(id() + ": " + msg)
+            if (name)
+                ui.puts(name + ": " + msg)
+            else
+                ui.puts(msg)
         }
 
-        // String describing this pair for output.
-        public function id():String
+        public function set_name(name:String):void
         {
-            return "<>";
+            this.name = name;
         }
 
         public function ProxyPair(ui:swfcat, s_c:*, connect_c:Function, s_r:*, connect_r:Function)

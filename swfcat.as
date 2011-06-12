@@ -265,6 +265,7 @@ package
 
         private function make_proxy_pair(client_spec:String, relay_spec:String):ProxyPair
         {
+            var proxy_pair:ProxyPair;
             var addr_c:Object;
             var addr_r:Object;
             var s_c:*;
@@ -278,21 +279,27 @@ package
             if (addr_c) {
                 s_c = new Socket();
                 s_r = new Socket();
-                return new ProxyPair(this, s_c, function ():void {
+                proxy_pair = new ProxyPair(this, s_c, function ():void {
                     s_c.connect(addr_c.host, addr_c.port);
                 }, s_r, function ():void {
                     s_r.connect(addr_r.host, addr_r.port);
                 });
+                proxy_pair.set_name("<" + addr_c.host + ":" + addr_c.port + ","
+                    + addr_r.host + ":" + addr_r.port + ">");
+                return proxy_pair;
             }
 
             if (client_spec.match(/^[0-9A-Fa-f]{64}$/)) {
                 s_c = new RTMFPSocket(CIRRUS_URL, CIRRUS_KEY);
                 s_r = new Socket();
-                return new ProxyPair(this, s_c, function ():void {
+                proxy_pair = new ProxyPair(this, s_c, function ():void {
                     s_c.connect(client_spec);
                 }, s_r, function ():void {
                     s_r.connect(addr_r.host, addr_r.port);
                 });
+                proxy_pair.set_name("<" + client_spec.substr(0, 4) + "...,"
+                    + addr_r.host + ":" + addr_r.port + ">");
+                return proxy_pair;
             }
 
             throw new ArgumentError("Can't parse client spec \"" + client_spec + "\".");
