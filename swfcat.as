@@ -96,7 +96,7 @@ package
 
             puts("Parameters loaded.");
 
-            if (this.loaderInfo.parameters["debug"])
+            if (this.loaderInfo.parameters["debug"] || this.loaderInfo.parameters["client"])
                 addChild(output_text);
             else
                 addChild(badge);
