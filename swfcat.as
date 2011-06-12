@@ -107,10 +107,10 @@ package
                 return;
             }
 
-            if (this.loaderInfo.parameter["proxy"])
-                proxy_main();
-            else
+            if (this.loaderInfo.parameters["client"])
                 client_main();
+            else
+                proxy_main();
         }
 
         /* Get an address structure from the given movie parameter, or the given
