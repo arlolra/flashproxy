@@ -101,12 +101,18 @@ Design of Flash proxies
   On startup, the connector sends a registration message to the
   facilitator, informing the facilitator that it is waiting for a
   connection. The facilitator will later hand this registration to a
-  Flash proxy. The registration message is an HTTP POST request of this
+  Flash proxy. The registration message is an HTTP POST request of the
   form:
 
     POST / HTTP/1.0
 
     client=[<address>]:<port>
+
+  or the form:
+
+    POST / HTTP/1.0
+
+    client=[<rtmfp-id>]:<port>
 
   The facilitator sends a 200 reply if the registration was successful
   and an error status otherwise. If the connector omits the [<address>]
@@ -141,11 +147,14 @@ Design of Flash proxies
 
     client=[<address>:<port>]&relay=<address>:<port>
 
-  If <address>:<port> is missing, it means that there are no client
-  registrations for this proxy.
+  or this:
 
-  The Flash proxy may serve more than one relay–client pair at once. It
-  limits its own bandwidth to 10 KB/s (combined upload/download).
+    client=[<rtmfp-id>]&relay=<address>:<port>
+
+  If the value for the client parameter is empty, it means that there are no
+  client registrations for this proxy.
+
+  The Flash proxy may serve more than one relay–client pair at once.
 
 8. Behavior of the facilitator
 

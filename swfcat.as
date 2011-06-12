@@ -9,17 +9,29 @@ package
     import flash.net.URLLoader;
     import flash.net.URLLoaderDataFormat;
     import flash.net.URLRequest;
+    import flash.net.URLRequestMethod;
+    import flash.net.URLVariables;
     import flash.events.Event;
     import flash.events.IOErrorEvent;
-    import flash.events.ProgressEvent;
     import flash.events.SecurityErrorEvent;
-    import flash.utils.ByteArray;
     import flash.utils.setTimeout;
 
     public class swfcat extends Sprite
     {
+        /* Adobe's Cirrus server for RTMFP connections.
+           The Cirrus key is defined at compile time by
+           reading from the CIRRUS_KEY environment var. */
+        private const CIRRUS_URL:String = "rtmfp://p2p.rtmfp.net";
+        private const CIRRUS_KEY:String = RTMFP::CIRRUS_KEY;
+        
         private const DEFAULT_FACILITATOR_ADDR:Object = {
             host: "tor-facilitator.bamsoftware.com",
+            port: 9002
+        };
+        
+        /* Local Tor client to use in case of RTMFP connection. */
+        private const LOCAL_TOR_CLIENT_ADDR:Object = {
+            host: "127.0.0.1",
             port: 9002
         };
 
@@ -84,7 +96,7 @@ package
 
             puts("Parameters loaded.");
 
-            if (this.loaderInfo.parameters["debug"])
+            if (this.loaderInfo.parameters["debug"] || this.loaderInfo.parameters["client"])
                 addChild(output_text);
             else
                 addChild(badge);
@@ -95,7 +107,10 @@ package
                 return;
             }
 
-            main();
+            if (this.loaderInfo.parameters["client"])
+                client_main();
+            else
+                proxy_main();
         }
 
         /* Get an address structure from the given movie parameter, or the given
@@ -112,13 +127,13 @@ package
         }
 
         /* The main logic begins here, after start-up issues are taken care of. */
-        private function main():void
+        private function proxy_main():void
         {
             var fac_url:String;
             var loader:URLLoader;
 
             if (num_proxy_pairs >= MAX_NUM_PROXY_PAIRS) {
-                setTimeout(main, FACILITATOR_POLL_INTERVAL);
+                setTimeout(proxy_main, FACILITATOR_POLL_INTERVAL);
                 return;
             }
 
@@ -143,12 +158,10 @@ package
         {
             var loader:URLLoader;
             var client_spec:String;
-            var client_addr:Object;
             var relay_spec:String;
-            var relay_addr:Object;
             var proxy_pair:Object;
 
-            setTimeout(main, FACILITATOR_POLL_INTERVAL);
+            setTimeout(proxy_main, FACILITATOR_POLL_INTERVAL);
 
             loader = e.target as URLLoader;
             client_spec = loader.data.client;
@@ -167,21 +180,12 @@ package
             puts("Facilitator: got client:\"" + client_spec + "\" "
                 + "relay:\"" + relay_spec + "\".");
 
-            client_addr = parse_addr_spec(client_spec);
-            if (!client_addr) {
-                puts("Error: Client spec must be in the form \"host:port\".");
+            try {
+                proxy_pair = make_proxy_pair(client_spec, relay_spec);
+            } catch (e:ArgumentError) {
+                puts("Error: " + e);
                 return;
             }
-            relay_addr = parse_addr_spec(relay_spec);
-            if (!client_addr) {
-                puts("Error: Relay spec must be in the form \"host:port\".");
-                return;
-            }
-
-            num_proxy_pairs++;
-            badge.proxy_begin();
-
-            proxy_pair = new ProxyPair(this, client_addr, relay_addr);
             proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
                 num_proxy_pairs--;
@@ -189,6 +193,112 @@ package
             });
             proxy_pair.connect();
 
+            num_proxy_pairs++;
+            badge.proxy_begin();
+        }
+
+        private function client_main():void
+        {
+            var rs:RTMFPSocket;
+
+            rs = new RTMFPSocket(CIRRUS_URL, CIRRUS_KEY);
+            rs.addEventListener(Event.COMPLETE, function (e:Event):void {
+                puts("Got RTMFP id " + rs.id);
+                register(rs);
+            });
+            rs.addEventListener(RTMFPSocket.ACCEPT_EVENT, client_accept);
+
+            rs.listen();
+        }
+
+        private function client_accept(e:Event):void {
+            var rs:RTMFPSocket;
+            var s_t:Socket;
+            var proxy_pair:ProxyPair;
+
+            rs = e.target as RTMFPSocket;
+            s_t = new Socket();
+
+            puts("Got RTMFP connection from " + rs.peer_id);
+
+            proxy_pair = new ProxyPair(this, rs, function ():void {
+                /* Do nothing; already connected. */
+            }, s_t, function ():void {
+                s_t.connect(LOCAL_TOR_CLIENT_ADDR.host, LOCAL_TOR_CLIENT_ADDR.port);
+            });
+            proxy_pair.connect();
+        }
+
+        private function register(rs:RTMFPSocket):void {
+            var fac_url:String;
+            var loader:URLLoader;
+            var request:URLRequest;
+            var variables:URLVariables;
+
+            loader = new URLLoader();
+            loader.addEventListener(Event.COMPLETE, function (e:Event):void {
+                puts("Facilitator: registered.");
+            });
+            loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
+                puts("Facilitator: security error: " + e.text + ".");
+                rs.close();
+            });
+            loader.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
+                puts("Facilitator: I/O error: " + e.text + ".");
+                rs.close();
+            });
+
+            fac_url = "http://" + encodeURIComponent(fac_addr.host)
+                + ":" + encodeURIComponent(fac_addr.port) + "/";
+            request = new URLRequest(fac_url);
+            request.method = URLRequestMethod.POST;
+            request.data = new URLVariables;
+            request.data["client"] = rs.id;
+
+            puts("Facilitator: connecting to " + fac_url + ".");
+            loader.load(request);
+        }
+
+        private function make_proxy_pair(client_spec:String, relay_spec:String):ProxyPair
+        {
+            var proxy_pair:ProxyPair;
+            var addr_c:Object;
+            var addr_r:Object;
+            var s_c:*;
+            var s_r:Socket;
+
+            addr_r = swfcat.parse_addr_spec(relay_spec);
+            if (!addr_r)
+                throw new ArgumentError("Relay spec must be in the form \"host:port\".");
+
+            addr_c = swfcat.parse_addr_spec(client_spec);
+            if (addr_c) {
+                s_c = new Socket();
+                s_r = new Socket();
+                proxy_pair = new ProxyPair(this, s_c, function ():void {
+                    s_c.connect(addr_c.host, addr_c.port);
+                }, s_r, function ():void {
+                    s_r.connect(addr_r.host, addr_r.port);
+                });
+                proxy_pair.set_name("<" + addr_c.host + ":" + addr_c.port + ","
+                    + addr_r.host + ":" + addr_r.port + ">");
+                return proxy_pair;
+            }
+
+            if (client_spec.match(/^[0-9A-Fa-f]{64}$/)) {
+                s_c = new RTMFPSocket(CIRRUS_URL, CIRRUS_KEY);
+                s_r = new Socket();
+                proxy_pair = new ProxyPair(this, s_c, function ():void {
+                    s_c.connect(client_spec);
+                }, s_r, function ():void {
+                    s_r.connect(addr_r.host, addr_r.port);
+                });
+                proxy_pair.set_name("<" + client_spec.substr(0, 4) + "...,"
+                    + addr_r.host + ":" + addr_r.port + ">");
+                return proxy_pair;
+            }
+
+            throw new ArgumentError("Can't parse client spec \"" + client_spec + "\".");
         }
 
         /* Parse an address in the form "host:port". Returns an Object with

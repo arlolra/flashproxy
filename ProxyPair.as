@@ -14,15 +14,16 @@ package
     /* An instance of a client-relay connection. */
     public class ProxyPair extends EventDispatcher
     {
-        // Address ({host, port}) of client.
-        private var addr_c:Object;
-        // Address ({host, port}) of relay.
-        private var addr_r:Object;
+        // Label for log messages.
+        public var name:String;
 
         // Socket to client.
-        private var s_c:Socket;
+        private var s_c:*;
+        private var connect_c:Function;
+
         // Socket to relay.
-        private var s_r:Socket;
+        private var s_r:*;
+        private var connect_r:Function;
 
         // Parent swfcat, for UI updates and rate meter.
         private var ui:swfcat;
@@ -35,21 +36,27 @@ package
 
         public function log(msg:String):void
         {
-            ui.puts(id() + ": " + msg)
+            if (name)
+                ui.puts(name + ": " + msg)
+            else
+                ui.puts(msg)
         }
 
-        // String describing this pair for output.
-        public function id():String
+        public function set_name(name:String):void
         {
-            return "<" + this.addr_c.host + ":" + this.addr_c.port +
-                "," + this.addr_r.host + ":" + this.addr_r.port + ">";
+            this.name = name;
         }
 
-        public function ProxyPair(ui:swfcat, addr_c:Object, addr_r:Object)
+        public function ProxyPair(ui:swfcat, s_c:*, connect_c:Function, s_r:*, connect_r:Function)
         {
             this.ui = ui;
-            this.addr_c = addr_c;
-            this.addr_r = addr_r;
+            /* s_c is a socket for connecting to the client. connect_c is a
+               function that, when called, connects s_c. Likewise for s_r and
+               connect_r. */
+            this.s_c = s_c;
+            this.connect_c = connect_c;
+            this.s_r = s_r;
+            this.connect_r = connect_r;
 
             this.c2r_schedule = [];
             this.r2c_schedule = [];
@@ -57,7 +64,7 @@ package
 
         /* Return a function that shows an error message and closes the other half
            of a communication pair. */
-        private function socket_error(message:String, other:Socket):Function
+        private function socket_error(message:String, other:*):Function
         {
             return function(e:Event):void {
                 if (e is TextEvent)
@@ -72,23 +79,11 @@ package
 
         public function connect():void
         {
-            s_r = new Socket();
-
             s_r.addEventListener(Event.CONNECT, relay_connected);
             s_r.addEventListener(Event.CLOSE, socket_error("Relay: closed", s_c));
             s_r.addEventListener(IOErrorEvent.IO_ERROR, socket_error("Relay: I/O error", s_c));
             s_r.addEventListener(SecurityErrorEvent.SECURITY_ERROR, socket_error("Relay: security error", s_c));
             s_r.addEventListener(ProgressEvent.SOCKET_DATA, relay_to_client);
-
-            log("Relay: connecting to " + addr_r.host + ":" + addr_r.port + ".");
-            s_r.connect(addr_r.host, addr_r.port);
-        }
-
-        private function relay_connected(e:Event):void
-        {
-            log("Relay: connected.");
-
-            s_c = new Socket();
 
             s_c.addEventListener(Event.CONNECT, client_connected);
             s_c.addEventListener(Event.CLOSE, socket_error("Client: closed", s_r));
@@ -96,8 +91,20 @@ package
             s_c.addEventListener(SecurityErrorEvent.SECURITY_ERROR, socket_error("Client: security error", s_r));
             s_c.addEventListener(ProgressEvent.SOCKET_DATA, client_to_relay);
 
-            log("Client: connecting to " + addr_c.host + ":" + addr_c.port + ".");
-            s_c.connect(addr_c.host, addr_c.port);
+            log("Relay: connecting.");
+            connect_r();
+            log("Client: connecting.");
+            connect_c();
+        }
+
+        private function relay_connected(e:Event):void
+        {
+            log("Relay: connected.");
+        }
+
+        private function client_connected(e:Event):void
+        {
+            log("Client: connected.");
         }
 
         private function relay_to_client(e:ProgressEvent):void
@@ -112,12 +119,7 @@ package
             flush();
         }
 
-        private function client_connected(e:Event):void
-        {
-            log("Client: connected.");
-        }
-
-        private function transfer_chunk(s_from:Socket, s_to:Socket, n:uint,
+        private function transfer_chunk(s_from:*, s_to:*, n:uint,
             label:String):void
         {
             var bytes:ByteArray;
