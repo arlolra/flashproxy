@@ -23,12 +23,12 @@ package
            reading from the CIRRUS_KEY environment var. */
         private const CIRRUS_URL:String = "rtmfp://p2p.rtmfp.net";
         private const CIRRUS_KEY:String = RTMFP::CIRRUS_KEY;
-        
+
         private const DEFAULT_FACILITATOR_ADDR:Object = {
             host: "tor-facilitator.bamsoftware.com",
             port: 9002
         };
-        
+
         /* Local Tor client to use in case of RTMFP connection. */
         private const LOCAL_TOR_CLIENT_ADDR:Object = {
             host: "127.0.0.1",
