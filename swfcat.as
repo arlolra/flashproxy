@@ -29,8 +29,8 @@ package
             port: 9002
         };
         
-        /* Default Tor client to use in case of RTMFP connection */
-        private const DEFAULT_TOR_CLIENT_ADDR:Object = {
+        /* Local Tor client to use in case of RTMFP connection. */
+        private const LOCAL_TOR_CLIENT_ADDR:Object = {
             host: "127.0.0.1",
             port: 9002
         };
@@ -44,8 +44,6 @@ package
         public const RATE_LIMIT:Number = undefined;
         // Seconds.
         private const RATE_LIMIT_HISTORY:Number = 5.0;
-
-        private var proxy_mode:Boolean;
 
         /* TextField for debug output. */
         private var output_text:TextField;
@@ -103,15 +101,13 @@ package
             else
                 addChild(badge);
 
-            proxy_mode = (this.loaderInfo.parameters["proxy"] != null);
-
             fac_addr = get_param_addr("facilitator", DEFAULT_FACILITATOR_ADDR);
             if (!fac_addr) {
                 puts("Error: Facilitator spec must be in the form \"host:port\".");
                 return;
             }
 
-            if (proxy_mode)
+            if (this.loaderInfo.parameter["proxy"])
                 proxy_main();
             else
                 client_main();
@@ -228,7 +224,7 @@ package
             proxy_pair = new ProxyPair(this, rs, function ():void {
                 /* Do nothing; already connected. */
             }, s_t, function ():void {
-                s_t.connect(DEFAULT_TOR_CLIENT_ADDR.host, DEFAULT_TOR_CLIENT_ADDR.port);
+                s_t.connect(LOCAL_TOR_CLIENT_ADDR.host, LOCAL_TOR_CLIENT_ADDR.port);
             });
             proxy_pair.connect();
         }
