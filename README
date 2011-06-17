@@ -17,7 +17,7 @@ There are five main parts. Our terminology for each part is in quotes.
    must also serve a Flash crossdomain policy.
 
 A proxy is capable of connecting to a client in two ways: Using a normal
-TCP connection, or over Adobe RTMFP, which involves a third party but is
+TCP connection; or over RTMFP, which requires Flash on the client but is
 capable of traversing NAT.
 
 == Demonstration page
@@ -58,8 +58,8 @@ which facilitator to use, for example
 There are two ways in which the client can receive connections: over TCP
 or RTMFP. TCP doesn't send traffic to anyone other than the facilitator
 and the proxy, but it only works if you have a public IP address. RTMFP
-coordinates connections using a server controlled by Adobe, but works
-when the client is behind a NAT.
+coordinates connections using another server (which may be the same as
+the facilitator) and works when the client is behind a NAT.
 
 To connect with TCP, run
 	./connector.py -f <facilitator-ip>

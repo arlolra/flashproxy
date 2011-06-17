@@ -21,7 +21,7 @@ package
         /* Adobe's Cirrus server for RTMFP connections.
            The Cirrus key is defined at compile time by
            reading from the CIRRUS_KEY environment var. */
-        private const CIRRUS_URL:String = "rtmfp://p2p.rtmfp.net";
+        private const CIRRUS_URL:String = "rtmfp://tor-facilitator.bamsoftware.com";
         private const CIRRUS_KEY:String = RTMFP::CIRRUS_KEY;
 
         private const DEFAULT_FACILITATOR_ADDR:Object = {
