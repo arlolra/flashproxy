@@ -1,5 +1,7 @@
 == Things to do
 
+Try tor-fw-helper for NAT traversal.
+
 Limit rate of registration in facilitator, maybe just one reg per IP.
 
 We need to solve the problem of potential changing fingerprints when
