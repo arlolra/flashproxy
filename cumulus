@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+# cumulus      This shell script takes care of starting and stopping
+#              the Cumulus server.
+#
+# chkconfig: 2345 90 10
+# description: Cumulus RTMFP server.
+# processname: CumulusService
+# pidfile: /var/cumulus/cumulus.pid
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+BINDIR=/usr/local/bin
+VARDIR=/var/cumulus
+CUMULUS=$BINDIR/CumulusService
+PIDFILE=$VARDIR/cumulus.pid
+USER=cumulus
+
+# See how we were called.
+case "$1" in
+  start)
+	[ -x $CUMULUS ] || exit 1
+	echo -n $"Starting Cumulus server: "
+	cd $VARDIR && daemon --user cumulus --pidfile $PIDFILE $CUMULUS --daemon --pidfile=$PIDFILE
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/cumulus
+	;;
+  stop)
+	# Stop daemon.
+	echo -n $"Shutting down Cumulus server: "
+	killproc CumulusService
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/cumulus
+	;;
+  status)
+	status cumulus
+	RETVAL=$?
+	;;
+  restart|reload)
+	$0 stop
+	$0 start
+	;;
+  condrestart)
+	[ -f /var/lock/subsys/cumulus ] && restart || :
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart}"
+	RETVAL=3
+	;;
+esac
+
+exit $RETVAL
