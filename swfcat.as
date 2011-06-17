@@ -18,7 +18,7 @@ package
 
     public class swfcat extends Sprite
     {
-        private const CIRRUS_URL:String = "rtmfp://tor-facilitator.bamsoftware.com";
+        private const RTMFP_URL:String = "rtmfp://tor-facilitator.bamsoftware.com";
 
         private const DEFAULT_FACILITATOR_ADDR:Object = {
             host: "tor-facilitator.bamsoftware.com",
@@ -197,7 +197,7 @@ package
         {
             var rs:RTMFPSocket;
 
-            rs = new RTMFPSocket(CIRRUS_URL);
+            rs = new RTMFPSocket(RTMFP_URL);
             rs.addEventListener(Event.COMPLETE, function (e:Event):void {
                 puts("Got RTMFP id " + rs.id);
                 register(rs);
@@ -282,7 +282,7 @@ package
             }
 
             if (client_spec.match(/^[0-9A-Fa-f]{64}$/)) {
-                s_c = new RTMFPSocket(CIRRUS_URL);
+                s_c = new RTMFPSocket(RTMFP_URL);
                 s_r = new Socket();
                 proxy_pair = new ProxyPair(this, s_c, function ():void {
                     s_c.connect(client_spec);
