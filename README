@@ -39,12 +39,12 @@ Copy the resulting swfcat.swf file to a web server.
 === Connecting
 
 On the Tor relay, run
-	sudo ./crossdomaind.py
+	# ./crossdomaind.py
 In general, any computer that a proxy connects to needs to serve a
 crossdomain policy, but the connector and facilitator have it built in.
 
 On the facilitator, run
-	./facilitator.py -r <relay-ip>
+	$ ./facilitator.py -r <relay-ip>
 The facilitator runs on port 9002 by default.
 
 In a browser somewhere, open swfcat.swf and pass it a parameters telling it
@@ -58,7 +58,7 @@ coordinates connections using another server (which may be the same as
 the facilitator) and works when the client is behind a NAT.
 
 To connect with TCP, run
-	./connector.py -f <facilitator-ip>
+	$ ./connector.py -f <facilitator-ip>
 (If you are running the facilitator locally, be sure to use an external
 IP address, not 127.0.0.1.) The connector informs the facilitator that
 it wants a connection, then listens on 0.0.0.0:9000 and 127.0.0.1:9001.
@@ -66,7 +66,7 @@ The proxy will connect on port 9000 and the local Tor will connect on
 9001.
 
 To connect with RTMFP, run
-	./connector.py 127.0.0.1:9001 127.0.0.1:9002
+	$ ./connector.py 127.0.0.1:9001 127.0.0.1:9002
 and open in a browser
 	http://www.example.com/swfcat.swf?client=1&facilitator=<facilitator-ip>:9002
 In this case, it is swfcat running in client mode that registers with
