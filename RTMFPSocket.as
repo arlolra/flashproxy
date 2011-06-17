@@ -50,7 +50,7 @@ package
         private var cirrus_url:String;
         private var cirrus_key:String;
 
-        public function RTMFPSocket(cirrus_url:String, cirrus_key:String)
+        public function RTMFPSocket(cirrus_url:String, cirrus_key:String = "")
         {
             connected = false;
 

@@ -32,10 +32,6 @@ Download the (free software) Flex SDK.
 	http://opensource.adobe.com/wiki/display/flexsdk/Flex+SDK
 Put its bin directory in your PATH. The important executable is mxmlc.
 
-For RTMFP support, you need a Cirrus developer key from Adobe. Put it in
-the environment variable CIRRUS_KEY so it can be found by Makefile.
-	$ export CIRRUS_KEY=XXXXXXXXXXXXXXXXXXXXXXXX-YYYYYYYYYYYY
-
 To build, run
 	$ make
 Copy the resulting swfcat.swf file to a web server.

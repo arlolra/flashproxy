@@ -18,11 +18,7 @@ package
 
     public class swfcat extends Sprite
     {
-        /* Adobe's Cirrus server for RTMFP connections.
-           The Cirrus key is defined at compile time by
-           reading from the CIRRUS_KEY environment var. */
         private const CIRRUS_URL:String = "rtmfp://tor-facilitator.bamsoftware.com";
-        private const CIRRUS_KEY:String = RTMFP::CIRRUS_KEY;
 
         private const DEFAULT_FACILITATOR_ADDR:Object = {
             host: "tor-facilitator.bamsoftware.com",
@@ -201,7 +197,7 @@ package
         {
             var rs:RTMFPSocket;
 
-            rs = new RTMFPSocket(CIRRUS_URL, CIRRUS_KEY);
+            rs = new RTMFPSocket(CIRRUS_URL);
             rs.addEventListener(Event.COMPLETE, function (e:Event):void {
                 puts("Got RTMFP id " + rs.id);
                 register(rs);
@@ -286,7 +282,7 @@ package
             }
 
             if (client_spec.match(/^[0-9A-Fa-f]{64}$/)) {
-                s_c = new RTMFPSocket(CIRRUS_URL, CIRRUS_KEY);
+                s_c = new RTMFPSocket(CIRRUS_URL);
                 s_r = new Socket();
                 proxy_pair = new ProxyPair(this, s_c, function ():void {
                     s_c.connect(client_spec);
