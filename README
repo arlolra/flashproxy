@@ -148,6 +148,14 @@ an HTTP respose.
 	\r\n
 	client=<ip-addr/rtmfp-id>&relay=<relay-ip>
 
+== Embedding in HTML
+
+<object width="70" height="23">
+    <param name="movie" value="swfcat.swf">
+    <param name="flashvars" value="">
+    <embed src="swfcat.swf" width="70" height="23" flashvars=""></embed>
+</object>
+
 == ActionScript programming
 
 A good tutorial on ActionScript programming with the Flex tools, with
