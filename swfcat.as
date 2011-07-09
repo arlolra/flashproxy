@@ -57,8 +57,10 @@ package
 
         public function puts(s:String):void
         {
-            output_text.appendText(s + "\n");
-            output_text.scrollV = output_text.maxScrollV;
+            if (output_text) {
+                output_text.appendText(s + "\n");
+                output_text.scrollV = output_text.maxScrollV;
+            }
         }
 
         public function swfcat()
@@ -67,13 +69,6 @@ package
             stage.scaleMode = StageScaleMode.NO_SCALE;
             stage.align = StageAlign.TOP_LEFT;
 
-            output_text = new TextField();
-            output_text.width = stage.stageWidth;
-            output_text.height = stage.stageHeight;
-            output_text.background = true;
-            output_text.backgroundColor = 0x001f0f;
-            output_text.textColor = 0x44cc44;
-
             badge = new Badge();
 
             if (RATE_LIMIT)
@@ -81,7 +76,6 @@ package
             else
                 rate_limit = new RateUnlimit();
 
-            puts("Starting.");
             // Wait until the query string parameters are loaded.
             this.loaderInfo.addEventListener(Event.COMPLETE, loaderinfo_complete);
         }
@@ -90,12 +84,19 @@ package
         {
             var fac_spec:String;
 
-            puts("Parameters loaded.");
-
-            if (this.loaderInfo.parameters["debug"] || this.loaderInfo.parameters["client"])
+            if (this.loaderInfo.parameters["debug"] || this.loaderInfo.parameters["client"]) {
+                output_text = new TextField();
+                output_text.width = stage.stageWidth;
+                output_text.height = stage.stageHeight;
+                output_text.background = true;
+                output_text.backgroundColor = 0x001f0f;
+                output_text.textColor = 0x44cc44;
                 addChild(output_text);
-            else
+            } else {
                 addChild(badge);
+            }
+
+            puts("Parameters loaded.");
 
             fac_addr = get_param_addr("facilitator", DEFAULT_FACILITATOR_ADDR);
             if (!fac_addr) {
