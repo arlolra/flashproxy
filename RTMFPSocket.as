@@ -205,5 +205,10 @@ package
             /* Use a short method name because it's sent over the wire. */
             outgoing.send("r", sendbuf);
         }
+
+        public function flush():void
+        {
+            /* Ignored. */
+        }
     }
 }

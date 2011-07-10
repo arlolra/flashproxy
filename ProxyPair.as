@@ -127,6 +127,7 @@ package
             bytes = new ByteArray();
             s_from.readBytes(bytes, 0, n);
             s_to.writeBytes(bytes);
+            s_to.flush();
             ui.rate_limit.update(n);
             log(label + ": read " + bytes.length + ".");
         }
