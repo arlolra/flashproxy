@@ -1,0 +1,6 @@
+Scripts for running experiments.
+
+This README contains descriptions of each numbered experiment.
+
+Experiment
+00  -   Includes socat, crossdomaind, swfcat, httpd, and facilitator
