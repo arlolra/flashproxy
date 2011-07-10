@@ -291,6 +291,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             client_str = ""
         self.send_response(200)
         self.send_header("Content-Type", "x-www-form-urlencoded")
+        self.send_header("Cache-Control", "no-cache")
         self.end_headers()
 
         data = {}
