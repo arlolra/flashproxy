@@ -168,6 +168,12 @@ def listen_socket(addr):
     s.setblocking(0)
     return s
 
+def format_peername(s):
+    try:
+        return format_addr(s.getpeername())
+    except socket.error, e:
+        return "<unconnected>"
+
 # How long to wait for a crossdomain policy request before deciding that this is
 # a normal socket.
 CROSSDOMAIN_TIMEOUT = 2.0
@@ -281,8 +287,8 @@ def handle_local_connection(fd):
     match_proxies()
 
 def report_pending():
-    log(u"locals  (%d): %s" % (len(locals), [format_addr(x.getpeername()) for x in locals]))
-    log(u"remotes (%d): %s" % (len(remotes), [format_addr(x.getpeername()) for x in remotes]))
+    log(u"locals  (%d): %s" % (len(locals), [format_peername(x) for x in locals]))
+    log(u"remotes (%d): %s" % (len(remotes), [format_peername(x) for x in remotes]))
 
 def register():
     if options.facilitator_addr is None:
@@ -302,7 +308,7 @@ def proxy_chunk(fd_r, fd_w, label):
         fd_w.close()
         return False
     if not data:
-        log(u"EOF from %s %s." % (label, format_addr(fd_r.getpeername())))
+        log(u"EOF from %s %s." % (label, format_peername(fd_r)))
         fd_r.close()
         fd_w.close()
         return False
@@ -322,14 +328,14 @@ def receive_unconnected(fd, label):
         fd.close()
         return False
     if not data:
-        log(u"EOF from unconnected %s %s with %d bytes buffered." % (label, format_addr(fd.getpeername()), len(fd.buf)))
+        log(u"EOF from unconnected %s %s with %d bytes buffered." % (label, format_peername(fd), len(fd.buf)))
         fd.close()
         return False
     else:
-        log(u"Data from unconnected %s %s (%d bytes)." % (label, format_addr(fd.getpeername()), len(data)))
+        log(u"Data from unconnected %s %s (%d bytes)." % (label, format_peername(fd), len(data)))
         fd.buf += data
         if len(fd.buf) >= UNCONNECTED_BUFFER_LIMIT:
-            log(u"Refusing to buffer more than %d bytes from %s %s." % (UNCONNECTED_BUFFER_LIMIT, label, format_addr(fd.getpeername())))
+            log(u"Refusing to buffer more than %d bytes from %s %s." % (UNCONNECTED_BUFFER_LIMIT, label, format_peername(fd)))
             fd.close()
             return False
         return True
@@ -340,7 +346,7 @@ def match_proxies():
         local = locals.pop(0)
         remote_addr, remote_port = remote.getpeername()
         local_addr, local_port = local.getpeername()
-        log(u"Linking %s and %s." % (format_addr(local.getpeername()), format_addr(remote.getpeername())))
+        log(u"Linking %s and %s." % (format_peername(local), format_peername(remote)))
         if local.buf:
             remote.sendall(local.buf)
         if remote.buf:
@@ -412,7 +418,7 @@ def main():
             pending = crossdomain_pending[0]
             if not pending.is_expired(CROSSDOMAIN_TIMEOUT):
                 break
-            log(u"Expired pending crossdomain from %s." % format_addr(pending.getpeername()))
+            log(u"Expired pending crossdomain from %s." % format_peername(pending))
             crossdomain_pending.pop(0)
             remotes.append(pending)
             handle_remote_connection(pending)
