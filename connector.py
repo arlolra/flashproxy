@@ -307,7 +307,12 @@ def receive_unconnected(fd, label):
     True iff there was no error and the socket may still be used; otherwise, the
     socket will be closed before returning."""
 
-    data = fd.recv(1024)
+    try:
+        data = fd.recv(1024)
+    except socket.error, e:
+        log(u"Socket error from %s: %s" % (label, repr(str(e))))
+        fd.close()
+        return False
     if not data:
         log(u"EOF from unconnected %s %s with %d bytes buffered." % (label, format_addr(fd.getpeername()), len(fd.buf)))
         fd.close()
