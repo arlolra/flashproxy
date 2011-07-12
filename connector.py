@@ -197,8 +197,12 @@ def handle_policy_request(fd):
     """Returns True iff the socket is still open and usable (wasn't a
     crossdomain request and wasn't closed."""
     log(u"handle_policy_request")
-    addr = fd.getpeername()
-    data = fd.recv(100)
+    try:
+        addr = fd.getpeername()
+        data = fd.recv(100)
+    except socket.error, e:
+        log(u"Socket error from crossdomain-pending: %s" % repr(str(e)))
+        return False
     if data == "<policy-file-request/>\0":
         log(u"Sending crossdomain policy to %s." % format_addr(addr))
         fd.sendall("""
@@ -251,8 +255,12 @@ def parse_socks_request(data):
 
 def handle_socks_request(fd):
     log(u"handle_socks_request")
-    addr = fd.getpeername()
-    data = fd.recv(100)
+    try:
+        addr = fd.getpeername()
+        data = fd.recv(100)
+    except socket.error, e:
+        log(u"Socket error from SOCKS-pending: %s" % repr(str(e)))
+        return False
     dest_addr = parse_socks_request(data)
     if dest_addr is None:
         # Error reply.
