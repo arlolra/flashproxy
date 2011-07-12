@@ -302,6 +302,25 @@ def proxy_chunk(fd_r, fd_w, label):
         fd_w.sendall(data)
         return True
 
+def receive_unconnected(fd, label):
+    """Receive and buffer data on a socket that has not been linked yet. Returns
+    True iff there was no error and the socket may still be used; otherwise, the
+    socket will be closed before returning."""
+
+    data = fd.recv(1024)
+    if not data:
+        log(u"EOF from unconnected %s %s with %d bytes buffered." % (label, format_addr(fd.getpeername()), len(fd.buf)))
+        fd.close()
+        return False
+    else:
+        log(u"Data from unconnected %s %s (%d bytes)." % (label, format_addr(fd.getpeername()), len(data)))
+        fd.buf += data
+        if len(fd.buf) >= UNCONNECTED_BUFFER_LIMIT:
+            log(u"Refusing to buffer more than %d bytes from %s %s." % (UNCONNECTED_BUFFER_LIMIT, label, format_addr(fd.getpeername())))
+            fd.close()
+            return False
+        return True
+
 def match_proxies():
     while locals and remotes:
         remote = remotes.pop(0)
@@ -368,32 +387,12 @@ def main():
                     del local_for[remote]
                     register()
             elif fd in locals:
-                data = fd.recv(1024)
-                if not data:
-                    log(u"EOF from unconnected local %s with %d bytes buffered." % (format_addr(fd.getpeername()), len(fd.buf)))
+                if not receive_unconnected(fd, "local"):
                     locals.remove(fd)
-                    fd.close()
-                else:
-                    log(u"Data from unconnected local %s (%d bytes)." % (format_addr(fd.getpeername()), len(data)))
-                    fd.buf += data
-                    if len(fd.buf) >= UNCONNECTED_BUFFER_LIMIT:
-                        log(u"Refusing to buffer more than %d bytes from local %s." % (UNCONNECTED_BUFFER_LIMIT, format_addr(fd.getpeername())))
-                        locals.remove(fd)
-                        fd.close()
                 report_pending()
             elif fd in remotes:
-                data = fd.recv(1024)
-                if not data:
-                    log(u"EOF from unconnected remote %s with %d bytes buffered." % (format_addr(fd.getpeername()), len(fd.buf)))
+                if not receive_unconnected(fd, "remote"):
                     remotes.remove(fd)
-                    fd.close()
-                else:
-                    log(u"Data from unconnected remote %s (%d bytes)." % (format_addr(fd.getpeername()), len(data)))
-                    fd.buf += data
-                    if len(fd.buf) >= UNCONNECTED_BUFFER_LIMIT:
-                        log(u"Refusing to buffer more than %d bytes from local %s." % (UNCONNECTED_BUFFER_LIMIT, format_addr(fd.getpeername())))
-                        remotes.remove(fd)
-                        fd.close()
                 report_pending()
             match_proxies()
         while crossdomain_pending:
