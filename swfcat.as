@@ -108,10 +108,8 @@ package
 
             if (this.loaderInfo.parameters["local"])
                 local_addr = get_param_addr("local", DEFAULT_LOCAL_TOR_CLIENT_ADDR);
-            else {
-                local_addr.host = DEFAULT_LOCAL_TOR_CLIENT_ADDR.host;
-                local_addr.port = DEFAULT_LOCAL_TOR_CLIENT_ADDR.port;   
-            }
+            else
+                local_addr = DEFAULT_LOCAL_TOR_CLIENT_ADDR;
 
             if (this.loaderInfo.parameters["client"])
                 client_main();
