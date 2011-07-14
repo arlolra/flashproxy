@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Get arguments
+if [ $1 ]; then
+    NUM_CLIENTS=$1
+else
+    NUM_CLIENTS=1
+fi
+
 # Go to flashproxy repo root dir
 cd ..
 
@@ -8,47 +15,58 @@ echo "creating dump file..."
 rm dump
 dd if=/dev/null of=dump bs=1G seek=1 &
 
-sleep 1
-
 # Start http server
 echo "starting http server..."
 thttpd -p 1080
-
-sleep 1
 
 # Start crossdomain policy server
 echo "starting cross domain policy server..."
 sudo ./crossdomaind.py &
 
-sleep 1
-
 # Start the facilitator
 echo "starting facilitator..."
 ./facilitator.py 4701 -r 127.0.0.1:1080
 
-sleep 1
-
-# Start the flash proxy
-echo "starting flash proxy..."
-google-chrome --app=http://localhost:1080/swfcat.swf?facilitator=127.0.0.1:4701
-
-sleep 1
-
-# Start socat adapter
-echo "starting socat adapter..."
-socat TCP-LISTEN:9000,reuseaddr,fork TCP-LISTEN:2000,reuseaddr &
+# Start socat adapters
+echo "starting socat adapters..."
+i=1
+until [ $i -gt $NUM_CLIENTS ]; do
+    let local_port=2000+i
+    let remote_port=9000+i
+    socat TCP-LISTEN:${remote_port},reuseaddr,fork TCP-LISTEN:${local_port},reuseaddr &
+    let i=i+1
+done
 
 sleep 1
 
 # Register with facilitator
 echo "registering with facilitator..."
-echo $'POST / HTTP/1.0\r\n\r\nclient=127.0.0.1:9000' | ncat localhost 4701 --send-only
+i=1
+until [ $i -gt $NUM_CLIENTS ]; do
+    let local_port=9000+i
+    echo $'POST / HTTP/1.0\r\n\r\nclient=127.0.0.1:'${local_port} | ncat localhost 4701 --send-only
+    let i=i+1
+done
 
-sleep 10
+# Start the flash proxy, server side
+echo "starting flash proxy server side..."
+firefox --remote "openURL(http://localhost:1080/swfcat.swf?debug=1&facilitator=127.0.0.1:4701)"
+
+let query_fac_time=NUM_CLIENTS+2
+sleep ${query_fac_time}
 
 # wget the dump file
 echo "getting the dump file..."
-wget http://localhost:2000/dump -O - > /dev/null
+i=2
+until [ $i -gt $NUM_CLIENTS ]; do
+    let local_port=2000+i
+    gnome-terminal -e "/bin/bash -c 'wget http://localhost:${local_port}/dump -O - > /dev/null; exec /bin/bash -i'"
+    let i=i+1
+    sleep 2
+done
+
+# Use this one for delaying the termination of experiment below
+wget http://localhost:2001/dump -O - > /dev/null
 
 # Slaughter the processes
 ps -ef | sed -n '/thttpd/{/grep/!p;}' | awk '{print$2}' | sudo xargs -i kill {}
