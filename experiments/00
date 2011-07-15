@@ -13,7 +13,7 @@ cd ..
 # Create 1GB dump file
 echo "creating dump file..."
 rm dump
-dd if=/dev/null of=dump bs=1G seek=1 &
+dd if=/dev/null of=dump bs=1G seek=1
 
 # Start http server
 echo "starting http server..."
