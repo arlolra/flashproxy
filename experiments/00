@@ -60,13 +60,13 @@ echo "getting the dump file..."
 i=2
 until [ $i -gt $NUM_CLIENTS ]; do
     let local_port=2000+i
-    gnome-terminal -e "/bin/bash -c 'wget http://localhost:${local_port}/dump -O - > /dev/null; exec /bin/bash -i'"
+    gnome-terminal -e "/bin/bash -c 'wget -t1 http://localhost:${local_port}/dump -O - > /dev/null; exec /bin/bash -i'"
     let i=i+1
     sleep 2
 done
 
 # Use this one for delaying the termination of experiment below
-wget http://localhost:2001/dump -O - > /dev/null
+wget -t1 http://localhost:2001/dump -O - > /dev/null
 
 # Slaughter the processes
 ps -ef | sed -n '/thttpd/{/grep/!p;}' | awk '{print$2}' | sudo xargs -i kill {}
