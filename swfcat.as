@@ -47,11 +47,7 @@ package
         /* UI shown when debug is off. */
         private var badge:Badge;
 
-        /* Number of proxy pairs currently connected (up to
-           MAX_NUM_PROXY_PAIRS). */
-        private var num_proxy_pairs:int = 0;
-        /* References to active proxy pairs, to prevent them from being
-           garbage collected. */
+        /* Proxy pairs currently connected (up to MAX_NUM_PROXY_PAIRS). */
         private var proxy_pairs:Array;
 
         private var fac_addr:Object;
@@ -140,7 +136,7 @@ package
             var fac_url:String;
             var loader:URLLoader;
 
-            if (num_proxy_pairs >= MAX_NUM_PROXY_PAIRS) {
+            if (proxy_pairs.length >= MAX_NUM_PROXY_PAIRS) {
                 setTimeout(proxy_main, FACILITATOR_POLL_INTERVAL);
                 return;
             }
@@ -197,14 +193,12 @@ package
             proxy_pairs.push(proxy_pair);
             proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
-                num_proxy_pairs--;
                 /* Delete from the list of active proxy pairs. */
                 proxy_pairs.splice(proxy_pairs.indexOf(proxy_pair), 1);
                 badge.proxy_end();
             });
             proxy_pair.connect();
 
-            num_proxy_pairs++;
             badge.proxy_begin();
         }
 
