@@ -50,6 +50,9 @@ package
         /* Number of proxy pairs currently connected (up to
            MAX_NUM_PROXY_PAIRS). */
         private var num_proxy_pairs:int = 0;
+        /* References to active proxy pairs, to prevent them from being
+           garbage collected. */
+        private var proxy_pairs:Array;
 
         private var fac_addr:Object;
         
@@ -72,6 +75,8 @@ package
             stage.align = StageAlign.TOP_LEFT;
 
             badge = new Badge();
+
+            proxy_pairs = [];
 
             if (RATE_LIMIT)
                 rate_limit = new BucketRateLimit(RATE_LIMIT * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
@@ -189,9 +194,12 @@ package
                 puts("Error: " + e);
                 return;
             }
+            proxy_pairs.push(proxy_pair);
             proxy_pair.addEventListener(Event.COMPLETE, function(e:Event):void {
                 proxy_pair.log("Complete.");
                 num_proxy_pairs--;
+                /* Delete from the list of active proxy pairs. */
+                proxy_pairs.splice(proxy_pairs.indexOf(proxy_pair), 1);
                 badge.proxy_end();
             });
             proxy_pair.connect();
