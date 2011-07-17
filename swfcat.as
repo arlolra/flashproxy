@@ -106,10 +106,11 @@ package
                 return;
             }
 
-            if (this.loaderInfo.parameters["local"])
-                local_addr = get_param_addr("local", DEFAULT_LOCAL_TOR_CLIENT_ADDR);
-            else
-                local_addr = DEFAULT_LOCAL_TOR_CLIENT_ADDR;
+            local_addr = get_param_addr("local", DEFAULT_LOCAL_TOR_CLIENT_ADDR);
+            if (!local_addr) {
+                puts("Error: Local spec must be in the form \"host:port\".");
+                return;
+            }
 
             if (this.loaderInfo.parameters["client"])
                 client_main();
