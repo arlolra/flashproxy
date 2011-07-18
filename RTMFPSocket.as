@@ -157,11 +157,6 @@ package
             event.bytesLoaded = bytes.bytesAvailable;
 
             bytes.readBytes(buffer, buffer.length, bytes.bytesAvailable);
-            if (bytes.bytesAvailable == 0) {
-                /* Reclaim memory space. */
-                bytes.position = 0;
-                bytes.length = 0;
-            }
 
             dispatchEvent(event);
         }
@@ -194,6 +189,11 @@ package
         public function readBytes(output:ByteArray, offset:uint = 0, length:uint = 0):void
         {
             buffer.readBytes(output, offset, length);
+            if (buffer.bytesAvailable == 0) {
+                /* Reclaim memory space. */
+                buffer.position = 0;
+                buffer.length = 0;
+            }
         }
 
         public function writeBytes(input:ByteArray, offset:uint = 0, length:uint = 0):void
