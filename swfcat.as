@@ -37,9 +37,9 @@ package
         private const FACILITATOR_POLL_INTERVAL:int = 1000;
 
         // Bytes per second. Set to undefined to disable limit.
-        public const RATE_LIMIT:Number = undefined;
+        public static const RATE_LIMIT:Number = undefined;
         // Seconds.
-        private const RATE_LIMIT_HISTORY:Number = 5.0;
+        private static const RATE_LIMIT_HISTORY:Number = 5.0;
 
         /* TextField for debug output. */
         private var output_text:TextField;
@@ -84,8 +84,6 @@ package
 
         private function loaderinfo_complete(e:Event):void
         {
-            var fac_spec:String;
-
             if (this.loaderInfo.parameters["debug"] || this.loaderInfo.parameters["client"]) {
                 output_text = new TextField();
                 output_text.width = stage.stageWidth;
@@ -122,7 +120,7 @@ package
            default. Returns null on error. */
         private function get_param_addr(param:String, default_addr:Object):Object
         {
-            var spec:String, addr:Object;
+            var spec:String;
 
             spec = this.loaderInfo.parameters[param];
             if (spec)
@@ -238,7 +236,6 @@ package
             var fac_url:String;
             var loader:URLLoader;
             var request:URLRequest;
-            var variables:URLVariables;
 
             loader = new URLLoader();
             loader.addEventListener(Event.COMPLETE, function (e:Event):void {
@@ -257,7 +254,7 @@ package
                 + ":" + encodeURIComponent(fac_addr.port) + "/";
             request = new URLRequest(fac_url);
             request.method = URLRequestMethod.POST;
-            request.data = new URLVariables;
+            request.data = new URLVariables();
             request.data["client"] = rs.id;
 
             puts("Facilitator: connecting to " + fac_url + ".");
