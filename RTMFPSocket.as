@@ -183,9 +183,12 @@ package
 
         public function close():void
         {
-            outgoing.close();
-            incoming.close();
-            nc.close();
+            if (outgoing)
+                outgoing.close();
+            if (incoming)
+                incoming.close();
+            if (nc)
+                nc.close();
         }
 
         public function readBytes(output:ByteArray, offset:uint = 0, length:uint = 0):void
