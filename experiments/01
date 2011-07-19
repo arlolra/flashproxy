@@ -52,7 +52,7 @@ sleep 15
 
 # Start the flash proxy, server side
 echo "starting flash proxy server side..."
-firefox --remote "openURL(http://localhost:1080/swfcat.swf?debug=1&facilitator=127.0.0.1:4701)"
+firefox --remote "openURL(http://localhost:1080/swfcat.swf?facilitator=127.0.0.1:4701)"
 
 sleep 15
 
