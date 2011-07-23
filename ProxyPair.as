@@ -86,13 +86,13 @@ package
         public function connect():void
         {
             s_r.addEventListener(Event.CONNECT, relay_connected);
-            s_r.addEventListener(Event.CLOSE, socket_error("Relay: closed", s_c));
+            s_r.addEventListener(Event.CLOSE, relay_closed);
             s_r.addEventListener(IOErrorEvent.IO_ERROR, socket_error("Relay: I/O error", s_c));
             s_r.addEventListener(SecurityErrorEvent.SECURITY_ERROR, socket_error("Relay: security error", s_c));
             s_r.addEventListener(ProgressEvent.SOCKET_DATA, relay_to_client);
 
             s_c.addEventListener(Event.CONNECT, client_connected);
-            s_c.addEventListener(Event.CLOSE, socket_error("Client: closed", s_r));
+            s_c.addEventListener(Event.CLOSE, client_closed);
             s_c.addEventListener(IOErrorEvent.IO_ERROR, socket_error("Client: I/O error", s_r));
             s_c.addEventListener(SecurityErrorEvent.SECURITY_ERROR, socket_error("Client: security error", s_r));
             s_c.addEventListener(ProgressEvent.SOCKET_DATA, client_to_relay);
@@ -111,6 +111,18 @@ package
         private function client_connected(e:Event):void
         {
             log("Client: connected.");
+        }
+
+        private function relay_closed(e:Event):void
+        {
+            log("Relay: closed.");
+            flush();
+        }
+
+        private function client_closed(e:Event):void
+        {
+            log("Client: closed.");
+            flush();
         }
 
         private function relay_to_client(e:ProgressEvent):void
@@ -141,24 +153,41 @@ package
         /* Send as much data as the rate limit currently allows. */
         private function flush():void
         {
+            var busy:Boolean;
+
             if (flush_id)
                 clearTimeout(flush_id);
             flush_id = undefined;
 
-            if (!(s_r.connected && s_c.connected))
-                /* Can't do anything until both sockets are connected. */
+            if (!s_r.connected && !s_c.connected)
+                /* Can't do anything while both sockets are disconnected. */
                 return;
 
-            while (!ui.rate_limit.is_limited() &&
-                   (r2c_schedule.length > 0 || c2r_schedule.length > 0)) {
-                if (r2c_schedule.length > 0)
+            busy = true;
+            while (busy && !ui.rate_limit.is_limited()) {
+                busy = false;
+                if (s_c.connected && r2c_schedule.length > 0) {
                     transfer_chunk(s_r, s_c, r2c_schedule.shift(), "Relay");
-                if (c2r_schedule.length > 0)
+                    busy = true;
+                }
+                if (s_r.connected && c2r_schedule.length > 0) {
                     transfer_chunk(s_c, s_r, c2r_schedule.shift(), "Client");
+                    busy = true;
+                }
             }
 
-            /* Call again when safe, if necessary. */
-            if (r2c_schedule.length > 0 || c2r_schedule.length > 0)
+            if (!s_r.connected && r2c_schedule.length == 0) {
+                log("Client: closing.");
+                s_c.close();
+            }
+            if (!s_c.connected && c2r_schedule.length == 0) {
+                log("Relay: closing.");
+                s_r.close();
+            }
+
+            if (!s_c.connected && !s_r.connected)
+                dispatchEvent(new Event(Event.COMPLETE));
+            else if (r2c_schedule.length > 0 || c2r_schedule.length > 0)
                 flush_id = setTimeout(flush, ui.rate_limit.when() * 1000);
         }
     }
