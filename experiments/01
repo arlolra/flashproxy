@@ -37,6 +37,12 @@ until [ $i -gt $NUM_CLIENTS ]; do
     let i=i+1
 done
 
+# Start the flash proxy, server side
+echo "starting flash proxy server side..."
+firefox &
+sleep 2
+firefox --remote "openURL(http://localhost:1080/swfcat.swf?facilitator=127.0.0.1:4701)"
+
 # Start the flash proxy, client side
 echo "starting flash proxy client side..."
 i=1
@@ -47,10 +53,6 @@ until [ $i -gt $NUM_CLIENTS ]; do
     sleep 2
 done
 
-# Start the flash proxy, server side
-echo "starting flash proxy server side..."
-firefox --remote "openURL(http://localhost:1080/swfcat.swf?facilitator=127.0.0.1:4701)"
-
 let query_fac_time=NUM_CLIENTS+2
 sleep ${query_fac_time}
 
@@ -59,7 +61,7 @@ echo "getting the dump file..."
 i=2
 until [ $i -gt $NUM_CLIENTS ]; do
     let local_port=2000+i
-    gnome-terminal -e "/bin/bash -c 'wget -t1 http://localhost:${local_port}/dump -O - > /dev/null; exec /bin/bash -i'"
+    xterm -e "/bin/bash -c 'wget -t1 http://localhost:${local_port}/dump -O - > /dev/null; exec /bin/bash -i'" &
     let i=i+1
     sleep 2
 done
