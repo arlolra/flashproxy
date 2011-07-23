@@ -67,6 +67,9 @@ done
 # Use this one for delaying the termination of experiment below
 wget -t1 http://localhost:2001/dump -O - > /dev/null
 
+echo "Press enter to continue."
+read
+
 # Slaughter the processes
 ps -ef | sed -n '/thttpd/{/grep/!p;}' | awk '{print$2}' | sudo xargs -i kill {}
 ps -ef | sed -n '/crossdomaind.py/{/grep/!p;}' | awk '{print$2}' | sudo xargs -i kill {}
