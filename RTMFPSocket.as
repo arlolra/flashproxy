@@ -78,6 +78,7 @@ package
         {
             switch (e.info.code) {
             case "NetConnection.Connect.Closed":
+                connected = false;
                 dispatchEvent(new Event(Event.CLOSE));
                 break;
             case "NetStream.Connect.Closed":
