@@ -54,6 +54,8 @@ package
         
         private var local_addr:Object;
 
+        public var debug:Boolean;
+
         public var rate_limit:RateLimit;
 
         public function puts(s:String):void
@@ -85,7 +87,9 @@ package
 
         private function loaderinfo_complete(e:Event):void
         {
-            if (this.loaderInfo.parameters["debug"] || this.loaderInfo.parameters["client"]) {
+            debug = this.loaderInfo.parameters["debug"];
+
+            if (debug || this.loaderInfo.parameters["client"]) {
                 output_text = new TextField();
                 output_text.width = stage.stageWidth;
                 output_text.height = stage.stageHeight;

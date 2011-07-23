@@ -42,6 +42,12 @@ package
                 ui.puts(msg)
         }
 
+        public function logdebug(msg:String):void
+        {
+            if (ui.debug)
+                log(msg);
+        }
+
         public function set_name(name:String):void
         {
             this.name = name;
@@ -129,7 +135,7 @@ package
             s_to.writeBytes(bytes);
             s_to.flush();
             ui.rate_limit.update(n);
-            log(label + ": read " + bytes.length + ".");
+            logdebug(label + ": read " + bytes.length + ".");
         }
 
         /* Send as much data as the rate limit currently allows. */
