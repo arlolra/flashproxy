@@ -42,14 +42,14 @@ echo "starting flash proxy client side..."
 i=1
 until [ $i -gt $NUM_CLIENTS ]; do
     let local_port=9000+i
-    firefox --remote "openURL(http://localhost:1080/swfcat.swf?local=127.0.0.1:${local_port}&client=1&facilitator=127.0.0.1:4701,new-window)"
+    firefox --remote "openURL(http://localhost:1080/swfcat.swf?local=127.0.0.1:${local_port}&client=1&facilitator=127.0.0.1:4701)"
     let i=i+1
     sleep 2
 done
 
 # Start the flash proxy, server side
 echo "starting flash proxy server side..."
-firefox --remote "openURL(http://localhost:1080/swfcat.swf?facilitator=127.0.0.1:4701,new-window)"
+firefox --remote "openURL(http://localhost:1080/swfcat.swf?facilitator=127.0.0.1:4701)"
 
 let query_fac_time=NUM_CLIENTS+2
 sleep ${query_fac_time}
