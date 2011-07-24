@@ -192,8 +192,7 @@ package
             buffer.readBytes(output, offset, length);
             if (buffer.bytesAvailable == 0) {
                 /* Reclaim memory space. */
-                buffer.position = 0;
-                buffer.length = 0;
+                buffer.clear();
             }
         }
 
