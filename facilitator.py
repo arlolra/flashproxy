@@ -3,6 +3,7 @@
 import BaseHTTPServer
 import SocketServer
 import cgi
+import errno
 import getopt
 import os
 import re
@@ -301,6 +302,19 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         data["client"] = client_str
         data["relay"] = options.relay_spec
         self.request.send(urllib.urlencode(data))
+
+    # Catch "broken pipe" errors that otherwise cause a stack trace in the log.
+    def catch_epipe(fn):
+        def ret(self, *args):
+            try:
+                fn(self, *args)
+            except socket.error, e:
+                if e.errno != errno.EPIPE:
+                    raise
+                log(u"%s broken pipe" % format_addr(self.client_address))
+        return ret
+    handle = catch_epipe(BaseHTTPServer.BaseHTTPRequestHandler.handle)
+    finish = catch_epipe(BaseHTTPServer.BaseHTTPRequestHandler.finish)
 
 REGS = RegSet()
 
