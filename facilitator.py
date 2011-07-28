@@ -272,7 +272,10 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def log_request(self, code):
         addr_s = format_addr(self.client_address)
-        referer = self.headers.get("Referer") or "-"
+        try:
+            referer = self.headers["Referer"]
+        except (AttributeError, KeyError):
+            referer = "-"
         log(u"resp %s %s %d %s"
             % (addr_s, repr(self.requestline), code, repr(referer)))
 
