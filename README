@@ -1,15 +1,15 @@
 == Introduction
 
 This is a set of tools that make it possible to connect Tor through an
-Adobe Flash proxy running on another computer. The Flash proxy can be
+browser-based proxy running on another computer. The flash proxy can be
 run just by opening a web page in a computer that has Flash Player
 installed.
 
 There are five main parts. Our terminology for each part is in quotes.
 1. The Tor "client," running on someone's localhost.
-2. A "connector," which waits for connections from the Flash proxy and
+2. A "connector," which waits for connections from the flash proxy and
    the Tor client, and joins them together.
-3. A Flash "proxy," running in someone's web browser. This piece is
+3. A "flash proxy," running in someone's web browser. This piece is
    called swfcat because it is like a netcat implemented in Flash.
 4. A "facilitator," a pseudo-HTTP server that keeps a list of clients
    that want a connection, and hands them out to proxies.
@@ -139,7 +139,7 @@ Clients register with the facilitator by sending an HTTP message:
 	POST / HTTP/1.0\r\n
 	\r\n
 	client=<ip-addr/rtmfp-id>
-The Flash proxy also gets a client address over HTTP:
+The flash proxy also gets a client address over HTTP:
 	GET / HTTP/1.0\r\n
 	\r\n
 The server sends back address specifications of a client and a relay in

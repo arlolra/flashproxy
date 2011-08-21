@@ -37,7 +37,7 @@ class options(object):
 def usage(f = sys.stdout):
     print >> f, """\
 Usage: %(progname)s -r RELAY <OPTIONS> [HOST] [PORT]
-Flash bridge facilitator: Register client addresses with HTTP POST requests
+Flash proxy facilitator: Register client addresses with HTTP POST requests
 and serve them out again with HTTP GET. Listen on HOST and PORT, by default
 %(addr)s %(port)d.
   -d, --debug         don't daemonize, log to stdout.

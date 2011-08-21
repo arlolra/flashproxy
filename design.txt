@@ -1,4 +1,4 @@
-Design of Flash proxies
+Design of flash proxies
 
 0. Problem statement
 
@@ -13,7 +13,7 @@ Design of Flash proxies
   that themselves can reach the Tor network. We call this subset the
   unrestricted Internet.
 
-  A browser-based proxy (Flash proxy), running in a web page in the
+  A browser-based proxy (flash proxy), running in a web page in the
   unrestricted Internet, proxies connections between the restricted
   Internet and the Tor network. These proxies are expected to be
   temporary and short-lived, but their number will be great enough that
@@ -23,7 +23,7 @@ Design of Flash proxies
   networking technologies is complicated by restrictions that prevent it
   being a straightforward proxy. Chief among these is the lack of
   listening sockets. Flash and, for example, WebSockets, can only
-  initiate outgoing connections, not receive incoming ones. The Flash
+  initiate outgoing connections, not receive incoming ones. The flash
   proxy can only connect to external hosts by connecting directly to
   them. The other significant restriction is that the proxy cannot
   connect to just any destination: Adobe Flash player requires the
@@ -33,15 +33,15 @@ Design of Flash proxies
 
 2. Components
 
-  Conceptually, each Flash proxy is nothing more than a simple proxy,
+  Conceptually, each flash proxy is nothing more than a simple proxy,
   which accepts connections from a client and forwards data to a server.
   But because of the limited networking facilities available to an
   in-browser application, several other pieces are needed.
 
   1. Tor client: Is just ordinary Tor with a special configuration to
-     allow it to connect through a Flash proxy. It advertises its need
+     allow it to connect through a flash proxy. It advertises its need
      for a connection the the facilitator, and communicates with the
-     Flash proxy through the connector.
+     flash proxy through the connector.
   2. Connector: Runs on the same computer as the Tor client. It opens
      one socket to the Internet and another to localhost. It waits for a
      connection on both sockets, then starts proxying data between them.
@@ -50,13 +50,13 @@ Design of Flash proxies
      startup, the connector informs the facilitator that it is waiting
      for a connection.
   3. Flash proxy: Runs in someone's browser, in an uncensored region of
-     the Internet. The Flash proxy first connects to the facilitator to
+     the Internet. The flash proxy first connects to the facilitator to
      get a client registration. It then makes two outgoing connections,
      one to a Tor relay and one to a waiting Tor client, and starts
      proxying data between them.
   4. Facilitator: Keeps track of client registrations and hands them out
      to clients. It is capable of receiving client registrations in a
-     variety of ways. It sends registrations to Flash proxies over HTTP.
+     variety of ways. It sends registrations to flash proxies over HTTP.
      The facilitator is responsible for matching clients to proxies in a
      reasonable manner.
   5. Tor relay: An ordinary Tor relay with no special configuration
@@ -68,15 +68,15 @@ Design of Flash proxies
   2. The restricted user starts Tor, which makes a SOCKS connection to
      the connector.
   3. The connector notifies the facilitator that it needs a connection.
-  4. An unrestricted user opens the web page containing the Flash proxy.
-  5. The Flash proxy connects to the facilitator and asks for a client.
+  4. An unrestricted user opens the web page containing the flash proxy.
+  5. The flash proxy connects to the facilitator and asks for a client.
   6. The facilitator sends one of its client registrations to the proxy.
-  7. The Flash proxy connects to a Tor relay and to the waiting client
+  7. The flash proxy connects to a Tor relay and to the waiting client
      connector.
-  8. The connector receives the Flash proxy's connection and begins
+  8. The connector receives the flash proxy's connection and begins
      relaying data between it and the Tor relay.
 
-  Later, the Flash proxy may go offline. Assuming that another Flash
+  Later, the flash proxy may go offline. Assuming that another flash
   proxy is available, it will receive the same client's address from the
   facilitator, and the local Tor client will reconnect to the client
   through it.
@@ -89,19 +89,19 @@ Design of Flash proxies
     Bridge 127.0.0.1:9001
     Socks4Proxy 127.0.0.1:9001
   The address given for the "Bridge" option is actually irrelevant. The
-  connector will ignore it and connect (through the Flash proxy) to a
+  connector will ignore it and connect (through the flash proxy) to a
   Tor relay. The Tor client does not have control of its first hop.
 
 6. Behavior of the connector
 
   The connector serves two purposes: It sends a registration message to
-  the facilitator and it carries data between a Flash proxy and the
+  the facilitator and it carries data between a flash proxy and the
   local Tor client.
 
   On startup, the connector sends a registration message to the
   facilitator, informing the facilitator that it is waiting for a
   connection. The facilitator will later hand this registration to a
-  Flash proxy. The registration message is an HTTP POST request of the
+  flash proxy. The registration message is an HTTP POST request of the
   form:
 
     POST / HTTP/1.0
@@ -121,19 +121,19 @@ Design of Flash proxies
   external address.
 
   The connector solves the impedance mismatch between the Tor client and
-  the Flash proxy, both of which want to make outgoing connections to
+  the flash proxy, both of which want to make outgoing connections to
   the other. The connector sits in between, listens for connections from
   both ends, and matches them together. The remote socket listens on
   port 9000 and the local on port 9001.
 
   The connector can serve a crossdomain policy in response to a
-  crossdomain request, allowing the Flash proxy to connect. On the local
+  crossdomain request, allowing the flash proxy to connect. On the local
   side, it acts as a SOCKS proxy (albeit one that always goes to the
   same destination).
 
-7. Behavior of the Flash proxy
+7. Behavior of the flash proxy
 
-  The Flash proxy polls the facilitator for client registrations. When
+  The flash proxy polls the facilitator for client registrations. When
   it receives a registration, it opens one connection to the given Tor
   relay, one to the given client, and begin proxying data between them.
 
@@ -154,7 +154,7 @@ Design of Flash proxies
   The facilitator keeps the HTTP session alive and does not send a
   registration until one is available.
 
-  The Flash proxy may serve more than one relay–client pair at once.
+  The flash proxy may serve more than one relay–client pair at once.
 
 8. Behavior of the facilitator
 
@@ -163,11 +163,11 @@ Design of Flash proxies
   facilitator listens on port 9002.
 
   In the current implementation, the facilitator forgets a client
-  registration after giving it to a Flash proxy. The client must
+  registration after giving it to a flash proxy. The client must
   re-register if it wants another connection later.
 
 9. Behavior of the Tor relay.
 
   The Tor relay requires no special configuration. It must also be
-  running a program that serves a crossdomain policy to allow a Flash
+  running a program that serves a crossdomain policy to allow a flash
   proxy to connect to it.
