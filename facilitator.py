@@ -229,11 +229,11 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_client(reg)
             log(u"proxy %s gets %s, relay %s (now %d)" %
                 (proxy_addr_s, unicode(reg), options.relay_spec, len(REGS)))
-        except socket.error:
+        except socket.error, e:
             # Something went wrong; likely the proxy disconnected without
             # receiving a reg. Restore the reg to the front of the queue.
             REGS.add_front(reg)
-            log(u"proxy %s gets none" % proxy_addr_s)
+            log(u"proxy %s gets none (%s)" % (proxy_addr_s, str(e)))
 
     def do_POST(self):
         client_addr_s = format_addr(self.client_address)
