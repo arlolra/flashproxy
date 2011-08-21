@@ -319,7 +319,14 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             try:
                 fn(self, *args)
             except socket.error, e:
-                if e.errno != errno.EPIPE:
+                try:
+                    err_num = e.errno
+                except AttributeError:
+                    # Before Python 2.6, exception can be a pair.
+                    err_num, errstr = e
+                except:
+                    raise
+                if err_num != errno.EPIPE:
                     raise
                 log(u"%s broken pipe" % format_addr(self.client_address))
         return ret
