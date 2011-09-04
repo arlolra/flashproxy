@@ -3,6 +3,7 @@ package
     import flash.display.Sprite;
     import flash.display.StageAlign;
     import flash.display.StageScaleMode;
+    import flash.external.ExternalInterface;
     import flash.text.TextField;
     import flash.text.TextFormat;
     import flash.net.Socket;
@@ -136,9 +137,38 @@ package
 
         /* Are circumstances such that we should self-disable and not be a
            proxy? We take a best-effort guess as to whether this device runs on
-           a battery or the data transfer might be expensive. */
+           a battery or the data transfer might be expensive.
+
+           Matching mobile User-Agents is complex; but we only need to match
+           those devices that can also run a recent version of Adobe Flash,
+           which is a subset of this list:
+           https://secure.wikimedia.org/wikipedia/en/wiki/Adobe_Flash_Player#Mobile_operating_systems
+
+           Other resources:
+           http://www.zytrax.com/tech/web/mobile_ids.html
+           http://googlewebmastercentral.blogspot.com/2011/03/mo-better-to-also-detect-mobile-user.html
+           http://search.cpan.org/~cmanley/Mobile-UserAgent-1.05/lib/Mobile/UserAgent.pm
+        */
         private function should_disable():Boolean
         {
+            const UA_LIST:Array = [
+                /\bmobile\b/i,
+                /\bandroid\b/i,
+                /\bopera mobi\b/i,
+            ];
+            var ua:String;
+
+            ua = ExternalInterface.call("window.navigator.userAgent.toString");
+
+            for (var i:uint = 0; i < UA_LIST.length; i++) {
+                var re:RegExp = UA_LIST[i];
+
+                if (ua.match(re)) {
+                    puts("Disabling because User-Agent matched " + re + ".");
+                    return true;
+                }
+            }
+
             return false;
         }
 
