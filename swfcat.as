@@ -151,15 +151,16 @@ package
         */
         private function should_disable():Boolean
         {
-            const UA_LIST:Array = [
-                /\bmobile\b/i,
-                /\bandroid\b/i,
-                /\bopera mobi\b/i,
-            ];
             var ua:String;
 
             ua = ExternalInterface.call("window.navigator.userAgent.toString");
             if (ua != null) {
+                const UA_LIST:Array = [
+                    /\bmobile\b/i,
+                    /\bandroid\b/i,
+                    /\bopera mobi\b/i,
+                ];
+
                 for (var i:uint = 0; i < UA_LIST.length; i++) {
                     var re:RegExp = UA_LIST[i];
 
