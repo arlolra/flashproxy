@@ -159,13 +159,14 @@ package
             var ua:String;
 
             ua = ExternalInterface.call("window.navigator.userAgent.toString");
+            if (ua != null) {
+                for (var i:uint = 0; i < UA_LIST.length; i++) {
+                    var re:RegExp = UA_LIST[i];
 
-            for (var i:uint = 0; i < UA_LIST.length; i++) {
-                var re:RegExp = UA_LIST[i];
-
-                if (ua.match(re)) {
-                    puts("Disabling because User-Agent matched " + re + ".");
-                    return true;
+                    if (ua.match(re)) {
+                        puts("Disabling because User-Agent matched " + re + ".");
+                        return true;
+                    }
                 }
             }
 
