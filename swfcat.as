@@ -134,11 +134,24 @@ package
                 return default_addr;
         }
 
+        /* Are circumstances such that we should self-disable and not be a
+           proxy? We take a best-effort guess as to whether this device runs on
+           a battery or the data transfer might be expensive. */
+        private function should_disable():Boolean
+        {
+            return false;
+        }
+
         /* The main logic begins here, after start-up issues are taken care of. */
         private function proxy_main():void
         {
             var fac_url:String;
             var loader:URLLoader;
+
+            if (should_disable()) {
+                puts("Disabling self.");
+                return;
+            }
 
             if (proxy_pairs.length >= MAX_NUM_PROXY_PAIRS) {
                 setTimeout(proxy_main, FACILITATOR_POLL_INTERVAL);
