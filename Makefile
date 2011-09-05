@@ -11,3 +11,5 @@ swfcat.swf: *.as badge.png
 
 clean:
 	rm -f $(TARGETS)
+
+.PHONY: all clean
