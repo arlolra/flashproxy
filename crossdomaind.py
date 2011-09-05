@@ -13,6 +13,7 @@ DEFAULT_PORTS = "*"
 
 class options(object):
     daemonize = False
+    pid_filename = None
     domain = DEFAULT_DOMAIN
     ports = DEFAULT_PORTS
 
@@ -21,10 +22,11 @@ def usage(f = sys.stdout):
 Usage: %(progname)s <OPTIONS> [HOST] [PORT]
 Serve a Flash crossdomain policy. By default HOST is \"%(addr)s\"
 and PORT is %(port)d.
-  --daemon             daemonize (Unix only).
-  -d, --domain=DOMAIN  limit access to the given DOMAIN (default \"%(domain)s\").
-  -h, --help           show this help.
-  -p, --ports=PORTS    limit access to the given PORTS (default \"%(ports)s\").\
+  --daemon                daemonize (Unix only).
+  -d, --domain=DOMAIN     limit access to the given DOMAIN (default \"%(domain)s\").
+  -h, --help              show this help.
+      --pidfile FILENAME  write PID to FILENAME after daemonizing.
+  -p, --ports=PORTS       limit access to the given PORTS (default \"%(ports)s\").\
 """ % {
     "progname": sys.argv[0],
     "addr": DEFAULT_ADDRESS,
@@ -40,7 +42,7 @@ def make_policy(domain, ports):
 </cross-domain-policy>
 \0""" % (xml.sax.saxutils.escape(domain), xml.sax.saxutils.escape(ports))
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "d:hp:", ["daemon", "domain", "help", "ports"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "d:hp:", ["daemon", "domain", "help", "pidfile=", "ports"])
 for o, a in opts:
     if o == "--daemon":
         options.daemonize = True
@@ -49,6 +51,8 @@ for o, a in opts:
         sys.exit()
     elif o == "-d" or o == "--domain":
         options.domain = a
+    elif o == "--pidfile":
+        options.pid_filename = a
     elif o == "-p" or o == "--ports":
         options.ports = a
 
@@ -76,7 +80,12 @@ s.bind(addrinfo[4])
 s.listen(10)
 
 if options.daemonize:
-    if os.fork() != 0:
+    pid = os.fork()
+    if pid != 0:
+        if options.pid_filename:
+            f = open(options.pid_filename, "w")
+            print >> f, pid
+            f.close()
         sys.exit(0)
 
 while True:
