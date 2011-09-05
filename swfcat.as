@@ -35,7 +35,7 @@ package
         private const MAX_NUM_PROXY_PAIRS:uint = 100;
 
         // Milliseconds.
-        private const FACILITATOR_POLL_INTERVAL:int = 1000;
+        private const FACILITATOR_POLL_INTERVAL:int = 10000;
 
         // Bytes per second. Set to undefined to disable limit.
         public static const RATE_LIMIT:Number = undefined;
