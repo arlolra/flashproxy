@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+# facilitator  This shell script takes care of starting and stopping
+#              the flash proxy facilitator.
+#
+# chkconfig: 2345 90 10
+# description: Flash proxy facilitator.
+# processname: facilitator.py
+# pidfile: /var/flashproxy/facilitator.pid
+
+# Installation instructions:
+# cp facilitator /etc/init.d/facilitator
+# chkconfig --add facilitator
+# service facilitator start
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Replace this with the address of a Tor relay that allows crossdomain
+# connections (i.e., is running crossdomaind.py). You can use host:port
+# syntax.
+RELAY=...
+
+BINDIR=/usr/local/bin
+VARDIR=/var/flashproxy
+PROG=$BINDIR/facilitator.py
+PIDFILE=$VARDIR/facilitator.pid
+USER=flashproxy
+
+# See how we were called.
+case "$1" in
+  start)
+	[ -x $PROG ] || exit 1
+	echo -n $"Starting flash proxy facilitator: "
+	cd $VARDIR && daemon --user $USER --pidfile $PIDFILE $PROG --pidfile $PIDFILE -r $RELAY
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/facilitator
+	;;
+  stop)
+	# Stop daemon.
+	echo -n $"Shutting down flash proxy facilitator: "
+	killproc -p $PIDFILE
+	RETVAL=$?
+	echo
+	if [ $RETVAL -eq 0 ]; then
+		rm -f /var/lock/subsys/facilitator
+		rm -f $PIDFILE
+	fi
+	;;
+  status)
+	status -p $PIDFILE facilitator
+	RETVAL=$?
+	;;
+  restart|reload)
+	$0 stop
+	$0 start
+	;;
+  condrestart)
+	[ -f /var/lock/subsys/facilitator ] && restart || :
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart}"
+	RETVAL=3
+	;;
+esac
+
+exit $RETVAL
