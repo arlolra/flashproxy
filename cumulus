@@ -8,6 +8,11 @@
 # processname: CumulusService
 # pidfile: /var/cumulus/cumulus.pid
 
+# Installation instructions:
+# cp cumulus /etc/init.d/cumulus
+# chkconfig --add cumulus
+# service cumulus start
+
 # Source function library.
 . /etc/rc.d/init.d/functions
 
