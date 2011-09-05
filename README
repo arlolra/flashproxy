@@ -90,6 +90,25 @@ try deleting the files in ~/.tor or /var/lib/tor.
 You will be able to see byte counts flowing in the browser window, and
 eventually be able to build a circuit.
 
+== Installing so as to restart at boot
+
+The directory init.d contains scripts to start the facilitator and
+crossdomaind server on CentOS. "make install" copies files to /usr/local/bin.
+
+	# make install
+	# useradd -d /dev/null -s /bin/false flashproxy
+	# mkdir /var/flashproxy
+	# chown -R flashproxy.flashproxy /var/flashproxy/
+
+	# cp init.d/facilitator /etc/init.d/facilitator
+	-- Edit /etc/init.d/facilitator to set $RELAY.
+	# chkconfig --add facilitator
+	# service facilitator start
+
+	# cp init.d/crossdomaind /etc/init.d/crossdomaind
+	# chkconfig --add crossdomaind
+	# service crossdomaind start
+
 == Building the Cumulus RTMFP server
 
 There is a free RTMFP rendezvous server called Cumulus. It is a
