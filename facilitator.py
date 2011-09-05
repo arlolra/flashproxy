@@ -26,6 +26,7 @@ class options(object):
     log_file = sys.stdout
     relay_spec = None
     daemonize = True
+    pid_filename = None
 
     @staticmethod
     def set_relay_spec(spec):
@@ -40,10 +41,11 @@ Usage: %(progname)s -r RELAY <OPTIONS> [HOST] [PORT]
 Flash proxy facilitator: Register client addresses with HTTP POST requests
 and serve them out again with HTTP GET. Listen on HOST and PORT, by default
 %(addr)s %(port)d.
-  -d, --debug         don't daemonize, log to stdout.
-  -h, --help          show this help.
-  -l, --log FILENAME  write log to FILENAME (default \"%(log)s\").
-  -r, --relay RELAY   send RELAY (host:port) to proxies as the relay to use.\
+  -d, --debug             don't daemonize, log to stdout.
+  -h, --help              show this help.
+  -l, --log FILENAME      write log to FILENAME (default \"%(log)s\").
+      --pidfile FILENAME  write PID to FILENAME after daemonizing.
+  -r, --relay RELAY       send RELAY (host:port) to proxies as the relay to use.\
 """ % {
     "progname": sys.argv[0],
     "addr": DEFAULT_ADDRESS,
@@ -326,7 +328,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 REGS = RegSet()
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:r:",
-    ["debug", "help", "log=", "relay="])
+    ["debug", "help", "log=", "pidfile=", "relay="])
 for o, a in opts:
     if o == "-d" or o == "--debug":
         options.daemonize = False
@@ -336,6 +338,8 @@ for o, a in opts:
         sys.exit()
     elif o == "-l" or o == "--log":
         options.log_filename = a
+    elif o == "--pidfile":
+        options.pid_filename = a
     elif o == "-r" or o == "--relay":
         try:
             options.set_relay_spec(a)
@@ -382,7 +386,12 @@ log(u"using relay address %s" % options.relay_spec)
 
 if options.daemonize:
     log(u"daemonizing")
-    if os.fork() != 0:
+    pid = os.fork()
+    if pid != 0:
+        if options.pid_filename:
+            f = open(options.pid_filename, "w")
+            print >> f, pid
+            f.close()
         sys.exit(0)
 
 try:
