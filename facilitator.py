@@ -347,11 +347,6 @@ for o, a in opts:
             print >> sys.stderr, u"Can't resolve relay %s: %s" % (repr(a), str(e))
             sys.exit(1)
 
-if options.log_filename:
-    options.log_file = open(options.log_filename, "a")
-else:
-    options.log_file = sys.stdout
-
 if not options.relay_spec:
     print >> sys.stderr, """\
 The -r option is required. Give it the relay that will be sent to proxies.
@@ -372,6 +367,13 @@ elif len(args) == 2:
 else:
     usage(sys.stderr)
     sys.exit(1)
+
+if options.log_filename:
+    options.log_file = open(options.log_filename, "a")
+    # Send error tracebacks to the log.
+    sys.stderr = options.log_file
+else:
+    options.log_file = sys.stdout
 
 addrinfo = socket.getaddrinfo(address[0], address[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
 

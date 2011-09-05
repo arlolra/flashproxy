@@ -144,6 +144,8 @@ else:
 
 if options.log_filename:
     options.log_file = open(options.log_filename, "a")
+    # Send error tracebacks to the log.
+    sys.stderr = options.log_file
 else:
     options.log_file = sys.stdout
 
