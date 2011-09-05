@@ -29,6 +29,7 @@ class options(object):
     log_filename = None
     log_file = sys.stdout
     daemonize = False
+    pid_filename = None
 
 # We accept up to this many bytes from a socket not yet matched with a partner
 # before disconnecting it.
@@ -51,7 +52,8 @@ FACILITATOR.
   -f, --facilitator=HOST[:PORT]  advertise willingness to receive connections to
                                    HOST:PORT. By default PORT is %(fac_port)d.
   -h, --help                     show this help.
-  -l, --log FILENAME             write log to FILENAME (default stdout).\
+  -l, --log FILENAME             write log to FILENAME (default stdout).
+      --pidfile FILENAME         write PID to FILENAME after daemonizing.\
 """ % {
     "progname": sys.argv[0],
     "local": format_addr((DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)),
@@ -113,7 +115,7 @@ def format_addr(addr):
     else:
         return u"%s:%d" % (host, port)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:", ["daemon", "facilitator=", "help", "log="])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:", ["daemon", "facilitator=", "help", "log=", "pidfile="])
 for o, a in opts:
     if o == "--daemon":
         options.daemonize = True
@@ -124,6 +126,8 @@ for o, a in opts:
         sys.exit()
     elif o == "-l" or o == "--log":
         options.log_filename = a
+    elif o == "--pidfile":
+        options.pid_filename = a
 
 if len(args) == 0:
     options.local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
@@ -356,7 +360,12 @@ def match_proxies():
 
 if options.daemonize:
     log(u"Daemonizing.")
-    if os.fork() != 0:
+    pid = os.fork()
+    if pid != 0:
+        if options.pid_filename:
+            f = open(options.pid_filename, "w")
+            print >> f, pid
+            f.close()
         sys.exit(0)
 
 register()
