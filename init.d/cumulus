@@ -9,7 +9,7 @@
 # pidfile: /var/cumulus/cumulus.pid
 
 # Installation instructions:
-# cp cumulus /etc/init.d/cumulus
+# cp init.d/cumulus /etc/init.d/cumulus
 # chkconfig --add cumulus
 # service cumulus start
 

@@ -118,7 +118,7 @@ Follow these steps to install the Cumulus server. You need to open port
 	# useradd -d /dev/null -s /bin/false cumulus
 	# mkdir /var/cumulus
 	# chown -R cumulus.cumulus /var/cumulus
-	# cp flashproxy/cumulus /etc/init.d/cumulus
+	# cp flashproxy/init.d/cumulus /etc/init.d/cumulus
 	# chkconfig --add cumulus
 	# service cumulus start
 
