@@ -183,23 +183,11 @@ class RegSet(object):
         finally:
             self.cv.release()
 
-    def add_front(self, reg):
-        self.cv.acquire()
-        try:
-            if reg not in list(self.set):
-                self.set.append(reg)
-                self.cv.notify()
-                return True
-            else:
-                return False
-        finally:
-            self.cv.release()
-
     def fetch(self):
         self.cv.acquire()
         try:
-            while not self.set:
-                self.cv.wait()
+            if not self.set:
+                return None
             return self.set.pop(0)
         finally:
             self.cv.release()
@@ -224,16 +212,13 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
 
         reg = REGS.fetch()
-
-        try:
-            self.send_client(reg)
+        if reg:
             log(u"proxy %s gets %s, relay %s (now %d)" %
                 (proxy_addr_s, unicode(reg), options.relay_spec, len(REGS)))
-        except socket.error, e:
-            # Something went wrong; likely the proxy disconnected without
-            # receiving a reg. Restore the reg to the front of the queue.
-            REGS.add_front(reg)
-            log(u"proxy %s gets none (%s)" % (proxy_addr_s, str(e)))
+            self.send_client(reg)
+        else:
+            log(u"proxy %s gets none" % proxy_addr_s)
+            self.send_client(None)
 
     def do_POST(self):
         client_addr_s = format_addr(self.client_address)
@@ -301,8 +286,13 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             % (format_addr(self.client_address), repr(msg)))
 
     def send_client(self, reg):
-        client_str = str(reg)
-
+        if reg:
+            client_str = str(reg)
+        else:
+            # Send an empty string rather than a 404 or similar because Flash
+            # Player's URLLoader can't always distinguish a 404 from, say,
+            # "server not found."
+            client_str = ""
         self.send_response(200)
         self.send_header("Content-Type", "x-www-form-urlencoded")
         self.send_header("Cache-Control", "no-cache")

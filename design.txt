@@ -151,8 +151,8 @@ Design of flash proxies
 
     client=[<rtmfp-id>]&relay=<address>:<port>
 
-  The facilitator keeps the HTTP session alive and does not send a
-  registration until one is available.
+  If the value for the client parameter is empty, it means that there are no
+  client registrations for this proxy.
 
   The flash proxy may serve more than one relay–client pair at once.
 
