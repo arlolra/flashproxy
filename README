@@ -77,7 +77,7 @@ The client needs to be running a version of Tor that supports the
 Socks4Proxy configuration. This means version 0.2.2.1-alpha or
 later--not the current stable release.
 
-Start Tor with the following configuration:
+Start Tor with the following configuration (you can use the included torrc file):
 	UseBridges 1
 	Bridge 127.0.0.1:9001
 	Socks4Proxy 127.0.0.1:9001
