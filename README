@@ -114,6 +114,10 @@ the Tor client, which the other methods don't.
 	$ ./connector.py 127.0.0.1:9001 127.0.0.1:9002
 3. Open in a browser
 	file:///home/user/flashproxy/swfcat.swf?client=1&debug=1
+   This should *not* be the same browser you use to browse over Tor. You
+   should not run Flash in your Tor browser. Use a separate Firefox
+   profile (firefox -no-remote -ProfileManager) or use a separate
+   browser entirely.
 4. Run Tor using the included torrc file.
 	$ tor -f flashproxy/torrc
 
