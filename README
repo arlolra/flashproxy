@@ -127,7 +127,7 @@ Follow these steps to install the Cumulus server. You need to open port
 1935/udp in the firewall.
 	$ git clone git://github.com/OpenRTMFP/Cumulus.git
 	$ cd Cumulus
-	$ patch -p0 < cumulus-no-manage-log.patch
+	$ patch -p0 < ~/flashproxy/patches/cumulus-no-manage-log.patch
 	$ cd CumulusLib
 	$ make LIBS=./
 	# cp libCumulus.so /usr/local/lib
