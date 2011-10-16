@@ -16,17 +16,149 @@ There are five main parts. Our terminology for each part is in quotes.
 5. A Tor "relay," which is just a normal Tor relay except that its host
    must also serve a Flash crossdomain policy.
 
-A proxy is capable of connecting to a client in two ways: Using a normal
-TCP connection; or over RTMFP, which requires Flash on the client but is
-capable of traversing NAT.
+The purpose of this project is to create many, generally ephemeral
+bridge IP addresses, with the goal of outpacing a censor's ability to
+block them. Rather than increasing the number of bridges at static
+addresses, we aim to make existing bridges reachable by a larger and
+changing pool of addresses.
+
 
 == Demonstration page
 
+This page has a description of the project; viewing it also turns your
+computer into a flash proxy as long as the page is open. (Only if you
+have Adobe Flash Player installed.)
+
 https://crypto.stanford.edu/flashproxy/
 
-== Quick start
 
-=== Building
+== Quick start for users
+
+You must have a version of Tor that supports the Socks4Proxy option.
+This means version 0.2.2.32 (released 2011-08-29) or later.
+
+All the flashproxy programs and source code can be downloaded this way:
+	git clone https://git.torproject.org/flashproxy.git
+But as a user you only need these files:
+	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/connector.py
+	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/torrc
+
+There are different ways to get connected, depending on whether you are
+able to receive direct TCP connections. The first method is preferred,
+if you are able to configure port forwarding or receive direct
+connections from the Internet.
+
+If you don't get a connection within 30 seconds or so, make sure someone
+with Flash Player is viewing https://crypto.stanford.edu/flashproxy/.
+There aren't yet enough operational proxies that one is available all
+the time.
+
+=== Direct TCP connection
+
+This is the preferred way to use a flash proxy when it's possible. The
+only communication your computer makes with a fixed IP address is
+registration with the facilitator: everything else happens over
+ephemeral proxies.
+
+1. Run the connector and instruct it to register with a public
+   facilitator.
+	$ python connector.py -f tor-facilitator.bamsoftware.com
+   By default the connector listens on Internet-facing TCP port 9000. If
+   you have to use a different port (to get through a firewall, for
+   example), give it on the command line like this (here using port
+   8888):
+	$ python connector.py -f tor-facilitator.bamsoftware.com 127.0.0.1:9001 :8888
+2. Run Tor using the included torrc file.
+	$ tor -f flashproxy/torrc
+
+Watch the logs of connector.py and tor. From connector.py you are
+expecting output lines like this:
+	Remote connection from XXX.XXX.XXX.XXX:YYYYY.
+	Local connection from 127.0.0.1:ZZZZZ.
+	Linking 127.0.0.1:ZZZZZ and XXX.XXX.XXX.XXX:YYYYY.
+From tor you are looking for:
+	[notice] Tor has successfully opened a circuit. Looks like client functionality is working.
+	[notice] Bootstrapped 100%: Done.
+
+=== Using a public connector
+
+Rather than running connector.py on your computer, you can use a public
+connector. This way is not as realistic because all your Tor traffic
+will first go to a public connector, which is at a fixed address and can
+be easily blocked. However this is an easy way to try out the system
+without having to do port forwarding.
+
+1. Edit the included torrc file to comment one line and uncomment
+   another:
+	# Socks4Proxy 127.0.0.1:9001
+	Socks4Proxy tor-facilitator.bamsoftware.com:9999
+2. Run Tor using the included torrc file.
+	$ tor -f flashproxy/torrc
+
+=== Using RTMFP
+
+This method uses a protocol called RTMFP to communicate through a NAT
+without port forwarding. However it uses a public server at a fixed
+address as an intermediary, so it can be easily blocked. (The
+intermediate server is operated by the flash proxy developers, not by
+Adobe as is usual with RTMFP.) This method also requires Flash Player on
+the Tor client, which the other methods don't.
+
+1. Download swfcat.swf from
+	https://crypto.stanford.edu/flashproxy/swfcat.swf
+   and save it locally. We will assume it is saved at
+   /home/user/flashproxy/swfcat.swf.
+2. Run the connector, without giving it a facilitator, and listening on
+   local ports only. In this configuration, it is the swfcat.swf program
+   that communicates with the facilitator, not the connector.
+	$ ./connector.py 127.0.0.1:9001 127.0.0.1:9002
+3. Open in a browser
+	file:///home/user/flashproxy/swfcat.swf?client=1&debug=1
+4. Run Tor using the included torrc file.
+	$ tor -f flashproxy/torrc
+
+You will see status messages in the swfcat.swf window.
+
+=== Troubleshooting
+
+Make sure someone is viewing https://crypto.stanford.edu/flashproxy/, or
+another web page with a flash proxy badge on it.
+
+Sometimes Tor can think that the bridge you reach through a proxy is
+unreachable after the proxy is disconnected, even if there is another
+proxy immediately available. If you are able to build Tor from source,
+try applying the patch patches/tor-ignore-bridge-failure.patch.
+	$ git apply ~/flashproxy/patches/tor-ignore-bridge-failure.patch
+or
+	$ patch -p1 < ~/flashproxy/patches/tor-ignore-bridge-failure.patch
+
+If tor hangs at 10% with these messages:
+	[notice] Bootstrapped 10%: Finishing handshake with directory server.
+	[notice] no known bridge descriptors running yet; stalling
+as a last resort you can try deleting the files in ~/.tor and
+/var/lib/tor, and then restarting tor.
+
+If tor apparently hangs here:
+	[notice] Bootstrapped 50%: Loading relay descriptors.
+	[notice] new bridge descriptor '...' (fresh)
+wait a few minutes. It can take a while to download relay descriptors.
+
+
+== How to put a flash proxy badge on a web page.
+
+Copy swfcat.swf to your server, then paste in this HTML:
+
+<object width="70" height="23">
+	<param name="movie" value="swfcat.swf">
+	<param name="flashvars" value="">
+	<embed src="swfcat.swf" width="70" height="23" flashvars=""></embed>
+</object>
+
+== For developers
+
+See design.txt for some more technical information.
+
+=== Building swfcat.swf
 
 Download the (free software) Flex SDK.
 	http://opensource.adobe.com/wiki/display/flexsdk/Flex+SDK
@@ -36,7 +168,15 @@ To build, run
 	$ make
 Copy the resulting swfcat.swf file to a web server.
 
-=== Connecting
+You can pass swfcat.swf the parameter debug=1 to see lots of debugging
+information.
+
+This is a good tutorial on ActionScript programming with the Flex tools,
+with sample code:
+	http://www.senocular.com/flash/tutorials/as3withmxmlc/
+	http://www.senocular.com/flash/tutorials/as3withmxmlc/AS3Flex2b3StarterFiles.zip
+
+=== Running a relay or facilitator
 
 On the Tor relay, run
 	# ./crossdomaind.py
@@ -45,52 +185,11 @@ crossdomain policy, but the connector and facilitator have it built in.
 
 On the facilitator, run
 	$ ./facilitator.py -r <relay-ip>
-The facilitator runs on port 9002 by default.
+You can use "tor1.bamsoftware.com" for <relay-ip>; it is already set up
+to serve a crossdomain policy. The facilitator runs on port 9002 by
+default.
 
-In a browser somewhere, open swfcat.swf and pass it a parameters telling it
-which facilitator to use, for example
-	http://www.example.com/swfcat.swf?facilitator=<facilitator-ip>:9002&debug=1
-
-There are two ways in which the client can receive connections: over TCP
-or RTMFP. TCP doesn't send traffic to anyone other than the facilitator
-and the proxy, but it only works if you have a public IP address. RTMFP
-coordinates connections using another server (which may be the same as
-the facilitator) and works when the client is behind a NAT.
-
-To connect with TCP, run
-	$ ./connector.py -f <facilitator-ip>
-(If you are running the facilitator locally, be sure to use an external
-IP address, not 127.0.0.1.) The connector informs the facilitator that
-it wants a connection, then listens on 0.0.0.0:9000 and 127.0.0.1:9001.
-The proxy will connect on port 9000 and the local Tor will connect on
-9001.
-
-To connect with RTMFP, run
-	$ ./connector.py 127.0.0.1:9001 127.0.0.1:9002
-and open in a browser
-	http://www.example.com/swfcat.swf?client=1&facilitator=<facilitator-ip>:9002
-In this case, it is swfcat running in client mode that registers with
-the facilitator. The connector acts to join the local swfcat and the
-local Tor client.
-
-The client needs to be running a version of Tor that supports the
-Socks4Proxy configuration. This means version 0.2.2.1-alpha or
-later--not the current stable release.
-
-Start Tor with the following configuration (you can use the included torrc file):
-	UseBridges 1
-	Bridge 127.0.0.1:9001
-	Socks4Proxy 127.0.0.1:9001
-
-If you see messages like
-	[notice] Bootstrapped 10%: Finishing handshake with directory server.
-	[notice] no known bridge descriptors running yet; stalling
-try deleting the files in ~/.tor or /var/lib/tor.
-
-You will be able to see byte counts flowing in the browser window, and
-eventually be able to build a circuit.
-
-== Installing so as to restart at boot
+=== Installing so as to restart at boot
 
 The directory init.d contains scripts to start the facilitator and
 crossdomaind server on CentOS. "make install" copies files to /usr/local/bin.
@@ -109,7 +208,7 @@ crossdomaind server on CentOS. "make install" copies files to /usr/local/bin.
 	# chkconfig --add crossdomaind
 	# service crossdomaind start
 
-== Building the Cumulus RTMFP server
+=== Building the Cumulus RTMFP server
 
 There is a free RTMFP rendezvous server called Cumulus. It is a
 replacement for the Adobe Cirrus service at rtmfp://p2p.rtmfp.net/.
@@ -140,45 +239,3 @@ Follow these steps to install the Cumulus server. You need to open port
 	# cp flashproxy/init.d/cumulus /etc/init.d/cumulus
 	# chkconfig --add cumulus
 	# service cumulus start
-
-== Rationale
-
-The purpose of this project is to create many, generally ephemeral
-bridge IP addresses, with the goal of outpacing a censor's ability to
-block them. Rather than increasing the number of bridges at static
-addresses, we aim to make existing bridges reachable by a larger and
-changing pool of addresses.
-
-== Design notes
-
-Any Tor relay can be used, as long as it also serves a crossdomain
-policy.
-
-Clients register with the facilitator by sending an HTTP message:
-	POST / HTTP/1.0\r\n
-	\r\n
-	client=<ip-addr/rtmfp-id>
-The flash proxy also gets a client address over HTTP:
-	GET / HTTP/1.0\r\n
-	\r\n
-The server sends back address specifications of a client and a relay in
-an HTTP respose.
-	HTTP/1.0 200 OK\r\n
-	\r\n
-	client=<ip-addr/rtmfp-id>&relay=<relay-ip>
-
-== Embedding in HTML
-
-<object width="70" height="23">
-    <param name="movie" value="swfcat.swf">
-    <param name="flashvars" value="">
-    <embed src="swfcat.swf" width="70" height="23" flashvars=""></embed>
-</object>
-
-== ActionScript programming
-
-A good tutorial on ActionScript programming with the Flex tools, with
-sample code:
-
-http://www.senocular.com/flash/tutorials/as3withmxmlc/
-http://www.senocular.com/flash/tutorials/as3withmxmlc/AS3Flex2b3StarterFiles.zip
