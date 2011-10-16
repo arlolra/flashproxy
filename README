@@ -175,6 +175,10 @@ Copy the resulting swfcat.swf file to a web server.
 You can pass swfcat.swf the parameter debug=1 to see lots of debugging
 information.
 
+Adobe makes a debug version of Flash player that raises a window on
+errors instead of silently failing, and exposes some logging functions.
+	http://www.adobe.com/support/flashplayer/downloads.html
+
 This is a good tutorial on ActionScript programming with the Flex tools,
 with sample code:
 	http://www.senocular.com/flash/tutorials/as3withmxmlc/
