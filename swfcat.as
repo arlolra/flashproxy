@@ -255,6 +255,7 @@ package
         {
             var rs:RTMFPSocket;
 
+            puts("Making RTMFP socket.");
             rs = new RTMFPSocket(RTMFP_URL);
             rs.addEventListener(Event.COMPLETE, function (e:Event):void {
                 puts("Got RTMFP id " + rs.id);
