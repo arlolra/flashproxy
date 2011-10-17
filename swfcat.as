@@ -135,55 +135,11 @@ package
                 return default_addr;
         }
 
-        /* Are circumstances such that we should self-disable and not be a
-           proxy? We take a best-effort guess as to whether this device runs on
-           a battery or the data transfer might be expensive.
-
-           Matching mobile User-Agents is complex; but we only need to match
-           those devices that can also run a recent version of Adobe Flash,
-           which is a subset of this list:
-           https://secure.wikimedia.org/wikipedia/en/wiki/Adobe_Flash_Player#Mobile_operating_systems
-
-           Other resources:
-           http://www.zytrax.com/tech/web/mobile_ids.html
-           http://googlewebmastercentral.blogspot.com/2011/03/mo-better-to-also-detect-mobile-user.html
-           http://search.cpan.org/~cmanley/Mobile-UserAgent-1.05/lib/Mobile/UserAgent.pm
-        */
-        private function should_disable():Boolean
-        {
-            var ua:String;
-
-            ua = ExternalInterface.call("window.navigator.userAgent.toString");
-            if (ua != null) {
-                const UA_LIST:Array = [
-                    /\bmobile\b/i,
-                    /\bandroid\b/i,
-                    /\bopera mobi\b/i,
-                ];
-
-                for (var i:uint = 0; i < UA_LIST.length; i++) {
-                    var re:RegExp = UA_LIST[i];
-
-                    if (ua.match(re)) {
-                        puts("Disabling because User-Agent matched " + re + ".");
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         /* The main logic begins here, after start-up issues are taken care of. */
         private function proxy_main():void
         {
             var fac_url:String;
             var loader:URLLoader;
-
-            if (should_disable()) {
-                puts("Disabling self.");
-                return;
-            }
 
             if (proxy_pairs.length >= MAX_NUM_PROXY_PAIRS) {
                 setTimeout(proxy_main, FACILITATOR_POLL_INTERVAL);
