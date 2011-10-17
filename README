@@ -150,13 +150,13 @@ wait a few minutes. It can take a while to download relay descriptors.
 
 == How to put a flash proxy badge on a web page.
 
-Copy swfcat.swf to your server, then paste in this HTML:
+Copy swfcat.swf to your server, then paste in this HTML where you want
+the badge to appear:
 
-<object width="70" height="23">
-	<param name="movie" value="swfcat.swf">
-	<param name="flashvars" value="">
-	<embed src="swfcat.swf" width="70" height="23" flashvars=""></embed>
-</object>
+<script type="text/javascript" src="https://crypto.stanford.edu/flashproxy/flashproxy.js"></script>
+
+It will be inserted as a span element with the id "flashproxy-badge".
+
 
 == For developers
 
