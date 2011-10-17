@@ -103,7 +103,7 @@ function flashproxy_make_badge()
 }
 
 /* Create and return a non-functional placeholder badge DOM fragment:
-   <img src=BADGE_IMAGE_URL border="0">
+<img src=BADGE_IMAGE_URL border="0">
 */
 function flashproxy_make_dummy_badge()
 {
