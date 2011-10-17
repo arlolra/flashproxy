@@ -71,7 +71,7 @@ ephemeral proxies.
 2. Run Tor using the included torrc file.
 	$ tor -f flashproxy/torrc
 
-Watch the logs of connector.py and tor. From connector.py you are
+Watch the output of connector.py and tor. From connector.py you are
 expecting output lines like this:
 	Remote connection from XXX.XXX.XXX.XXX:YYYYY.
 	Local connection from 127.0.0.1:ZZZZZ.
