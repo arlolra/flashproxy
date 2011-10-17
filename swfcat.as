@@ -330,12 +330,17 @@ package
     }
 }
 
+import flash.events.MouseEvent;
+import flash.net.navigateToURL;
+import flash.net.URLRequest;
 import flash.text.TextFormat;
 import flash.text.TextField;
 import flash.utils.getTimer;
 
 class Badge extends flash.display.Sprite
 {
+    private const FLASHPROXY_INFO_URL:String = "https://crypto.stanford.edu/flashproxy/";
+
     /* Number of proxy pairs currently connected. */
     private var num_proxy_pairs:int = 0;
     /* Number of proxy pairs ever connected. */
@@ -385,6 +390,8 @@ class Badge extends flash.display.Sprite
 
         /* Update the client counter on badge. */
         update_client_count();
+
+        addEventListener(MouseEvent.CLICK, mouse_clicked);
     }
 
     public function proxy_begin():void
@@ -412,6 +419,15 @@ class Badge extends flash.display.Sprite
         cur_client_count_tf.text = "";
         for(var i:Number = 0; i < num_proxy_pairs; i++)
             cur_client_count_tf.appendText(".");
+    }
+
+    /* Show a web page with detailed information when the badge is clicked. */
+    private function mouse_clicked(e:MouseEvent):void
+    {
+        try {
+            navigateToURL(new URLRequest(FLASHPROXY_INFO_URL));
+        } catch (err:Error) {
+        }
     }
 }
 
