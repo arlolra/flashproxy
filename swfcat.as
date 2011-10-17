@@ -3,18 +3,18 @@ package
     import flash.display.Sprite;
     import flash.display.StageAlign;
     import flash.display.StageScaleMode;
+    import flash.events.Event;
+    import flash.events.IOErrorEvent;
+    import flash.events.SecurityErrorEvent;
     import flash.external.ExternalInterface;
-    import flash.text.TextField;
-    import flash.text.TextFormat;
     import flash.net.Socket;
     import flash.net.URLLoader;
     import flash.net.URLLoaderDataFormat;
     import flash.net.URLRequest;
     import flash.net.URLRequestMethod;
     import flash.net.URLVariables;
-    import flash.events.Event;
-    import flash.events.IOErrorEvent;
-    import flash.events.SecurityErrorEvent;
+    import flash.text.TextField;
+    import flash.text.TextFormat;
     import flash.utils.setTimeout;
 
     public class swfcat extends Sprite
@@ -333,8 +333,8 @@ package
 import flash.events.MouseEvent;
 import flash.net.navigateToURL;
 import flash.net.URLRequest;
-import flash.text.TextFormat;
 import flash.text.TextField;
+import flash.text.TextFormat;
 import flash.utils.getTimer;
 
 class Badge extends flash.display.Sprite
