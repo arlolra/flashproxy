@@ -67,7 +67,7 @@ ephemeral proxies.
    you have to use a different port (to get through a firewall, for
    example), give it on the command line like this (here using port
    8888):
-	$ python connector.py -f tor-facilitator.bamsoftware.com 127.0.0.1:9001 :8888
+	$ python connector.py -f tor-facilitator.bamsoftware.com :9001 :8888
 2. Run Tor using the included torrc file.
 	$ tor -f flashproxy/torrc
 
