@@ -152,9 +152,7 @@ wait a few minutes. It can take a while to download relay descriptors.
 
 Paste in this HTML where you want the badge to appear:
 
-<script type="text/javascript" src="https://crypto.stanford.edu/flashproxy/flashproxy.js"></script>
-
-It will be inserted as a span element with the id "flashproxy-badge".
+<iframe src="//crypto.stanford.edu/flashproxy/embed.html" width="70px" height="23px" frameBorder="0" scrolling="0"></iframe>
 
 
 == For developers

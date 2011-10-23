@@ -1,3 +1,7 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript">
 /* Are circumstances such that we should self-disable and not be a
    proxy? We take a best-effort guess as to whether this device runs on
    a battery or the data transfer might be expensive.
@@ -137,5 +141,21 @@ function flashproxy_badge_insert()
     }
     e.parentNode.appendChild(flashproxy_make_container(badge));
 }
+</script>
 
+<style type="text/css">
+body {
+	margin: 0;
+	padding: 0;
+}
+</style>
+</head>
+<body>
+<script type="text/javascript">
 flashproxy_badge_insert();
+</script>
+<noscript>
+<a href="https://crypto.stanford.edu/flashproxy/" target="_parent"><img src="badge.png" border="0" alt="I support Internet freedom"></a>
+</noscript>
+</body>
+</html>
