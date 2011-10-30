@@ -77,26 +77,13 @@ PIDS_TO_KILL+=($!)
 visible_sleep 1
 
 
-# Extract and parse the "real" part of "time" output and return as a count of
-# seconds.
-extract_real_time() {
-	perl -n -e '($m, $s) = ($_ =~ m/real\s+(\d+)m([\d\.]+)s/); if (defined($m)) { print $m*60 + $s . "\n"; }'
-}
-
 > "$RESULTS_FILE_NAME"
 
 declare -a WAIT_PIDS
 i=0
 while [ $i -lt $NUM_CLIENTS ]; do
-	echo "Start Wget $((i + 1))."
-	(
-		times=$((time wget http://localhost:2000/dump -q --timeout 30 -t 1 -O /dev/null) 2>&1)
-		if [ $? -eq 0 ]; then
-			echo "$times" | extract_real_time >> "$RESULTS_FILE_NAME"
-		else
-			echo "error" >> "$RESULTS_FILE_NAME"
-		fi
-	) &
+	echo "Start downloader $((i + 1))."
+	./httpget.py http://localhost:2000/dump >> "$RESULTS_FILE_NAME" &
 	WAIT_PIDS+=($!)
 	i=$((i + 1))
 done
