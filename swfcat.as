@@ -82,11 +82,9 @@ package
         /* Proxy pairs currently connected (up to MAX_NUM_PROXY_PAIRS). */
         private var proxy_pairs:Array;
 
-        private var fac_addr:Object;
-        
-        private var local_addr:Object;
-
         public var debug:Boolean;
+        private var fac_addr:Object;
+        private var local_addr:Object;
 
         public var rate_limit:RateLimit;
 
