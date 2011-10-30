@@ -308,7 +308,7 @@ def register():
 
 def proxy_chunk(fd_r, fd_w, label):
     try:
-        data = fd_r.recv(1024)
+        data = fd_r.recv(65536)
     except socket.error, e: # Can be "Connection reset by peer".
         log(u"Socket error from %s: %s" % (label, repr(str(e))))
         fd_w.close()
