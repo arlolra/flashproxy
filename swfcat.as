@@ -21,6 +21,10 @@
  * How many clients to serve concurrently. The default is
  * DEFAULT_MAX_NUM_PROXY_PAIRS.
  *
+ * facilitator_poll_interval=<FLOAT>
+ * How often to poll the facilitator, in seconds. The default is
+ * DEFAULT_FACILITATOR_POLL_INTERVAL. There is a sanity-check minimum of 1.0 s.
+ *
  * client=1
  * If set (to any value), run in client RTMFP mode. In this mode, rather than
  * connecting to a facilitator and attempting to serve clients, swfcat starts an
@@ -69,8 +73,9 @@ package
 
         private const DEFAULT_MAX_NUM_PROXY_PAIRS:uint = 10;
 
-        // Milliseconds.
-        private const FACILITATOR_POLL_INTERVAL:int = 10000;
+        /* In seconds. */
+        private const DEFAULT_FACILITATOR_POLL_INTERVAL:Number = 10.0;
+        private const MIN_FACILITATOR_POLL_INTERVAL:Number = 1.0;
 
         // Bytes per second. Set to undefined to disable limit.
         public static const RATE_LIMIT:Number = undefined;
@@ -89,6 +94,7 @@ package
         public var debug:Boolean;
         private var fac_addr:Object;
         private var max_num_proxy_pairs:uint;
+        private var facilitator_poll_interval:Number;
         private var local_addr:Object;
 
         public var rate_limit:RateLimit;
@@ -153,6 +159,13 @@ package
             }
             max_num_proxy_pairs = uint(tmp);
 
+            tmp = get_param_timespec("facilitator_poll_interval", DEFAULT_FACILITATOR_POLL_INTERVAL);
+            if (tmp == null || tmp < MIN_FACILITATOR_POLL_INTERVAL) {
+                puts("Error: facilitator_poll_interval must be a nonnegative number at least " + MIN_FACILITATOR_POLL_INTERVAL + ".");
+                return;
+            }
+            facilitator_poll_interval = Number(tmp);
+
             local_addr = get_param_addr("local", DEFAULT_LOCAL_TOR_CLIENT_ADDR);
             if (!local_addr) {
                 puts("Error: Local spec must be in the form \"host:port\".");
@@ -198,6 +211,14 @@ package
             }
         }
 
+        /* Get a floating-point number of seconds from a time specification. The
+           only time specification format is a decimal number of seconds.
+           Returns null on error. */
+        private function get_param_timespec(param:String, default_val:Number):Object
+        {
+            return get_param_number(param, default_val);
+        }
+
         /* The main logic begins here, after start-up issues are taken care of. */
         private function proxy_main():void
         {
@@ -205,7 +226,7 @@ package
             var loader:URLLoader;
 
             if (proxy_pairs.length >= max_num_proxy_pairs) {
-                setTimeout(proxy_main, FACILITATOR_POLL_INTERVAL);
+                setTimeout(proxy_main, uint(facilitator_poll_interval * 1000));
                 return;
             }
 
@@ -233,7 +254,7 @@ package
             var relay_spec:String;
             var proxy_pair:Object;
 
-            setTimeout(proxy_main, FACILITATOR_POLL_INTERVAL);
+            setTimeout(proxy_main, uint(facilitator_poll_interval * 1000));
 
             loader = e.target as URLLoader;
             client_spec = loader.data.client;
