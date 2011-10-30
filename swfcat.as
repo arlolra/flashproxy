@@ -67,7 +67,7 @@ package
             port: 9002
         };
 
-        private const DEFAULT_MAX_NUM_PROXY_PAIRS:uint = 100;
+        private const DEFAULT_MAX_NUM_PROXY_PAIRS:uint = 10;
 
         // Milliseconds.
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
