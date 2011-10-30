@@ -17,6 +17,10 @@
  * The address of the facilitator to use. By default it is
  * DEFAULT_FACILITATOR_ADDR. Both <HOST> and <PORT> must be present.
  *
+ * max_clients=<NUM>
+ * How many clients to serve concurrently. The default is
+ * DEFAULT_MAX_NUM_PROXY_PAIRS.
+ *
  * client=1
  * If set (to any value), run in client RTMFP mode. In this mode, rather than
  * connecting to a facilitator and attempting to serve clients, swfcat starts an
@@ -63,7 +67,7 @@ package
             port: 9002
         };
 
-        private const MAX_NUM_PROXY_PAIRS:uint = 100;
+        private const DEFAULT_MAX_NUM_PROXY_PAIRS:uint = 100;
 
         // Milliseconds.
         private const FACILITATOR_POLL_INTERVAL:int = 10000;
@@ -79,11 +83,12 @@ package
         /* UI shown when debug is off. */
         private var badge:Badge;
 
-        /* Proxy pairs currently connected (up to MAX_NUM_PROXY_PAIRS). */
+        /* Proxy pairs currently connected (up to max_num_proxy_pairs). */
         private var proxy_pairs:Array;
 
         public var debug:Boolean;
         private var fac_addr:Object;
+        private var max_num_proxy_pairs:uint;
         private var local_addr:Object;
 
         public var rate_limit:RateLimit;
@@ -117,6 +122,8 @@ package
 
         private function loaderinfo_complete(e:Event):void
         {
+            var tmp:Object;
+
             debug = this.loaderInfo.parameters["debug"];
 
             if (debug || this.loaderInfo.parameters["client"]) {
@@ -138,6 +145,13 @@ package
                 puts("Error: Facilitator spec must be in the form \"host:port\".");
                 return;
             }
+
+            tmp = get_param_number("max_clients", DEFAULT_MAX_NUM_PROXY_PAIRS);
+            if (tmp == null || tmp < 0) {
+                puts("Error: max_clients must be a nonnegative integer.");
+                return;
+            }
+            max_num_proxy_pairs = uint(tmp);
 
             local_addr = get_param_addr("local", DEFAULT_LOCAL_TOR_CLIENT_ADDR);
             if (!local_addr) {
@@ -164,13 +178,33 @@ package
                 return default_addr;
         }
 
+        /* Get a number from the given movie parameter, or the given default.
+           Returns null on error. First check for a null return, and then call
+           uint or whatever on the return value if no error. */
+        private function get_param_number(param:String, default_val:Number):Object
+        {
+            var spec:String;
+            var val:Number;
+
+            spec = this.loaderInfo.parameters[param];
+            if (spec) {
+                val = Number(spec);
+                if (isNaN(val))
+                    return null;
+                else
+                    return val;
+            } else {
+                return default_val;
+            }
+        }
+
         /* The main logic begins here, after start-up issues are taken care of. */
         private function proxy_main():void
         {
             var fac_url:String;
             var loader:URLLoader;
 
-            if (proxy_pairs.length >= MAX_NUM_PROXY_PAIRS) {
+            if (proxy_pairs.length >= max_num_proxy_pairs) {
                 setTimeout(proxy_main, FACILITATOR_POLL_INTERVAL);
                 return;
             }
