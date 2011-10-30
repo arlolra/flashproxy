@@ -1,6 +1,43 @@
-Scripts for running experiments.
+This directory contains scripts for testing and benchmarking the flash
+proxy.
 
-This README contains descriptions of each numbered experiment.
+== Preparation
 
-Experiment
-00  -   Includes socat, crossdomaind, swfcat, httpd, and facilitator
+You need to have installed certain software before running the tests.
+	Firefox
+	socat
+	Wget
+	Python
+	thttpd
+	Flash Player
+Firefox, socat, Wget, and Python are easily installed on most GNU/Linux
+distributions. thttpd can be compiled from the packages at
+http://acme.com/software/thttpd/. A debug version of Flash Player can be
+downloaded from http://www.adobe.com/support/flashplayer/downloads.html.
+
+You need to create some dedicated Firefox profiles. Create profiles
+named flashexp1 and flashexp2 by running
+	firefox -ProfileManager -no-remote
+Start the browsers with
+	firefox -P flashexp1 -no-remote &
+	firefox -P flashexp2 -no-remote &
+and in each one, set this about:config variable:
+	browser.link.open_newwindow=1 (default is 3)
+This allows the scripts to clear the contents of a tab and replace them
+with another page.
+
+Before running any tests, start the crossdomain server as root:
+	sudo crossdomaind.py --daemon
+The tests themselves shouldn't be run as root.
+
+I personally run these tests in an Arch Linux VM.
+	useradd -m user
+	passwd user
+	pacman -Sy
+	pacman -Su
+	pacman -S firefox socat python2 xorg xorg-xinit xterm flashplugin gcc make
+Download thttpd, compile it (you have to rename the getline function to
+avoid a naming conflict), and install it in /usr/local/bin. Symlink
+/usr/bin/python to /usr/bin/python2. Also you have to install the
+ttf-ms-fonts package from the AUR for text to show up in Flash Player.
+Add a window manager, run "startx", and you should be set.
