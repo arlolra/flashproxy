@@ -22,7 +22,7 @@ function flashproxy_should_disable()
 
     ua = window.navigator.userAgent;
     if (ua != null) {
-        const UA_LIST = [
+        var UA_LIST = [
             /\bmobile\b/i,
             /\bandroid\b/i,
             /\bopera mobi\b/i,
@@ -49,8 +49,8 @@ function flashproxy_should_disable()
 */
 function flashproxy_make_container(child)
 {
-    const BADGE_ID = "flashproxy-badge";
-    const FLASHPROXY_INFO_URL = "https://crypto.stanford.edu/flashproxy/";
+    var BADGE_ID = "flashproxy-badge";
+    var FLASHPROXY_INFO_URL = "https://crypto.stanford.edu/flashproxy/";
 
     var container;
     var a;
@@ -74,10 +74,10 @@ function flashproxy_make_container(child)
 */
 function flashproxy_make_badge()
 {
-    const WIDTH = 70;
-    const HEIGHT = 23;
-    const FLASHVARS = "";
-    const SWFCAT_URL = "https://crypto.stanford.edu/flashproxy/swfcat.swf";
+    var WIDTH = 70;
+    var HEIGHT = 23;
+    var FLASHVARS = "";
+    var SWFCAT_URL = "https://crypto.stanford.edu/flashproxy/swfcat.swf";
 
     var object;
     var param;
@@ -111,7 +111,7 @@ function flashproxy_make_badge()
 */
 function flashproxy_make_dummy_badge()
 {
-    const BADGE_IMAGE_URL = "https://crypto.stanford.edu/flashproxy/badge.png";
+    var BADGE_IMAGE_URL = "https://crypto.stanford.edu/flashproxy/badge.png";
 
     var img;
 
