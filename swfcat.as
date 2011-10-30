@@ -1,3 +1,34 @@
+/* Flash parameters. These can change how the program runs from the outside.
+ * They can be set as a URL query string, for example:
+ *      http://www.example.com/swfcat.swf?facilitator=127.0.0.1:9002&debug=1
+ * or in the HTML markup for the embedding of the movie:
+ *      <object>
+ *          <param name="movie" value="http://www.example.com/swfcat.swf">
+ *          <param name="flashvars" value="facilitator=127.0.0.1:9002&debug=1">
+ *          <embed src="http://www.example.com/swfcat.swf"
+ *                 flashvars="facilitator=127.0.0.1:9002&debug=1"></embed>
+ *      </object>
+ *
+ * debug=1
+ * If set (to any value), show verbose terminal-like output instead of the
+ * badge.
+ *
+ * facilitator=<HOST>:<PORT>
+ * The address of the facilitator to use. By default it is
+ * DEFAULT_FACILITATOR_ADDR. Both <HOST> and <PORT> must be present.
+ *
+ * client=1
+ * If set (to any value), run in client RTMFP mode. In this mode, rather than
+ * connecting to a facilitator and attempting to serve clients, swfcat starts an
+ * RTMFP socket and connects to a local address (to the connector, to be exact).
+ * See README for more on running in client RTMFP mode. No argument is required
+ * to use RTMFP when in the usual server mode.
+ *
+ * local=<HOST>:<PORT>
+ * When in client RTMFP mode (client=1), connect to this local address. The
+ * default is DEFAULT_LOCAL_TOR_CLIENT_ADDR.
+ */
+
 package
 {
     import flash.display.Sprite;
