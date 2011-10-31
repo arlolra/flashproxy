@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Usage: ./throughput.sh [-n NUM_CLIENTS]
 #
