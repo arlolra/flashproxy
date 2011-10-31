@@ -22,6 +22,8 @@ browser_clear "$PROFILE_1"
 ensure_browser_started "$PROFILE_2"
 browser_clear "$PROFILE_2"
 
+sleep 1
+
 while true; do
 	echo "1 on"
 	firefox -P "$PROFILE_1" -remote "openurl($URL)"

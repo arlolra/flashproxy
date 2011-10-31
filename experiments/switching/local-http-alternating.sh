@@ -51,7 +51,7 @@ ensure_browser_started "$PROFILE_2"
 
 ./proxy-loop.sh "$PROXY_URL" "$PROFILE_1" "$PROFILE_2" >/dev/null 2>&1  &
 PIDS_TO_KILL+=($!)
-visible_sleep 1
+visible_sleep 2
 
 echo "Start socat."
 "$SOCAT" TCP-LISTEN:2000,reuseaddr,fork SOCKS4A:127.0.0.1:dummy:0,socksport=9001 &
