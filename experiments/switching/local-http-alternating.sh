@@ -8,7 +8,7 @@
 
 PROFILE_1=flashexp1
 PROFILE_2=flashexp2
-PROXY_URL="http://localhost:8000/swfcat.swf?facilitator=127.0.0.1:9002"
+PROXY_URL="http://127.0.0.1:8000/swfcat.swf?facilitator=127.0.0.1:9002"
 DATA_FILE_NAME="$FLASHPROXY_DIR/dump"
 
 # Declare an array.
@@ -52,8 +52,8 @@ PIDS_TO_KILL+=($!)
 visible_sleep 1
 
 echo "Start socat."
-"$SOCAT" TCP-LISTEN:2000,reuseaddr,fork SOCKS4A:localhost:dummy:0,socksport=9001 &
+"$SOCAT" TCP-LISTEN:2000,reuseaddr,fork SOCKS4A:127.0.0.1:dummy:0,socksport=9001 &
 PIDS_TO_KILL+=($!)
 visible_sleep 1
 
-time wget http://localhost:2000/dump -t 0 -O /dev/null
+time wget http://127.0.0.1:2000/dump -t 0 -O /dev/null

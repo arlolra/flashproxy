@@ -19,7 +19,7 @@ while getopts "n:" OPTNAME; do
 done
 
 PROFILE=flashexp1
-PROXY_URL="http://localhost:8000/swfcat.swf?facilitator=127.0.0.1:9002&max_clients=$NUM_CLIENTS&facilitator_poll_interval=1.0"
+PROXY_URL="http://127.0.0.1:8000/swfcat.swf?facilitator=127.0.0.1:9002&max_clients=$NUM_CLIENTS&facilitator_poll_interval=1.0"
 DATA_FILE_NAME="$FLASHPROXY_DIR/dump"
 RESULTS_FILE_NAME="results-$NUM_CLIENTS-$(date --iso)"
 
@@ -62,7 +62,7 @@ visible_sleep 2
 i=0
 while [ $i -lt $NUM_CLIENTS ]; do
 	echo -ne "\rRegister client $((i + 1))."
-	echo $'POST / HTTP/1.0\r\n\r\nclient=127.0.0.1:9000' | socat STDIN TCP-CONNECT:localhost:9002
+	echo $'POST / HTTP/1.0\r\n\r\nclient=127.0.0.1:9000' | socat STDIN TCP-CONNECT:127.0.0.1:9002
 	sleep 1
 	i=$((i + 1))
 done
@@ -70,7 +70,7 @@ echo
 visible_sleep 2
 
 echo "Start socat."
-"$SOCAT" TCP-LISTEN:2000,fork,reuseaddr SOCKS4A:localhost:dummy:0,socksport=9001 &
+"$SOCAT" TCP-LISTEN:2000,fork,reuseaddr SOCKS4A:127.0.0.1:dummy:0,socksport=9001 &
 PIDS_TO_KILL+=($!)
 visible_sleep 1
 
@@ -82,7 +82,7 @@ declare -a WAIT_PIDS
 i=0
 while [ $i -lt $NUM_CLIENTS ]; do
 	echo "Start downloader $((i + 1))."
-	./httpget.py -l proxy http://localhost:2000/dump >> "$RESULTS_FILE_NAME" &
+	./httpget.py -l proxy http://127.0.0.1:2000/dump >> "$RESULTS_FILE_NAME" &
 	WAIT_PIDS+=($!)
 	i=$((i + 1))
 done
@@ -96,7 +96,7 @@ declare -a WAIT_PIDS
 i=0
 while [ $i -lt $NUM_CLIENTS ]; do
 	echo "Start downloader $((i + 1))."
-	./httpget.py -l direct http://localhost:8000/dump >> "$RESULTS_FILE_NAME" &
+	./httpget.py -l direct http://127.0.0.1:8000/dump >> "$RESULTS_FILE_NAME" &
 	WAIT_PIDS+=($!)
 	i=$((i + 1))
 done
