@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Usage: ./remote-tor-alternating.sh
+# Usage: ./remote-tor-alternating.sh [OUTPUT_FILENAME]
 #
-# Tests a Tor download over alternating flash proxies.
+# Tests a Tor download over alternating flash proxies. If OUTPUT_FILENAME is
+# supplied, appends the time measurement to that file.
 
 . ../common.sh
 
@@ -10,6 +11,7 @@ PROFILE_1=flashexp1
 PROFILE_2=flashexp2
 PROXY_URL="http://127.0.0.1:8000/swfcat.swf?facilitator=127.0.0.1:9002"
 DATA_FILE_NAME="$FLASHPROXY_DIR/dump"
+OUTPUT_FILENAME="$1"
 
 # Declare an array.
 declare -a PIDS_TO_KILL
@@ -52,4 +54,8 @@ PIDS_TO_KILL+=($!)
 # Let Tor bootstrap.
 visible_sleep 15
 
-time torify wget http://torperf.torproject.org/.5mbfile -t 0 -O /dev/null
+if [ -n "$OUTPUT_FILENAME" ]; then
+	real_time torify wget http://torperf.torproject.org/.5mbfile -t 0 -O /dev/null >> "$OUTPUT_FILENAME"
+else
+	real_time torify wget http://torperf.torproject.org/.5mbfile -t 0 -O /dev/null
+fi

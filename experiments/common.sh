@@ -35,3 +35,13 @@ browser_goto() {
 	ensure_browser_started "$PROFILE"
 	"$FIREFOX" -P "$PROFILE" -remote "openurl($URL)" 2>/dev/null
 }
+
+# Run a command and get the "real" part of time(1) output as a number of
+# seconds.
+real_time() {
+	# Make a spare copy of stderr (fd 1).
+	exec 3>&2
+	# Point the subcommand's stderr to our copy (fd 3), and extract the
+	# original stderr (fd 2) output of time.
+	(time -p eval "$@" 2>&3) |& tail -n 3 | head -n 1 | awk '{print $2}'
+}

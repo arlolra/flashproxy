@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Usage: ./local-http-constant.sh
+# Usage: ./local-http-constant.sh [OUTPUT_FILENAME]
 #
-# Tests a download over an uninterrupted flash proxy.
+# Tests a download over an uninterrupted flash proxy. If OUTPUT_FILENAME
+# is supplied, appends the time measurement to that file.
 
 . ../common.sh
 
@@ -10,6 +11,7 @@ PROFILE_1=flashexp1
 PROFILE_2=flashexp2
 PROXY_URL="http://127.0.0.1:8000/swfcat.swf?facilitator=127.0.0.1:9002"
 DATA_FILE_NAME="$FLASHPROXY_DIR/dump"
+OUTPUT_FILENAME="$1"
 
 # Declare an array.
 declare -a PIDS_TO_KILL
@@ -51,4 +53,8 @@ echo "Start socat."
 PIDS_TO_KILL+=($!)
 visible_sleep 1
 
-time wget http://127.0.0.1:2000/dump -t 0 -O /dev/null
+if [ -n "$OUTPUT_FILENAME" ]; then
+	real_time wget http://127.0.0.1:2000/dump -t 0 -O /dev/null >> "$OUTPUT_FILENAME"
+else
+	real_time wget http://127.0.0.1:2000/dump -t 0 -O /dev/null
+fi
