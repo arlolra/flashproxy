@@ -4,6 +4,7 @@
 FIREFOX=firefox
 SOCAT=socat
 THTTPD=thttpd
+TOR=tor
 
 visible_sleep() {
 	N="$1"
