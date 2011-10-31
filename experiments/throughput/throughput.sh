@@ -79,14 +79,30 @@ visible_sleep 1
 
 > "$RESULTS_FILE_NAME"
 
+# Proxied downloads.
 declare -a WAIT_PIDS
 i=0
 while [ $i -lt $NUM_CLIENTS ]; do
 	echo "Start downloader $((i + 1))."
-	./httpget.py http://localhost:2000/dump >> "$RESULTS_FILE_NAME" &
+	./httpget.py -l proxy http://localhost:2000/dump >> "$RESULTS_FILE_NAME" &
 	WAIT_PIDS+=($!)
 	i=$((i + 1))
 done
 for pid in "${WAIT_PIDS[@]}"; do
 	wait "$pid"
 done
+unset WAIT_PIDS
+
+# Direct downloads.
+declare -a WAIT_PIDS
+i=0
+while [ $i -lt $NUM_CLIENTS ]; do
+	echo "Start downloader $((i + 1))."
+	./httpget.py -l direct http://localhost:8000/dump >> "$RESULTS_FILE_NAME" &
+	WAIT_PIDS+=($!)
+	i=$((i + 1))
+done
+for pid in "${WAIT_PIDS[@]}"; do
+	wait "$pid"
+done
+unset WAIT_PIDS
