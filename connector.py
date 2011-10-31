@@ -181,8 +181,11 @@ def format_peername(s):
         return "<unconnected>"
 
 # How long to wait for a crossdomain policy request before deciding that this is
-# a normal socket.
-CROSSDOMAIN_TIMEOUT = 2.0
+# a normal socket. In 160 crossdomain connections to the public facilitator, the
+# mean time before receiving a crossdomain request is only 0.05625 s. But that
+# was measured from log entries with a one-second resolution, so give a healthy
+# margin above that.
+CROSSDOMAIN_TIMEOUT = 0.5
 
 # Local socket, accepting SOCKS requests from localhost
 local_s = listen_socket(options.local_addr)
