@@ -45,3 +45,14 @@ real_time() {
 	# original stderr (fd 2) output of time.
 	(time -p eval "$@" 2>&3) |& tail -n 3 | head -n 1 | awk '{print $2}'
 }
+
+# Repeat a subcommand N times.
+repeat() {
+	local N
+	N="$1"
+	shift
+	while [ $N -gt 0 ]; do
+		eval "$@"
+		N=$((N-1))
+	done
+}
