@@ -18,7 +18,7 @@ visible_sleep() {
 
 ensure_browser_started() {
 	local PROFILE="$1"
-	("$FIREFOX" -P "$PROFILE" -remote "ping()" || "$FIREFOX" -P "$PROFILE" -no-remote & visible_sleep 5) 2>/dev/null
+	("$FIREFOX" -P "$PROFILE" -remote "ping()" || ("$FIREFOX" -P "$PROFILE" -no-remote & visible_sleep 5)) 2>/dev/null
 }
 
 browser_clear() {
