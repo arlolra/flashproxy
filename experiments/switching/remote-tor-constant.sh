@@ -50,7 +50,7 @@ browser_goto "$PROFILE_1" "$PROXY_URL"
 visible_sleep 15
 
 if [ -n "$OUTPUT_FILENAME" ]; then
-	real_time torify wget http://torperf.torproject.org/.5mbfile -t 0 -O /dev/null >> "$OUTPUT_FILENAME"
+	real_time torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -t 0 -O /dev/null >> "$OUTPUT_FILENAME"
 else
-	real_time torify wget http://torperf.torproject.org/.5mbfile -t 0 -O /dev/null
+	real_time torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -t 0 -O /dev/null
 fi
