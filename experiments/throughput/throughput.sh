@@ -10,8 +10,6 @@
 
 . ../common.sh
 
-FLASHPROXY_DIR=../../../flashproxy
-
 NUM_CLIENTS=1
 
 while getopts "n:" OPTNAME; do

@@ -6,8 +6,6 @@
 
 . ../common.sh
 
-FLASHPROXY_DIR=../../../flashproxy
-
 PROFILE_1=flashexp1
 PROFILE_2=flashexp2
 PROXY_URL="http://localhost:8000/swfcat.swf?facilitator=127.0.0.1:9002"

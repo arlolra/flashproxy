@@ -1,6 +1,8 @@
 # This file contains common variables and subroutines used by the experiment
 # scripts.
 
+FLASHPROXY_DIR="$(dirname $BASH_SOURCE)/.."
+
 FIREFOX=firefox
 SOCAT=socat
 THTTPD=thttpd
