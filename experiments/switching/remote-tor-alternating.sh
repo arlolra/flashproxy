@@ -22,6 +22,8 @@ stop() {
 		echo "Kill pids ${PIDS_TO_KILL[@]}."
 		kill "${PIDS_TO_KILL[@]}"
 	fi
+	echo "Delete data file."
+	rm -f "$DATA_FILE_NAME"
 	exit
 }
 trap stop EXIT
@@ -54,8 +56,14 @@ PIDS_TO_KILL+=($!)
 # Let Tor bootstrap.
 visible_sleep 15
 
+repeat_download() {
+	until torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -c -t 0 -O "$DATA_FILE_NAME"; do
+		echo "retrying"
+	done
+}
+
 if [ -n "$OUTPUT_FILENAME" ]; then
-	real_time torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -t 0 -O /dev/null >> "$OUTPUT_FILENAME"
+	real_time repeat_download >> "$OUTPUT_FILENAME"
 else
-	real_time torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -t 0 -O /dev/null
+	real_time repeat_download
 fi
