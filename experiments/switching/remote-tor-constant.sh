@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./remote-tor-constant.sh
+# Usage: ./remote-tor-constant.sh [OUTPUT_FILENAME]
 #
 # Tests a Tor download over an uninterrupted flash proxy. If OUTPUT_FILENAME is
 # supplied, appends the time measurement to that file.
