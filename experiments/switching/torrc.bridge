@@ -1,0 +1,5 @@
+# This configuration file causes a direct Tor connection to use the same bridge
+# used by a flash proxy.
+
+UseBridges 1
+Bridge tor1.bamsoftware.com:9001

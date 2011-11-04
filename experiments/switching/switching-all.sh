@@ -28,6 +28,9 @@ repeat $NUM_ITERATIONS ./local-http-constant.sh "local-http-constant-$DATE.log"
 > "local-http-alternating-$DATE.log"
 repeat $NUM_ITERATIONS ./local-http-alternating.sh "local-http-alternating-$DATE.log"
 
+> "remote-tor-direct-$DATE.log"
+repeat $NUM_ITERATIONS ./remote-tor-direct.sh "remote-tor-direct-$DATE.log"
+
 > "remote-tor-constant-$DATE.log"
 repeat $NUM_ITERATIONS ./remote-tor-constant.sh "remote-tor-constant-$DATE.log"
 
