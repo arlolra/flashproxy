@@ -5,7 +5,6 @@
 
 UseBridges 1
 Bridge 127.0.0.1:9001
-UseMicrodescriptors 0
 Socks4Proxy 127.0.0.1:9001
 
 # In case you are not able to receive remote connections on port 9000, comment
