@@ -19,7 +19,7 @@ while getopts "n:" OPTNAME; do
 done
 
 PROFILE=flashexp1
-PROXY_URL="http://127.0.0.1:8000/swfcat.swf?facilitator=127.0.0.1:9002&max_clients=$NUM_CLIENTS&facilitator_poll_interval=1.0"
+PROXY_URL="http://127.0.0.1:8000/swfcat.swf?facilitator=127.0.0.1:9002&max_clients=$NUM_CLIENTS&ratelimit=off&facilitator_poll_interval=1.0"
 DATA_FILE_NAME="$FLASHPROXY_DIR/dump"
 RESULTS_FILE_NAME="results-$NUM_CLIENTS-$(date --iso)"
 

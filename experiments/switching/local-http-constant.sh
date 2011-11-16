@@ -9,7 +9,7 @@
 
 PROFILE_1=flashexp1
 PROFILE_2=flashexp2
-PROXY_URL="http://127.0.0.1:8000/swfcat.swf?facilitator=127.0.0.1:9002"
+PROXY_URL="http://127.0.0.1:8000/swfcat.swf?facilitator=127.0.0.1:9002&ratelimit=off"
 DATA_FILE_NAME="$FLASHPROXY_DIR/dump"
 OUTPUT_FILENAME="$1"
 

@@ -25,9 +25,10 @@
  * How often to poll the facilitator, in seconds. The default is
  * DEFAULT_FACILITATOR_POLL_INTERVAL. There is a sanity-check minimum of 1.0 s.
  * 
- * ratelimit=<FLOAT>(<UNIT>)?
- * What rate to limit all proxy traffic combined to. The default is
- * DEFAULT_RATE_LIMIT. There is a sanity-check minimum of "10K".
+ * ratelimit=<FLOAT>(<UNIT>)?|off
+ * What rate to limit all proxy traffic combined to. The special value "off"
+ * disables the limit. The default is DEFAULT_RATE_LIMIT. There is a
+ * sanity-check minimum of "10K".
  *
  * client=1
  * If set (to any value), run in client RTMFP mode. In this mode, rather than
@@ -166,7 +167,10 @@ package
             }
             facilitator_poll_interval = Number(tmp);
 
-            tmp = get_param_byte_count("ratelimit", DEFAULT_RATE_LIMIT);
+            if (this.loaderInfo.parameters["ratelimit"] == "off")
+                tmp = undefined;
+            else
+                tmp = get_param_byte_count("ratelimit", DEFAULT_RATE_LIMIT);
             if (tmp === undefined) {
                 /* No rate limit. */
             } else if (tmp == null || tmp < MIN_FACILITATOR_POLL_INTERVAL) {
