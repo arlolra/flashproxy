@@ -24,6 +24,10 @@
  * facilitator_poll_interval=<FLOAT>
  * How often to poll the facilitator, in seconds. The default is
  * DEFAULT_FACILITATOR_POLL_INTERVAL. There is a sanity-check minimum of 1.0 s.
+ * 
+ * ratelimit=<FLOAT>(<UNIT>)?
+ * What rate to limit all proxy traffic combined to. The default is
+ * DEFAULT_RATE_LIMIT. There is a sanity-check minimum of "10K".
  *
  * client=1
  * If set (to any value), run in client RTMFP mode. In this mode, rather than
@@ -78,7 +82,8 @@ package
         private const MIN_FACILITATOR_POLL_INTERVAL:Number = 1.0;
 
         // Bytes per second. Set to undefined to disable limit.
-        public static const RATE_LIMIT:Number = undefined;
+        public static const DEFAULT_RATE_LIMIT:Number = undefined;
+        public static const MIN_RATE_LIMIT:Number = 10 * 1024;
         // Seconds.
         private static const RATE_LIMIT_HISTORY:Number = 5.0;
 
@@ -117,18 +122,13 @@ package
 
             proxy_pairs = [];
 
-            if (RATE_LIMIT)
-                rate_limit = new BucketRateLimit(RATE_LIMIT * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
-            else
-                rate_limit = new RateUnlimit();
-
             // Wait until the query string parameters are loaded.
             this.loaderInfo.addEventListener(Event.COMPLETE, loaderinfo_complete);
         }
 
         private function loaderinfo_complete(e:Event):void
         {
-            var tmp:Object;
+            var tmp:*;
 
             debug = this.loaderInfo.parameters["debug"];
 
@@ -165,6 +165,18 @@ package
                 return;
             }
             facilitator_poll_interval = Number(tmp);
+
+            tmp = get_param_byte_count("ratelimit", DEFAULT_RATE_LIMIT);
+            if (tmp === undefined) {
+                /* No rate limit. */
+            } else if (tmp == null || tmp < MIN_FACILITATOR_POLL_INTERVAL) {
+                puts("Error: ratelimit must be a nonnegative number at least " + MIN_RATE_LIMIT + ".");
+                return;
+            }
+            if (tmp)
+                rate_limit = new BucketRateLimit(Number(tmp) * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
+            else
+                rate_limit = new RateUnlimit();
 
             local_addr = get_param_addr("local", DEFAULT_LOCAL_TOR_CLIENT_ADDR);
             if (!local_addr) {
@@ -217,6 +229,19 @@ package
         private function get_param_timespec(param:String, default_val:Number):Object
         {
             return get_param_number(param, default_val);
+        }
+
+        /* Get a count of bytes from a string specification like "100" or
+           "1.3m". Returns null on error. */
+        private function get_param_byte_count(param:String, default_val:Number):Object
+        {
+            var spec:String;
+
+            spec = this.loaderInfo.parameters[param];
+            if (spec)
+                return parse_byte_count(spec);
+            else
+                return default_val;
         }
 
         /* The main logic begins here, after start-up issues are taken care of. */
@@ -410,6 +435,36 @@ package
             addr.port = parseInt(parts[1]);
 
             return addr;
+        }
+
+        /* Parse a count of bytes. A suffix of "k", "m", or "g" (or uppercase)
+           does what you would think. Returns null on error. */
+        private static function parse_byte_count(spec:String):Object
+        {
+            const UNITS:Object = {
+                k: 1024, m: 1024 * 1024, g: 1024 * 1024 * 1024,
+                K: 1024, M: 1024 * 1024, G: 1024 * 1024 * 1024
+            };
+            var count:Number, units:Object;
+            var matches:Array;
+
+            matches = spec.match(/^(\d+(?:\.\d*)?)(\w*)$/);
+            if (matches == null)
+                return null;
+
+            count = Number(matches[1]);
+            if (isNaN(count))
+                return null;
+
+            if (matches[2] == "") {
+                units = 1;
+            } else {
+                units = UNITS[matches[2]];
+                if (units == null)
+                    return null;
+            }
+
+            return count * Number(units);
         }
     }
 }
