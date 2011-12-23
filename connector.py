@@ -43,7 +43,7 @@ exists, data is ferried between them until one side is closed. By default
 LOCAL is "%(local)s" and REMOTE is "%(remote)s".
 
 The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
-request are ignored and the local connection is always joined to a remote
+request are ignored and the local connection is always linked to a remote
 connection.
 
 If the -f option is given, then the REMOTE address is advertised to the given
@@ -325,7 +325,7 @@ def proxy_chunk(fd_r, fd_w, label):
         fd_w.sendall(data)
         return True
 
-def receive_unconnected(fd, label):
+def receive_unlinked(fd, label):
     """Receive and buffer data on a socket that has not been linked yet. Returns
     True iff there was no error and the socket may still be used; otherwise, the
     socket will be closed before returning."""
@@ -337,11 +337,11 @@ def receive_unconnected(fd, label):
         fd.close()
         return False
     if not data:
-        log(u"EOF from unconnected %s %s with %d bytes buffered." % (label, format_peername(fd), len(fd.buf)))
+        log(u"EOF from unlinked %s %s with %d bytes buffered." % (label, format_peername(fd), len(fd.buf)))
         fd.close()
         return False
     else:
-        log(u"Data from unconnected %s %s (%d bytes)." % (label, format_peername(fd), len(data)))
+        log(u"Data from unlinked %s %s (%d bytes)." % (label, format_peername(fd), len(data)))
         fd.buf += data
         if len(fd.buf) >= UNCONNECTED_BUFFER_LIMIT:
             log(u"Refusing to buffer more than %d bytes from %s %s." % (UNCONNECTED_BUFFER_LIMIT, label, format_peername(fd)))
@@ -420,11 +420,11 @@ def main():
                     del local_for[remote]
                     register()
             elif fd in locals:
-                if not receive_unconnected(fd, "local"):
+                if not receive_unlinked(fd, "local"):
                     locals.remove(fd)
                 report_pending()
             elif fd in remotes:
-                if not receive_unconnected(fd, "remote"):
+                if not receive_unlinked(fd, "remote"):
                     remotes.remove(fd)
                 report_pending()
             match_proxies()
