@@ -161,7 +161,8 @@ See design.txt for some more technical information.
 
 === Building swfcat.swf
 
-Download the (free software) Flex SDK.
+Download the Flex SDK. You only need the "Open Source Flex SDK," not the
+"Adobe Flex SDK."
 	http://opensource.adobe.com/wiki/display/flexsdk/Flex+SDK
 Put its bin directory in your PATH. The important executable is mxmlc.
 
