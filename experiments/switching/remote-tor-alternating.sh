@@ -57,7 +57,7 @@ PIDS_TO_KILL+=($!)
 visible_sleep 15
 
 repeat_download() {
-	until torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -c -t 0 -O "$DATA_FILE_NAME"; do
+	until torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -c -t 1000 -O "$DATA_FILE_NAME"; do
 		echo "retrying"
 	done
 }

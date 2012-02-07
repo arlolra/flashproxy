@@ -60,7 +60,7 @@ visible_sleep 2
 
 
 if [ -n "$OUTPUT_FILENAME" ]; then
-	real_time wget http://127.0.0.1:2000/dump --wait=0 --waitretry=0 -t 0 -O /dev/null >> "$OUTPUT_FILENAME"
+	real_time wget http://127.0.0.1:2000/dump --wait=0 --waitretry=0 -t 1000 -O /dev/null >> "$OUTPUT_FILENAME"
 else
-	real_time wget http://127.0.0.1:2000/dump --wait=0 --waitretry=0 -t 0 -O /dev/null
+	real_time wget http://127.0.0.1:2000/dump --wait=0 --waitretry=0 -t 1000 -O /dev/null
 fi

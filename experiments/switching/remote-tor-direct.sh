@@ -31,7 +31,7 @@ PIDS_TO_KILL+=($!)
 visible_sleep 15
 
 if [ -n "$OUTPUT_FILENAME" ]; then
-	real_time torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -c -t 0 -O "$DATA_FILE_NAME" >> "$OUTPUT_FILENAME"
+	real_time torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -c -t 1000 -O "$DATA_FILE_NAME" >> "$OUTPUT_FILENAME"
 else
-	real_time torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -c -t 0 -O "$DATA_FILE_NAME"
+	real_time torify wget http://torperf.torproject.org/.5mbfile --wait=0 --waitretry=0 -c -t 1000 -O "$DATA_FILE_NAME"
 fi
