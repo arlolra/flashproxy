@@ -4,16 +4,20 @@ proxy.
 == Preparation
 
 You need to have installed certain software before running the tests.
-	Firefox
+	Firefox 8.0.1
 	socat
 	Wget
 	Python
 	thttpd
 	Flash Player
-Firefox, socat, Wget, and Python are easily installed on most GNU/Linux
+socat, Wget, and Python are easily installed on most GNU/Linux
 distributions. thttpd can be compiled from the packages at
 http://acme.com/software/thttpd/. A debug version of Flash Player can be
 downloaded from http://www.adobe.com/support/flashplayer/downloads.html.
+
+Firefox versions 9 and 10 will not work; these versions have a change to
+the -no-remote option that prevents the tests from running. This is
+supposed to be fixed in version 11.
 
 You need to create some dedicated Firefox profiles. Create profiles
 named flashexp1 and flashexp2 by running
