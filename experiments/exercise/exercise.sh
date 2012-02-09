@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This script registers with the flash proxy facilitator, tries to download
+# check.torproject.org, and saves a timestamped log file.
+
 FLASHPROXY_DIR="$HOME/flashproxy"
 TOR="$HOME/tor/src/or/tor"
 LOCAL_PORT=1080
