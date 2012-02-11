@@ -38,7 +38,7 @@ PIDS_TO_KILL+=($!)
 echo "Start facilitator."
 "$FLASHPROXY_DIR"/facilitator.py -d --relay 127.0.0.1:8000 >/dev/null &
 PIDS_TO_KILL+=($!)
-visible_sleep 2
+visible_sleep 5
 
 echo "Start connector."
 "$FLASHPROXY_DIR"/connector.py --facilitator 127.0.0.1 >/dev/null &
