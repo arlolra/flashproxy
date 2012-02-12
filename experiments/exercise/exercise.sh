@@ -25,7 +25,7 @@ PIDS_TO_KILL+=($!)
 
 sleep 20
 
-"$TOR" UseBridges 1 Bridge 127.0.0.1:9001 Socks4Proxy 127.0.0.1:$LOCAL_PORT &
+"$TOR" UseBridges 1 Bridge 127.0.0.1:9001 Socks4Proxy 127.0.0.1:$LOCAL_PORT LearnCircuitBuildTimeout 0 &
 PIDS_TO_KILL+=($!)
 
 sleep 60
