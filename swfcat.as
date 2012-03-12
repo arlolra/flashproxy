@@ -29,17 +29,6 @@
  * What rate to limit all proxy traffic combined to. The special value "off"
  * disables the limit. The default is DEFAULT_RATE_LIMIT. There is a
  * sanity-check minimum of "10K".
- *
- * client=1
- * If set (to any value), run in client RTMFP mode. In this mode, rather than
- * connecting to a facilitator and attempting to serve clients, swfcat starts an
- * RTMFP socket and connects to a local address (to the connector, to be exact).
- * See README for more on running in client RTMFP mode. No argument is required
- * to use RTMFP when in the usual server mode.
- *
- * local=<HOST>:<PORT>
- * When in client RTMFP mode (client=1), connect to this local address. The
- * default is DEFAULT_LOCAL_TOR_CLIENT_ADDR.
  */
 
 package
@@ -63,16 +52,8 @@ package
 
     public class swfcat extends Sprite
     {
-        private const RTMFP_URL:String = "rtmfp://tor-facilitator.bamsoftware.com";
-
         private const DEFAULT_FACILITATOR_ADDR:Object = {
             host: "tor-facilitator.bamsoftware.com",
-            port: 9002
-        };
-
-        /* Local Tor client to use in case of RTMFP connection. */
-        private const DEFAULT_LOCAL_TOR_CLIENT_ADDR:Object = {
-            host: "127.0.0.1",
             port: 9002
         };
 
@@ -101,7 +82,6 @@ package
         private var fac_addr:Object;
         private var max_num_proxy_pairs:uint;
         private var facilitator_poll_interval:Number;
-        private var local_addr:Object;
 
         public var rate_limit:RateLimit;
 
@@ -133,7 +113,7 @@ package
 
             debug = this.loaderInfo.parameters["debug"];
 
-            if (debug || this.loaderInfo.parameters["client"]) {
+            if (debug) {
                 output_text = new TextField();
                 output_text.width = stage.stageWidth;
                 output_text.height = stage.stageHeight;
@@ -182,16 +162,7 @@ package
             else
                 rate_limit = new RateUnlimit();
 
-            local_addr = get_param_addr("local", DEFAULT_LOCAL_TOR_CLIENT_ADDR);
-            if (!local_addr) {
-                puts("Error: Local spec must be in the form \"host:port\".");
-                return;
-            }
-
-            if (this.loaderInfo.parameters["client"])
-                client_main();
-            else
-                proxy_main();
+            proxy_main();
         }
 
         /* Get an address structure from the given movie parameter, or the given
@@ -320,68 +291,6 @@ package
             badge.proxy_begin();
         }
 
-        private function client_main():void
-        {
-            var rs:RTMFPSocket;
-
-            puts("Making RTMFP socket.");
-            rs = new RTMFPSocket(RTMFP_URL);
-            rs.addEventListener(Event.COMPLETE, function (e:Event):void {
-                puts("Got RTMFP id " + rs.id);
-                register(rs);
-            });
-            rs.addEventListener(RTMFPSocket.ACCEPT_EVENT, client_accept);
-
-            rs.listen();
-        }
-
-        private function client_accept(e:Event):void {
-            var rs:RTMFPSocket;
-            var s_t:Socket;
-            var proxy_pair:ProxyPair;
-
-            rs = e.target as RTMFPSocket;
-            s_t = new Socket();
-
-            puts("Got RTMFP connection from " + rs.peer_id);
-
-            proxy_pair = new ProxyPair(this, rs, function ():void {
-                /* Do nothing; already connected. */
-            }, s_t, function ():void {
-                s_t.connect(local_addr.host, local_addr.port);
-            });
-            proxy_pair.connect();
-        }
-
-        private function register(rs:RTMFPSocket):void {
-            var fac_url:String;
-            var loader:URLLoader;
-            var request:URLRequest;
-
-            loader = new URLLoader();
-            loader.addEventListener(Event.COMPLETE, function (e:Event):void {
-                puts("Facilitator: registered.");
-            });
-            loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function (e:SecurityErrorEvent):void {
-                puts("Facilitator: security error: " + e.text + ".");
-                rs.close();
-            });
-            loader.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
-                puts("Facilitator: I/O error: " + e.text + ".");
-                rs.close();
-            });
-
-            fac_url = "http://" + encodeURIComponent(fac_addr.host)
-                + ":" + encodeURIComponent(fac_addr.port) + "/";
-            request = new URLRequest(fac_url);
-            request.method = URLRequestMethod.POST;
-            request.data = new URLVariables();
-            request.data["client"] = rs.id;
-
-            puts("Facilitator: connecting to " + fac_url + ".");
-            loader.load(request);
-        }
-
         private function make_proxy_pair(client_spec:String, relay_spec:String):ProxyPair
         {
             var proxy_pair:ProxyPair;
@@ -404,19 +313,6 @@ package
                     s_r.connect(addr_r.host, addr_r.port);
                 });
                 proxy_pair.set_name("<" + addr_c.host + ":" + addr_c.port + ","
-                    + addr_r.host + ":" + addr_r.port + ">");
-                return proxy_pair;
-            }
-
-            if (client_spec.match(/^[0-9A-Fa-f]{64}$/)) {
-                s_c = new RTMFPSocket(RTMFP_URL);
-                s_r = new Socket();
-                proxy_pair = new ProxyPair(this, s_c, function ():void {
-                    s_c.connect(client_spec);
-                }, s_r, function ():void {
-                    s_r.connect(addr_r.host, addr_r.port);
-                });
-                proxy_pair.set_name("<" + client_spec.substr(0, 4) + "...,"
                     + addr_r.host + ":" + addr_r.port + ">");
                 return proxy_pair;
             }

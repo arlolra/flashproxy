@@ -108,12 +108,6 @@ Design of flash proxies
 
     client=[<address>]:<port>
 
-  or the form:
-
-    POST / HTTP/1.0
-
-    client=[<rtmfp-id>]:<port>
-
   The facilitator sends a 200 reply if the registration was successful
   and an error status otherwise. If the connector omits the [<address>]
   part, the facilitator will automatically fill it in based on the HTTP
@@ -146,10 +140,6 @@ Design of flash proxies
   The response code is 200 and the body looks like this:
 
     client=[<address>:<port>]&relay=<address>:<port>
-
-  or this:
-
-    client=[<rtmfp-id>]&relay=<address>:<port>
 
   If the value for the client parameter is empty, it means that there are no
   client registrations for this proxy.

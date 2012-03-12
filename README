@@ -95,34 +95,6 @@ without having to do port forwarding.
 2. Run Tor using the included torrc file.
 	$ tor -f flashproxy/torrc
 
-=== Using RTMFP
-
-This method uses a protocol called RTMFP to communicate through a NAT
-without port forwarding. However it uses a public server at a fixed
-address as an intermediary, so it can be easily blocked. (The
-intermediate server is operated by the flash proxy developers, not by
-Adobe as is usual with RTMFP.) This method also requires Flash Player on
-the Tor client, which the other methods don't.
-
-1. Download swfcat.swf from
-	https://crypto.stanford.edu/flashproxy/swfcat.swf
-   and save it locally. We will assume it is saved at
-   /home/user/flashproxy/swfcat.swf.
-2. Run the connector, without giving it a facilitator, and listening on
-   local ports only. In this configuration, it is the swfcat.swf program
-   that communicates with the facilitator, not the connector.
-	$ ./connector.py 127.0.0.1:9001 127.0.0.1:9002
-3. Open in a browser
-	file:///home/user/flashproxy/swfcat.swf?client=1&debug=1
-   This should *not* be the same browser you use to browse over Tor. You
-   should not run Flash in your Tor browser. Use a separate Firefox
-   profile (firefox -no-remote -ProfileManager) or use a separate
-   browser entirely.
-4. Run Tor using the included torrc file.
-	$ tor -f flashproxy/torrc
-
-You will see status messages in the swfcat.swf window.
-
 === Troubleshooting
 
 Make sure someone is viewing https://crypto.stanford.edu/flashproxy/, or
@@ -213,35 +185,3 @@ crossdomaind server on CentOS. "make install" copies files to /usr/local/bin.
 	# cp init.d/crossdomaind /etc/init.d/crossdomaind
 	# chkconfig --add crossdomaind
 	# service crossdomaind start
-
-=== Building the Cumulus RTMFP server
-
-There is a free RTMFP rendezvous server called Cumulus. It is a
-replacement for the Adobe Cirrus service at rtmfp://p2p.rtmfp.net/.
-These are instructions to build and install it.
-
-First install the prerequisite libpoco, http://poco.sourceforge.net/.
-You only need the "Basic Edition."
-	# apt-get install libpoco-dev
-or
-	$ cd poco-VERSION
-	$ ./configure && make
-	# make install
-
-Follow these steps to install the Cumulus server. You need to open port
-1935/udp in the firewall.
-	$ git clone git://github.com/OpenRTMFP/Cumulus.git
-	$ cd Cumulus
-	$ patch -p0 < ~/flashproxy/patches/cumulus-no-manage-log.patch
-	$ cd CumulusLib
-	$ make LIBS=./
-	# cp libCumulus.so /usr/local/lib
-	$ cd ../../CumulusService
-	$ make
-	# cp CumulusService /usr/local/bin
-	# useradd -d /dev/null -s /bin/false cumulus
-	# mkdir /var/cumulus
-	# chown -R cumulus.cumulus /var/cumulus
-	# cp flashproxy/init.d/cumulus /etc/init.d/cumulus
-	# chkconfig --add cumulus
-	# service cumulus start
