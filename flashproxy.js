@@ -119,7 +119,6 @@ function flashproxy_should_disable()
 
 function flashproxy_badge_insert()
 {
-    var fp;
     var e;
 
     if (flashproxy_should_disable()) {
@@ -138,6 +137,3 @@ function flashproxy_badge_insert()
 
     return fp;
 }
-
-fp = flashproxy_badge_insert();
-fp.start();
