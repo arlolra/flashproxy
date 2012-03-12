@@ -1,3 +1,13 @@
+var DEFAULT_FACILITATOR_ADDR = {
+    host: "tor-facilitator.bamsoftware.com",
+    port: 9002
+};
+
+function format_addr(addr)
+{
+    return addr.host + ":" + addr.port;
+}
+
 function FlashProxy()
 {
     this.debug_div = document.createElement("div");
@@ -14,7 +24,17 @@ function FlashProxy()
     };
 
     this.start = function() {
+        var fac_addr;
+
         this.puts("Hello world!");
+
+        fac_addr = DEFAULT_FACILITATOR_ADDR;
+        if (!fac_addr) {
+            puts("Error: Facilitator spec must be in the form \"host:port\".");
+            return;
+        }
+
+        this.puts("Using facilitator " + format_addr(fac_addr) + ".");
     }
 }
 
