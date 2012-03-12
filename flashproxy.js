@@ -24,9 +24,8 @@ function FlashProxy()
     };
 
     this.start = function() {
-        var fac_addr;
-
-        this.puts("Hello world!");
+        var fac_addr, fac_url;
+        var xhr;
 
         fac_addr = DEFAULT_FACILITATOR_ADDR;
         if (!fac_addr) {
@@ -35,7 +34,32 @@ function FlashProxy()
         }
 
         this.puts("Using facilitator " + format_addr(fac_addr) + ".");
-    }
+
+        fac_url = "http://" + encodeURIComponent(fac_addr.host)
+            + ":" + encodeURIComponent(fac_addr.port) + "/";
+        xhr = new XMLHttpRequest();
+        xhr.open("GET", fac_url);
+        xhr.responseType = "text";
+        xhr.onreadystatechange = function() {
+            /* Status 0 is UNSENT. 4 is DONE. */
+            if (xhr.status == 0 && xhr.statusText == null) {
+                this.puts("Facilitator: cross-domain error.");
+            } else if (xhr.readyState == 4) {
+                if (xhr.status == 200)
+                    this.fac_complete(xhr.responseText);
+                else if (xhr.readyState == 4)
+                    this.puts("Facilitator: got status " + xhr.status + ".");
+                else
+                    this.puts("Facilitator: unknown error.");
+            }
+        }.bind(this);
+        this.puts("Facilitator: connecting to " + fac_url + ".");
+        xhr.send(null);
+    };
+
+    this.fac_complete = function(text) {
+        this.puts("Facilitator: got response \"" + text + "\".");
+    };
 }
 
 /* This is the non-functional badge that occupies space when
