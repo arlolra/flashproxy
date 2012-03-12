@@ -14,7 +14,7 @@ swfcat.swf: *.as badge.png
 
 install:
 	mkdir -p $(BINDIR)
-	cp -f connector.py crossdomaind.py facilitator.py $(BINDIR)
+	cp -f connector.py facilitator.py $(BINDIR)
 
 clean:
 	rm -f $(TARGETS)

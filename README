@@ -13,8 +13,7 @@ There are five main parts. Our terminology for each part is in quotes.
    called swfcat because it is like a netcat implemented in Flash.
 4. A "facilitator," a pseudo-HTTP server that keeps a list of clients
    that want a connection, and hands them out to proxies.
-5. A Tor "relay," which is just a normal Tor relay except that its host
-   must also serve a Flash crossdomain policy.
+5. A Tor "relay," which is just a normal Tor relay.
 
 The purpose of this project is to create many, generally ephemeral
 bridge IP addresses, with the goal of outpacing a censor's ability to
@@ -156,21 +155,15 @@ with sample code:
 
 === Running a relay or facilitator
 
-On the Tor relay, run
-	# ./crossdomaind.py
-In general, any computer that a proxy connects to needs to serve a
-crossdomain policy, but the connector and facilitator have it built in.
-
 On the facilitator, run
 	$ ./facilitator.py -r <relay-ip>
-You can use "tor1.bamsoftware.com" for <relay-ip>; it is already set up
-to serve a crossdomain policy. The facilitator runs on port 9002 by
-default.
+You can use "tor1.bamsoftware.com" for <relay-ip>. The facilitator runs
+on port 9002 by default.
 
 === Installing so as to restart at boot
 
-The directory init.d contains scripts to start the facilitator and
-crossdomaind server on CentOS. "make install" copies files to /usr/local/bin.
+The directory init.d contains scripts to start the facilitator on
+CentOS. "make install" copies files to /usr/local/bin.
 
 	# make install
 	# useradd -d /dev/null -s /bin/false flashproxy
@@ -181,7 +174,3 @@ crossdomaind server on CentOS. "make install" copies files to /usr/local/bin.
 	-- Edit /etc/init.d/facilitator to set $RELAY.
 	# chkconfig --add facilitator
 	# service facilitator start
-
-	# cp init.d/crossdomaind /etc/init.d/crossdomaind
-	# chkconfig --add crossdomaind
-	# service crossdomaind start

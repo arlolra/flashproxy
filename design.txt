@@ -26,10 +26,9 @@ Design of flash proxies
   initiate outgoing connections, not receive incoming ones. The flash
   proxy can only connect to external hosts by connecting directly to
   them. The other significant restriction is that the proxy cannot
-  connect to just any destination: Adobe Flash player requires the
-  server to provide a "crossdomain policy" allowing access. A third, but
-  less important, restriction is that browser-based networking does not
-  provide low-level socket access such as control of source address.
+  connect to just any destination. A third, but less important,
+  restriction is that browser-based networking does not provide
+  low-level socket access such as control of source address.
 
 2. Components
 
@@ -59,8 +58,7 @@ Design of flash proxies
      variety of ways. It sends registrations to flash proxies over HTTP.
      The facilitator is responsible for matching clients to proxies in a
      reasonable manner.
-  5. Tor relay: An ordinary Tor relay with no special configuration
-     apart from serving a crossdomain policy to allow Flash connections.
+  5. Tor relay: An ordinary Tor relay.
 
 4. Sample session
 
@@ -120,10 +118,8 @@ Design of flash proxies
   both ends, and matches them together. The remote socket listens on
   port 9000 and the local on port 9001.
 
-  The connector can serve a crossdomain policy in response to a
-  crossdomain request, allowing the flash proxy to connect. On the local
-  side, it acts as a SOCKS proxy (albeit one that always goes to the
-  same destination).
+  On the local side, it acts as a SOCKS proxy (albeit one that always
+  goes to the same destination).
 
 7. Behavior of the flash proxy
 
@@ -158,6 +154,4 @@ Design of flash proxies
 
 9. Behavior of the Tor relay.
 
-  The Tor relay requires no special configuration. It must also be
-  running a program that serves a crossdomain policy to allow a flash
-  proxy to connect to it.
+  The Tor relay requires no special configuration.

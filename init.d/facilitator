@@ -16,8 +16,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-# Replace this with the address of a Tor relay that allows crossdomain
-# connections (i.e., is running crossdomaind.py). You can use host:port
+# Replace this with the address of a Tor relay. You can use host:port
 # syntax.
 RELAY=...
 
