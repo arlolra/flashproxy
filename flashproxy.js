@@ -3,6 +3,11 @@ var DEFAULT_FACILITATOR_ADDR = {
     port: 9002
 };
 
+function parse_query_string(qs)
+{
+    return {};
+}
+
 function format_addr(addr)
 {
     return addr.host + ":" + addr.port;

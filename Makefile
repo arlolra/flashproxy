@@ -19,4 +19,7 @@ install:
 clean:
 	rm -f $(TARGETS)
 
-.PHONY: all clean
+test:
+	./flashproxy-test.js
+
+.PHONY: all clean test
