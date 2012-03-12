@@ -298,6 +298,8 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "x-www-form-urlencoded")
         self.send_header("Cache-Control", "no-cache")
+        # Allow XMLHttpRequest from any domain. http://www.w3.org/TR/cors/.
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
 
         data = {}
