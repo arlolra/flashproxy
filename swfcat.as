@@ -260,7 +260,7 @@ package
             }
 
             loader = new URLLoader();
-            /* Get the x-www-form-urlencoded values. */
+            /* Get the application/x-www-form-urlencoded values. */
             loader.dataFormat = URLLoaderDataFormat.VARIABLES;
             loader.addEventListener(Event.COMPLETE, fac_complete);
             loader.addEventListener(IOErrorEvent.IO_ERROR, function (e:IOErrorEvent):void {
