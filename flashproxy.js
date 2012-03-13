@@ -128,7 +128,17 @@ function FlashProxy()
         fac_url = "http://" + encodeURIComponent(fac_addr.host)
             + ":" + encodeURIComponent(fac_addr.port) + "/";
         xhr = new XMLHttpRequest();
-        xhr.open("GET", fac_url);
+        try {
+            xhr.open("GET", fac_url);
+        } catch (err) {
+            /* An exception happens here when, for example, NoScript allows the
+               domain on which the proxy badge runs, but not the domain to which
+               it's trying to make the HTTP request. The exception message is
+               like "Component returned failure code: 0x805e0006
+               [nsIXMLHttpRequest.open]" on Firefox. */
+            this.puts("Facilitator: exception while connecting: " + repr(err.message) + ".");
+            return;
+        }
         xhr.responseType = "text";
         xhr.onreadystatechange = function() {
             /* Status 0 is UNSENT. 4 is DONE. */
@@ -137,10 +147,8 @@ function FlashProxy()
             } else if (xhr.readyState == 4) {
                 if (xhr.status == 200)
                     this.fac_complete(xhr.responseText);
-                else if (xhr.readyState == 4)
-                    this.puts("Facilitator: got status " + xhr.status + ".");
                 else
-                    this.puts("Facilitator: unknown error.");
+                    this.puts("Facilitator: can't connect: got response code " + xhr.status + ".");
             }
         }.bind(this);
         this.puts("Facilitator: connecting to " + fac_url + ".");
