@@ -34,7 +34,7 @@ function quote(s)
 
 function maybe_quote(s)
 {
-    if (/[\\\"]/.test(s))
+    if (!/^[a-zA-Z_]\w*$/.test(s))
         return quote(s);
     else
         return s;
