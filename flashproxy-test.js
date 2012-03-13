@@ -10,6 +10,8 @@ load("flashproxy.js");
 
 function objects_equal(a, b)
 {
+    if ((a === null) != (b === null))
+        return false;
     if (typeof a != typeof b)
         return false;
     if (typeof a != "object")
@@ -42,7 +44,7 @@ function maybe_quote(s)
 
 function repr(x)
 {
-    if (typeof x === null) {
+    if (x === null) {
         return "null";
     } else if (typeof x == "undefined") {
         return "undefined";
