@@ -1,3 +1,12 @@
+/* Query string parameters. These change how the program runs from the outside.
+ * For example:
+ *   http://www.example.com/embed.html?facilitator=127.0.0.1:9002&debug=1
+ *
+ * facilitator=<HOST>:<PORT>
+ * The address of the facilitator to use. By default it is
+ * DEFAULT_FACILITATOR_ADDR. Both <HOST> and <PORT> must be present.
+ */
+
 var DEFAULT_FACILITATOR_ADDR = {
     host: "tor-facilitator.bamsoftware.com",
     port: 9002
@@ -96,12 +105,15 @@ function FlashProxy()
     };
 
     this.start = function() {
+        var query;
         var fac_addr, fac_url;
         var xhr;
 
-        fac_addr = DEFAULT_FACILITATOR_ADDR;
+        query = parse_query_string(window.location.search.substr(1));
+
+        fac_addr = get_query_param_addr(query, "facilitator", DEFAULT_FACILITATOR_ADDR);
         if (!fac_addr) {
-            puts("Error: Facilitator spec must be in the form \"host:port\".");
+            this.puts("Error: Facilitator spec must be in the form \"host:port\".");
             return;
         }
 
