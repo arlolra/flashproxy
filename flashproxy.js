@@ -106,8 +106,7 @@ function FlashProxy()
 
     this.start = function() {
         var query;
-        var fac_addr, fac_url;
-        var xhr;
+        var fac_addr;
 
         query = parse_query_string(window.location.search.substr(1));
 
@@ -116,6 +115,13 @@ function FlashProxy()
             this.puts("Error: Facilitator spec must be in the form \"host:port\".");
             return;
         }
+
+        this.proxy_main(fac_addr);
+    };
+
+    this.proxy_main = function(fac_addr) {
+        var fac_url;
+        var xhr;
 
         this.puts("Using facilitator " + format_addr(fac_addr) + ".");
 
