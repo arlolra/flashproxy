@@ -212,12 +212,6 @@ function repr(x)
    proxy? We take a best-effort guess as to whether this device runs on
    a battery or the data transfer might be expensive.
 
-   Matching mobile User-Agents is complex; but we only need to match
-   those devices that can also run a recent version of Adobe Flash,
-   which is a subset of this list:
-   https://secure.wikimedia.org/wikipedia/en/wiki/Adobe_Flash_Player#Mobile_operating_systems
-
-   Other resources:
    http://www.zytrax.com/tech/web/mobile_ids.html
    http://googlewebmastercentral.blogspot.com/2011/03/mo-better-to-also-detect-mobile-user.html
    http://search.cpan.org/~cmanley/Mobile-UserAgent-1.05/lib/Mobile/UserAgent.pm
