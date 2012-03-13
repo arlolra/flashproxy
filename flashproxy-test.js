@@ -123,7 +123,64 @@ function test_parse_query_string()
     }
 }
 
+function test_parse_addr_spec()
+{
+    var TESTS = [
+        { spec: "",
+          expected: null },
+        { spec: "3.3.3.3:4444",
+          expected: { host: "3.3.3.3", port: 4444 } },
+        { spec: "3.3.3.3",
+          expected: null },
+        { spec: "3.3.3.3:0x1111",
+          expected: null },
+        { spec: "3.3.3.3:-4444",
+          expected: null },
+        { spec: "3.3.3.3:65536",
+          expected: null },
+    ];
+
+    for (var i = 0; i < TESTS.length; i++) {
+        var test = TESTS[i];
+        var actual;
+
+        actual = parse_addr_spec(test.spec);
+        if (objects_equal(actual, test.expected))
+            pass(test.spec);
+        else
+            fail(test.spec, test.expected, actual);
+    }
+}
+
+function test_get_query_param_addr()
+{
+    var DEFAULT = { host: "1.1.1.1", port: 2222 };
+    var TESTS = [
+        { query: { },
+          expected: DEFAULT },
+        { query: { addr: "3.3.3.3:4444" },
+          expected: { host: "3.3.3.3", port: 4444 } },
+        { query: { x: "3.3.3.3:4444" },
+          expected: DEFAULT },
+        { query: { addr: "---" },
+          expected: null },
+    ];
+
+    for (var i = 0; i < TESTS.length; i++) {
+        var test = TESTS[i];
+        var actual;
+
+        actual = get_query_param_addr(test.query, "addr", DEFAULT);
+        if (objects_equal(actual, test.expected))
+            pass(test.query);
+        else
+            fail(test.query, test.expected, actual);
+    }
+}
+
 test_parse_query_string();
+test_parse_addr_spec();
+test_get_query_param_addr();
 
 if (num_failed == 0)
     quit(0);

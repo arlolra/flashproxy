@@ -43,6 +43,38 @@ function parse_query_string(qs)
     return result;
 }
 
+/* Get a query string parameter and parse it as an address spec. Returns
+   default_val if param is not defined in the query string. Returns null on a
+   parsing error. */
+function get_query_param_addr(query, param, default_val)
+{
+    var val;
+
+    val = query[param];
+    if (val === undefined)
+        return default_val;
+    else
+        return parse_addr_spec(val);
+}
+
+/* Parse an address in the form "host:port". Returns an Object with
+   keys "host" (String) and "port" (int). Returns null on error. */
+function parse_addr_spec(spec)
+{
+    var groups;
+    var host, port;
+
+    groups = spec.match(/^([^:]+):(\d+)$/);
+    if (!groups)
+        return null;
+    host = groups[1];
+    port = parseInt(groups[2], 10);
+    if (isNaN(port) || port < 0 || port > 65535)
+        return null;
+
+    return { host: host, port: port }
+}
+
 function format_addr(addr)
 {
     return addr.host + ":" + addr.port;
