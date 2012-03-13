@@ -29,37 +29,6 @@ function objects_equal(a, b)
     return true;
 }
 
-function quote(s)
-{
-    return "\"" + s.replace(/([\\\"])/, "\\$1") + "\"";
-}
-
-function maybe_quote(s)
-{
-    if (!/^[a-zA-Z_]\w*$/.test(s))
-        return quote(s);
-    else
-        return s;
-}
-
-function repr(x)
-{
-    if (x === null) {
-        return "null";
-    } else if (typeof x == "undefined") {
-        return "undefined";
-    } else if (typeof x == "object") {
-        var elems = [];
-        for (var k in x)
-            elems.push(maybe_quote(k) + ": " + repr(x[k]));
-        return "{ " + elems.join(", ") + " }";
-    } else if (typeof x == "string") {
-        return quote(x);
-    } else {
-        return x.toString();
-    }
-}
-
 var top = true;
 function announce(test_name)
 {
