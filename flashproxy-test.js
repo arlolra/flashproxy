@@ -60,6 +60,15 @@ function repr(x)
     }
 }
 
+var top = true;
+function announce(test_name)
+{
+    if (!top)
+        print();
+    top = false;
+    print(test_name);
+}
+
 function pass(test)
 {
     num_tests++;
@@ -111,6 +120,7 @@ function test_parse_query_string()
           expected: { "": "", a: "b", c: "d" } },
     ];
 
+    announce("test_parse_query_string");
     for (var i = 0; i < TESTS.length; i++) {
         var test = TESTS[i];
         var actual;
@@ -140,6 +150,7 @@ function test_parse_addr_spec()
           expected: null },
     ];
 
+    announce("test_parse_addr_spec");
     for (var i = 0; i < TESTS.length; i++) {
         var test = TESTS[i];
         var actual;
@@ -166,6 +177,7 @@ function test_get_query_param_addr()
           expected: null },
     ];
 
+    announce("test_get_query_param_addr");
     for (var i = 0; i < TESTS.length; i++) {
         var test = TESTS[i];
         var actual;
