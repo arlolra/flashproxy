@@ -3,9 +3,44 @@ var DEFAULT_FACILITATOR_ADDR = {
     port: 9002
 };
 
+/* Parse a URL query string or application/x-www-form-urlencoded body. The
+   return type is an object mapping string keys to string values. By design,
+   this function doesn't support multiple values for the same named parameter,
+   for example "a=1&a=2&a=3"; the first definition always wins. Returns null on
+   error.
+
+   Always decodes from UTF-8, not any other encoding.
+
+   http://dev.w3.org/html5/spec/Overview.html#url-encoded-form-data */
 function parse_query_string(qs)
 {
-    return {};
+    var strings;
+    var result;
+
+    result = {};
+    if (qs)
+        strings = qs.split("&");
+    else
+        strings = {}
+    for (var i = 0; i < strings.length; i++) {
+        var string = strings[i];
+        var j, name, value;
+
+        j = string.indexOf("=");
+        if (j == -1) {
+            name = string;
+            value = "";
+        } else {
+            name = string.substr(0, j);
+            value = string.substr(j + 1);
+        }
+        name = decodeURIComponent(name.replace(/\+/, " "));
+        value = decodeURIComponent(value.replace(/\+/, " "));
+        if (!(name in result))
+             result[name] = value;
+    }
+
+    return result;
 }
 
 function format_addr(addr)
