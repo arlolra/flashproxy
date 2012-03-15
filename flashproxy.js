@@ -43,8 +43,8 @@ function parse_query_string(qs)
             name = string.substr(0, j);
             value = string.substr(j + 1);
         }
-        name = decodeURIComponent(name.replace(/\+/, " "));
-        value = decodeURIComponent(value.replace(/\+/, " "));
+        name = decodeURIComponent(name.replace(/\+/g, " "));
+        value = decodeURIComponent(value.replace(/\+/g, " "));
         if (!(name in result))
              result[name] = value;
     }

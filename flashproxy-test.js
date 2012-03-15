@@ -74,6 +74,8 @@ function test_parse_query_string()
           expected: { "a": "b c+d" } },
         { qs: "a+b=c",
           expected: { "a b": "c" } },
+        { qs: "a=b+c+d",
+          expected: { a: "b c d" } },
         /* First appearance wins. */
         { qs: "a=b&c=d&a=e",
           expected: { a: "b", c: "d" } },
