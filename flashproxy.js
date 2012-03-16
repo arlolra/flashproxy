@@ -99,8 +99,14 @@ function FlashProxy()
 
     this.puts = function(s) {
         if (this.debug_div) {
+            var at_bottom;
+
+            /* http://www.w3.org/TR/cssom-view/#element-scrolling-members */
+            at_bottom = (this.debug_div.scrollTop + this.debug_div.clientHeight == this.debug_div.scrollHeight);
             this.debug_div.appendChild(document.createTextNode(s));
             this.debug_div.appendChild(document.createElement("br"));
+            if (at_bottom)
+                this.debug_div.scrollTop = this.debug_div.scrollHeight;
         }
     };
 
