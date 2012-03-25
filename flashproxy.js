@@ -91,7 +91,7 @@ function format_addr(addr)
 
 function FlashProxy()
 {
-    this.debug_div = document.createElement("div");
+    this.debug_div = document.createElement("pre");
     this.debug_div.className = "debug";
 
     this.badge_elem = this.debug_div;
@@ -103,8 +103,7 @@ function FlashProxy()
 
             /* http://www.w3.org/TR/cssom-view/#element-scrolling-members */
             at_bottom = (this.debug_div.scrollTop + this.debug_div.clientHeight == this.debug_div.scrollHeight);
-            this.debug_div.appendChild(document.createTextNode(s));
-            this.debug_div.appendChild(document.createElement("br"));
+            this.debug_div.appendChild(document.createTextNode(s + "\n"));
             if (at_bottom)
                 this.debug_div.scrollTop = this.debug_div.scrollHeight;
         }
