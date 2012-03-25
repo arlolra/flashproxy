@@ -125,6 +125,8 @@ The relay runs with a WebSocket proxy in external proxy mode.
 This command proxies WebSocket on port 9901 to a local ORPort on 9001.
 	./websockify :9901 127.0.0.1:9001
 
+Add this line to torrc to make the relay use the external proxy:
+	ServerTransportPlugin websocket proxy 127.0.0.1:9901
 
 == How to put a flash proxy badge on a web page.
 
