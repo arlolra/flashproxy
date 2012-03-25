@@ -118,6 +118,14 @@ If tor apparently hangs here:
 wait a few minutes. It can take a while to download relay descriptors.
 
 
+== How to run a relay
+
+The relay runs with a WebSocket proxy in external proxy mode.
+	git clone git://github.com/kanaka/websockify.git
+This command proxies WebSocket on port 9901 to a local ORPort on 9001.
+	./websockify :9901 127.0.0.1:9001
+
+
 == How to put a flash proxy badge on a web page.
 
 Paste in this HTML where you want the badge to appear:
@@ -129,7 +137,7 @@ Paste in this HTML where you want the badge to appear:
 
 See design.txt for some more technical information.
 
-=== Running a relay or facilitator
+=== Running a facilitator
 
 On the facilitator, run
 	$ ./facilitator.py -r <relay-ip>
