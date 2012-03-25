@@ -148,7 +148,7 @@ If tor apparently hangs here:
 wait a few minutes. It can take a while to download relay descriptors.
 
 
-== How to put a flash proxy badge on a web page.
+== How to put a flash proxy badge on a web page
 
 Paste in this HTML where you want the badge to appear:
 
