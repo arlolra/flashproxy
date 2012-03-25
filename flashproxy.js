@@ -147,14 +147,14 @@ function FlashProxy()
         }
         xhr.responseType = "text";
         xhr.onreadystatechange = function() {
-            /* Status 0 is UNSENT. 4 is DONE. */
-            if (xhr.status == 0 && xhr.statusText == null) {
-                this.puts("Facilitator: cross-domain error.");
-            } else if (xhr.readyState == 4) {
+            /* Status 4 is DONE. */
+            if (xhr.readyState == 4) {
                 if (xhr.status == 200)
                     this.fac_complete(xhr.responseText);
+                else if (xhr.status == 0 && xhr.statusText == "")
+                    this.puts("Facilitator: same-origin error.");
                 else
-                    this.puts("Facilitator: can't connect: got response code " + xhr.status + ".");
+                    this.puts("Facilitator: can't connect: got status " + repr(xhr.status) + " and status text " + repr(xhr.statusText) + ".");
             }
         }.bind(this);
         this.puts("Facilitator: connecting to " + fac_url + ".");
