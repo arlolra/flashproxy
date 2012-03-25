@@ -115,40 +115,6 @@ def format_addr(addr):
     else:
         return u"%s:%d" % (host, port)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:", ["daemon", "facilitator=", "help", "log=", "pidfile="])
-for o, a in opts:
-    if o == "--daemon":
-        options.daemonize = True
-    elif o == "-f" or o == "--facilitator":
-        options.facilitator_addr = parse_addr_spec(a, None, DEFAULT_FACILITATOR_PORT)
-    elif o == "-h" or o == "--help":
-        usage()
-        sys.exit()
-    elif o == "-l" or o == "--log":
-        options.log_filename = a
-    elif o == "--pidfile":
-        options.pid_filename = a
-
-if len(args) == 0:
-    options.local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-    options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-elif len(args) == 1:
-    options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-    options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-elif len(args) == 2:
-    options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-    options.remote_addr = parse_addr_spec(args[1], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-else:
-    usage(sys.stderr)
-    sys.exit(1)
-
-if options.log_filename:
-    options.log_file = open(options.log_filename, "a")
-    # Send error tracebacks to the log.
-    sys.stderr = options.log_file
-else:
-    options.log_file = sys.stdout
-
 
 class BufferSocket(object):
     """A socket containing a time of creation and a buffer of data received. The
@@ -179,22 +145,6 @@ def format_peername(s):
         return format_addr(s.getpeername())
     except socket.error, e:
         return "<unconnected>"
-
-# Local socket, accepting SOCKS requests from localhost
-local_s = listen_socket(options.local_addr)
-# Remote socket, accepting remote WebSocket connections from proxies.
-remote_s = listen_socket(options.remote_addr)
-
-# Remote connection sockets.
-remotes = []
-# New local sockets waiting to finish their SOCKS negotiation.
-socks_pending = []
-# Local Tor sockets, after SOCKS negotiation.
-locals = []
-
-# Bidirectional mapping between local sockets and remote sockets.
-local_for = {}
-remote_for = {}
 
 
 def grab_string(s, pos):
@@ -327,18 +277,6 @@ def match_proxies():
         remote_for[local.fd] = remote.fd
         local_for[remote.fd] = local.fd
 
-if options.daemonize:
-    log(u"Daemonizing.")
-    pid = os.fork()
-    if pid != 0:
-        if options.pid_filename:
-            f = open(options.pid_filename, "w")
-            print >> f, pid
-            f.close()
-        sys.exit(0)
-
-register()
-
 def main():
     while True:
         rset = [remote_s, local_s] + socks_pending + remote_for.keys() + local_for.keys() + locals + remotes
@@ -347,8 +285,9 @@ def main():
             if fd == remote_s:
                 remote_c, addr = fd.accept()
                 log(u"Remote connection from %s." % format_addr(addr))
-                remotes.append(fd)
-                handle_remote_connection(fd)
+                remotes.append(BufferSocket(remote_c))
+                handle_remote_connection(remote_c)
+                report_pending()
             elif fd == local_s:
                 local_c, addr = fd.accept()
                 log(u"Local connection from %s." % format_addr(addr))
@@ -385,8 +324,70 @@ def main():
                 report_pending()
             match_proxies()
 
-try:
-    main()
-except Exception:
-    exc = traceback.format_exc()
-    log("".join(exc))
+if __name__ == "__main__":
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:", ["daemon", "facilitator=", "help", "log=", "pidfile="])
+    for o, a in opts:
+        if o == "--daemon":
+            options.daemonize = True
+        elif o == "-f" or o == "--facilitator":
+            options.facilitator_addr = parse_addr_spec(a, None, DEFAULT_FACILITATOR_PORT)
+        elif o == "-h" or o == "--help":
+            usage()
+            sys.exit()
+        elif o == "-l" or o == "--log":
+            options.log_filename = a
+        elif o == "--pidfile":
+            options.pid_filename = a
+
+    if len(args) == 0:
+        options.local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+        options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+    elif len(args) == 1:
+        options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+        options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+    elif len(args) == 2:
+        options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
+        options.remote_addr = parse_addr_spec(args[1], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+    else:
+        usage(sys.stderr)
+        sys.exit(1)
+
+    if options.log_filename:
+        options.log_file = open(options.log_filename, "a")
+        # Send error tracebacks to the log.
+        sys.stderr = options.log_file
+    else:
+        options.log_file = sys.stdout
+
+    # Local socket, accepting SOCKS requests from localhost
+    local_s = listen_socket(options.local_addr)
+    # Remote socket, accepting remote WebSocket connections from proxies.
+    remote_s = listen_socket(options.remote_addr)
+
+    # Remote connection sockets.
+    remotes = []
+    # New local sockets waiting to finish their SOCKS negotiation.
+    socks_pending = []
+    # Local Tor sockets, after SOCKS negotiation.
+    locals = []
+
+    # Bidirectional mapping between local sockets and remote sockets.
+    local_for = {}
+    remote_for = {}
+
+    register()
+
+    if options.daemonize:
+        log(u"Daemonizing.")
+        pid = os.fork()
+        if pid != 0:
+            if options.pid_filename:
+                f = open(options.pid_filename, "w")
+                print >> f, pid
+                f.close()
+            sys.exit(0)
+    try:
+        main()
+    except Exception:
+        exc = traceback.format_exc()
+        log("".join(exc))
