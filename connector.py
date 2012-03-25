@@ -180,22 +180,11 @@ def format_peername(s):
     except socket.error, e:
         return "<unconnected>"
 
-# How long to wait for a crossdomain policy request before deciding that this is
-# a normal socket. In 160 crossdomain connections to the public facilitator, the
-# mean time before receiving a crossdomain request is only 0.05625 s. But that
-# was measured from log entries with a one-second resolution, so give a healthy
-# margin above that.
-CROSSDOMAIN_TIMEOUT = 0.5
-
 # Local socket, accepting SOCKS requests from localhost
 local_s = listen_socket(options.local_addr)
-# Remote socket, accepting both crossdomain policy requests and remote proxy
-# connections.
+# Remote socket, accepting remote WebSocket connections from proxies.
 remote_s = listen_socket(options.remote_addr)
 
-# Sockets that may be crossdomain policy requests or may be normal remote
-# connections.
-crossdomain_pending = []
 # Remote connection sockets.
 remotes = []
 # New local sockets waiting to finish their SOCKS negotiation.
@@ -207,31 +196,6 @@ locals = []
 local_for = {}
 remote_for = {}
 
-
-def handle_policy_request(fd):
-    """Returns True iff the socket is still open and usable (wasn't a
-    crossdomain request and wasn't closed."""
-    log(u"handle_policy_request")
-    try:
-        addr = fd.getpeername()
-        data = fd.recv(100)
-    except socket.error, e:
-        log(u"Socket error from crossdomain-pending: %s" % repr(str(e)))
-        return False
-    if data == "<policy-file-request/>\0":
-        log(u"Sending crossdomain policy to %s." % format_addr(addr))
-        fd.sendall("""
-<cross-domain-policy>
-<allow-access-from domain="*" to-ports="%s"/>
-</cross-domain-policy>
-\0""" % xml.sax.saxutils.escape(str(options.remote_addr[1])))
-        return False
-    elif data == "":
-        log(u"No data from %s." % format_addr(addr))
-        return False
-    else:
-        fd.buf += data
-        return True
 
 def grab_string(s, pos):
     """Grab a NUL-terminated string from the given string, starting at the given
@@ -377,27 +341,19 @@ register()
 
 def main():
     while True:
-        rset = [remote_s, local_s] + crossdomain_pending + socks_pending + remote_for.keys() + local_for.keys() + locals + remotes
-        rset, _, _ = select.select(rset, [], [], CROSSDOMAIN_TIMEOUT)
+        rset = [remote_s, local_s] + socks_pending + remote_for.keys() + local_for.keys() + locals + remotes
+        rset, _, _ = select.select(rset, [], [])
         for fd in rset:
             if fd == remote_s:
                 remote_c, addr = fd.accept()
                 log(u"Remote connection from %s." % format_addr(addr))
-                crossdomain_pending.append(BufferSocket(remote_c))
+                remotes.append(fd)
+                handle_remote_connection(fd)
             elif fd == local_s:
                 local_c, addr = fd.accept()
                 log(u"Local connection from %s." % format_addr(addr))
                 socks_pending.append(local_c)
                 register()
-            elif fd in crossdomain_pending:
-                log(u"Data from crossdomain-pending %s." % format_addr(addr))
-                if handle_policy_request(fd):
-                    remotes.append(fd)
-                    handle_remote_connection(fd)
-                else:
-                    fd.close()
-                crossdomain_pending.remove(fd)
-                report_pending()
             elif fd in socks_pending:
                 log(u"SOCKS request from %s." % format_addr(addr))
                 if handle_socks_request(fd):
@@ -428,15 +384,6 @@ def main():
                     remotes.remove(fd)
                 report_pending()
             match_proxies()
-        while crossdomain_pending:
-            pending = crossdomain_pending[0]
-            if not pending.is_expired(CROSSDOMAIN_TIMEOUT):
-                break
-            log(u"Expired pending crossdomain from %s." % format_peername(pending))
-            crossdomain_pending.pop(0)
-            remotes.append(pending)
-            handle_remote_connection(pending)
-            report_pending()
 
 try:
     main()
