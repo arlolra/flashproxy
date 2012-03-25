@@ -9,8 +9,7 @@ There are five main parts. Our terminology for each part is in quotes.
 1. The Tor "client," running on someone's localhost.
 2. A "connector," which waits for connections from the flash proxy and
    the Tor client, and joins them together.
-3. A "flash proxy," running in someone's web browser. This piece is
-   called swfcat because it is like a netcat implemented in Flash.
+3. A "flash proxy," an application running in someone's web browser.
 4. A "facilitator," a pseudo-HTTP server that keeps a list of clients
    that want a connection, and hands them out to proxies.
 5. A Tor "relay," which is just a normal Tor relay.
@@ -129,29 +128,6 @@ Paste in this HTML where you want the badge to appear:
 == For developers
 
 See design.txt for some more technical information.
-
-=== Building swfcat.swf
-
-Download the Flex SDK. You only need the "Open Source Flex SDK," not the
-"Adobe Flex SDK."
-	http://opensource.adobe.com/wiki/display/flexsdk/Flex+SDK
-Put its bin directory in your PATH. The important executable is mxmlc.
-
-To build, run
-	$ make
-Copy the resulting swfcat.swf file to a web server.
-
-You can pass swfcat.swf the parameter debug=1 to see lots of debugging
-information.
-
-Adobe makes a debug version of Flash player that raises a window on
-errors instead of silently failing, and exposes some logging functions.
-	http://www.adobe.com/support/flashplayer/downloads.html
-
-This is a good tutorial on ActionScript programming with the Flex tools,
-with sample code:
-	http://www.senocular.com/flash/tutorials/as3withmxmlc/
-	http://www.senocular.com/flash/tutorials/as3withmxmlc/AS3Flex2b3StarterFiles.zip
 
 === Running a relay or facilitator
 
