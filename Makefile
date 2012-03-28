@@ -20,6 +20,7 @@ clean:
 	rm -f $(TARGETS)
 
 test:
+	./connector-test.py
 	./flashproxy-test.js
 
 .PHONY: all clean test

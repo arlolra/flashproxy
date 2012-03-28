@@ -130,6 +130,159 @@ class BufferSocket(object):
     def is_expired(self, timeout):
         return time.time() - self.birthday > timeout
 
+
+class WebSocketFrame(object):
+    def __init__(self):
+        self.fin = False
+        self.opcode = None
+        self.payload = None
+
+    def is_control(self):
+        return (self.opcode & 0x08) != 0
+
+class WebSocketMessage(object):
+    def __init__(self):
+        self.opcode = None
+        self.payload = None
+
+    def is_control(self):
+        return (self.opcode & 0x08) != 0
+
+class WebSocketDecoder(object):
+    """RFC 6455 section 5 is about the WebSocket framing format."""
+    # Raise an exception rather than buffer anything arger than this.
+    MAX_MESSAGE_LENGTH = 1024 * 1024
+
+    class MaskingError(ValueError):
+        pass
+
+    def __init__(self, use_mask = False):
+        """use_mask should be True for server-to-client sockets, and False for
+        client-to-server sockets."""
+        self.use_mask = use_mask
+
+        # Per-frame state.
+        self.buf = ""
+
+        # Per-message state.
+        self.message_buf = ""
+        self.message_opcode = None
+
+    def feed(self, data):
+        self.buf += data
+
+    @staticmethod
+    def mask(payload, mask_key):
+        result = []
+        for i, c in enumerate(payload):
+            mc = chr(ord(payload[i]) ^ ord(mask_key[i%4]))
+            result.append(mc)
+        return "".join(result)
+
+    def read_frame(self):
+        """Read a frame from the internal buffer, if one is available. Returns a
+        WebSocketFrame object, or None if there are no complete frames to
+        read."""
+        # RFC 6255 section 5.2.
+        if len(self.buf) < 2:
+            return None
+        offset = 0
+        b0, b1 = struct.unpack_from(">BB", self.buf, offset)
+        offset += 2
+        fin = (b0 & 0x80) != 0
+        opcode = b0 & 0x0f
+        frame_masked = (b1 & 0x80) != 0
+        payload_len = b1 & 0x7f
+
+        if payload_len == 126:
+            if len(self.buf) < offset + 2:
+                return None
+            payload_len, = struct.unpack_from(">H", self.buf, offset)
+            offset += 2
+        elif payload_len == 127:
+            if len(self.buf) < offset + 8:
+                return None
+            payload_len, = struct.unpack_from(">Q", self.buf, offset)
+            offset += 8
+
+        if frame_masked:
+            if not self.use_mask:
+                # "A client MUST close a connection if it detects a masked
+                # frame."
+                raise self.MaskingError("Got masked payload from server")
+            if len(self.buf) < offset + 4:
+                return None
+            mask_key = self.buf[offset:offset+4]
+            offset += 4
+        else:
+            if self.use_mask:
+                # "The server MUST close the connection upon receiving a frame
+                # that is not masked."
+                raise self.MaskingError("Got unmasked payload from client")
+            mask_key = "\x00\x00\x00\x00"
+
+        if payload_len > self.MAX_MESSAGE_LENGTH:
+            raise ValueError("Refusing to buffer payload of %d bytes" % payload_len)
+
+        if len(self.buf) < offset + payload_len:
+            return None
+        payload = WebSocketDecoder.mask(self.buf[offset:offset+payload_len], mask_key)
+        self.buf = self.buf[offset+payload_len:]
+
+        frame = WebSocketFrame()
+        frame.fin = fin
+        frame.opcode = opcode
+        frame.payload = payload
+
+        return frame
+
+    def read_message(self):
+        """Read a complete message. If the opcode is 1, the payload is decoded
+        from a UTF-8 binary string to a unicode string. If a control frame is
+        read while another fragmented message is in progress, the control frame
+        is returned as a new message immediately. Returns None if there is no
+        complete frame to be read."""
+        # RFC 6455 section 5.4 is about fragmentation.
+        while True:
+            frame = self.read_frame()
+            if frame is None:
+                return None
+            # "Control frames (see Section 5.5) MAY be injected in the middle of
+            # a fragmented message. Control frames themselves MUST NOT be
+            # fragmented.
+            if frame.is_control():
+                if not frame.fin:
+                    raise ValueError("Control frame (opcode %d) has FIN bit clear" % frame.opcode)
+                message = WebSocketMessage()
+                message.opcode = frame.opcode
+                message.payload = frame.payload
+                return message
+
+            if self.message_opcode is None:
+                if frame.opcode == 0:
+                    raise ValueError("First frame has opcode 0")
+                self.message_opcode = frame.opcode
+            else:
+                if frame.opcode != 0:
+                    raise ValueError("Non-first frame has nonzero opcode %d" % frame.opcode)
+            self.message_buf += frame.payload
+
+            if frame.fin:
+                break
+        message = WebSocketMessage()
+        message.opcode = self.message_opcode
+        message.payload = self.message_buf
+        self.postprocess_message(message)
+        self.message_opcode = None
+        self.message_buf = ""
+
+        return message
+
+    def postprocess_message(self, message):
+        if message.opcode == 1:
+            message.payload = message.payload.decode("utf-8")
+        return message
+
 def listen_socket(addr):
     """Return a nonblocking socket listening on the given address."""
     addrinfo = socket.getaddrinfo(addr[0], addr[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
