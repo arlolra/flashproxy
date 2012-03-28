@@ -131,6 +131,13 @@ class BufferSocket(object):
         return time.time() - self.birthday > timeout
 
 
+def apply_mask(payload, mask_key):
+    result = []
+    for i, c in enumerate(payload):
+        mc = chr(ord(payload[i]) ^ ord(mask_key[i%4]))
+        result.append(mc)
+    return "".join(result)
+
 class WebSocketFrame(object):
     def __init__(self):
         self.fin = False
@@ -170,14 +177,6 @@ class WebSocketDecoder(object):
 
     def feed(self, data):
         self.buf += data
-
-    @staticmethod
-    def mask(payload, mask_key):
-        result = []
-        for i, c in enumerate(payload):
-            mc = chr(ord(payload[i]) ^ ord(mask_key[i%4]))
-            result.append(mc)
-        return "".join(result)
 
     def read_frame(self):
         """Read a frame from the internal buffer, if one is available. Returns a
@@ -226,7 +225,7 @@ class WebSocketDecoder(object):
 
         if len(self.buf) < offset + payload_len:
             return None
-        payload = WebSocketDecoder.mask(self.buf[offset:offset+payload_len], mask_key)
+        payload = apply_mask(self.buf[offset:offset+payload_len], mask_key)
         self.buf = self.buf[offset+payload_len:]
 
         frame = WebSocketFrame()
@@ -282,6 +281,40 @@ class WebSocketDecoder(object):
         if message.opcode == 1:
             message.payload = message.payload.decode("utf-8")
         return message
+
+class WebSocketEncoder(object):
+    def __init__(self, use_mask = False):
+        self.use_mask = use_mask
+
+    def encode_frame(self, opcode, payload):
+        if opcode >= 16:
+            raise ValueError("Opcode of %d is >= 16" % opcode)
+        length = len(payload)
+
+        if self.use_mask:
+            mask_key = os.urandom(4)
+            payload = apply_mask(payload, mask_key)
+            mask_bit = 0x80
+        else:
+            mask_key = ""
+            mask_bit = 0x00
+
+        if length < 126:
+            len_b, len_ext = length, ""
+        elif length < 0x10000:
+            len_b, len_ext = 126, struct.pack(">H", length)
+        elif length < 0x10000000000000000:
+            len_b, len_ext = 127, struct.pack(">Q", length)
+        else:
+            raise ValueError("payload length of %d is too long" % length)
+
+        return chr(0x80 | opcode) + chr(mask_bit | len_b) + len_ext + mask_key + payload
+
+    def encode_message(self, opcode, payload):
+        if opcode == 1:
+            payload = payload.encode("utf-8")
+        return self.encode_frame(opcode, payload)
+
 
 def listen_socket(addr):
     """Return a nonblocking socket listening on the given address."""

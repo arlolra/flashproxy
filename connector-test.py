@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from connector import WebSocketDecoder
+from connector import WebSocketDecoder, WebSocketEncoder
 
 def read_frames(dec):
     frames = []
@@ -146,6 +146,32 @@ class TestWebSocketDecoder(unittest.TestCase):
         dec = WebSocketDecoder()
         dec.feed("\x82\x7f\x00\x00\x00\x00\x01\x00\x00\x00")
         self.assertRaises(ValueError, dec.read_frame)
+
+class TestWebSocketEncoder(unittest.TestCase):
+    def test_length(self):
+        """Test that payload lengths are encoded using the smallest number of
+        bytes."""
+        TESTS = [(0, 0), (125, 0), (126, 2), (65535, 2), (65536, 8)]
+        for length, encoded_length in TESTS:
+            enc = WebSocketEncoder(use_mask = False)
+            eframe = enc.encode_frame(2, "\x00" * length)
+            self.assertEqual(len(eframe), 1 + 1 + encoded_length + length)
+            enc = WebSocketEncoder(use_mask = True)
+            eframe = enc.encode_frame(2, "\x00" * length)
+            self.assertEqual(len(eframe), 1 + 1 + encoded_length + 4 + length)
+
+    def test_roundtrip(self):
+        TESTS = [
+            (1, u"Hello world"),
+            (1, u"Hello \N{WHITE SMILING FACE}"),
+        ]
+        for opcode, payload in TESTS:
+            for use_mask in (False, True):
+                enc = WebSocketEncoder(use_mask = use_mask)
+                enc_message = enc.encode_message(opcode, payload)
+                dec = WebSocketDecoder(use_mask = use_mask)
+                dec.feed(enc_message)
+                self.assertEqual(read_messages(dec), [(opcode, payload)])
 
 if __name__ == "__main__":
     unittest.main()
