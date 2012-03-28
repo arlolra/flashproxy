@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import base64
+import cStringIO
 import getopt
+import hashlib
 import httplib
 import os
 import re
@@ -13,6 +15,7 @@ import time
 import traceback
 import urllib
 import xml.sax.saxutils
+import BaseHTTPServer
 
 DEFAULT_REMOTE_ADDRESS = "0.0.0.0"
 DEFAULT_REMOTE_PORT = 9000
@@ -379,6 +382,121 @@ def format_peername(s):
         return "<unconnected>"
 
 
+class WebSocketRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    def __init__(self, request_text, fd):
+        self.rfile = cStringIO.StringIO(request_text)
+        self.wfile = fd.makefile()
+        self.error = False
+        self.raw_requestline = self.rfile.readline()
+        self.parse_request()
+
+    def log_message(self, *args):
+        pass
+
+    def send_error(self, code, message = None):
+        BaseHTTPServer.BaseHTTPRequestHandler.send_error(self, code, message)
+        self.error = True
+
+MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
+def handle_websocket_request(fd):
+    log(u"handle_websocket_request")
+    request_text = fd.recv(10 * 1024)
+    handler = WebSocketRequestHandler(request_text, fd)
+    method = handler.command
+    path = handler.path
+    headers = handler.headers
+
+    # See RFC 6455 section 4.2.1 for this sequence of checks.
+    #
+    # 1. An HTTP/1.1 or higher GET request, including a "Request-URI"...
+    if method != "GET":
+        handler.send_error(405)
+        return None
+    if path != "/":
+        handler.send_error(404)
+        return None
+
+    # 2. A |Host| header field containing the server's authority.
+    # We deliberately skip this test.
+
+    # 3. An |Upgrade| header field containing the value "websocket", treated as
+    # an ASCII case-insensitive value.
+    if "websocket" not in [x.strip().lower() for x in headers.get("upgrade").split(",")]:
+        handler.send_error(400)
+        return None
+
+    # 4. A |Connection| header field that includes the token "Upgrade", treated
+    # as an ASCII case-insensitive value.
+    if "upgrade" not in [x.strip().lower() for x in headers.get("connection").split(",")]:
+        handler.send_error(400)
+        return None
+
+    # 5. A |Sec-WebSocket-Key| header field with a base64-encoded value that,
+    # when decoded, is 16 bytes in length.
+    try:
+        key = headers.get("sec-websocket-key")
+        if len(base64.b64decode(key)) != 16:
+            raise TypeError("Sec-WebSocket-Key must be 16 bytes")
+    except TypeError:
+        handler.send_error(400)
+        return None
+
+    # 6. A |Sec-WebSocket-Version| header field, with a value of 13. We also
+    # allow 8 from draft-ietf-hybi-thewebsocketprotocol-10.
+    version = headers.get("sec-websocket-version")
+    KNOWN_VERSIONS = ["8", "13"]
+    if version not in KNOWN_VERSIONS:
+        # "If this version does not match a version understood by the server,
+        # the server MUST abort the WebSocket handshake described in this
+        # section and instead send an appropriate HTTP error code (such as 426
+        # Upgrade Required) and a |Sec-WebSocket-Version| header field
+        # indicating the version(s) the server is capable of understanding."
+        handler.send_response(426)
+        handler.send_header("Sec-WebSocket-Version", ", ".join(KNOWN_VERSIONS))
+        handler.end_headers()
+        return None
+
+    # 7. Optionally, an |Origin| header field.
+
+    # 8. Optionally, a |Sec-WebSocket-Protocol| header field, with a list of
+    # values indicating which protocols the client would like to speak, ordered
+    # by preference.
+    protocols_str = headers.get("sec-websocket-protocol")
+    if protocols_str is None:
+        protocols = []
+    else:
+        protocols = [x.strip().lower() for x in protocols_str.split(",")]
+
+    # 9. Optionally, a |Sec-WebSocket-Extensions| header field...
+
+    # 10. Optionally, other header fields...
+
+    # See RFC 6455 section 4.2.2, item 5 for these steps.
+
+    # 1. A Status-Line with a 101 response code as per RFC 2616.
+    handler.send_response(101)
+    # 2. An |Upgrade| header field with value "websocket" as per RFC 2616.
+    handler.send_header("Upgrade", "websocket")
+    # 3. A |Connection| header field with value "Upgrade".
+    handler.send_header("Connection", "Upgrade")
+    # 4. A |Sec-WebSocket-Accept| header field.  The value of this header field
+    # is constructed by concatenating /key/, defined above in step 4 in Section
+    # 4.2.2, with the string "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", taking the
+    # SHA-1 hash of this concatenated value to obtain a 20-byte value and
+    # base64-encoding (see Section 4 of [RFC4648]) this 20-byte hash.
+    accept_key = base64.b64encode(hashlib.sha1(key + MAGIC_GUID).digest())
+    handler.send_header("Sec-WebSocket-Accept", accept_key)
+    # 5.  Optionally, a |Sec-WebSocket-Protocol| header field, with a value
+    # /subprotocol/ as defined in step 4 in Section 4.2.2.
+    if "base64" in protocols:
+        handler.send_header("Sec-WebSocket-Protocol", "base64")
+    # 6.  Optionally, a |Sec-WebSocket-Extensions| header field...
+
+    handler.end_headers()
+
+    return protocols
+
 def grab_string(s, pos):
     """Grab a NUL-terminated string from the given string, starting at the given
     offset. Return (pos, str) tuple, or (pos, None) on error."""
@@ -511,20 +629,28 @@ def match_proxies():
 
 def main():
     while True:
-        rset = [remote_s, local_s] + socks_pending + remote_for.keys() + local_for.keys() + locals + remotes
+        rset = [remote_s, local_s] + websocket_pending + socks_pending + remote_for.keys() + local_for.keys() + locals + remotes
         rset, _, _ = select.select(rset, [], [])
         for fd in rset:
             if fd == remote_s:
                 remote_c, addr = fd.accept()
                 log(u"Remote connection from %s." % format_addr(addr))
-                remotes.append(BufferSocket(remote_c))
-                handle_remote_connection(remote_c)
-                report_pending()
+                websocket_pending.append(BufferSocket(remote_c))
             elif fd == local_s:
                 local_c, addr = fd.accept()
                 log(u"Local connection from %s." % format_addr(addr))
                 socks_pending.append(local_c)
                 register()
+            elif fd in websocket_pending:
+                log(u"Data from WebSocket-pending %s." % format_addr(addr))
+                protocols = handle_websocket_request(fd)
+                if protocols is not None:
+                    remotes.append(fd)
+                    handle_remote_connection(fd)
+                else:
+                    fd.close()
+                websocket_pending.remove(fd)
+                report_pending()
             elif fd in socks_pending:
                 log(u"SOCKS request from %s." % format_addr(addr))
                 if handle_socks_request(fd):
@@ -596,6 +722,8 @@ if __name__ == "__main__":
     # Remote socket, accepting remote WebSocket connections from proxies.
     remote_s = listen_socket(options.remote_addr)
 
+    # New remote sockets waiting to finish their WebSocket negotiation.
+    websocket_pending = []
     # Remote connection sockets.
     remotes = []
     # New local sockets waiting to finish their SOCKS negotiation.
