@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import base64
 import getopt
 import httplib
 import os
@@ -314,6 +315,51 @@ class WebSocketEncoder(object):
         if opcode == 1:
             payload = payload.encode("utf-8")
         return self.encode_frame(opcode, payload)
+
+# WebSocket implementations generally support text (opcode 1) messages, which
+# are UTF-8-encoded text. Not all support binary (opcode 2) messages. During the
+# WebSocket handshake, we use the "base64" value of the Sec-WebSocket-Protocol
+# header field to indicate that text frames should encoded UTF-8-encoded
+# base64-encoded binary data. Binary messages are always interpreted verbatim,
+# but text messages are rejected if "base64" was not negotiated.
+#
+# The idea here is that browsers that know they don't support binary messages
+# can negotiate "base64" with both endpoints and still reliably transport binary
+# data. Those that know they can support binary messages can just use binary
+# messages in the straightforward way.
+
+class WebSocketBinaryDecoder(object):
+    def __init__(self, protocols, use_mask = False):
+        self.dec = WebSocketDecoder(use_mask)
+        self.base64 = "base64" in protocols
+
+    def feed(self, data):
+        self.dec.feed(data)
+
+    def read(self):
+        while True:
+            message = self.dec.read_message()
+            if message is None:
+                return None
+            elif message.opcode == 1:
+                if not self.base64:
+                    raise ValueError("Received text message on decoder incapable of base64")
+                return base64.b64decode(message.payload)
+            elif message.opcode == 2:
+                return message.payload
+            # Ignore all other opcodes.
+        return None
+
+class WebSocketBinaryEncoder(object):
+    def __init__(self, protocols, use_mask = False):
+        self.enc = WebSocketEncoder(use_mask)
+        self.base64 = "base64" in protocols
+
+    def encode(self, data):
+        if self.base64:
+            return self.enc.encode_message(1, base64.b64encode(data))
+        else:
+            return self.enc.encode_message(2, data)
 
 
 def listen_socket(addr):
