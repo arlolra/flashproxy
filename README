@@ -58,14 +58,16 @@ only communication your computer makes with a fixed IP address is
 registration with the facilitator: everything else happens over
 ephemeral proxies.
 
-1. Run the connector and instruct it to register with a public
-   facilitator.
-	$ python connector.py -f tor-facilitator.bamsoftware.com
+1. Run the connector.
+	$ python connector.py
+   Register with a public facilitator.
+	$ python flashproxy-reg-http.py
    By default the connector listens on Internet-facing TCP port 9000. If
    you have to use a different port (to get through a firewall, for
-   example), give it on the command line like this (here using port
+   example), give it on the command lines like this (here using port
    8888):
-	$ python connector.py -f tor-facilitator.bamsoftware.com :9001 :8888
+	$ python connector.py 127.0.0.1:9001 :8888
+	$ python flashproxy-reg-http.py -a :8888
 2. Run Tor using the included torrc file.
 	$ tor -f flashproxy/torrc
 

@@ -4,7 +4,6 @@ import base64
 import cStringIO
 import getopt
 import hashlib
-import httplib
 import os
 import re
 import select
@@ -21,14 +20,12 @@ DEFAULT_REMOTE_ADDRESS = "0.0.0.0"
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_LOCAL_ADDRESS = "127.0.0.1"
 DEFAULT_LOCAL_PORT = 9001
-DEFAULT_FACILITATOR_PORT = 9002
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class options(object):
     local_addr = None
     remote_addr = None
-    facilitator_addr = None
 
     log_filename = None
     log_file = sys.stdout
@@ -41,7 +38,7 @@ UNCONNECTED_BUFFER_LIMIT = 10240
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %(progname)s -f FACILITATOR[:PORT] [LOCAL][:PORT] [REMOTE][:PORT]
+Usage: %(progname)s [LOCAL][:PORT] [REMOTE][:PORT]
 Wait for connections on a local and a remote port. When any pair of connections
 exists, data is ferried between them until one side is closed. By default
 LOCAL is "%(local)s" and REMOTE is "%(remote)s".
@@ -49,12 +46,7 @@ LOCAL is "%(local)s" and REMOTE is "%(remote)s".
 The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
 request are ignored and the local connection is always linked to a remote
 connection.
-
-If the -f option is given, then the REMOTE address is advertised to the given
-FACILITATOR.
   --daemon                       daemonize (Unix only).
-  -f, --facilitator=HOST[:PORT]  advertise willingness to receive connections to
-                                   HOST:PORT. By default PORT is %(fac_port)d.
   -h, --help                     show this help.
   -l, --log FILENAME             write log to FILENAME (default stdout).
       --pidfile FILENAME         write PID to FILENAME after daemonizing.\
@@ -62,7 +54,6 @@ FACILITATOR.
     "progname": sys.argv[0],
     "local": format_addr((DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)),
     "remote": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
-    "fac_port": DEFAULT_FACILITATOR_PORT,
 }
 
 def log(msg):
@@ -556,22 +547,12 @@ def handle_remote_connection(fd):
 
 def handle_local_connection(fd):
     log(u"handle_local_connection")
-    register()
     match_proxies()
 
 def report_pending():
     log(u"locals  (%d): %s" % (len(locals), [format_peername(x) for x in locals]))
     log(u"remotes (%d): %s" % (len(remotes), [format_peername(x) for x in remotes]))
 
-def register():
-    if options.facilitator_addr is None:
-        return False
-    spec = format_addr((None, options.remote_addr[1]))
-    log(u"Registering \"%s\" with %s." % (spec, format_addr(options.facilitator_addr)))
-    http = httplib.HTTPConnection(*options.facilitator_addr)
-    http.request("POST", "/", urllib.urlencode({"client": spec}))
-    http.close()
-    return True
 
 def proxy_chunk(fd_r, fd_w, label):
     try:
@@ -640,7 +621,6 @@ def main():
                 local_c, addr = fd.accept()
                 log(u"Local connection from %s." % format_addr(addr))
                 socks_pending.append(local_c)
-                register()
             elif fd in websocket_pending:
                 log(u"Data from WebSocket-pending %s." % format_addr(addr))
                 protocols = handle_websocket_request(fd)
@@ -665,13 +645,11 @@ def main():
                 if not proxy_chunk(fd, local, "remote"):
                     del local_for[fd]
                     del remote_for[local]
-                    register()
             elif fd in remote_for:
                 remote = remote_for[fd]
                 if not proxy_chunk(fd, remote, "local"):
                     del remote_for[fd]
                     del local_for[remote]
-                    register()
             elif fd in locals:
                 if not receive_unlinked(fd, "local"):
                     locals.remove(fd)
@@ -683,12 +661,10 @@ def main():
             match_proxies()
 
 if __name__ == "__main__":
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:", ["daemon", "facilitator=", "help", "log=", "pidfile="])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "hl:", ["daemon", "help", "log=", "pidfile="])
     for o, a in opts:
         if o == "--daemon":
             options.daemonize = True
-        elif o == "-f" or o == "--facilitator":
-            options.facilitator_addr = parse_addr_spec(a, None, DEFAULT_FACILITATOR_PORT)
         elif o == "-h" or o == "--help":
             usage()
             sys.exit()
@@ -734,8 +710,6 @@ if __name__ == "__main__":
     # Bidirectional mapping between local sockets and remote sockets.
     local_for = {}
     remote_for = {}
-
-    register()
 
     if options.daemonize:
         log(u"Daemonizing.")
