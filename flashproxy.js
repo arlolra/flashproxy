@@ -2,9 +2,19 @@
  * For example:
  *   http://www.example.com/embed.html?facilitator=127.0.0.1:9002&debug=1
  *
+ * client=<HOST>:<PORT>
+ * The address of the client to connect to. The proxy normally receives this
+ * information from the facilitator. When this option is used, the facilitator
+ * query is not done. The "relay" parameter must be given as well.
+ *
  * facilitator=<HOST>:<PORT>
  * The address of the facilitator to use. By default it is
  * DEFAULT_FACILITATOR_ADDR. Both <HOST> and <PORT> must be present.
+ *
+ * relay=<HOST>:<PORT>
+ * The address of the relay to connect to. The proxy normally receives this
+ * information from the facilitator. When this option is used, the facilitator
+ * query is not done. The "client" parameter must be given as well.
  */
 
 var DEFAULT_FACILITATOR_ADDR = {
@@ -112,6 +122,8 @@ function FlashProxy()
     this.start = function() {
         var query;
         var fac_addr;
+        var client_addr;
+        var relay_addr;
 
         query = parse_query_string(window.location.search.substr(1));
 
@@ -120,8 +132,19 @@ function FlashProxy()
             this.puts("Error: Facilitator spec must be in the form \"host:port\".");
             return;
         }
-
-        this.proxy_main(fac_addr);
+        client_addr = get_query_param_addr(query, "client");
+        relay_addr = get_query_param_addr(query, "relay");
+        if (client_addr !== undefined && relay_addr !== undefined) {
+            this.make_proxy_pair(client_addr, relay_addr);
+        } else if (client_addr !== undefined) {
+            this.puts("Error: the \"client\" parameter requires \"relay\" also.")
+            return;
+        } else if (relay_addr !== undefined) {
+            this.puts("Error: the \"relay\" parameter requires \"client\" also.")
+            return;
+        } else {
+            this.proxy_main(fac_addr);
+        }
     };
 
     this.proxy_main = function(fac_addr) {
