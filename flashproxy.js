@@ -99,6 +99,16 @@ function format_addr(addr)
     return addr.host + ":" + addr.port;
 }
 
+function make_websocket(addr)
+{
+    var url;
+
+    url = "ws://" + encodeURIComponent(addr.host)
+            + ":" + encodeURIComponent(addr.port) + "/";
+
+    return (window.WebSocket || window.MozWebSocket)(url, "base64");
+}
+
 function FlashProxy()
 {
     var debug_div = document.createElement("pre");
