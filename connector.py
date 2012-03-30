@@ -358,6 +358,9 @@ def format_peername(s):
     except socket.error, e:
         return "<unconnected>"
 
+# How long to wait for a WebSocket request on the remote socket. It is limited
+# to avoid Slowloris-like attacks.
+WEBSOCKET_REQUEST_TIMEOUT = 2.0
 
 class WebSocketRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def __init__(self, request_text, fd):
@@ -601,6 +604,17 @@ def match_proxies():
         if remote.buf:
             local.send_chunk(remote.buf)
 
+class TimeoutSocket(object):
+    def __init__(self, fd):
+        self.fd = fd
+        self.birthday = time.time()
+
+    def age(self):
+        return time.time() - self.birthday
+
+    def __getattr__(self, name):
+        return getattr(self.fd, name)
+
 class RemoteSocket(object):
     def __init__(self, fd, protocols):
         self.fd = fd
@@ -635,12 +649,12 @@ class LocalSocket(object):
 def main():
     while True:
         rset = [remote_s, local_s] + websocket_pending + socks_pending + locals + remotes
-        rset, _, _ = select.select(rset, [], [])
+        rset, _, _ = select.select(rset, [], [], WEBSOCKET_REQUEST_TIMEOUT)
         for fd in rset:
             if fd == remote_s:
                 remote_c, addr = fd.accept()
                 log(u"Remote connection from %s." % format_addr(addr))
-                websocket_pending.append(remote_c)
+                websocket_pending.append(TimeoutSocket(remote_c))
             elif fd == local_s:
                 local_c, addr = fd.accept()
                 log(u"Local connection from %s." % format_addr(addr))
@@ -687,6 +701,14 @@ def main():
                         locals.remove(fd)
                     report_pending()
             match_proxies()
+        while websocket_pending:
+            pending = websocket_pending[0]
+            if pending.age() < WEBSOCKET_REQUEST_TIMEOUT:
+                break
+            log(u"Expired remote connection from %s." % format_peername(pending))
+            pending.close()
+            websocket_pending.pop(0)
+            report_pending()
 
 if __name__ == "__main__":
     opts, args = getopt.gnu_getopt(sys.argv[1:], "hl:", ["daemon", "help", "log=", "pidfile="])
