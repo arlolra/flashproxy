@@ -130,6 +130,8 @@ function FlashProxy()
         when: function() { return 0; }
     };
 
+    this.proxy_pairs = [];
+
     this.badge_elem = debug_div;
     this.badge_elem.setAttribute("id", "flashproxy-badge");
 
@@ -227,8 +229,134 @@ function FlashProxy()
     };
 
     this.make_proxy_pair = function(client_addr, relay_addr) {
+        var proxy_pair;
+
         puts("make_proxy_pair");
+
+        proxy_pair = new ProxyPair(client_addr, relay_addr);
+        this.proxy_pairs.push(proxy_pair);
+        proxy_pair.connect();
     };
+
+    /* An instance of a client-relay connection. */
+    function ProxyPair(client_addr, relay_addr)
+    {
+        function log(s)
+        {
+            puts(s)
+        }
+
+        this.client_addr = client_addr;
+        this.relay_addr = relay_addr;
+
+        this.c2r_schedule = [];
+        this.r2c_schedule = [];
+
+        this.flush_timeout_id = null;
+
+        /* Return a function that shows an error message and closes the other
+           half of a communication pair. */
+        this.make_onerror_callback = function(partner)
+        {
+            return function(event) {
+                var ws = event.target;
+
+                log(ws.label + ": error.");
+                partner.close();
+                // dispatchEvent(new Event(Event.COMPLETE));
+            };
+        };
+
+        this.onopen_callback = function(event) {
+            var ws = event.target;
+
+            log(ws.label + ": connected.");
+        }.bind(this);
+
+        this.onclose_callback = function(event) {
+            var ws = event.target;
+
+            log(ws.label + ": closed.");
+            this.flush();
+        }.bind(this);
+
+        this.onmessage_client_to_relay = function(event) {
+            this.c2r_schedule.push(event.data);
+            this.flush();
+        }.bind(this);
+
+        this.onmessage_relay_to_client = function(event) {
+            this.r2c_schedule.push(event.data);
+            this.flush();
+        }.bind(this);
+
+        this.connect = function() {
+            log("Client: connecting.");
+            this.client_s = make_websocket(this.client_addr);
+
+            log("Relay: connecting.");
+            this.relay_s = make_websocket(this.relay_addr);
+
+            this.client_s.label = "Client";
+            this.client_s.onopen = this.onopen_callback;
+            this.client_s.onclose = this.onclose_callback;
+            this.client_s.onerror = this.make_onerror_callback(this.relay_s);
+            this.client_s.onmessage = this.onmessage_client_to_relay;
+
+            this.relay_s.label = "Relay";
+            this.relay_s.onopen = this.onopen_callback;
+            this.relay_s.onclose = this.onclose_callback;
+            this.relay_s.onerror = this.make_onerror_callback(this.client_s);
+            this.relay_s.onmessage = this.onmessage_relay_to_client;
+        };
+
+        function is_open(ws)
+        {
+            return ws.readyState == ws.OPEN;
+        }
+
+        function is_closed(ws)
+        {
+            return ws.readyState == ws.CLOSED;
+        }
+
+        /* Send as much data as the rate limit currently allows. */
+        this.flush = function() {
+            var busy;
+
+            if (this.flush_timeout_id)
+                clearTimeout(this.flush_timeout_id);
+            this.flush_timeout_id = null;
+
+            busy = true;
+            while (busy && !rate_limit.is_limited()) {
+                busy = false;
+                if (is_open(this.client_s) && this.r2c_schedule.length > 0) {
+                    this.client_s.send(this.r2c_schedule.shift());
+                    busy = true;
+                }
+                if (is_open(this.relay_s) && this.c2r_schedule.length > 0) {
+                    this.relay_s.send(this.c2r_schedule.shift());
+                    busy = true;
+                }
+            }
+
+            if (is_closed(this.relay_s) && !is_closed(this.client_s) && this.r2c_schedule.length == 0) {
+                log("Client: closing.");
+                this.client_s.close();
+            }
+            if (is_closed(this.client_s) && !is_closed(this.relay_s) && this.c2r_schedule.length == 0) {
+                log("Relay: closing.");
+                this.relay_s.close();
+            }
+
+            if (is_closed(this.client_s) && is_closed(this.relay_s))
+                // dispatchEvent(new Event(Event.COMPLETE));
+                ;
+            else if (this.r2c_schedule.length > 0 || this.c2r_schedule.length > 0)
+                this.flush_timeout_id = setTimeout(this.flush, rate_limit.when() * 1000);
+        };
+    }
 }
 
 /* This is the non-functional badge that occupies space when
