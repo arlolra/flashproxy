@@ -235,6 +235,11 @@ function FlashProxy()
 
         proxy_pair = new ProxyPair(client_addr, relay_addr);
         this.proxy_pairs.push(proxy_pair);
+        proxy_pair.complete_callback = function(event) {
+            puts("Complete.");
+            /* Delete from the list of active proxy pairs. */
+            this.proxy_pairs.splice(this.proxy_pairs.indexOf(proxy_pair), 1);
+        }.bind(this);
         proxy_pair.connect();
     };
 
@@ -254,6 +259,10 @@ function FlashProxy()
 
         this.flush_timeout_id = null;
 
+        /* This callback function can be overridden by external callers. */
+        this.complete_callback = function() {
+        };
+
         /* Return a function that shows an error message and closes the other
            half of a communication pair. */
         this.make_onerror_callback = function(partner)
@@ -263,8 +272,7 @@ function FlashProxy()
 
                 log(ws.label + ": error.");
                 partner.close();
-                // dispatchEvent(new Event(Event.COMPLETE));
-            };
+            }.bind(this);
         };
 
         this.onopen_callback = function(event) {
@@ -278,6 +286,9 @@ function FlashProxy()
 
             log(ws.label + ": closed.");
             this.flush();
+
+            if (is_closed(this.client_s) && is_closed(this.relay_s))
+                this.complete_callback();
         }.bind(this);
 
         this.onmessage_client_to_relay = function(event) {
@@ -350,10 +361,7 @@ function FlashProxy()
                 this.relay_s.close();
             }
 
-            if (is_closed(this.client_s) && is_closed(this.relay_s))
-                // dispatchEvent(new Event(Event.COMPLETE));
-                ;
-            else if (this.r2c_schedule.length > 0 || this.c2r_schedule.length > 0)
+            if (this.r2c_schedule.length > 0 || this.c2r_schedule.length > 0)
                 this.flush_timeout_id = setTimeout(this.flush, rate_limit.when() * 1000);
         };
     }
