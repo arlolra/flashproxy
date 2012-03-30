@@ -161,7 +161,36 @@ function FlashProxy()
     };
 
     this.fac_complete = function(text) {
-        this.puts("Facilitator: got response \"" + text + "\".");
+        var response;
+        var client_addr;
+        var relay_addr;
+
+        response = parse_query_string(text);
+
+        if (!response.client) {
+            this.puts("No clients.");
+            return;
+        }
+        client_addr = parse_addr_spec(response.client);
+        if (client_addr === null) {
+            this.puts("Error: can't parse client spec " + repr(response.client) + ".");
+        }
+        if (!response.relay) {
+            this.puts("Error: missing relay in response.");
+            return;
+        }
+        relay_addr = parse_addr_spec(response.relay);
+        if (relay_addr === null) {
+            this.puts("Error: can't parse relay spec " + repr(response.relay) + ".");
+        }
+        puts("Facilitator: got client:" + repr(client_spec) + " "
+            + "relay:" + repr(relay_spec) + ".");
+
+        this.make_proxy_pair(client_addr, relay_addr);
+    };
+
+    this.make_proxy_pair = function(client_addr, relay_addr) {
+        this.puts("make_proxy_pair");
     };
 }
 
