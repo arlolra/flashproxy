@@ -689,7 +689,7 @@ def main():
                 else:
                     if not receive_unlinked(fd, "remote"):
                         remotes.remove(fd)
-                report_pending()
+                    report_pending()
             elif fd in locals:
                 remote = fd.partner
                 if remote:
