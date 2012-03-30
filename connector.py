@@ -541,14 +541,6 @@ def handle_socks_request(fd):
     # Note we throw away the requested address and port.
     return True
 
-def handle_remote_connection(fd):
-    log(u"handle_remote_connection")
-    match_proxies()
-
-def handle_local_connection(fd):
-    log(u"handle_local_connection")
-    match_proxies()
-
 def report_pending():
     log(u"locals  (%d): %s" % (len(locals), [format_peername(x) for x in locals]))
     log(u"remotes (%d): %s" % (len(remotes), [format_peername(x) for x in remotes]))
@@ -626,7 +618,6 @@ def main():
                 protocols = handle_websocket_request(fd)
                 if protocols is not None:
                     remotes.append(fd)
-                    handle_remote_connection(fd)
                 else:
                     fd.close()
                 websocket_pending.remove(fd)
@@ -635,7 +626,6 @@ def main():
                 log(u"SOCKS request from %s." % format_addr(addr))
                 if handle_socks_request(fd):
                     locals.append(BufferSocket(fd))
-                    handle_local_connection(fd)
                 else:
                     fd.close()
                 socks_pending.remove(fd)
