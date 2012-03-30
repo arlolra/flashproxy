@@ -7,6 +7,10 @@
  * information from the facilitator. When this option is used, the facilitator
  * query is not done. The "relay" parameter must be given as well.
  *
+ * debug=1
+ * If set (to any value), show verbose terminal-like output instead of the
+ * badge.
+ *
  * facilitator=<HOST>:<PORT>
  * The address of the facilitator to use. By default it is
  * DEFAULT_FACILITATOR_ADDR. Both <HOST> and <PORT> must be present.
@@ -111,8 +115,27 @@ function make_websocket(addr)
 
 function FlashProxy()
 {
-    var debug_div = document.createElement("pre");
-    debug_div.className = "debug";
+    var debug_div;
+
+    this.query = parse_query_string(window.location.search.substr(1));
+
+    if (this.query.debug) {
+        debug_div = document.createElement("pre");
+        debug_div.className = "debug";
+
+        this.badge_elem = debug_div;
+    } else {
+        var img;
+
+        debug_div = undefined;
+        img = document.createElement("img");
+        img.setAttribute("src", "https://crypto.stanford.edu/flashproxy/badge.png");
+        img.setAttribute("border", 0);
+
+        this.badge_elem = img;
+    }
+    this.badge_elem.setAttribute("id", "flashproxy-badge");
+
     function puts(s) {
         if (debug_div) {
             var at_bottom;
@@ -132,24 +155,18 @@ function FlashProxy()
 
     this.proxy_pairs = [];
 
-    this.badge_elem = debug_div;
-    this.badge_elem.setAttribute("id", "flashproxy-badge");
-
     this.start = function() {
-        var query;
         var fac_addr;
         var client_addr;
         var relay_addr;
 
-        query = parse_query_string(window.location.search.substr(1));
-
-        fac_addr = get_query_param_addr(query, "facilitator", DEFAULT_FACILITATOR_ADDR);
+        fac_addr = get_query_param_addr(this.query, "facilitator", DEFAULT_FACILITATOR_ADDR);
         if (!fac_addr) {
             puts("Error: Facilitator spec must be in the form \"host:port\".");
             return;
         }
-        client_addr = get_query_param_addr(query, "client");
-        relay_addr = get_query_param_addr(query, "relay");
+        client_addr = get_query_param_addr(this.query, "client");
+        relay_addr = get_query_param_addr(this.query, "relay");
         if (client_addr !== undefined && relay_addr !== undefined) {
             this.make_proxy_pair(client_addr, relay_addr);
         } else if (client_addr !== undefined) {
