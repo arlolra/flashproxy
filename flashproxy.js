@@ -103,11 +103,7 @@ function FlashProxy()
 {
     var debug_div = document.createElement("pre");
     debug_div.className = "debug";
-
-    this.badge_elem = debug_div;
-    this.badge_elem.setAttribute("id", "flashproxy-badge");
-
-    this.puts = function(s) {
+    function puts(s) {
         if (debug_div) {
             var at_bottom;
 
@@ -119,6 +115,9 @@ function FlashProxy()
         }
     };
 
+    this.badge_elem = debug_div;
+    this.badge_elem.setAttribute("id", "flashproxy-badge");
+
     this.start = function() {
         var query;
         var fac_addr;
@@ -129,7 +128,7 @@ function FlashProxy()
 
         fac_addr = get_query_param_addr(query, "facilitator", DEFAULT_FACILITATOR_ADDR);
         if (!fac_addr) {
-            this.puts("Error: Facilitator spec must be in the form \"host:port\".");
+            puts("Error: Facilitator spec must be in the form \"host:port\".");
             return;
         }
         client_addr = get_query_param_addr(query, "client");
@@ -137,10 +136,10 @@ function FlashProxy()
         if (client_addr !== undefined && relay_addr !== undefined) {
             this.make_proxy_pair(client_addr, relay_addr);
         } else if (client_addr !== undefined) {
-            this.puts("Error: the \"client\" parameter requires \"relay\" also.")
+            puts("Error: the \"client\" parameter requires \"relay\" also.")
             return;
         } else if (relay_addr !== undefined) {
-            this.puts("Error: the \"relay\" parameter requires \"client\" also.")
+            puts("Error: the \"relay\" parameter requires \"client\" also.")
             return;
         } else {
             this.proxy_main(fac_addr);
@@ -151,7 +150,7 @@ function FlashProxy()
         var fac_url;
         var xhr;
 
-        this.puts("Using facilitator " + format_addr(fac_addr) + ".");
+        puts("Using facilitator " + format_addr(fac_addr) + ".");
 
         fac_url = "http://" + encodeURIComponent(fac_addr.host)
             + ":" + encodeURIComponent(fac_addr.port) + "/";
@@ -164,7 +163,7 @@ function FlashProxy()
                it's trying to make the HTTP request. The exception message is
                like "Component returned failure code: 0x805e0006
                [nsIXMLHttpRequest.open]" on Firefox. */
-            this.puts("Facilitator: exception while connecting: " + repr(err.message) + ".");
+            puts("Facilitator: exception while connecting: " + repr(err.message) + ".");
             return;
         }
         xhr.responseType = "text";
@@ -174,12 +173,12 @@ function FlashProxy()
                 if (xhr.status == 200)
                     this.fac_complete(xhr.responseText);
                 else if (xhr.status == 0 && xhr.statusText == "")
-                    this.puts("Facilitator: same-origin error.");
+                    puts("Facilitator: same-origin error.");
                 else
-                    this.puts("Facilitator: can't connect: got status " + repr(xhr.status) + " and status text " + repr(xhr.statusText) + ".");
+                    puts("Facilitator: can't connect: got status " + repr(xhr.status) + " and status text " + repr(xhr.statusText) + ".");
             }
         }.bind(this);
-        this.puts("Facilitator: connecting to " + fac_url + ".");
+        puts("Facilitator: connecting to " + fac_url + ".");
         xhr.send(null);
     };
 
@@ -191,20 +190,20 @@ function FlashProxy()
         response = parse_query_string(text);
 
         if (!response.client) {
-            this.puts("No clients.");
+            puts("No clients.");
             return;
         }
         client_addr = parse_addr_spec(response.client);
         if (client_addr === null) {
-            this.puts("Error: can't parse client spec " + repr(response.client) + ".");
+            puts("Error: can't parse client spec " + repr(response.client) + ".");
         }
         if (!response.relay) {
-            this.puts("Error: missing relay in response.");
+            puts("Error: missing relay in response.");
             return;
         }
         relay_addr = parse_addr_spec(response.relay);
         if (relay_addr === null) {
-            this.puts("Error: can't parse relay spec " + repr(response.relay) + ".");
+            puts("Error: can't parse relay spec " + repr(response.relay) + ".");
         }
         puts("Facilitator: got client:" + repr(client_spec) + " "
             + "relay:" + repr(relay_spec) + ".");
@@ -213,7 +212,7 @@ function FlashProxy()
     };
 
     this.make_proxy_pair = function(client_addr, relay_addr) {
-        this.puts("make_proxy_pair");
+        puts("make_proxy_pair");
     };
 }
 
