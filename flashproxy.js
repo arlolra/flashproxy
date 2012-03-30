@@ -101,21 +101,21 @@ function format_addr(addr)
 
 function FlashProxy()
 {
-    this.debug_div = document.createElement("pre");
-    this.debug_div.className = "debug";
+    var debug_div = document.createElement("pre");
+    debug_div.className = "debug";
 
-    this.badge_elem = this.debug_div;
+    this.badge_elem = debug_div;
     this.badge_elem.setAttribute("id", "flashproxy-badge");
 
     this.puts = function(s) {
-        if (this.debug_div) {
+        if (debug_div) {
             var at_bottom;
 
             /* http://www.w3.org/TR/cssom-view/#element-scrolling-members */
-            at_bottom = (this.debug_div.scrollTop + this.debug_div.clientHeight == this.debug_div.scrollHeight);
-            this.debug_div.appendChild(document.createTextNode(s + "\n"));
+            at_bottom = (debug_div.scrollTop + debug_div.clientHeight == debug_div.scrollHeight);
+            debug_div.appendChild(document.createTextNode(s + "\n"));
             if (at_bottom)
-                this.debug_div.scrollTop = this.debug_div.scrollHeight;
+                debug_div.scrollTop = debug_div.scrollHeight;
         }
     };
 
