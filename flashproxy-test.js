@@ -3,6 +3,10 @@
 /* To run this test program, install the Rhino JavaScript interpreter
    (apt-get install rhino). */
 
+var VERBOSE = false;
+if ("-v" in arguments)
+    VERBOSE = true;
+
 var num_tests = 0;
 var num_failed = 0;
 
@@ -32,16 +36,19 @@ function objects_equal(a, b)
 var top = true;
 function announce(test_name)
 {
-    if (!top)
-        print();
+    if (VERBOSE) {
+        if (!top)
+            print();
+        print(test_name);
+    }
     top = false;
-    print(test_name);
 }
 
 function pass(test)
 {
     num_tests++;
-    print("PASS " + repr(test));
+    if (VERBOSE)
+        print("PASS " + repr(test));
 }
 
 function fail(test, expected, actual)
