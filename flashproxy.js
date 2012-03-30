@@ -125,6 +125,11 @@ function FlashProxy()
         }
     };
 
+    var rate_limit = {
+        is_limited: function() { return false; },
+        when: function() { return 0; }
+    };
+
     this.badge_elem = debug_div;
     this.badge_elem.setAttribute("id", "flashproxy-badge");
 
