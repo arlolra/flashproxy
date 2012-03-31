@@ -308,6 +308,7 @@ function FlashProxy()
         client_addr = parse_addr_spec(response.client);
         if (client_addr === null) {
             puts("Error: can't parse client spec " + repr(response.client) + ".");
+            return;
         }
         if (!response.relay) {
             puts("Error: missing relay in response.");
@@ -316,6 +317,7 @@ function FlashProxy()
         relay_addr = parse_addr_spec(response.relay);
         if (relay_addr === null) {
             puts("Error: can't parse relay spec " + repr(response.relay) + ".");
+            return;
         }
         puts("Facilitator: got client:" + repr(client_spec) + " "
             + "relay:" + repr(relay_spec) + ".");
