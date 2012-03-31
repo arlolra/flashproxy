@@ -689,6 +689,7 @@ def main():
                 else:
                     if not receive_unlinked(fd, "remote"):
                         remotes.remove(fd)
+                        unlinked_remotes.remove(fd)
                     report_pending()
             elif fd in locals:
                 remote = fd.partner
@@ -699,6 +700,7 @@ def main():
                 else:
                     if not receive_unlinked(fd, "local"):
                         locals.remove(fd)
+                        unlinked_locals.remove(fd)
                     report_pending()
             match_proxies()
         while websocket_pending:
