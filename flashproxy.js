@@ -29,6 +29,8 @@
  * query is not done. The "client" parameter must be given as well.
  */
 
+var FLASHPROXY_INFO_URL = "https://crypto.stanford.edu/flashproxy/";
+
 var DEFAULT_FACILITATOR_ADDR = {
     host: "tor-facilitator.bamsoftware.com",
     port: 9002
@@ -180,20 +182,13 @@ function FlashProxy()
 
     this.query = parse_query_string(window.location.search.substr(1));
 
+    this.badge = new Badge();
     if (this.query.debug) {
         debug_div = document.createElement("pre");
         debug_div.className = "debug";
-
         this.badge_elem = debug_div;
     } else {
-        var img;
-
-        debug_div = undefined;
-        img = document.createElement("img");
-        img.setAttribute("src", "https://crypto.stanford.edu/flashproxy/badge.png");
-        img.setAttribute("border", 0);
-
-        this.badge_elem = img;
+        this.badge_elem = this.badge.elem;
     }
     this.badge_elem.setAttribute("id", "flashproxy-badge");
 
@@ -333,8 +328,11 @@ function FlashProxy()
             puts("Complete.");
             /* Delete from the list of active proxy pairs. */
             this.proxy_pairs.splice(this.proxy_pairs.indexOf(proxy_pair), 1);
+            this.badge.proxy_end();
         }.bind(this);
         proxy_pair.connect();
+
+        this.badge.proxy_begin();
     };
 
     /* An instance of a client-relay connection. */
@@ -459,6 +457,68 @@ function FlashProxy()
                 this.flush_timeout_id = setTimeout(this.flush, rate_limit.when() * 1000);
         };
     }
+}
+
+var HTML_ESCAPES = {
+    "&": "amp",
+    "<": "lt",
+    ">": "gt",
+    "'": "apos",
+    "\"": "quot"
+};
+function escape_html(s)
+{
+    return s.replace(/&<>'"/, function(x) { return HTML_ESCAPES[x] });
+}
+
+/* The usual embedded HTML badge. The "elem" member is a DOM element that can be
+   included elsewhere. */
+function Badge()
+{
+    /* Number of proxy pairs currently connected. */
+    this.num_proxy_pairs = 0;
+    /* Number of proxy pairs ever connected. */
+    this.total_proxy_pairs = 0;
+
+    this.counter_text = document.createElement("p");
+
+    var div, subdiv, a, img;
+
+    div = document.createElement("div");
+
+    a = document.createElement("a");
+    a.setAttribute("href", FLASHPROXY_INFO_URL);
+
+    img = document.createElement("img");
+    img.setAttribute("src", "https://crypto.stanford.edu/flashproxy/badge.png");
+
+    subdiv = document.createElement("div");
+
+    this.counter_text = document.createElement("p");
+
+    div.appendChild(a);
+    a.appendChild(img);
+    div.appendChild(subdiv)
+    subdiv.appendChild(this.counter_text);
+
+    this.elem = div;
+
+    this.proxy_begin = function() {
+        this.num_proxy_pairs++;
+        this.total_proxy_pairs++;
+        this.refresh();
+    };
+
+    this.proxy_end = function() {
+        this.num_proxy_pairs--;
+        this.refresh();
+    }
+
+    this.refresh = function() {
+        this.counter_text.innerHTML = escape_html(String(this.num_proxy_pairs));
+    };
+
+    this.refresh();
 }
 
 /* This is the non-functional badge that occupies space when
