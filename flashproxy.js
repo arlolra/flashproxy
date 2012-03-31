@@ -217,12 +217,11 @@ function FlashProxy()
     this.proxy_pairs = [];
 
     this.start = function() {
-        var fac_addr;
         var client_addr;
         var relay_addr;
 
-        fac_addr = get_query_param_addr(this.query, "facilitator", DEFAULT_FACILITATOR_ADDR);
-        if (!fac_addr) {
+        this.fac_addr = get_query_param_addr(this.query, "facilitator", DEFAULT_FACILITATOR_ADDR);
+        if (!this.fac_addr) {
             puts("Error: Facilitator spec must be in the form \"host:port\".");
             return;
         }
@@ -250,18 +249,21 @@ function FlashProxy()
             puts("Error: the \"relay\" parameter requires \"client\" also.")
             return;
         } else {
-            this.proxy_main(fac_addr);
+            this.proxy_main();
         }
     };
 
-    this.proxy_main = function(fac_addr) {
+    this.proxy_main = function() {
         var fac_url;
         var xhr;
 
-        puts("Using facilitator " + format_addr(fac_addr) + ".");
+        if (this.proxy_pairs.length >= this.max_num_proxy_pairs) {
+            setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval);
+            return;
+        }
 
-        fac_url = "http://" + encodeURIComponent(fac_addr.host)
-            + ":" + encodeURIComponent(fac_addr.port) + "/";
+        fac_url = "http://" + encodeURIComponent(this.fac_addr.host)
+            + ":" + encodeURIComponent(this.fac_addr.port) + "/";
         xhr = new XMLHttpRequest();
         try {
             xhr.open("GET", fac_url);
@@ -293,6 +295,8 @@ function FlashProxy()
         var response;
         var client_addr;
         var relay_addr;
+
+        setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval * 1000);
 
         response = parse_query_string(text);
 
