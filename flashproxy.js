@@ -218,18 +218,21 @@ function FlashProxy()
         this.fac_addr = get_query_param_addr(this.query, "facilitator", DEFAULT_FACILITATOR_ADDR);
         if (!this.fac_addr) {
             puts("Error: Facilitator spec must be in the form \"host:port\".");
+            this.die();
             return;
         }
 
         this.max_num_proxy_pairs = get_query_param_integer(this.query, "max_clients", DEFAULT_MAX_NUM_PROXY_PAIRS);
         if (this.max_num_proxy_pairs == null || this.max_num_proxy_pairs < 0) {
             puts("Error: max_clients must be a nonnegative integer.");
+            this.die();
             return;
         }
 
         this.facilitator_poll_interval = get_query_param_timespec(this.query, "facilitator_poll_interval", DEFAULT_FACILITATOR_POLL_INTERVAL);
         if (this.facilitator_poll_interval == null || this.facilitator_poll_interval < MIN_FACILITATOR_POLL_INTERVAL) {
             puts("Error: facilitator_poll_interval must be a nonnegative number at least " + MIN_FACILITATOR_POLL_INTERVAL + ".");
+            this.die();
             return;
         }
 
@@ -239,9 +242,11 @@ function FlashProxy()
             this.make_proxy_pair(client_addr, relay_addr);
         } else if (client_addr !== undefined) {
             puts("Error: the \"client\" parameter requires \"relay\" also.")
+            this.die();
             return;
         } else if (relay_addr !== undefined) {
             puts("Error: the \"relay\" parameter requires \"client\" also.")
+            this.die();
             return;
         } else {
             this.proxy_main();
@@ -269,6 +274,7 @@ function FlashProxy()
                like "Component returned failure code: 0x805e0006
                [nsIXMLHttpRequest.open]" on Firefox. */
             puts("Facilitator: exception while connecting: " + repr(err.message) + ".");
+            this.die();
             return;
         }
         xhr.responseType = "text";
@@ -332,6 +338,11 @@ function FlashProxy()
 
         this.badge.proxy_begin();
     };
+
+    this.die = function() {
+        puts("die");
+        this.badge.set_color("#111");
+    }
 
     /* An instance of a client-relay connection. */
     function ProxyPair(client_addr, relay_addr)
@@ -514,6 +525,10 @@ function Badge()
 
     this.refresh = function() {
         this.counter_text.innerHTML = escape_html(String(this.num_proxy_pairs));
+    };
+
+    this.set_color = function(color) {
+        this.elem.style.backgroundColor = color;
     };
 
     this.refresh();
