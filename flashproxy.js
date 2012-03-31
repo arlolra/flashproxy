@@ -320,8 +320,6 @@ function FlashProxy()
     this.make_proxy_pair = function(client_addr, relay_addr) {
         var proxy_pair;
 
-        puts("make_proxy_pair");
-
         proxy_pair = new ProxyPair(client_addr, relay_addr);
         this.proxy_pairs.push(proxy_pair);
         proxy_pair.complete_callback = function(event) {
