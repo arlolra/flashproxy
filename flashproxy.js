@@ -15,6 +15,14 @@
  * The address of the facilitator to use. By default it is
  * DEFAULT_FACILITATOR_ADDR. Both <HOST> and <PORT> must be present.
  *
+ * facilitator_poll_interval=<FLOAT>
+ * How often to poll the facilitator, in seconds. The default is
+ * DEFAULT_FACILITATOR_POLL_INTERVAL. There is a sanity-check minimum of 1.0 s.
+ *
+ * max_clients=<NUM>
+ * How many clients to serve concurrently. The default is
+ * DEFAULT_MAX_NUM_PROXY_PAIRS.
+ *
  * relay=<HOST>:<PORT>
  * The address of the relay to connect to. The proxy normally receives this
  * information from the facilitator. When this option is used, the facilitator
@@ -25,6 +33,11 @@ var DEFAULT_FACILITATOR_ADDR = {
     host: "tor-facilitator.bamsoftware.com",
     port: 9002
 };
+
+var DEFAULT_MAX_NUM_PROXY_PAIRS = 10;
+
+var DEFAULT_FACILITATOR_POLL_INTERVAL = 10.0;
+var MIN_FACILITATOR_POLL_INTERVAL = 1.0;
 
 /* Parse a URL query string or application/x-www-form-urlencoded body. The
    return type is an object mapping string keys to string values. By design,
@@ -78,6 +91,54 @@ function get_query_param_addr(query, param, default_val)
         return default_val;
     else
         return parse_addr_spec(val);
+}
+
+/* Get an integer from the given movie parameter, or the given default. Returns
+   null on error. */
+function get_query_param_integer(query, param, default_val)
+{
+    var spec;
+    var val;
+
+    spec = query[param];
+    if (spec === undefined) {
+        return default_val;
+    } else if (!spec.match(/^-?[0-9]+/)) {
+        return null;
+    } else {
+        val = parseInt(spec, 10);
+        if (isNaN(val))
+            return null;
+        else
+            return val;
+    }
+}
+
+/* Get a number from the given movie parameter, or the given default. Returns
+   null on error. */
+function get_query_param_number(query, param, default_val)
+{
+    var spec;
+    var val;
+
+    spec = query[param];
+    if (spec === undefined) {
+        return default_val;
+    } else {
+        val = Number(spec);
+        if (isNaN(val))
+            return null;
+        else
+            return val;
+    }
+}
+
+/* Get a floating-point number of seconds from a time specification. The only
+   time specification format is a decimal number of seconds. Returns null on
+   error. */
+function get_query_param_timespec(query, param, default_val)
+{
+    return get_query_param_number(query, param, default_val);
 }
 
 /* Parse an address in the form "host:port". Returns an Object with
@@ -165,6 +226,19 @@ function FlashProxy()
             puts("Error: Facilitator spec must be in the form \"host:port\".");
             return;
         }
+
+        this.max_num_proxy_pairs = get_query_param_integer(this.query, "max_clients", DEFAULT_MAX_NUM_PROXY_PAIRS);
+        if (this.max_num_proxy_pairs == null || this.max_num_proxy_pairs < 0) {
+            puts("Error: max_clients must be a nonnegative integer.");
+            return;
+        }
+
+        this.facilitator_poll_interval = get_query_param_timespec(this.query, "facilitator_poll_interval", DEFAULT_FACILITATOR_POLL_INTERVAL);
+        if (this.facilitator_poll_interval == null || this.facilitator_poll_interval < MIN_FACILITATOR_POLL_INTERVAL) {
+            puts("Error: facilitator_poll_interval must be a nonnegative number at least " + MIN_FACILITATOR_POLL_INTERVAL + ".");
+            return;
+        }
+
         client_addr = get_query_param_addr(this.query, "client");
         relay_addr = get_query_param_addr(this.query, "relay");
         if (client_addr !== undefined && relay_addr !== undefined) {
