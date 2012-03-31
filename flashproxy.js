@@ -488,7 +488,7 @@ function Badge()
     a.setAttribute("href", FLASHPROXY_INFO_URL);
 
     img = document.createElement("img");
-    img.setAttribute("src", "https://crypto.stanford.edu/flashproxy/badge.png");
+    img.setAttribute("src", "badge.png");
 
     subdiv = document.createElement("div");
 
