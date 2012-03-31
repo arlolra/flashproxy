@@ -202,8 +202,7 @@ function FlashProxy()
         }
         xhr.responseType = "text";
         xhr.onreadystatechange = function() {
-            /* Status 4 is DONE. */
-            if (xhr.readyState == 4) {
+            if (xhr.readyState == xhr.DONE) {
                 if (xhr.status == 200)
                     this.fac_complete(xhr.responseText);
                 else if (xhr.status == 0 && xhr.statusText == "")
