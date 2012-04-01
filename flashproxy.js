@@ -27,6 +27,11 @@
  * The address of the relay to connect to. The proxy normally receives this
  * information from the facilitator. When this option is used, the facilitator
  * query is not done. The "client" parameter must be given as well.
+ *
+ * ratelimit=<FLOAT>(<UNIT>)?|off
+ * What rate to limit all proxy traffic combined to. The special value "off"
+ * disables the limit. The default is DEFAULT_RATE_LIMIT. There is a
+ * sanity-check minimum of "10K".
  */
 
 var FLASHPROXY_INFO_URL = "https://crypto.stanford.edu/flashproxy/";
@@ -40,6 +45,11 @@ var DEFAULT_MAX_NUM_PROXY_PAIRS = 10;
 
 var DEFAULT_FACILITATOR_POLL_INTERVAL = 10.0;
 var MIN_FACILITATOR_POLL_INTERVAL = 1.0;
+
+/* Bytes per second. Set to undefined to disable limit. */
+var DEFAULT_RATE_LIMIT = undefined;
+var MIN_RATE_LIMIT = 10 * 1024;
+var RATE_LIMIT_HISTORY = 5.0;
 
 /* Parse a URL query string or application/x-www-form-urlencoded body. The
    return type is an object mapping string keys to string values. By design,
@@ -143,6 +153,49 @@ function get_query_param_timespec(query, param, default_val)
     return get_query_param_number(query, param, default_val);
 }
 
+/* Parse a count of bytes. A suffix of "k", "m", or "g" (or uppercase)
+   does what you would think. Returns null on error. */
+function parse_byte_count(spec)
+{
+    var UNITS = {
+        k: 1024, m: 1024 * 1024, g: 1024 * 1024 * 1024,
+        K: 1024, M: 1024 * 1024, G: 1024 * 1024 * 1024
+    };
+    var count, units;
+    var matches;
+
+    matches = spec.match(/^(\d+(?:\.\d*)?)(\w*)$/);
+    if (matches == null)
+        return null;
+
+    count = Number(matches[1]);
+    if (isNaN(count))
+        return null;
+
+    if (matches[2] == "") {
+        units = 1;
+    } else {
+        units = UNITS[matches[2]];
+        if (units == null)
+            return null;
+    }
+
+    return count * Number(units);
+}
+
+/* Get a count of bytes from a string specification like "100" or "1.3m".
+   Returns null on error. */
+function get_query_param_byte_count(query, param, default_val)
+{
+    var spec;
+
+    spec = query[param];
+    if (spec === undefined)
+        return default_val;
+    else
+        return parse_byte_count(spec);
+}
+
 /* Parse an address in the form "host:port". Returns an Object with
    keys "host" (String) and "port" (int). Returns null on error. */
 function parse_addr_spec(spec)
@@ -179,6 +232,7 @@ function make_websocket(addr)
 function FlashProxy()
 {
     var debug_div;
+    var rate_limit;
 
     this.query = parse_query_string(window.location.search.substr(1));
 
@@ -204,16 +258,12 @@ function FlashProxy()
         }
     };
 
-    var rate_limit = {
-        is_limited: function() { return false; },
-        when: function() { return 0; }
-    };
-
     this.proxy_pairs = [];
 
     this.start = function() {
         var client_addr;
         var relay_addr;
+        var rate_limit_bytes;
 
         this.fac_addr = get_query_param_addr(this.query, "facilitator", DEFAULT_FACILITATOR_ADDR);
         if (!this.fac_addr) {
@@ -234,6 +284,20 @@ function FlashProxy()
             puts("Error: facilitator_poll_interval must be a nonnegative number at least " + MIN_FACILITATOR_POLL_INTERVAL + ".");
             this.die();
             return;
+        }
+
+        if (this.query["ratelimit"] == "off")
+            rate_limit_bytes = undefined;
+        else
+            rate_limit_bytes = get_query_param_byte_count(this.query, "ratelimit", DEFAULT_RATE_LIMIT);
+        if (rate_limit_bytes === undefined) {
+            rate_limit = new DummyRateLimit();
+        } else if (rate_limit_bytes == null || rate_limit_bytes < MIN_FACILITATOR_POLL_INTERVAL) {
+            puts("Error: ratelimit must be a nonnegative number at least " + MIN_RATE_LIMIT + ".");
+            this.die();
+            return;
+        } else {
+            rate_limit = new BucketRateLimit(rate_limit_bytes * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
         }
 
         client_addr = get_query_param_addr(this.query, "client");
@@ -447,13 +511,19 @@ function FlashProxy()
 
             busy = true;
             while (busy && !rate_limit.is_limited()) {
+                var chunk;
+
                 busy = false;
                 if (is_open(this.client_s) && this.r2c_schedule.length > 0) {
-                    this.client_s.send(this.r2c_schedule.shift());
+                    chunk = this.r2c_schedule.shift();
+                    rate_limit.update(chunk.length);
+                    this.client_s.send(chunk);
                     busy = true;
                 }
                 if (is_open(this.relay_s) && this.c2r_schedule.length > 0) {
-                    this.relay_s.send(this.c2r_schedule.shift());
+                    chunk = this.c2r_schedule.shift();
+                    rate_limit.update(chunk.length);
+                    this.relay_s.send(chunk);
                     busy = true;
                 }
             }
@@ -470,6 +540,64 @@ function FlashProxy()
             if (this.r2c_schedule.length > 0 || this.c2r_schedule.length > 0)
                 this.flush_timeout_id = setTimeout(this.flush, rate_limit.when() * 1000);
         };
+    }
+}
+
+function BucketRateLimit(capacity, time)
+{
+    this.amount = 0.0;
+    /* capacity / time is the rate we are aiming for. */
+    this.capacity = capacity;
+    this.time = time;
+    this.last_update = new Date();
+
+    this.age = function() {
+        var now;
+        var delta;
+
+        now = new Date();
+        delta = (now - this.last_update) / 1000.0;
+        this.last_update = now;
+
+        this.amount -= delta * this.capacity / this.time;
+        if (this.amount < 0.0)
+            this.amount = 0.0;
+    };
+
+    this.update = function(n) {
+        this.age();
+        this.amount += n;
+
+        return this.amount <= this.capacity;
+    };
+
+    /* How many seconds in the future will the limit expire? */
+    this.when = function() {
+        this.age();
+
+        return (this.amount - this.capacity) / (this.capacity / this.time);
+    }
+
+    this.is_limited = function() {
+        this.age();
+
+        return this.amount > this.capacity;
+    }
+}
+
+/* A rate limiter that never limits. */
+function DummyRateLimit(capacity, time)
+{
+    this.update = function(n) {
+        return true;
+    };
+
+    this.when = function() {
+        return 0.0;
+    }
+
+    this.is_limited = function() {
+        return false;
     }
 }
 
