@@ -7,7 +7,7 @@ import re
 import sys
 import urllib
 
-DEFAULT_REMOTE_ADDR = None
+DEFAULT_REMOTE_ADDR = ""
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_FACILITATOR_HOST = "tor-facilitator.bamsoftware.com"
 DEFAULT_FACILITATOR_PORT = 9002
@@ -61,7 +61,7 @@ def parse_addr_spec(spec, defhost = None, defport = None):
         af = 0
     host = host or defhost
     port = port or defport
-    if not (host and port):
+    if not port:
         raise ValueError("Bad address specification \"%s\"" % spec)
     return host, int(port)
 
