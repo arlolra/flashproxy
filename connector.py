@@ -383,6 +383,8 @@ def handle_websocket_request(fd):
     log(u"handle_websocket_request")
     request_text = fd.recv(10 * 1024)
     handler = WebSocketRequestHandler(request_text, fd)
+    if handler.error:
+        return None
     method = handler.command
     path = handler.path
     headers = handler.headers
