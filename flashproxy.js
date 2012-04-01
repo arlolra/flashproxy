@@ -360,6 +360,7 @@ function FlashProxy()
         this.c2r_schedule = [];
         this.r2c_schedule = [];
 
+        this.running = true;
         this.flush_timeout_id = null;
 
         /* This callback function can be overridden by external callers. */
@@ -390,8 +391,10 @@ function FlashProxy()
             log(ws.label + ": closed.");
             this.flush();
 
-            if (is_closed(this.client_s) && is_closed(this.relay_s))
+            if (this.running && is_closed(this.client_s) && is_closed(this.relay_s)) {
+                this.running = false;
                 this.complete_callback();
+            }
         }.bind(this);
 
         this.onmessage_client_to_relay = function(event) {
