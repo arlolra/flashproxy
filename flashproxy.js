@@ -538,7 +538,7 @@ function FlashProxy()
             }
 
             if (this.r2c_schedule.length > 0 || this.c2r_schedule.length > 0)
-                this.flush_timeout_id = setTimeout(this.flush, rate_limit.when() * 1000);
+                this.flush_timeout_id = setTimeout(this.flush.bind(this), rate_limit.when() * 1000);
         };
     }
 }
