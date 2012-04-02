@@ -1,14 +1,9 @@
 ## Configuration file for Tor over flash proxies.
 ## Usage:
-##   connector.py -f tor-facilitator.bamsoftware.com
+##   connector.py
+##   flashproxy-reg-http.py
 ##   tor -f torrc
 
+ClientTransportPlugin websocket socks4 127.0.0.1:9001
 UseBridges 1
-Bridge 127.0.0.1:9001
-Socks4Proxy 127.0.0.1:9001
-
-# In case you are not able to receive remote connections on port 9000, comment
-# the Socks4Proxy line above and uncomment this one. This will use a public
-# connector. There is no need to run connector.py locally.
-
-# Socks4Proxy tor-facilitator.bamsoftware.com:9999
+Bridge websocket 127.0.0.1:9001
