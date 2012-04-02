@@ -226,7 +226,7 @@ function make_websocket(addr)
     url = "ws://" + encodeURIComponent(addr.host)
             + ":" + encodeURIComponent(addr.port) + "/";
 
-    return (window.WebSocket || window.MozWebSocket)(url, "base64");
+    return new (window.WebSocket || window.MozWebSocket)(url, "base64");
 }
 
 function FlashProxy()
