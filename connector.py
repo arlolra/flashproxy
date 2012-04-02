@@ -4,11 +4,13 @@ import base64
 import cStringIO
 import getopt
 import hashlib
+import httplib
 import os
 import re
 import select
 import socket
 import struct
+import subprocess
 import sys
 import time
 import traceback
@@ -26,6 +28,7 @@ LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 class options(object):
     local_addr = None
     remote_addr = None
+    facilitator_addr = None
 
     log_filename = None
     log_file = sys.stdout
@@ -38,7 +41,7 @@ UNCONNECTED_BUFFER_LIMIT = 10240
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %(progname)s [LOCAL][:PORT] [REMOTE][:PORT]
+Usage: %(progname)s -f FACILITATOR[:PORT] [LOCAL][:PORT] [REMOTE][:PORT]
 Wait for connections on a local and a remote port. When any pair of connections
 exists, data is ferried between them until one side is closed. By default
 LOCAL is "%(local)s" and REMOTE is "%(remote)s".
@@ -46,7 +49,12 @@ LOCAL is "%(local)s" and REMOTE is "%(remote)s".
 The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
 request are ignored and the local connection is always linked to a remote
 connection.
+
+The REMOTE address is registered with the given FACILITATOR:PORT (or whatever
+is the default of the flashproxy-reg-http.py program).
   --daemon                       daemonize (Unix only).
+  -f, --facilitator=HOST[:PORT]  advertise willingness to receive connections to
+                                   HOST:PORT.
   -h, --help                     show this help.
   -l, --log FILENAME             write log to FILENAME (default stdout).
       --pidfile FILENAME         write PID to FILENAME after daemonizing.\
@@ -535,6 +543,16 @@ def handle_socks_request(fd):
 def report_pending():
     log(u"locals  (%d): %s" % (len(locals), [format_peername(x) for x in locals]))
     log(u"remotes (%d): %s" % (len(remotes), [format_peername(x) for x in remotes]))
+ 
+def register():
+    spec = format_addr((None, options.remote_addr[1]))
+    command = ["./flashproxy-reg-http.py"]
+    if options.facilitator_addr is None:
+        log(u"Registering \"%s\"." % spec)
+    else:
+        command += [format_addr(options.facilitator_addr)]
+    command += ["-a", spec]
+    p = subprocess.Popen(command)
 
 def proxy_chunk_local_to_remote(local, remote):
     try:
@@ -661,6 +679,7 @@ def main():
                 local_c, addr = fd.accept()
                 log(u"Local connection from %s." % format_addr(addr))
                 socks_pending.append(local_c)
+                register()
             elif fd in websocket_pending:
                 log(u"Data from WebSocket-pending %s." % format_addr(addr))
                 protocols = handle_websocket_request(fd)
@@ -688,10 +707,12 @@ def main():
                     if not proxy_chunk_remote_to_local(fd, local):
                         remotes.remove(fd)
                         locals.remove(local)
+                        register()
                 else:
                     if not receive_unlinked(fd, "remote"):
                         remotes.remove(fd)
                         unlinked_remotes.remove(fd)
+                        register()
                     report_pending()
             elif fd in locals:
                 remote = fd.partner
@@ -715,10 +736,12 @@ def main():
             report_pending()
 
 if __name__ == "__main__":
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "hl:", ["daemon", "help", "log=", "pidfile="])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:", ["daemon", "facilitator=", "help", "log=", "pidfile="])
     for o, a in opts:
         if o == "--daemon":
             options.daemonize = True
+        elif o == "-f" or o == "--facilitator":
+            options.facilitator_addr = parse_addr_spec(a)
         elif o == "-h" or o == "--help":
             usage()
             sys.exit()
@@ -764,6 +787,8 @@ if __name__ == "__main__":
     locals = []
     # Locals not yet linked with a remote. This is a subset of remotes.
     unlinked_locals = []
+
+    register()
 
     if options.daemonize:
         log(u"Daemonizing.")
