@@ -1,7 +1,6 @@
 ## Configuration file for Tor over flash proxies.
 ## Usage:
 ##   connector.py
-##   flashproxy-reg-http.py
 ##   tor -f torrc
 
 ClientTransportPlugin websocket socks4 127.0.0.1:9001
