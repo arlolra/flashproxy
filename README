@@ -116,7 +116,7 @@ does this automatically.
 Add this line to torrc to make the relay use the external proxy:
 	ServerTransportPlugin websocket proxy 127.0.0.1:9901
 
-== How to put a flash proxy badge on a web page.
+== How to put a flash proxy badge on a web page
 
 Paste in this HTML where you want the badge to appear:
 
