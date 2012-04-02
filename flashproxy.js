@@ -383,8 +383,8 @@ function FlashProxy()
             puts("Error: can't parse relay spec " + repr(response.relay) + ".");
             return;
         }
-        puts("Facilitator: got client:" + repr(client_spec) + " "
-            + "relay:" + repr(relay_spec) + ".");
+        puts("Facilitator: got client:" + repr(client_addr) + " "
+            + "relay:" + repr(relay_addr) + ".");
 
         this.make_proxy_pair(client_addr, relay_addr);
     };
