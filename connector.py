@@ -146,7 +146,7 @@ class WebSocketMessage(object):
 
 class WebSocketDecoder(object):
     """RFC 6455 section 5 is about the WebSocket framing format."""
-    # Raise an exception rather than buffer anything arger than this.
+    # Raise an exception rather than buffer anything larger than this.
     MAX_MESSAGE_LENGTH = 1024 * 1024
 
     class MaskingError(ValueError):
