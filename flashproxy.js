@@ -76,13 +76,12 @@ if (query.debug) {
     debug_div.className = "debug";
 }
 
-function puts(s)
-{
+function puts(s) {
     if (debug_div) {
         var at_bottom;
 
         /* http://www.w3.org/TR/cssom-view/#element-scrolling-members */
-        at_bottom = (debug_div.scrollTop + debug_div.clientHeight == debug_div.scrollHeight);
+        at_bottom = (debug_div.scrollTop + debug_div.clientHeight === debug_div.scrollHeight);
         debug_div.appendChild(document.createTextNode(s + "\n"));
         if (at_bottom)
             debug_div.scrollTop = debug_div.scrollHeight;
@@ -98,8 +97,7 @@ function puts(s)
    Always decodes from UTF-8, not any other encoding.
 
    http://dev.w3.org/html5/spec/Overview.html#url-encoded-form-data */
-function parse_query_string(qs)
-{
+function parse_query_string(qs) {
     var strings;
     var result;
 
@@ -107,13 +105,13 @@ function parse_query_string(qs)
     if (qs)
         strings = qs.split("&");
     else
-        strings = {}
+        strings = {};
     for (var i = 0; i < strings.length; i++) {
         var string = strings[i];
         var j, name, value;
 
         j = string.indexOf("=");
-        if (j == -1) {
+        if (j === -1) {
             name = string;
             value = "";
         } else {
@@ -132,8 +130,7 @@ function parse_query_string(qs)
 /* Get a query string parameter and parse it as an address spec. Returns
    default_val if param is not defined in the query string. Returns null on a
    parsing error. */
-function get_query_param_addr(query, param, default_val)
-{
+function get_query_param_addr(query, param, default_val) {
     var val;
 
     val = query[param];
@@ -145,8 +142,7 @@ function get_query_param_addr(query, param, default_val)
 
 /* Get an integer from the given movie parameter, or the given default. Returns
    null on error. */
-function get_query_param_integer(query, param, default_val)
-{
+function get_query_param_integer(query, param, default_val) {
     var spec;
     var val;
 
@@ -166,8 +162,7 @@ function get_query_param_integer(query, param, default_val)
 
 /* Get a number from the given movie parameter, or the given default. Returns
    null on error. */
-function get_query_param_number(query, param, default_val)
-{
+function get_query_param_number(query, param, default_val) {
     var spec;
     var val;
 
@@ -186,15 +181,13 @@ function get_query_param_number(query, param, default_val)
 /* Get a floating-point number of seconds from a time specification. The only
    time specification format is a decimal number of seconds. Returns null on
    error. */
-function get_query_param_timespec(query, param, default_val)
-{
+function get_query_param_timespec(query, param, default_val) {
     return get_query_param_number(query, param, default_val);
 }
 
 /* Parse a count of bytes. A suffix of "k", "m", or "g" (or uppercase)
    does what you would think. Returns null on error. */
-function parse_byte_count(spec)
-{
+function parse_byte_count(spec) {
     var UNITS = {
         k: 1024, m: 1024 * 1024, g: 1024 * 1024 * 1024,
         K: 1024, M: 1024 * 1024, G: 1024 * 1024 * 1024
@@ -203,18 +196,18 @@ function parse_byte_count(spec)
     var matches;
 
     matches = spec.match(/^(\d+(?:\.\d*)?)(\w*)$/);
-    if (matches == null)
+    if (matches === null)
         return null;
 
     count = Number(matches[1]);
     if (isNaN(count))
         return null;
 
-    if (matches[2] == "") {
+    if (matches[2] === "") {
         units = 1;
     } else {
         units = UNITS[matches[2]];
-        if (units == null)
+        if (units === null)
             return null;
     }
 
@@ -223,8 +216,7 @@ function parse_byte_count(spec)
 
 /* Get a count of bytes from a string specification like "100" or "1.3m".
    Returns null on error. */
-function get_query_param_byte_count(query, param, default_val)
-{
+function get_query_param_byte_count(query, param, default_val) {
     var spec;
 
     spec = query[param];
@@ -236,8 +228,7 @@ function get_query_param_byte_count(query, param, default_val)
 
 /* Parse an address in the form "host:port". Returns an Object with
    keys "host" (String) and "port" (int). Returns null on error. */
-function parse_addr_spec(spec)
-{
+function parse_addr_spec(spec) {
     var groups;
     var host, port;
 
@@ -252,21 +243,18 @@ function parse_addr_spec(spec)
     return { host: host, port: port }
 }
 
-function format_addr(addr)
-{
+function format_addr(addr) {
     return addr.host + ":" + addr.port;
 }
 
 /* Does the WebSocket implementation in this browser support binary frames? (RFC
    6455 section 5.6.) If not, we have to use base64-encoded text frames. It is
    assumed that the client and relay endpoints always support binary frames. */
-function have_websocket_binary_frames()
-{
+function have_websocket_binary_frames() {
     return false;
 }
 
-function make_websocket(addr)
-{
+function make_websocket(addr) {
     var url;
     var ws;
 
@@ -286,8 +274,7 @@ function make_websocket(addr)
     return ws;
 }
 
-function FlashProxy()
-{
+function FlashProxy() {
     this.badge = new Badge();
     /* Click the badge to disable it. */
     this.badge.elem.onclick = function(event) {
@@ -314,26 +301,26 @@ function FlashProxy()
         }
 
         this.max_num_proxy_pairs = get_query_param_integer(query, "max_clients", DEFAULT_MAX_NUM_PROXY_PAIRS);
-        if (this.max_num_proxy_pairs == null || this.max_num_proxy_pairs < 0) {
+        if (this.max_num_proxy_pairs === null || this.max_num_proxy_pairs < 0) {
             puts("Error: max_clients must be a nonnegative integer.");
             this.die();
             return;
         }
 
         this.facilitator_poll_interval = get_query_param_timespec(query, "facilitator_poll_interval", DEFAULT_FACILITATOR_POLL_INTERVAL);
-        if (this.facilitator_poll_interval == null || this.facilitator_poll_interval < MIN_FACILITATOR_POLL_INTERVAL) {
+        if (this.facilitator_poll_interval === null || this.facilitator_poll_interval < MIN_FACILITATOR_POLL_INTERVAL) {
             puts("Error: facilitator_poll_interval must be a nonnegative number at least " + MIN_FACILITATOR_POLL_INTERVAL + ".");
             this.die();
             return;
         }
 
-        if (query["ratelimit"] == "off")
+        if (query["ratelimit"] === "off")
             rate_limit_bytes = undefined;
         else
             rate_limit_bytes = get_query_param_byte_count(query, "ratelimit", DEFAULT_RATE_LIMIT);
         if (rate_limit_bytes === undefined) {
             this.rate_limit = new DummyRateLimit();
-        } else if (rate_limit_bytes == null || rate_limit_bytes < MIN_FACILITATOR_POLL_INTERVAL) {
+        } else if (rate_limit_bytes === null || rate_limit_bytes < MIN_FACILITATOR_POLL_INTERVAL) {
             puts("Error: ratelimit must be a nonnegative number at least " + MIN_RATE_LIMIT + ".");
             this.die();
             return;
@@ -384,10 +371,10 @@ function FlashProxy()
         }
         xhr.responseType = "text";
         xhr.onreadystatechange = function() {
-            if (xhr.readyState == xhr.DONE) {
-                if (xhr.status == 200)
+            if (xhr.readyState === xhr.DONE) {
+                if (xhr.status === 200)
                     this.fac_complete(xhr.responseText);
-                else if (xhr.status == 0 && xhr.statusText == "")
+                else if (xhr.status === 0 && xhr.statusText === "")
                     puts("Facilitator: same-origin error.");
                 else
                     puts("Facilitator: can't connect: got status " + repr(xhr.status) + " and status text " + repr(xhr.statusText) + ".");
@@ -464,8 +451,7 @@ function FlashProxy()
 }
 
 /* An instance of a client-relay connection. */
-function ProxyPair(client_addr, relay_addr, rate_limit)
-{
+function ProxyPair(client_addr, relay_addr, rate_limit) {
     function log(s)
     {
         puts(s)
@@ -547,12 +533,12 @@ function ProxyPair(client_addr, relay_addr, rate_limit)
 
     function is_open(ws)
     {
-        return ws.readyState == ws.OPEN;
+        return ws.readyState === ws.OPEN;
     }
 
     function is_closed(ws)
     {
-        return ws.readyState == ws.CLOSED;
+        return ws.readyState === ws.CLOSED;
     }
 
     this.close = function() {
@@ -587,11 +573,11 @@ function ProxyPair(client_addr, relay_addr, rate_limit)
             }
         }
 
-        if (is_closed(this.relay_s) && !is_closed(this.client_s) && this.r2c_schedule.length == 0) {
+        if (is_closed(this.relay_s) && !is_closed(this.client_s) && this.r2c_schedule.length === 0) {
             log("Client: closing.");
             this.client_s.close();
         }
-        if (is_closed(this.client_s) && !is_closed(this.relay_s) && this.c2r_schedule.length == 0) {
+        if (is_closed(this.client_s) && !is_closed(this.relay_s) && this.c2r_schedule.length === 0) {
             log("Relay: closing.");
             this.relay_s.close();
         }
@@ -601,8 +587,7 @@ function ProxyPair(client_addr, relay_addr, rate_limit)
     };
 }
 
-function BucketRateLimit(capacity, time)
-{
+function BucketRateLimit(capacity, time) {
     this.amount = 0.0;
     /* capacity / time is the rate we are aiming for. */
     this.capacity = capacity;
@@ -644,8 +629,7 @@ function BucketRateLimit(capacity, time)
 }
 
 /* A rate limiter that never limits. */
-function DummyRateLimit(capacity, time)
-{
+function DummyRateLimit(capacity, time) {
     this.update = function(n) {
         return true;
     };
@@ -666,15 +650,13 @@ var HTML_ESCAPES = {
     "'": "apos",
     "\"": "quot"
 };
-function escape_html(s)
-{
+function escape_html(s) {
     return s.replace(/&<>'"/, function(x) { return HTML_ESCAPES[x] });
 }
 
 /* The usual embedded HTML badge. The "elem" member is a DOM element that can be
    included elsewhere. */
-function Badge()
-{
+function Badge() {
     /* Number of proxy pairs currently connected. */
     this.num_proxy_pairs = 0;
     /* Number of proxy pairs ever connected. */
@@ -722,31 +704,28 @@ function Badge()
     this.refresh();
 }
 
-function quote(s)
-{
+function quote(s) {
     return "\"" + s.replace(/([\\\"])/, "\\$1") + "\"";
 }
 
-function maybe_quote(s)
-{
+function maybe_quote(s) {
     if (!/^[a-zA-Z_]\w*$/.test(s))
         return quote(s);
     else
         return s;
 }
 
-function repr(x)
-{
+function repr(x) {
     if (x === null) {
         return "null";
-    } else if (typeof x == "undefined") {
+    } else if (typeof x === "undefined") {
         return "undefined";
-    } else if (typeof x == "object") {
+    } else if (typeof x === "object") {
         var elems = [];
         for (var k in x)
             elems.push(maybe_quote(k) + ": " + repr(x[k]));
         return "{ " + elems.join(", ") + " }";
-    } else if (typeof x == "string") {
+    } else if (typeof x === "string") {
         return quote(x);
     } else {
         return x.toString();
@@ -761,8 +740,7 @@ function repr(x)
    http://googlewebmastercentral.blogspot.com/2011/03/mo-better-to-also-detect-mobile-user.html
    http://search.cpan.org/~cmanley/Mobile-UserAgent-1.05/lib/Mobile/UserAgent.pm
 */
-function flashproxy_should_disable()
-{
+function flashproxy_should_disable() {
     var ua;
 
     ua = window.navigator.userAgent;
@@ -792,8 +770,7 @@ function flashproxy_should_disable()
     return false;
 }
 
-function flashproxy_badge_insert()
-{
+function flashproxy_badge_insert() {
     var fp;
     var e;
 
@@ -804,7 +781,7 @@ function flashproxy_badge_insert()
     /* http://intertwingly.net/blog/2006/11/10/Thats-Not-Write for this trick to
        insert right after the <script> element in the DOM. */
     e = document;
-    while (e.lastChild && e.lastChild.nodeType == 1) {
+    while (e.lastChild && e.lastChild.nodeType === 1) {
         e = e.lastChild;
     }
     e.parentNode.appendChild(fp.badge_elem);
