@@ -10,6 +10,8 @@ if ("-v" in arguments)
 var num_tests = 0;
 var num_failed = 0;
 
+var window = {location: {search: "?"}};
+
 load("flashproxy.js");
 
 function objects_equal(a, b)
