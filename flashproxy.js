@@ -49,8 +49,6 @@
  * http://autobahn.ws/testsuite/reports/clients/index.html
  */
 
-var FLASHPROXY_INFO_URL = "https://crypto.stanford.edu/flashproxy/";
-
 var DEFAULT_FACILITATOR_ADDR = {
     host: "tor-facilitator.bamsoftware.com",
     port: 9002
@@ -291,6 +289,10 @@ function make_websocket(addr)
 function FlashProxy()
 {
     this.badge = new Badge();
+    /* Click the badge to disable it. */
+    this.badge.elem.onclick = function(event) {
+        this.disable();
+    }.bind(this);
     if (query.debug)
         this.badge_elem = debug_div;
     else
@@ -680,17 +682,13 @@ function Badge()
 
     this.counter_text = document.createElement("td");
 
-    var div, a, img, table, tr, td;
+    var div, img, table, tr, td;
 
     div = document.createElement("div");
 
-    a = document.createElement("a");
-    a.setAttribute("href", FLASHPROXY_INFO_URL);
-    div.appendChild(a);
-
     img = document.createElement("img");
     img.setAttribute("src", "badge.png");
-    a.appendChild(img);
+    div.appendChild(img);
 
     table = document.createElement("table");
     div.appendChild(table)
