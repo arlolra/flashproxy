@@ -255,14 +255,36 @@ function format_addr(addr)
     return addr.host + ":" + addr.port;
 }
 
+/* Does the WebSocket implementation in this browser support binary frames? (RFC
+   6455 section 5.6.) If not, we have to use base64-encoded text frames. It is
+   assumed that the client and relay endpoints always support binary frames. */
+function have_websocket_binary_frames()
+{
+    return false;
+}
+
 function make_websocket(addr)
 {
     var url;
+    var WebSocket;
+    var ws;
 
     url = "ws://" + encodeURIComponent(addr.host)
             + ":" + encodeURIComponent(addr.port) + "/";
 
-    return new (window.WebSocket || window.MozWebSocket)(url, "base64");
+    WebSocket = window.WebSocket || window.MozWebSocket;
+
+    if (have_websocket_binary_frames())
+        ws = new WebSocket(url);
+    else
+        ws = new WebSocket(url, "base64");
+    /* "User agents can use this as a hint for how to handle incoming binary
+       data: if the attribute is set to 'blob', it is safe to spool it to disk,
+       and if it is set to 'arraybuffer', it is likely more efficient to keep
+       the data in memory." */
+    ws.binaryType = "arraybuffer";
+
+    return ws;
 }
 
 function FlashProxy()
