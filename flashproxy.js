@@ -678,27 +678,28 @@ function Badge()
     /* Number of proxy pairs ever connected. */
     this.total_proxy_pairs = 0;
 
-    this.counter_text = document.createElement("p");
+    this.counter_text = document.createElement("td");
 
-    var div, subdiv, a, img;
+    var div, a, img, table, tr, td;
 
     div = document.createElement("div");
 
     a = document.createElement("a");
     a.setAttribute("href", FLASHPROXY_INFO_URL);
+    div.appendChild(a);
 
     img = document.createElement("img");
     img.setAttribute("src", "badge.png");
-
-    subdiv = document.createElement("div");
-
-    this.counter_text = document.createElement("p");
-
-    div.appendChild(a);
     a.appendChild(img);
-    div.appendChild(subdiv)
-    subdiv.appendChild(this.counter_text);
 
+    table = document.createElement("table");
+    div.appendChild(table)
+    tr = document.createElement("tr");
+    table.appendChild(tr);
+    td = document.createElement("td");
+    tr.appendChild(td);
+
+    this.counter_text = td;
     this.elem = div;
 
     this.proxy_begin = function() {
