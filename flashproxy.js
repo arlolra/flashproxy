@@ -34,6 +34,21 @@
  * sanity-check minimum of "10K".
  */
 
+/* WebSocket links.
+ *
+ * The WebSocket Protocol
+ * https://tools.ietf.org/html/rfc6455
+ *
+ * The WebSocket API
+ * http://dev.w3.org/html5/websockets/
+ *
+ * MDN page with browser compatibility
+ * https://developer.mozilla.org/en/WebSockets
+ *
+ * Implementation tests (including tests of binary messages)
+ * http://autobahn.ws/testsuite/reports/clients/index.html
+ */
+
 var FLASHPROXY_INFO_URL = "https://crypto.stanford.edu/flashproxy/";
 
 var DEFAULT_FACILITATOR_ADDR = {
