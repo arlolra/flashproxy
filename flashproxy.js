@@ -421,26 +421,20 @@ function FlashProxy()
         this.badge.proxy_begin();
     };
 
+    /* Cease all network operations and prevent any future ones. */
+    this.disable = function() {
+        puts("disabling");
+        this.proxy_main = function() { };
+        this.make_proxy_pair = function(client_addr, relay_addr) { };
+        while (this.proxy_pairs.length > 0)
+            this.proxy_pairs.pop().close();
+        this.badge.set_color("#777");
+        this.badge.refresh();
+    };
+
     this.die = function() {
         puts("die");
         this.badge.set_color("#111");
-    };
-}
-
-/* This is the non-functional badge that occupies space when
-   flashproxy_should_disable decides that the proxy shouldn't run. */
-function DummyFlashProxy()
-{
-    var img;
-
-    img = document.createElement("img");
-    img.setAttribute("src", "https://crypto.stanford.edu/flashproxy/badge.png");
-    img.setAttribute("border", 0);
-    img.setAttribute("id", "flashproxy-badge");
-
-    this.badge_elem = img;
-
-    this.start = function() {
     };
 }
 
@@ -771,13 +765,12 @@ function flashproxy_should_disable()
 
 function flashproxy_badge_insert()
 {
+    var fp;
     var e;
 
-    if (flashproxy_should_disable()) {
-        fp = new DummyFlashProxy();
-    } else {
-        fp = new FlashProxy();
-    }
+    fp = new FlashProxy();
+    if (flashproxy_should_disable())
+        fp.disable();
 
     /* http://intertwingly.net/blog/2006/11/10/Thats-Not-Write for this trick to
        insert right after the <script> element in the DOM. */
