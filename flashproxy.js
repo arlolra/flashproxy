@@ -690,7 +690,7 @@ function Badge()
     }
 
     this.refresh = function() {
-        this.counter_text.innerHTML = escape_html(String(this.num_proxy_pairs));
+        this.counter_text.innerHTML = escape_html(String(this.total_proxy_pairs));
     };
 
     this.set_color = function(color) {
