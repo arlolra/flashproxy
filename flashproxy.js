@@ -52,6 +52,25 @@ var MIN_RATE_LIMIT = 10 * 1024;
 var RATE_LIMIT_HISTORY = 5.0;
 
 var query = parse_query_string(window.location.search.substr(1));
+var debug_div;
+
+if (query.debug) {
+    debug_div = document.createElement("pre");
+    debug_div.className = "debug";
+}
+
+function puts(s)
+{
+    if (debug_div) {
+        var at_bottom;
+
+        /* http://www.w3.org/TR/cssom-view/#element-scrolling-members */
+        at_bottom = (debug_div.scrollTop + debug_div.clientHeight == debug_div.scrollHeight);
+        debug_div.appendChild(document.createTextNode(s + "\n"));
+        if (at_bottom)
+            debug_div.scrollTop = debug_div.scrollHeight;
+    }
+}
 
 /* Parse a URL query string or application/x-www-form-urlencoded body. The
    return type is an object mapping string keys to string values. By design,
@@ -233,30 +252,14 @@ function make_websocket(addr)
 
 function FlashProxy()
 {
-    var debug_div;
     var rate_limit;
 
     this.badge = new Badge();
-    if (query.debug) {
-        debug_div = document.createElement("pre");
-        debug_div.className = "debug";
+    if (query.debug)
         this.badge_elem = debug_div;
-    } else {
+    else
         this.badge_elem = this.badge.elem;
-    }
     this.badge_elem.setAttribute("id", "flashproxy-badge");
-
-    function puts(s) {
-        if (debug_div) {
-            var at_bottom;
-
-            /* http://www.w3.org/TR/cssom-view/#element-scrolling-members */
-            at_bottom = (debug_div.scrollTop + debug_div.clientHeight == debug_div.scrollHeight);
-            debug_div.appendChild(document.createTextNode(s + "\n"));
-            if (at_bottom)
-                debug_div.scrollTop = debug_div.scrollHeight;
-        }
-    };
 
     this.proxy_pairs = [];
 
