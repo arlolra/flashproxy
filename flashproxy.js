@@ -536,6 +536,11 @@ function ProxyPair(client_addr, relay_addr, rate_limit)
         return ws.readyState == ws.CLOSED;
     }
 
+    this.close = function() {
+        this.client_s.close();
+        this.relay_s.close();
+    };
+
     /* Send as much data as the rate limit currently allows. */
     this.flush = function() {
         var busy;
