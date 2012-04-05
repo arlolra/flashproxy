@@ -252,8 +252,6 @@ function make_websocket(addr)
 
 function FlashProxy()
 {
-    var rate_limit;
-
     this.badge = new Badge();
     if (query.debug)
         this.badge_elem = debug_div;
@@ -294,13 +292,13 @@ function FlashProxy()
         else
             rate_limit_bytes = get_query_param_byte_count(query, "ratelimit", DEFAULT_RATE_LIMIT);
         if (rate_limit_bytes === undefined) {
-            rate_limit = new DummyRateLimit();
+            this.rate_limit = new DummyRateLimit();
         } else if (rate_limit_bytes == null || rate_limit_bytes < MIN_FACILITATOR_POLL_INTERVAL) {
             puts("Error: ratelimit must be a nonnegative number at least " + MIN_RATE_LIMIT + ".");
             this.die();
             return;
         } else {
-            rate_limit = new BucketRateLimit(rate_limit_bytes * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
+            this.rate_limit = new BucketRateLimit(rate_limit_bytes * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
         }
 
         client_addr = get_query_param_addr(query, "client");
@@ -395,7 +393,7 @@ function FlashProxy()
     this.make_proxy_pair = function(client_addr, relay_addr) {
         var proxy_pair;
 
-        proxy_pair = new ProxyPair(client_addr, relay_addr);
+        proxy_pair = new ProxyPair(client_addr, relay_addr, this.rate_limit);
         this.proxy_pairs.push(proxy_pair);
         proxy_pair.complete_callback = function(event) {
             puts("Complete.");
@@ -412,138 +410,156 @@ function FlashProxy()
         puts("die");
         this.badge.set_color("#111");
     }
+}
 
-    /* An instance of a client-relay connection. */
-    function ProxyPair(client_addr, relay_addr)
+/* This is the non-functional badge that occupies space when
+   flashproxy_should_disable decides that the proxy shouldn't run. */
+function DummyFlashProxy()
+{
+    var img;
+
+    img = document.createElement("img");
+    img.setAttribute("src", "https://crypto.stanford.edu/flashproxy/badge.png");
+    img.setAttribute("border", 0);
+    img.setAttribute("id", "flashproxy-badge");
+
+    this.badge_elem = img;
+
+    this.start = function() {
+    };
+}
+
+/* An instance of a client-relay connection. */
+function ProxyPair(client_addr, relay_addr, rate_limit)
+{
+    function log(s)
     {
-        function log(s)
-        {
-            puts(s)
+        puts(s)
+    }
+
+    this.client_addr = client_addr;
+    this.relay_addr = relay_addr;
+    this.rate_limit = rate_limit;
+
+    this.c2r_schedule = [];
+    this.r2c_schedule = [];
+
+    this.running = true;
+    this.flush_timeout_id = null;
+
+    /* This callback function can be overridden by external callers. */
+    this.complete_callback = function() {
+    };
+
+    /* Return a function that shows an error message and closes the other
+       half of a communication pair. */
+    this.make_onerror_callback = function(partner)
+    {
+        return function(event) {
+            var ws = event.target;
+
+            log(ws.label + ": error.");
+            partner.close();
+        }.bind(this);
+    };
+
+    this.onopen_callback = function(event) {
+        var ws = event.target;
+
+        log(ws.label + ": connected.");
+    }.bind(this);
+
+    this.onclose_callback = function(event) {
+        var ws = event.target;
+
+        log(ws.label + ": closed.");
+        this.flush();
+
+        if (this.running && is_closed(this.client_s) && is_closed(this.relay_s)) {
+            this.running = false;
+            this.complete_callback();
         }
+    }.bind(this);
 
-        this.client_addr = client_addr;
-        this.relay_addr = relay_addr;
+    this.onmessage_client_to_relay = function(event) {
+        this.c2r_schedule.push(event.data);
+        this.flush();
+    }.bind(this);
 
-        this.c2r_schedule = [];
-        this.r2c_schedule = [];
+    this.onmessage_relay_to_client = function(event) {
+        this.r2c_schedule.push(event.data);
+        this.flush();
+    }.bind(this);
 
-        this.running = true;
+    this.connect = function() {
+        log("Client: connecting.");
+        this.client_s = make_websocket(this.client_addr);
+
+        log("Relay: connecting.");
+        this.relay_s = make_websocket(this.relay_addr);
+
+        this.client_s.label = "Client";
+        this.client_s.onopen = this.onopen_callback;
+        this.client_s.onclose = this.onclose_callback;
+        this.client_s.onerror = this.make_onerror_callback(this.relay_s);
+        this.client_s.onmessage = this.onmessage_client_to_relay;
+
+        this.relay_s.label = "Relay";
+        this.relay_s.onopen = this.onopen_callback;
+        this.relay_s.onclose = this.onclose_callback;
+        this.relay_s.onerror = this.make_onerror_callback(this.client_s);
+        this.relay_s.onmessage = this.onmessage_relay_to_client;
+    };
+
+    function is_open(ws)
+    {
+        return ws.readyState == ws.OPEN;
+    }
+
+    function is_closed(ws)
+    {
+        return ws.readyState == ws.CLOSED;
+    }
+
+    /* Send as much data as the rate limit currently allows. */
+    this.flush = function() {
+        var busy;
+
+        if (this.flush_timeout_id)
+            clearTimeout(this.flush_timeout_id);
         this.flush_timeout_id = null;
 
-        /* This callback function can be overridden by external callers. */
-        this.complete_callback = function() {
-        };
+        busy = true;
+        while (busy && !this.rate_limit.is_limited()) {
+            var chunk;
 
-        /* Return a function that shows an error message and closes the other
-           half of a communication pair. */
-        this.make_onerror_callback = function(partner)
-        {
-            return function(event) {
-                var ws = event.target;
-
-                log(ws.label + ": error.");
-                partner.close();
-            }.bind(this);
-        };
-
-        this.onopen_callback = function(event) {
-            var ws = event.target;
-
-            log(ws.label + ": connected.");
-        }.bind(this);
-
-        this.onclose_callback = function(event) {
-            var ws = event.target;
-
-            log(ws.label + ": closed.");
-            this.flush();
-
-            if (this.running && is_closed(this.client_s) && is_closed(this.relay_s)) {
-                this.running = false;
-                this.complete_callback();
+            busy = false;
+            if (is_open(this.client_s) && this.r2c_schedule.length > 0) {
+                chunk = this.r2c_schedule.shift();
+                this.rate_limit.update(chunk.length);
+                this.client_s.send(chunk);
+                busy = true;
             }
-        }.bind(this);
-
-        this.onmessage_client_to_relay = function(event) {
-            this.c2r_schedule.push(event.data);
-            this.flush();
-        }.bind(this);
-
-        this.onmessage_relay_to_client = function(event) {
-            this.r2c_schedule.push(event.data);
-            this.flush();
-        }.bind(this);
-
-        this.connect = function() {
-            log("Client: connecting.");
-            this.client_s = make_websocket(this.client_addr);
-
-            log("Relay: connecting.");
-            this.relay_s = make_websocket(this.relay_addr);
-
-            this.client_s.label = "Client";
-            this.client_s.onopen = this.onopen_callback;
-            this.client_s.onclose = this.onclose_callback;
-            this.client_s.onerror = this.make_onerror_callback(this.relay_s);
-            this.client_s.onmessage = this.onmessage_client_to_relay;
-
-            this.relay_s.label = "Relay";
-            this.relay_s.onopen = this.onopen_callback;
-            this.relay_s.onclose = this.onclose_callback;
-            this.relay_s.onerror = this.make_onerror_callback(this.client_s);
-            this.relay_s.onmessage = this.onmessage_relay_to_client;
-        };
-
-        function is_open(ws)
-        {
-            return ws.readyState == ws.OPEN;
+            if (is_open(this.relay_s) && this.c2r_schedule.length > 0) {
+                chunk = this.c2r_schedule.shift();
+                this.rate_limit.update(chunk.length);
+                this.relay_s.send(chunk);
+                busy = true;
+            }
         }
 
-        function is_closed(ws)
-        {
-            return ws.readyState == ws.CLOSED;
+        if (is_closed(this.relay_s) && !is_closed(this.client_s) && this.r2c_schedule.length == 0) {
+            log("Client: closing.");
+            this.client_s.close();
+        }
+        if (is_closed(this.client_s) && !is_closed(this.relay_s) && this.c2r_schedule.length == 0) {
+            log("Relay: closing.");
+            this.relay_s.close();
         }
 
-        /* Send as much data as the rate limit currently allows. */
-        this.flush = function() {
-            var busy;
-
-            if (this.flush_timeout_id)
-                clearTimeout(this.flush_timeout_id);
-            this.flush_timeout_id = null;
-
-            busy = true;
-            while (busy && !rate_limit.is_limited()) {
-                var chunk;
-
-                busy = false;
-                if (is_open(this.client_s) && this.r2c_schedule.length > 0) {
-                    chunk = this.r2c_schedule.shift();
-                    rate_limit.update(chunk.length);
-                    this.client_s.send(chunk);
-                    busy = true;
-                }
-                if (is_open(this.relay_s) && this.c2r_schedule.length > 0) {
-                    chunk = this.c2r_schedule.shift();
-                    rate_limit.update(chunk.length);
-                    this.relay_s.send(chunk);
-                    busy = true;
-                }
-            }
-
-            if (is_closed(this.relay_s) && !is_closed(this.client_s) && this.r2c_schedule.length == 0) {
-                log("Client: closing.");
-                this.client_s.close();
-            }
-            if (is_closed(this.client_s) && !is_closed(this.relay_s) && this.c2r_schedule.length == 0) {
-                log("Relay: closing.");
-                this.relay_s.close();
-            }
-
-            if (this.r2c_schedule.length > 0 || this.c2r_schedule.length > 0)
-                this.flush_timeout_id = setTimeout(this.flush.bind(this), rate_limit.when() * 1000);
-        };
-    }
+        if (this.r2c_schedule.length > 0 || this.c2r_schedule.length > 0)
+            this.flush_timeout_id = setTimeout(this.flush.bind(this), this.rate_limit.when() * 1000);
+    };
 }
 
 function BucketRateLimit(capacity, time)
@@ -668,23 +684,6 @@ function Badge()
     };
 
     this.refresh();
-}
-
-/* This is the non-functional badge that occupies space when
-   flashproxy_should_disable decides that the proxy shouldn't run. */
-function DummyFlashProxy()
-{
-    var img;
-
-    img = document.createElement("img");
-    img.setAttribute("src", "https://crypto.stanford.edu/flashproxy/badge.png");
-    img.setAttribute("border", 0);
-    img.setAttribute("id", "flashproxy-badge");
-
-    this.badge_elem = img;
-
-    this.start = function() {
-    };
 }
 
 function quote(s)
