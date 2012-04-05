@@ -424,7 +424,7 @@ function FlashProxy()
     this.die = function() {
         puts("die");
         this.badge.set_color("#111");
-    }
+    };
 }
 
 /* This is the non-functional badge that occupies space when
