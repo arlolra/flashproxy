@@ -51,6 +51,8 @@ var DEFAULT_RATE_LIMIT = undefined;
 var MIN_RATE_LIMIT = 10 * 1024;
 var RATE_LIMIT_HISTORY = 5.0;
 
+var query = parse_query_string(window.location.search.substr(1));
+
 /* Parse a URL query string or application/x-www-form-urlencoded body. The
    return type is an object mapping string keys to string values. By design,
    this function doesn't support multiple values for the same named parameter,
@@ -234,10 +236,8 @@ function FlashProxy()
     var debug_div;
     var rate_limit;
 
-    this.query = parse_query_string(window.location.search.substr(1));
-
     this.badge = new Badge();
-    if (this.query.debug) {
+    if (query.debug) {
         debug_div = document.createElement("pre");
         debug_div.className = "debug";
         this.badge_elem = debug_div;
@@ -265,31 +265,31 @@ function FlashProxy()
         var relay_addr;
         var rate_limit_bytes;
 
-        this.fac_addr = get_query_param_addr(this.query, "facilitator", DEFAULT_FACILITATOR_ADDR);
+        this.fac_addr = get_query_param_addr(query, "facilitator", DEFAULT_FACILITATOR_ADDR);
         if (!this.fac_addr) {
             puts("Error: Facilitator spec must be in the form \"host:port\".");
             this.die();
             return;
         }
 
-        this.max_num_proxy_pairs = get_query_param_integer(this.query, "max_clients", DEFAULT_MAX_NUM_PROXY_PAIRS);
+        this.max_num_proxy_pairs = get_query_param_integer(query, "max_clients", DEFAULT_MAX_NUM_PROXY_PAIRS);
         if (this.max_num_proxy_pairs == null || this.max_num_proxy_pairs < 0) {
             puts("Error: max_clients must be a nonnegative integer.");
             this.die();
             return;
         }
 
-        this.facilitator_poll_interval = get_query_param_timespec(this.query, "facilitator_poll_interval", DEFAULT_FACILITATOR_POLL_INTERVAL);
+        this.facilitator_poll_interval = get_query_param_timespec(query, "facilitator_poll_interval", DEFAULT_FACILITATOR_POLL_INTERVAL);
         if (this.facilitator_poll_interval == null || this.facilitator_poll_interval < MIN_FACILITATOR_POLL_INTERVAL) {
             puts("Error: facilitator_poll_interval must be a nonnegative number at least " + MIN_FACILITATOR_POLL_INTERVAL + ".");
             this.die();
             return;
         }
 
-        if (this.query["ratelimit"] == "off")
+        if (query["ratelimit"] == "off")
             rate_limit_bytes = undefined;
         else
-            rate_limit_bytes = get_query_param_byte_count(this.query, "ratelimit", DEFAULT_RATE_LIMIT);
+            rate_limit_bytes = get_query_param_byte_count(query, "ratelimit", DEFAULT_RATE_LIMIT);
         if (rate_limit_bytes === undefined) {
             rate_limit = new DummyRateLimit();
         } else if (rate_limit_bytes == null || rate_limit_bytes < MIN_FACILITATOR_POLL_INTERVAL) {
@@ -300,8 +300,8 @@ function FlashProxy()
             rate_limit = new BucketRateLimit(rate_limit_bytes * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
         }
 
-        client_addr = get_query_param_addr(this.query, "client");
-        relay_addr = get_query_param_addr(this.query, "relay");
+        client_addr = get_query_param_addr(query, "client");
+        relay_addr = get_query_param_addr(query, "relay");
         if (client_addr !== undefined && relay_addr !== undefined) {
             this.make_proxy_pair(client_addr, relay_addr);
         } else if (client_addr !== undefined) {
