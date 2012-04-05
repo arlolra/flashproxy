@@ -786,6 +786,10 @@ function flashproxy_should_disable()
         }
     }
 
+    if (!WebSocket)
+        /* No WebSocket support. */
+        return true;
+
     return false;
 }
 
