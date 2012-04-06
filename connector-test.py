@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import socket
+import subprocess
 import unittest
 from connector import WebSocketDecoder, WebSocketEncoder
+
+LOCAL_ADDRESS = ("127.0.0.1", 40000)
+REMOTE_ADDRESS = ("127.0.0.1", 40001)
 
 def read_frames(dec):
     frames = []
@@ -175,6 +180,23 @@ class TestWebSocketEncoder(unittest.TestCase):
                 dec = WebSocketDecoder(use_mask = use_mask)
                 dec.feed(enc_message)
                 self.assertEqual(read_messages(dec), [(opcode, payload)])
+
+def format_address(addr):
+    return "%s:%d" % addr
+
+class TestConnectionLimit(unittest.TestCase):
+    def setUp(self):
+        self.p = subprocess.Popen(["./connector.py", format_address(LOCAL_ADDRESS), format_address(REMOTE_ADDRESS)])
+
+    def tearDown(self):
+        self.p.terminate()
+
+    def test_remote_limit(self):
+        """Test that the connector limits the number of remote connections that
+        it will accept."""
+        for i in range(5):
+            s = socket.create_connection(REMOTE_ADDRESS, 2)
+        self.assertRaises(socket.error, socket.create_connection, REMOTE_ADDRESS)
 
 if __name__ == "__main__":
     unittest.main()
