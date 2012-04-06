@@ -34,6 +34,7 @@ class options(object):
     log_filename = None
     log_file = sys.stdout
     daemonize = False
+    register = False
     pid_filename = None
 
 # We accept up to this many bytes from a socket not yet matched with a partner
@@ -42,7 +43,7 @@ UNCONNECTED_BUFFER_LIMIT = 10240
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %(progname)s -f FACILITATOR[:PORT] [LOCAL][:PORT] [REMOTE][:PORT]
+Usage: %(progname)s --register [LOCAL][:PORT] [REMOTE][:PORT]
 Wait for connections on a local and a remote port. When any pair of connections
 exists, data is ferried between them until one side is closed. By default
 LOCAL is "%(local)s" and REMOTE is "%(remote)s".
@@ -51,14 +52,17 @@ The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
 request are ignored and the local connection is always linked to a remote
 connection.
 
-The REMOTE address is registered with the given FACILITATOR:PORT (or whatever
-is the default of the flashproxy-reg-http.py program).
+If the --register option is used, then your IP address will be sent to the
+facilitator so that proxies can connect to you. You need to register in some way
+in order to get any service. The --facilitator option allows controlling which
+facilitator is used; if omitted, it uses a public default.
   --daemon                       daemonize (Unix only).
   -f, --facilitator=HOST[:PORT]  advertise willingness to receive connections to
                                    HOST:PORT.
   -h, --help                     show this help.
   -l, --log FILENAME             write log to FILENAME (default stdout).
-      --pidfile FILENAME         write PID to FILENAME after daemonizing.\
+      --pidfile FILENAME         write PID to FILENAME after daemonizing.
+  -r, --register                 register with the facilitator.\
 """ % {
     "progname": sys.argv[0],
     "local": format_addr((DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)),
@@ -567,6 +571,9 @@ def report_pending():
     log(u"remotes (%d): %s" % (len(remotes), [format_peername(x) for x in remotes]))
  
 def register():
+    if not options.register:
+        return
+
     spec = format_addr((None, options.remote_addr[1]))
     command = ["./flashproxy-reg-http.py"]
     if options.facilitator_addr is None:
@@ -768,7 +775,7 @@ def main():
             report_pending()
 
 if __name__ == "__main__":
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:", ["daemon", "facilitator=", "help", "log=", "pidfile="])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register"])
     for o, a in opts:
         if o == "--daemon":
             options.daemonize = True
@@ -781,6 +788,8 @@ if __name__ == "__main__":
             options.log_filename = a
         elif o == "--pidfile":
             options.pid_filename = a
+        elif o == "-r" or o == "--register":
+            options.register = True
 
     if len(args) == 0:
         options.local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
