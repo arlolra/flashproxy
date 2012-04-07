@@ -47,6 +47,9 @@ class TestWebSocketDecoder(unittest.TestCase):
             ("\x82\x7f\x00\x00\x00\x00\x00\x01\x00\x00" + "\x00" * 65536, False,
                 [(True, 2, "\x00" * 65536)],
                 [(2, "\x00" * 65536)]),
+            ("\x82\x7f\x00\x00\x00\x00\x00\x01\x00\x03" + "ABCD" * 16384 + "XYZ", False,
+                [(True, 2, "ABCD" * 16384 + "XYZ")],
+                [(2, "ABCD" * 16384 + "XYZ")]),
         ]
         for data, use_mask, expected_frames, expected_messages in TESTS:
             dec = WebSocketDecoder(use_mask = use_mask)
