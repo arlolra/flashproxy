@@ -573,11 +573,11 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
             }
         }
 
-        if (is_closed(this.relay_s) && !is_closed(this.client_s) && this.r2c_schedule.length === 0) {
+        if (is_closed(this.relay_s) && !is_closed(this.client_s) && this.client_s.bufferedAmount === 0 && this.r2c_schedule.length === 0) {
             log("Client: closing.");
             this.client_s.close();
         }
-        if (is_closed(this.client_s) && !is_closed(this.relay_s) && this.c2r_schedule.length === 0) {
+        if (is_closed(this.client_s) && !is_closed(this.relay_s) && this.relay_s.bufferedAmount === 0 && this.c2r_schedule.length === 0) {
             log("Relay: closing.");
             this.relay_s.close();
         }
