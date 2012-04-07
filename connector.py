@@ -219,14 +219,17 @@ class WebSocketDecoder(object):
                 # "The server MUST close the connection upon receiving a frame
                 # that is not masked."
                 raise self.MaskingError("Got unmasked payload from client")
-            mask_key = "\x00\x00\x00\x00"
+            mask_key = None
 
         if payload_len > self.MAX_MESSAGE_LENGTH:
             raise ValueError("Refusing to buffer payload of %d bytes" % payload_len)
 
         if len(self.buf) < offset + payload_len:
             return None
-        payload = apply_mask(self.buf[offset:offset+payload_len], mask_key)
+        if mask_key:
+            payload = apply_mask(self.buf[offset:offset+payload_len], mask_key)
+        else:
+            payload = self.buf[offset:offset+payload_len]
         self.buf = self.buf[offset+payload_len:]
 
         frame = WebSocketFrame()
