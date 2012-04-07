@@ -126,22 +126,23 @@ def format_addr(addr):
 
 
 def apply_mask(payload, mask_key):
-    result = array.array("l")
-    result.fromstring(payload[:len(payload) // 4 * 4])
-    m, = struct.unpack("=l", mask_key)
+    result = array.array("B", payload)
+    m = array.array("B", mask_key)
     i = 0
+    while i < len(result) - 7:
+        result[i] ^= m[0]
+        result[i+1] ^= m[1]
+        result[i+2] ^= m[2]
+        result[i+3] ^= m[3]
+        result[i+4] ^= m[0]
+        result[i+5] ^= m[1]
+        result[i+6] ^= m[2]
+        result[i+7] ^= m[3]
+        i += 8
     while i < len(result):
-        result[i] ^= m
+        result[i] ^= m[i%4]
         i += 1
-    result = result.tostring()
-    i *= 4
-    if i < len(payload):
-        remainder = []
-        while i < len(payload):
-            remainder.append(chr(ord(payload[i]) ^ ord(mask_key[i%4])))
-            i += 1
-        result = result + "".join(remainder)
-    return result
+    return result.tostring()
 
 class WebSocketFrame(object):
     def __init__(self):
