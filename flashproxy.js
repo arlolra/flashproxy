@@ -450,6 +450,8 @@ function FlashProxy() {
 
 /* An instance of a client-relay connection. */
 function ProxyPair(client_addr, relay_addr, rate_limit) {
+    var MAX_BUFFER = 10 * 1024 * 1024;
+
     function log(s)
     {
         puts(s)
@@ -557,13 +559,13 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
             var chunk;
 
             busy = false;
-            if (is_open(this.client_s) && this.r2c_schedule.length > 0) {
+            if (is_open(this.client_s) && this.client_s.bufferedAmount < MAX_BUFFER && this.r2c_schedule.length > 0) {
                 chunk = this.r2c_schedule.shift();
                 this.rate_limit.update(chunk.length);
                 this.client_s.send(chunk);
                 busy = true;
             }
-            if (is_open(this.relay_s) && this.c2r_schedule.length > 0) {
+            if (is_open(this.relay_s) && this.relay_s.bufferedAmount < MAX_BUFFER && this.c2r_schedule.length > 0) {
                 chunk = this.c2r_schedule.shift();
                 this.rate_limit.update(chunk.length);
                 this.relay_s.send(chunk);
