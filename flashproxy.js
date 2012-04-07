@@ -374,8 +374,6 @@ function FlashProxy() {
             if (xhr.readyState === xhr.DONE) {
                 if (xhr.status === 200)
                     this.fac_complete(xhr.responseText);
-                else if (xhr.status === 0 && xhr.statusText === "")
-                    puts("Facilitator: same-origin error.");
                 else
                     puts("Facilitator: can't connect: got status " + repr(xhr.status) + " and status text " + repr(xhr.statusText) + ".");
             }
