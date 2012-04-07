@@ -5,6 +5,7 @@ FLASHPROXY_DIR="$(dirname $BASH_SOURCE)/.."
 
 FIREFOX=firefox
 SOCAT=socat
+WEBSOCKIFY=websockify
 THTTPD=thttpd
 TOR=tor
 
