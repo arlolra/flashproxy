@@ -9,11 +9,11 @@ You need to have installed certain software before running the tests.
 	Wget
 	Python
 	thttpd
-	Flash Player
+	websockify
 socat, Wget, and Python are easily installed on most GNU/Linux
 distributions. thttpd can be compiled from the packages at
-http://acme.com/software/thttpd/. A debug version of Flash Player can be
-downloaded from http://www.adobe.com/support/flashplayer/downloads.html.
+http://acme.com/software/thttpd/. websockify is from
+https://github.com/kanaka/websockify/.
 
 Firefox versions 9 and 10 will not work; these versions have a change to
 the -no-remote option that prevents the tests from running. This is
@@ -29,10 +29,6 @@ and in each one, set this about:config variable:
 	browser.link.open_newwindow=1 (default is 3)
 This allows the scripts to clear the contents of a tab and replace them
 with another page.
-
-Before running any tests, start the crossdomain server as root:
-	sudo crossdomaind.py --daemon
-The tests themselves shouldn't be run as root.
 
 I personally run these tests in an Arch Linux VM.
 	useradd -m user
