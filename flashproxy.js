@@ -749,9 +749,6 @@ function flashproxy_should_disable() {
             /\bmobile\b/i,
             /\bandroid\b/i,
             /\bopera mobi\b/i,
-            /* Disable on Safari because it doesn't have the hybi/RFC type of
-               WebSockets. */
-            /\bsafari\b/i,
         ];
 
         for (var i = 0; i < UA_LIST.length; i++) {
@@ -762,6 +759,11 @@ function flashproxy_should_disable() {
             }
         }
     }
+
+    if (ua.match(/\bsafari\b/i) && !ua.match(/\bchrome\b/i))
+        /* Disable on Safari because it doesn't have the hybi/RFC type of
+           WebSockets. */
+        return true;
 
     if (!WebSocket)
         /* No WebSocket support. */
