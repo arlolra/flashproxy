@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import array
 import base64
 import cStringIO
 import getopt
@@ -121,11 +122,22 @@ def format_addr(addr):
 
 
 def apply_mask(payload, mask_key):
-    result = []
-    for i, c in enumerate(payload):
-        mc = chr(ord(payload[i]) ^ ord(mask_key[i%4]))
-        result.append(mc)
-    return "".join(result)
+    result = array.array("l")
+    result.fromstring(payload[:len(payload) // 4 * 4])
+    m, = struct.unpack("=l", mask_key)
+    i = 0
+    while i < len(result):
+        result[i] ^= m
+        i += 1
+    result = result.tostring()
+    i *= 4
+    if i < len(payload):
+        remainder = []
+        while i < len(payload):
+            remainder.append(chr(ord(payload[i]) ^ ord(mask_key[i%4])))
+            i += 1
+        result = result + "".join(remainder)
+    return result
 
 class WebSocketFrame(object):
     def __init__(self):
