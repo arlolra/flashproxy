@@ -620,7 +620,13 @@ def proxy_chunk_remote_to_local(remote, local, data = None):
     else:
         remote.dec.feed(data)
         while True:
-            data = remote.dec.read()
+            try:
+                data = remote.dec.read()
+            except (WebSocketDecoder.MaskingError, ValueError), e:
+                log(u"WebSocket decode error from remote: %s" % repr(str(e)))
+                remote.close()
+                local.close()
+                return False
             if data is None:
                 break
             elif not data:
