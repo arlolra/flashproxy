@@ -74,11 +74,11 @@ class TestWebSocketDecoder(unittest.TestCase):
     def test_empty_feed(self):
         """Test that the decoder can handle a zero-byte feed."""
         dec = WebSocketDecoder()
-        self.assertIsNone(dec.read_frame())
+        self.assertEqual(dec.read_frame(), None)
         dec.feed("")
-        self.assertIsNone(dec.read_frame())
+        self.assertEqual(dec.read_frame(), None)
         dec.feed("\x81\x05H")
-        self.assertIsNone(dec.read_frame())
+        self.assertEqual(dec.read_frame(), None)
         dec.feed("ello")
         self.assertEqual(read_frames(dec), [(True, 1, u"Hello")])
 
