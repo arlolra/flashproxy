@@ -8,6 +8,10 @@
 # Results are saved in a file called results-NUM_CLIENTS-DATE, where DATE is the
 # current date.
 
+#         plain       socks            ws               ws              plain
+# httpget <---> socat <---> connector <---> flashproxy <---> websockify <---> thttpd
+#             2000        9001     9000                    8001             8000
+
 . ../common.sh
 
 NUM_CLIENTS=1
@@ -19,7 +23,7 @@ while getopts "n:" OPTNAME; do
 done
 
 PROFILE=flashexp1
-PROXY_URL="http://127.0.0.1:8000/swfcat.swf?facilitator=127.0.0.1:9002&max_clients=$NUM_CLIENTS&ratelimit=off&facilitator_poll_interval=1.0"
+PROXY_URL="http://127.0.0.1:8000/embed.html?facilitator=127.0.0.1:9002&max_clients=$NUM_CLIENTS&ratelimit=off&facilitator_poll_interval=1.0"
 DATA_FILE_NAME="$FLASHPROXY_DIR/dump"
 RESULTS_FILE_NAME="results-$NUM_CLIENTS-$(date --iso)"
 
@@ -44,8 +48,12 @@ echo "Start web server."
 "$THTTPD" -D -d "$FLASHPROXY_DIR" -p 8000 &
 PIDS_TO_KILL+=($!)
 
+echo "Start websockify."
+"$WEBSOCKIFY" -v 8001 127.0.0.1:8000 >/dev/null &
+PIDS_TO_KILL+=($!)
+
 echo "Start facilitator."
-"$FLASHPROXY_DIR"/facilitator.py -d --relay 127.0.0.1:8000 >/dev/null &
+"$FLASHPROXY_DIR"/facilitator.py -d --relay 127.0.0.1:8001 127.0.0.1 9002 >/dev/null &
 PIDS_TO_KILL+=($!)
 visible_sleep 1
 
