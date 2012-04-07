@@ -552,7 +552,10 @@ def register():
     else:
         command += [format_addr(options.facilitator_addr)]
     command += ["-a", spec]
-    p = subprocess.Popen(command)
+    try:
+        p = subprocess.Popen(command)
+    except OSError, e:
+        log(u"Failed to register: %s" % str(e))
 
 def proxy_chunk_local_to_remote(local, remote):
     try:
