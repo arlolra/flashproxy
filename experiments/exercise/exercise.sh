@@ -19,8 +19,9 @@ stop() {
 trap stop EXIT
 
 date
-
-"$FLASHPROXY_DIR"/connector.py -f tor-facilitator.bamsoftware.com ":$LOCAL_PORT" ":$REMOTE_PORT" &
+ 
+cd "$FLASHPROXY_DIR"
+./connector.py --register ":$LOCAL_PORT" ":$REMOTE_PORT" &
 PIDS_TO_KILL+=($!)
 
 sleep 20
