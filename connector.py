@@ -325,6 +325,8 @@ class WebSocketBinaryDecoder(object):
         self.dec.feed(data)
 
     def read(self):
+        """Returns None when there are currently no data to be read. Returns ""
+        when a close message is received."""
         while True:
             message = self.dec.read_message()
             if message is None:
@@ -332,9 +334,14 @@ class WebSocketBinaryDecoder(object):
             elif message.opcode == 1:
                 if not self.base64:
                     raise ValueError("Received text message on decoder incapable of base64")
-                return base64.b64decode(message.payload)
+                payload = base64.b64decode(message.payload)
+                if payload:
+                    return payload
             elif message.opcode == 2:
-                return message.payload
+                if message.payload:
+                    return message.payload
+            elif message.opcode == 8:
+                return ""
             # Ignore all other opcodes.
         return None
 
@@ -557,13 +564,14 @@ def register():
     except OSError, e:
         log(u"Failed to register: %s" % str(e))
 
-def proxy_chunk_local_to_remote(local, remote):
-    try:
-        data = local.recv(65536)
-    except socket.error, e: # Can be "Connection reset by peer".
-        log(u"Socket error from local: %s" % repr(str(e)))
-        remote.close()
-        return False
+def proxy_chunk_local_to_remote(local, remote, data = None):
+    if data is None:
+        try:
+            data = local.recv(65536)
+        except socket.error, e: # Can be "Connection reset by peer".
+            log(u"Socket error from local: %s" % repr(str(e)))
+            remote.close()
+            return False
     if not data:
         log(u"EOF from local %s." % format_peername(local))
         local.close()
@@ -573,20 +581,31 @@ def proxy_chunk_local_to_remote(local, remote):
         remote.send_chunk(data)
         return True
 
-def proxy_chunk_remote_to_local(remote, local):
-    try:
-        data = remote.recv(65536)
-    except socket.error, e: # Can be "Connection reset by peer".
-        log(u"Socket error from remote: %s" % repr(str(e)))
-        local.close()
-        return False
+def proxy_chunk_remote_to_local(remote, local, data = None):
+    if data is None:
+        try:
+            data = remote.recv(65536)
+        except socket.error, e: # Can be "Connection reset by peer".
+            log(u"Socket error from remote: %s" % repr(str(e)))
+            local.close()
+            return False
     if not data:
         log(u"EOF from remote %s." % format_peername(remote))
         remote.close()
         local.close()
         return False
     else:
-        local.send_chunk(data)
+        remote.dec.feed(data)
+        while True:
+            data = remote.dec.read()
+            if data is None:
+                break
+            elif not data:
+                log(u"WebSocket close from remote %s." % format_peername(remote))
+                remote.close()
+                local.close()
+                return False
+            local.send_chunk(data)
         return True
 
 def receive_unlinked(fd, label):
@@ -623,9 +642,9 @@ def match_proxies():
         remote.partner = local
         local.partner = remote
         if local.buf:
-            remote.send_chunk(local.buf)
+            proxy_chunk_remote_to_local(remote, local, local.buf)
         if remote.buf:
-            local.send_chunk(remote.buf)
+            proxy_chunk_local_to_remote(local, remote, remote.buf)
 
 class TimeoutSocket(object):
     def __init__(self, fd):
@@ -659,12 +678,7 @@ class LocalSocket(object):
         self.partner = None
 
     def send_chunk(self, data):
-        self.partner.dec.feed(data)
-        while True:
-            data = self.partner.dec.read()
-            if not data:
-                break
-            self.sendall(data)
+        self.sendall(data)
 
     def __getattr__(self, name):
         return getattr(self.fd, name)
