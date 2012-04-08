@@ -601,7 +601,12 @@ def proxy_chunk_local_to_remote(local, remote, data = None):
         remote.close()
         return False
     else:
-        remote.send_chunk(data)
+        try:
+            remote.send_chunk(data)
+        except socket.error, e:
+            log(u"Socket error writing to remote: %s" % repr(str(e)))
+            local.close()
+            return False
         return True
 
 def proxy_chunk_remote_to_local(remote, local, data = None):
@@ -634,7 +639,12 @@ def proxy_chunk_remote_to_local(remote, local, data = None):
                 remote.close()
                 local.close()
                 return False
-            local.send_chunk(data)
+            try:
+                local.send_chunk(data)
+            except socket.error, e:
+                log(u"Socket error writing to local: %s" % repr(str(e)))
+                remote.close()
+                return False
         return True
 
 def receive_unlinked(fd, label):
