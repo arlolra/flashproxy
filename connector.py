@@ -257,7 +257,7 @@ class WebSocketDecoder(object):
                 return None
             # "Control frames (see Section 5.5) MAY be injected in the middle of
             # a fragmented message. Control frames themselves MUST NOT be
-            # fragmented.
+            # fragmented."
             if frame.is_control():
                 if not frame.fin:
                     raise ValueError("Control frame (opcode %d) has FIN bit clear" % frame.opcode)
