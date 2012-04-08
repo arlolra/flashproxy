@@ -670,10 +670,10 @@ def match_proxies():
         log(u"Linking %s and %s." % (format_peername(local), format_peername(remote)))
         remote.partner = local
         local.partner = remote
-        if local.buf:
-            proxy_chunk_remote_to_local(remote, local, local.buf)
         if remote.buf:
-            proxy_chunk_local_to_remote(local, remote, remote.buf)
+            proxy_chunk_remote_to_local(remote, local, remote.buf)
+        if local.buf:
+            proxy_chunk_local_to_remote(local, remote, local.buf)
 
 class TimeoutSocket(object):
     def __init__(self, fd):
