@@ -76,6 +76,15 @@ From tor you are looking for:
 	[notice] Tor has successfully opened a circuit. Looks like client functionality is working.
 	[notice] Bootstrapped 100%: Done.
 
+=== Using a public connector
+
+Rather than running connector.py on your computer, you can use a public
+connector. This way is not as realistic because all your Tor traffic
+will first go to a public connector, which is at a fixed address and can
+be easily blocked. However this is an easy way to try out the system
+without having to do port forwarding.
+	$ tor ClientTransportPlugin "websocket socks4 127.0.0.1:9001" UseBridges 1 Bridge "websocket tor-facilitator.bamsoftware.com:9999"
+
 === Troubleshooting
 
 Make sure someone is viewing https://crypto.stanford.edu/flashproxy/, or
