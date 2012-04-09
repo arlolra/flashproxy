@@ -9,7 +9,7 @@
 
 PROFILE_1=flashexp1
 PROFILE_2=flashexp2
-PROXY_URL="http://127.0.0.1:8000/swfcat.swf?facilitator=127.0.0.1:9002&ratelimit=off"
+PROXY_URL="http://127.0.0.1:8000/embed.html?facilitator=127.0.0.1:9002&ratelimit=off"
 DATA_FILE_NAME="$FLASHPROXY_DIR/dump"
 OUTPUT_FILENAME="$1"
 
@@ -38,8 +38,9 @@ PIDS_TO_KILL+=($!)
 visible_sleep 5
 
 echo "Start connector."
-"$FLASHPROXY_DIR"/connector.py --facilitator 127.0.0.1 >/dev/null &
+"$FLASHPROXY_DIR"/connector.py >/dev/null &
 PIDS_TO_KILL+=($!)
+echo $'POST / HTTP/1.0\r\n\r\nclient=:9000' | socat - TCP-CONNECT:127.0.0.1:9002
 visible_sleep 1
 
 echo "Start Tor."
