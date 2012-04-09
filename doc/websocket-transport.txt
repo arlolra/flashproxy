@@ -1,0 +1,218 @@
+Title: WebSocket pluggable transport
+Author: David Fifield
+
+Overview
+
+  This proposal describes the "websocket" pluggable transport for Tor.
+  It uses the WebSocket protocol now implemented by many web browsers.
+  It is mostly a straightforward description of proxying WebSocket to
+  plain TCP, with special consideration for a base64 encoding for agents
+  that don't support binary WebSocket frames.
+
+Motivation
+
+  The WebSocket protocol is used by the "flash proxy" system that uses
+  web browsers as temporary proxies; browsers may connect to a relay
+  that supports this pluggable transport. Additionally, if WebSocket has
+  a lot of non-Tor use, it becomes a good target for tunneling, perhaps
+  in conjunction with a lower layer of obfuscation. WebSocket commonly
+  works over HTTP ports that are likely to get through a firewall.
+
+WebSocket overview
+
+  WebSocket is a protocol (rather, several mostly compatible protocols)
+  aimed at exposing socket-like functionality to JavaScript in web
+  browsers. It is partially aimed at supplanting techniques such as HTTP
+  long polling for client–server communication. WebSocket provides
+  bidirectional communication between a client and server, sufficient to
+  tunnel Tor traffic. A WebSocket session begins with an HTTP Upgrade
+  handshake. The socket carries data broken into variable-length
+  "messages" which are further broken into "frames." There are
+  distinguished frame opcodes that serve to send either data or control
+  information. Frames sent by the client (but not the server) are XORed
+  with a repeating 32-bit mask that is randomly generated per-frame.
+
+  Broadly speaking, there are two versions of WebSocket: the older
+  "hixie" protocol, and the newer "hybi" protocol which is now RFC 6455.
+  There are subprotocols within these two versions that differ only in
+  small ways: "hixie-75" and "hixie-76"; and "hybi-7", "hybi-10", and
+  "hybi-17". The older "hybi" sockets were supported by Firefox 4 and
+  Opera 11, but were later disabled because of problems with interaction
+  with reverse HTTP proxies. Current versions of Firefox and Chrome
+  support "hybi" sockets, while Safari only supports "hixie".
+
+  The "hybi" sockets support text frames and binary frames. Text frames
+  may only include UTF-8–encoded text; it is an error if payload doesn't
+  decode. Binary frames may contain any binary data. However, not all
+  web browsers support binary frames; they were first added to Firefox
+  in version 11. The "hixie" sockets have only text frames.
+
+Method name
+
+  The method name of the transport is "websocket". For example, these
+  are possible torrc configurations for a client and server,
+  respectively:
+
+UseBridges 1
+ClientTransportPlugin websocket exec /usr/libexec/tor-websocket-proxy --client --managed
+Bridge websocket 198.51.100.1
+
+ServerTransportPlugin websocket exec /usr/libexec/tor-websocket-proxy --server --managed
+
+The base64 subprotocol
+
+  The most convenient way to tunnel data over WebSocket is with binary
+  frames, but not all web browsers support binary frames. To work around
+  this, the "base64" subprotocol encodes binary data as base64 within
+  text frames. A client that knows it does not support binary frames
+  requests the base64 subprotocol by including "base64" in the value of
+  the Sec-WebSocket-Protocol header field. A server that also supports
+  this subprotocol by sending the value "base64" (and only "base64") in
+  the Sec-WebSocket-Protocol header field of its response. See under
+  "Examples" for example of handshakes like this.
+
+  The base64 encoding is applied at the message level, not the frame
+  level. This means, in particular, that any '=' padding occurs only at
+  the end of a message, not at the end of each of its constituent
+  frames. So, for example, the 5-byte message "Hello", whose base64
+  encoding is "SGVsbG8=", may be sent as one text frame as follows:
+
+    0x81 0x08 "SGVsbG8="
+
+  or, for example, as two frames (one of 2 bytes and one of 6 bytes):
+
+    0x01 0x02 "SG" 0x81 0x06 "sbG8="
+
+  When sent by a client, all frames including these must be masked. If
+  the masking key is 0x12345678, then the message may be sent as one
+  frame like this:
+
+    0x81 0x18 0x12 0x34 0x56 0x78 0x41 0x73 0x00 0x0b 0x70 0x73 0x6e 0x45
+
+Examples
+
+  Here are examples of WebSocket handshakes and the beginning of data
+  transfer. The data is the beginning of a Tor connection (i.e., it
+  begins with a TLS handshake). Data are shown using C string syntax. ">
+  " at the beginning of a line indicates client-to-server communication;
+  "< " is server-to-client. "[...]" indicates contents omitted for
+  brevity. Newlines in the presentation are not significant. This
+  section is non-normative.
+
+  Using "hybi"/RFC 6455 WebSocket with binary frames:
+
+> GET / HTTP/1.1\r\n
+> Host: 192.0.2.1:80\r\n
+> Origin: https://example.com\r\n
+> Sec-WebSocket-Version: 13\r\n
+> Sec-WebSocket-Key: mzo2xSF9N8VUxuefqO0RSw==\r\n
+> Connection: Upgrade\r\n
+> Upgrade: websocket\r\n
+> \r\n
+< HTTP/1.1 101 Switching Protocols\r\n
+< Upgrade: websocket\r\n
+< Connection: Upgrade\r\n
+< Sec-WebSocket-Accept: fM0KjD7ixoxkl4PEXU6tNaTveSg=\r\n
+< \r\n
+> \x82\xfe\x01\x04\xc9\xd6\xdd\x29\xdf\xd5\xde\x29\x36\xd7[...]
+< \x16\x03\x01\x00\x31\x02\x00\x00\x2d\x03[...]
+
+  Using "hybi"/RFC 6455 WebSocket with the base64 subprotocol:
+
+> GET / HTTP/1.1\r\n
+> Host: 192.0.2.1:80\r\n
+> Origin: https://example.com\r\n
+> Sec-WebSocket-Version: 13\r\n
+> Sec-WebSocket-Protocol: base64\r\n
+> Sec-WebSocket-Key: k5Ybhw0XBDeBfmda1J9ooQ==\r\n
+> Connection: Upgrade\r\n
+> Upgrade: websocket\r\n
+> \r\n
+< HTTP/1.1 101 Switching Protocols\r\n
+< Upgrade: websocket\r\n
+< Connection: Upgrade\r\n
+< Sec-WebSocket-Accept: LYWpflPUHdal8U1BLPXWR3iqUrI=\r\n
+< Sec-WebSocket-Protocol: base64\r\n
+< \r\n
+> \x81\xfe\x01\x58\xbd\x94\x2a\x31\xfb\xf3\x67\x75\xfc\xc4[...]
+< \x81\x7e\x04\xd0FgMBADECAA[...]
+
+Considerations specific to pluggable transports
+
+  Endpoints must implement WebSocket according to RFC 6455; for example,
+  a server MUST close the connection if it receives an unmasked frame
+  from a client, and a client MUST close the connection if it receives a
+  masked frame from a server (RFC 6455 section 5.1). There are also
+  additional requirements for WebSocket when used as a Tor pluggable
+  transport.
+
+  Clients MUST implement the RFC 6455 version of the protocol and use it
+  for all connections. Servers MUST implement the RFC 6455 version of
+  the protocol and MAY also implement earlier versions. That is, a
+  server MAY check a client HTTP request to see if it matches an earlier
+  version of the protocol, and MAY begin communicating using that
+  protocol. Section 4.4 of RFC 6455 discusses supporting multiple
+  versions of the protocol.
+
+  Servers MUST support binary frames (opcode 2). Servers MAY also
+  support text frames (opcode 1). Servers supporting text frames MUST
+  implement the base64 subprotocol and accept it when requested by a
+  client in the Sec-WebSocket-Protocol header field. Text frames MUST
+  NOT be sent by either side if the base64 subprotocol has not been
+  negotiated. Any endpoint receiving a text frame when base64 has not
+  been negotiated, or a text message that cannot be decoded as base64,
+  MUST close the connection.
+
+  A client MUST NOT proceed after receiving any HTTP response status
+  code other than 101. In particular, it MUST NOT follow redirections
+  such as 301.
+
+  Endpoints SHOULD respond to Ping frames with a single Pong frame, but
+  nothing in this specification requires the sending of Ping frames.
+
+  Endpoints SHOULD limit the size of messages they send. All messages
+  SHOULD be sent in a single frame.
+
+  Endpoints MUST limit the size of messages and frames that they will
+  buffer. Upon receiving such a message (when the sum of the length of
+  already-buffered data and the length of the next frame exceeds the
+  limit), the endpoint MUST close the connection and SHOULD do so with a
+  status code of 1009 (see RFC 6455 section 7.4.1). Endpoints MUST be
+  capable of receiving messages containing 1500 octets of binary data;
+  this may require buffering up to 2026 bytes of UTF-8–encoded base64
+  text.
+
+Questions/extensions
+
+  WebSocket also has a TLS-wrapped version, identified by using the
+  "wss" (as opposed to "ws") URL scheme. An advantage of this when
+  tunneling through a browser is that the TLS handshake will be exactly
+  that of a browser. However, this probably requires the certificates of
+  relays' server transport plugins to be trusted by browsers.
+
+References
+
+  "Pluggable transports for circumvention"
+  https://gitweb.torproject.org/torspec.git/blob/HEAD:/proposals/180-pluggable-transport.txt
+
+  RFC 6455, "The WebSocket Protocol" (a.k.a. hybi-17)
+  https://tools.ietf.org/html/rfc6455
+
+  "The WebSocket protocol (draft-ietf-hybi-thewebsocketprotocol-10)"
+  (a.k.a. hybi-10)
+  https://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10
+
+  "The WebSocket protocol (draft-ietf-hybi-thewebsocketprotocol-7)"
+  (a.k.a. hybi-7)
+  https://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-7
+
+  "The WebSocket protocol (draft-ietf-hybi-thewebsocketprotocol-00)"
+  (a.k.a. hybi-00, hixie-76)
+  https://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-00
+
+  "The Web Socket protocol (draft-hixie-thewebsocketprotocol-75)"
+  (a.k.a. hixie-75)
+  https://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-75
+
+  Browser support matrix
+  http://autobahn.ws/testsuite/reports/clients/index.html
