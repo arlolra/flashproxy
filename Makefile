@@ -6,7 +6,7 @@ all:
 
 install:
 	mkdir -p $(BINDIR)
-	cp -f connector.py facilitator.py $(BINDIR)
+	cp -f connector.py facilitator.py flashproxy-reg-http.py $(BINDIR)
 
 clean:
 	:
