@@ -24,6 +24,11 @@ except ImportError:
     # Python 2.4 uses this name.
     from sha import sha as sha1
 
+try:
+    import numpy
+except ImportError:
+    numpy = None
+
 DEFAULT_REMOTE_ADDRESS = "0.0.0.0"
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_LOCAL_ADDRESS = "127.0.0.1"
@@ -130,7 +135,22 @@ def format_addr(addr):
 
 
 
-def apply_mask(payload, mask_key):
+def apply_mask_numpy(payload, mask_key):
+    if len(payload) == 0:
+        return ""
+    payload_a = numpy.frombuffer(payload, dtype="|u4", count=len(payload)//4)
+    m, = numpy.frombuffer(mask_key, dtype="|u4", count=1)
+    result = numpy.bitwise_xor(payload_a, m).tostring()
+    i = len(payload) // 4 * 4
+    if i < len(payload):
+        remainder = []
+        while i < len(payload):
+            remainder.append(chr(ord(payload[i]) ^ ord(mask_key[i % 4])))
+            i += 1
+        result = result + "".join(remainder)
+    return result
+
+def apply_mask_py(payload, mask_key):
     result = array.array("B", payload)
     m = array.array("B", mask_key)
     i = 0
@@ -148,6 +168,11 @@ def apply_mask(payload, mask_key):
         result[i] ^= m[i%4]
         i += 1
     return result.tostring()
+
+if numpy is not None:
+    apply_mask = apply_mask_numpy
+else:
+    apply_mask = apply_mask_py
 
 class WebSocketFrame(object):
     def __init__(self):
