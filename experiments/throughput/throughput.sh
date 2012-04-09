@@ -42,7 +42,7 @@ stop() {
 trap stop EXIT
 
 echo "Create data file."
-dd if=/dev/null of="$DATA_FILE_NAME" bs=1M seek=100 2>/dev/null || exit
+dd if=/dev/null of="$DATA_FILE_NAME" bs=1M seek=10 2>/dev/null || exit
 
 echo "Start web server."
 "$THTTPD" -D -d "$FLASHPROXY_DIR" -p 8000 &
