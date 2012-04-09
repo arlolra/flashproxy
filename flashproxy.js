@@ -64,8 +64,9 @@ var DEFAULT_RATE_LIMIT = undefined;
 var MIN_RATE_LIMIT = 10 * 1024;
 var RATE_LIMIT_HISTORY = 5.0;
 
-/* Gecko browsers use the name MozWebSocket. Also we can test whether WebSocket
-   is defined to see if WebSockets are supported at all. */
+/* Firefox before version 11.0 uses the name MozWebSocket. Whether the global
+   variable WebSocket is defined indicates whether WebSocket is supported at
+   all. */
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
 var query = parse_query_string(window.location.search.substr(1));
