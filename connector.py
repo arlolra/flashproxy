@@ -4,7 +4,6 @@ import array
 import base64
 import cStringIO
 import getopt
-import hashlib
 import httplib
 import os
 import re
@@ -18,6 +17,12 @@ import traceback
 import urllib
 import xml.sax.saxutils
 import BaseHTTPServer
+
+try:
+    from hashlib import sha1
+except ImportError:
+    # Python 2.4 uses this name.
+    from sha import sha as sha1
 
 DEFAULT_REMOTE_ADDRESS = "0.0.0.0"
 DEFAULT_REMOTE_PORT = 9000
@@ -502,7 +507,7 @@ def handle_websocket_request(fd):
     # 4.2.2, with the string "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", taking the
     # SHA-1 hash of this concatenated value to obtain a 20-byte value and
     # base64-encoding (see Section 4 of [RFC4648]) this 20-byte hash.
-    accept_key = base64.b64encode(hashlib.sha1(key + MAGIC_GUID).digest())
+    accept_key = base64.b64encode(sha1(key + MAGIC_GUID).digest())
     handler.send_header("Sec-WebSocket-Accept", accept_key)
     # 5.  Optionally, a |Sec-WebSocket-Protocol| header field, with a value
     # /subprotocol/ as defined in step 4 in Section 4.2.2.
