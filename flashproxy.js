@@ -252,6 +252,16 @@ function format_addr(addr) {
    6455 section 5.6.) If not, we have to use base64-encoded text frames. It is
    assumed that the client and relay endpoints always support binary frames. */
 function have_websocket_binary_frames() {
+    var ua, matches;
+
+    ua = window.navigator.userAgent;
+    if (ua === null)
+        return false;
+
+    matches = ua.match(/\bchrome\/(\d+)/i);
+    if (matches !== null && Number(matches[1]) >= 16)
+        return true;
+
     return false;
 }
 
