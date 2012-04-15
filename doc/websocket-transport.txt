@@ -69,7 +69,7 @@ The base64 subprotocol
   the Sec-WebSocket-Protocol header field. A server that also supports
   this subprotocol by sending the value "base64" (and only "base64") in
   the Sec-WebSocket-Protocol header field of its response. See under
-  "Examples" for example of handshakes like this.
+  "Examples" for examples of handshakes like this.
 
   The base64 encoding is applied at the message level, not the frame
   level. This means, in particular, that any '=' padding occurs only at
@@ -83,9 +83,9 @@ The base64 subprotocol
 
     0x01 0x02 "SG" 0x81 0x06 "sbG8="
 
-  When sent by a client, all frames including these must be masked. If
-  the masking key is 0x12345678, then the message may be sent as one
-  frame like this:
+  When sent by a client, all frames including these must be masked. Here
+  is an example of a masked base64-encoded message sent as a single
+  frame (using the masking key 0x12345678):
 
     0x81 0x18 0x12 0x34 0x56 0x78 0x41 0x73 0x00 0x0b 0x70 0x73 0x6e 0x45
 
