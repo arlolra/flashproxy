@@ -756,7 +756,7 @@ function flashproxy_should_disable() {
     var ua;
 
     ua = window.navigator.userAgent;
-    if (ua != null) {
+    if (ua !== null) {
         var UA_LIST = [
             /\bmobile\b/i,
             /\bandroid\b/i,
