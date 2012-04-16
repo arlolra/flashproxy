@@ -170,8 +170,10 @@ Considerations specific to pluggable transports
   Endpoints SHOULD respond to Ping frames with a single Pong frame, but
   nothing in this specification requires the sending of Ping frames.
 
-  Endpoints SHOULD limit the size of messages they send. All messages
-  SHOULD be sent in a single frame.
+  Message and frame boundaries are not meaningful. Received non-control
+  messages are concatenated, in order, to reconstruct the original
+  stream. Endpoints SHOULD limit the size of messages they send. All
+  messages SHOULD be sent in a single frame.
 
   Endpoints MUST limit the size of messages and frames that they will
   buffer. Upon receiving such a message (when the sum of the length of
