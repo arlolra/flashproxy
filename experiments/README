@@ -17,7 +17,7 @@ https://github.com/kanaka/websockify/.
 
 Firefox versions 9 and 10 will not work; these versions have a change to
 the -no-remote option that prevents the tests from running. This is
-supposed to be fixed in version 11.
+supposed to be fixed with a -new-instance option in version 12.
 
 You need to create some dedicated Firefox profiles. Create profiles
 named flashexp1 and flashexp2 by running
