@@ -118,6 +118,7 @@ re-register:
 
 The relay runs with a WebSocket proxy in external proxy mode.
 	git clone git://github.com/kanaka/websockify.git
+	git apply ~/flashproxy/patches/websockify-binary-default.patch
 This command proxies WebSocket on port 9901 to a local ORPort on 9001.
 	./websockify :9901 127.0.0.1:9001
 The init.d script described under "Installing so as to restart at boot"
@@ -160,6 +161,7 @@ CentOS. "make install" copies files to /usr/local/bin.
 	# service facilitator start
 
 	# cd websockify
+	# git apply ~/flashproxy/patches/websockify-binary-default.patch
 	# cp websockify websocket.py /usr/local/bin
 	# useradd -d /dev/null -s /bin/false websockify
 	# mkdir /var/websockify

@@ -1,0 +1,26 @@
+From 066c665c2e437a399e2fd0b55394b0ec82c7aeab Mon Sep 17 00:00:00 2001
+From: David Fifield <david@bamsoftware.com>
+Date: Thu, 19 Apr 2012 14:16:16 -0700
+Subject: [PATCH] Assume binary transfer when no subprotocol is given.
+
+---
+ websocket.py |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/websocket.py b/websocket.py
+index 646160c..d6cea57 100644
+--- a/websocket.py
++++ b/websocket.py
+@@ -660,7 +660,8 @@ Sec-WebSocket-Accept: %s\r
+             elif 'base64' in protocols:
+                 self.base64 = True
+             else:
+-                raise self.EClose("Client must support 'binary' or 'base64' protocol")
++                self.base64 = False
++                # raise self.EClose("Client must support 'binary' or 'base64' protocol")
+ 
+             # Generate the hash value for the accept header
+             accept = b64encode(sha1(s2b(key + self.GUID)).digest())
+-- 
+1.7.9.5
+
