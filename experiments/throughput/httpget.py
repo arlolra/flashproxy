@@ -19,7 +19,7 @@ for o, a in opts:
         label = a
 
 try:
-    stream = urllib2.urlopen(args[0], timeout=10)
+    stream = urllib2.urlopen(args[0], timeout=100)
     start_time = time.time()
     while stream.read(BLOCK_SIZE):
         pass
