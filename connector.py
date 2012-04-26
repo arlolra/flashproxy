@@ -711,9 +711,16 @@ def match_proxies():
         remote.partner = local
         local.partner = remote
         if remote.buf:
-            proxy_chunk_remote_to_local(remote, local, remote.buf)
+            if not proxy_chunk_remote_to_local(remote, local, remote.buf):
+                remotes.remove(remote)
+                locals.remove(local)
+                register()
+                return
         if local.buf:
-            proxy_chunk_local_to_remote(local, remote, local.buf)
+            if not proxy_chunk_local_to_remote(local, remote, local.buf):
+                remotes.remove(remote)
+                locals.remove(local)
+                return
 
 class TimeoutSocket(object):
     def __init__(self, fd):
