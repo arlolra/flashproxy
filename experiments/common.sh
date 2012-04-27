@@ -15,7 +15,7 @@ visible_sleep() {
 	while [ "$N" -gt 0 ]; do
 		sleep 1
 		N=$((N-1))
-		echo -ne "\rsleep $N"
+		echo -ne "\rsleep $N "
 	done
 	echo -ne "\n"
 }
