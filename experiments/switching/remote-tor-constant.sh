@@ -32,7 +32,7 @@ echo "Start web server."
 PIDS_TO_KILL+=($!)
 
 echo "Start facilitator."
-"$FLASHPROXY_DIR"/facilitator.py -d --relay tor1.bamsoftware.com >/dev/null &
+"$FLASHPROXY_DIR"/facilitator.py -d --relay tor1.bamsoftware.com:9901 >/dev/null &
 PIDS_TO_KILL+=($!)
 visible_sleep 5
 
