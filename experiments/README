@@ -16,6 +16,10 @@ http://acme.com/software/thttpd/. websockify is from
 https://github.com/kanaka/websockify/. The old Firefox is from
 http://download.mozilla.org/?product=firefox-8.0.1&os=linux&lang=en-US.
 
+Before compiling thttpd, increade IDLE_READ_TIMEOUT in config.h to a
+high value (several thousand). This is because some tests wait a long
+time between making a connection and sending an HTTP request.
+
 Firefox versions 9 and 10 will not work; these versions have a change to
 the -no-remote option that prevents the tests from running. This is
 supposed to be fixed with a -new-instance option in version 12.
