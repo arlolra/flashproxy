@@ -54,9 +54,8 @@ PIDS_TO_KILL+=($!)
 visible_sleep 2
 
 echo "Start socat."
-"$FLASHPROXY_DIR"/connector.py >/dev/null &
+"$SOCAT" TCP-LISTEN:2000,reuseaddr,fork SOCKS4A:127.0.0.1:dummy:0,socksport=9001 &
 PIDS_TO_KILL+=($!)
-echo $'POST / HTTP/1.0\r\n\r\nclient=:9000' | socat - TCP-CONNECT:127.0.0.1:9002
 visible_sleep 2
 
 
