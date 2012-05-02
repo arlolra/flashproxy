@@ -605,8 +605,13 @@ def register():
     if not options.register:
         return
 
+    # sys.path[0] is initialized to the directory containing the Python script file.
+    script_dir = sys.path[0]
+    if not script_dir:
+        # Maybe the script was read from stdin; in any case don't guess at the directory.
+        return
+    command = [os.path.join(script_dir, "flashproxy-reg-http.py")]
     spec = format_addr((None, options.remote_addr[1]))
-    command = ["./flashproxy-reg-http.py"]
     if options.facilitator_addr is None:
         log(u"Registering \"%s\"." % spec)
     else:
