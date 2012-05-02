@@ -45,9 +45,8 @@ PIDS_TO_KILL+=($!)
 visible_sleep 5
 
 echo "Start connector."
-"$FLASHPROXY_DIR"/connector.py >/dev/null &
+"$FLASHPROXY_DIR"/connector.py --register --facilitator 127.0.0.1:9002 >/dev/null &
 PIDS_TO_KILL+=($!)
-echo $'POST / HTTP/1.0\r\n\r\nclient=:9000' | socat - TCP-CONNECT:127.0.0.1:9002
 visible_sleep 1
 
 echo "Start browser."
