@@ -93,11 +93,11 @@ Examples
 
   Here are examples of WebSocket handshakes and the beginning of data
   transfer. The data is the beginning of a Tor connection (i.e., it
-  begins with a TLS handshake). Data are shown using C string syntax. ">
-  " at the beginning of a line indicates client-to-server communication;
-  "< " is server-to-client. "[...]" indicates contents omitted for
-  brevity. Newlines in the presentation are not significant. This
-  section is non-normative.
+  begins with a TLS handshake). Data are shown using C string syntax.
+  "> " at the beginning of a line indicates client-to-server
+  communication; "< " is server-to-client. "[...]" indicates contents
+  omitted for brevity. Newlines in the presentation are not significant.
+  This section is non-normative.
 
   Using "hybi"/RFC 6455 WebSocket with binary frames:
 
