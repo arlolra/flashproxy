@@ -103,7 +103,7 @@ Examples
 
 > GET / HTTP/1.1\r\n
 > Host: 192.0.2.1:80\r\n
-> Origin: https://example.com\r\n
+> Origin: http://example.com\r\n
 > Sec-WebSocket-Version: 13\r\n
 > Sec-WebSocket-Key: mzo2xSF9N8VUxuefqO0RSw==\r\n
 > Connection: Upgrade\r\n
@@ -121,7 +121,7 @@ Examples
 
 > GET / HTTP/1.1\r\n
 > Host: 192.0.2.1:80\r\n
-> Origin: https://example.com\r\n
+> Origin: http://example.com\r\n
 > Sec-WebSocket-Version: 13\r\n
 > Sec-WebSocket-Protocol: base64\r\n
 > Sec-WebSocket-Key: k5Ybhw0XBDeBfmda1J9ooQ==\r\n

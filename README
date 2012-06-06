@@ -26,7 +26,7 @@ changing pool of addresses.
 This page has a description of the project; viewing it also turns your
 computer into a flash proxy as long as the page is open.
 
-https://crypto.stanford.edu/flashproxy/
+http://crypto.stanford.edu/flashproxy/
 
 
 == Quick start for users
@@ -46,7 +46,7 @@ if you are able to configure port forwarding or receive direct
 connections from the Internet.
 
 If you don't get a connection within 30 seconds or so, make sure someone
-with Flash Player is viewing https://crypto.stanford.edu/flashproxy/.
+with Flash Player is viewing http://crypto.stanford.edu/flashproxy/.
 There aren't yet enough operational proxies that one is available all
 the time.
 
@@ -87,7 +87,7 @@ without having to do port forwarding.
 
 === Troubleshooting
 
-Make sure someone is viewing https://crypto.stanford.edu/flashproxy/, or
+Make sure someone is viewing http://crypto.stanford.edu/flashproxy/, or
 another web page with a flash proxy badge on it.
 
 Sometimes Tor can think that the bridge you reach through a proxy is
@@ -131,7 +131,7 @@ Add this line to torrc to make the relay use the external proxy:
 
 Paste in this HTML where you want the badge to appear:
 
-<iframe src="https://crypto.stanford.edu/flashproxy/embed.html" width="70px" height="23px" frameBorder="0" scrolling="no"></iframe>
+<iframe src="//crypto.stanford.edu/flashproxy/embed.html" width="70px" height="23px" frameBorder="0" scrolling="no"></iframe>
 
 
 == For developers
