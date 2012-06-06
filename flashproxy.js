@@ -437,7 +437,13 @@ function FlashProxy() {
             this.proxy_pairs.splice(this.proxy_pairs.indexOf(proxy_pair), 1);
             this.badge.proxy_end();
         }.bind(this);
-        proxy_pair.connect();
+        try {
+            proxy_pair.connect();
+        } catch (err) {
+            puts("ProxyPair: exception while connecting: " + repr(err.message) + ".");
+            this.die();
+            return;
+        }
 
         this.badge.proxy_begin();
     };
