@@ -9,13 +9,6 @@ reconnecting through a new proxy. Tor remembers the host fingerprint
 from the first connection (to the bridge it thinks is at 127.0.0.1) and
 balks at connecting to the same address with a different fingerprint.
 
-Could be useful to have a swfcatsim.py program. This would simulate
-a swfcat instance (perhaps without the crossdomain stuff), providing
-a bridge with a lifetime randomly chosen from some distribution. (For
-example: "simulate proxies connecting according to this Poisson
-distribution and staying connected according to this exponential
-distribution.")
-
 == How to use with an SSH proxy
 
 Start swfcat, giving it a relay parameter pointing to your SSH server.
