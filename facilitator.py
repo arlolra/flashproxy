@@ -190,10 +190,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         path = urlparse.urlsplit(self.path)[2]
 
-        if path == u"/crossdomain.xml":
-            self.send_crossdomain()
-            return
-
         reg = REGS.fetch()
         if reg:
             log(u"proxy %s gets %s, relay %s (now %d)" %
@@ -234,19 +230,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.end_headers()
-
-    def send_crossdomain(self):
-        crossdomain = """\
-<cross-domain-policy>
-<allow-access-from domain="*"/>
-</cross-domain-policy>
-"""
-        self.send_response(200)
-        # Content-Type must be one of a few whitelisted types.
-        # http://www.adobe.com/devnet/flashplayer/articles/fplayer9_security.html#_Content-Type_Whitelist
-        self.send_header("Content-Type", "application/xml")
-        self.end_headers()
-        self.wfile.write(crossdomain)
 
     def send_error(self, code, message = None):
         self.send_response(code)
