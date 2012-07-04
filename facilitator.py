@@ -129,22 +129,6 @@ class TCPReg(object):
         else:
             return False
 
-class RTMFPReg(object):
-    def __init__(self, id):
-        self.id = id
-
-    def __unicode__(self):
-        return u"%s" % self.id
-
-    def __str__(self):
-        return unicode(self).encode("UTF-8")
-
-    def __cmp__(self, other):
-        if isinstance(other, RTMFPReg):
-            return cmp(self.id, other.id)
-        else:
-            return False
-
 class Reg(object):
     @staticmethod
     def parse(spec, defhost = None, defport = None):
@@ -162,9 +146,6 @@ class Reg(object):
 
             host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
             return TCPReg(host, int(port))
-
-        if re.match(ur'^[0-9A-Fa-f]{64}$', spec):
-            return RTMFPReg(spec)
 
         raise ValueError("Bad spec format: %s" % repr(spec))
 
