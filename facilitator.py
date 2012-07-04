@@ -27,6 +27,7 @@ class options(object):
     relay_spec = None
     daemonize = True
     pid_filename = None
+    safe_logging = True
 
     @staticmethod
     def set_relay_spec(spec):
@@ -45,13 +46,21 @@ and serve them out again with HTTP GET. Listen on HOST and PORT, by default
   -h, --help              show this help.
   -l, --log FILENAME      write log to FILENAME (default \"%(log)s\").
       --pidfile FILENAME  write PID to FILENAME after daemonizing.
-  -r, --relay RELAY       send RELAY (host:port) to proxies as the relay to use.\
+  -r, --relay RELAY       send RELAY (host:port) to proxies as the relay to use.
+  --unsafe-logging        don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "addr": DEFAULT_ADDRESS,
     "port": DEFAULT_PORT,
     "log": DEFAULT_LOG_FILENAME,
 }
+
+def safe_str(s):
+    """Return s if options.safe_logging is true, and "[scrubbed]" otherwise."""
+    if options.safe_logging:
+        return "[scrubbed]"
+    else:
+        return s
 
 log_lock = threading.Lock()
 def log(msg):
@@ -186,17 +195,17 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         proxy_addr_s = format_addr(self.client_address)
 
-        log(u"proxy %s connects" % proxy_addr_s)
+        log(u"proxy %s connects" % safe_str(proxy_addr_s))
 
         path = urlparse.urlsplit(self.path)[2]
 
         reg = REGS.fetch()
         if reg:
             log(u"proxy %s gets %s, relay %s (now %d)" %
-                (proxy_addr_s, unicode(reg), options.relay_spec, len(REGS)))
+                (safe_str(proxy_addr_s), safe_str(unicode(reg)), options.relay_spec, len(REGS)))
             self.send_client(reg)
         else:
-            log(u"proxy %s gets none" % proxy_addr_s)
+            log(u"proxy %s gets none" % safe_str(proxy_addr_s))
             self.send_client(None)
 
     def do_POST(self):
@@ -207,7 +216,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         client_spec = data.getfirst("client")
         if client_spec is None:
-            log(u"client %s missing \"client\" param" % client_addr_s)
+            log(u"client %s missing \"client\" param" % safe_str(client_addr_s))
             self.send_error(400)
             return
 
@@ -215,18 +224,18 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             reg = Reg.parse(client_spec, self.client_address[0])
         except ValueError, e:
             log(u"client %s syntax error in %s: %s"
-                % (client_addr_s, repr(client_spec), repr(str(e))))
+                % (safe_str(client_addr_s), safe_str(repr(client_spec)), repr(str(e))))
             self.send_error(400)
             return
 
         log(u"client %s regs %s -> %s"
-            % (client_addr_s, repr(client_spec), unicode(reg)))
+            % (safe_str(client_addr_s), safe_str(repr(client_spec)), safe_str(unicode(reg))))
         if REGS.add(reg):
             log(u"client %s %s (now %d)"
-                % (client_addr_s, unicode(reg), len(REGS)))
+                % (safe_str(client_addr_s), safe_str(unicode(reg)), len(REGS)))
         else:
             log(u"client %s %s (already present, now %d)"
-                % (client_addr_s, unicode(reg), len(REGS)))
+                % (safe_str(client_addr_s), safe_str(unicode(reg)), len(REGS)))
 
         self.send_response(200)
         self.end_headers()
@@ -244,7 +253,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         except (AttributeError, KeyError):
             referer = "-"
         log(u"resp %s %s %d %s"
-            % (addr_s, repr(self.requestline), code, repr(referer)))
+            % (safe_str(addr_s), repr(self.requestline), code, repr(referer)))
 
     def log_message(self, format, *args):
         msg = format % args
@@ -286,7 +295,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
                     raise
                 if err_num != errno.EPIPE:
                     raise
-                log(u"%s broken pipe" % format_addr(self.client_address))
+                log(u"%s broken pipe" % safe_str(format_addr(self.client_address)))
         return ret
     handle = catch_epipe(BaseHTTPServer.BaseHTTPRequestHandler.handle)
     finish = catch_epipe(BaseHTTPServer.BaseHTTPRequestHandler.finish)
@@ -294,7 +303,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 REGS = RegSet()
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:r:",
-    ["debug", "help", "log=", "pidfile=", "relay="])
+    ["debug", "help", "log=", "pidfile=", "relay=", "unsafe-logging"])
 for o, a in opts:
     if o == "-d" or o == "--debug":
         options.daemonize = False
@@ -312,6 +321,8 @@ for o, a in opts:
         except socket.gaierror, e:
             print >> sys.stderr, u"Can't resolve relay %s: %s" % (repr(a), str(e))
             sys.exit(1)
+    elif o == "--unsafe-logging":
+        options.safe_logging = False
 
 if not options.relay_spec:
     print >> sys.stderr, """\
