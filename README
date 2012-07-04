@@ -1,33 +1,3 @@
-== Introduction
-
-This is a set of tools that make it possible to connect Tor through an
-browser-based proxy running on another computer. The flash proxy can be
-run just by opening a web page in a browser.
-
-There are five main parts. Our terminology for each part is in quotes.
-1. The Tor "client," running on someone's localhost.
-2. A "connector," which waits for connections from the flash proxy and
-   the Tor client, and joins them together.
-3. A "flash proxy," an application running in someone's web browser.
-4. A "facilitator," a pseudo-HTTP server that keeps a list of clients
-   that want a connection, and hands them out to proxies.
-5. A Tor "relay," which is just a normal Tor relay.
-
-The purpose of this project is to create many, generally ephemeral
-bridge IP addresses, with the goal of outpacing a censor's ability to
-block them. Rather than increasing the number of bridges at static
-addresses, we aim to make existing bridges reachable by a larger and
-changing pool of addresses.
-
-
-== Demonstration page
-
-This page has a description of the project; viewing it also turns your
-computer into a flash proxy as long as the page is open.
-
-http://crypto.stanford.edu/flashproxy/
-
-
 == Quick start for users
 
 You must have a version of Tor that supports pluggable transports. This
@@ -39,19 +9,8 @@ But as a user you only need these files:
 	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/connector.py
 	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/torrc
 
-There are different ways to get connected, depending on whether you are
-able to receive direct TCP connections. The first method is preferred,
-if you are able to configure port forwarding or receive direct
-connections from the Internet.
-
-If you don't get a connection within 30 seconds or so, make sure someone
-is viewing http://crypto.stanford.edu/flashproxy/. There aren't yet
-enough operational proxies that one is available all the time.
-
-=== Direct TCP connection
-
-This is the preferred way to use a flash proxy when it's possible. The
-only communication your computer makes with a fixed IP address is
+You must be able to receive TCP connections in order
+The only communication your computer makes with a fixed IP address is
 registration with the facilitator: everything else happens over
 ephemeral proxies.
 
@@ -74,7 +33,45 @@ From tor you are looking for:
 	[notice] Tor has successfully opened a circuit. Looks like client functionality is working.
 	[notice] Bootstrapped 100%: Done.
 
-=== Using a public connector
+If you don't get a connection within 30 seconds or so, make sure someone
+is viewing http://crypto.stanford.edu/flashproxy/. There aren't yet
+enough operational proxies that one is available all the time.
+
+
+== Overview
+
+This is a set of tools that make it possible to connect Tor through an
+browser-based proxy running on another computer. The flash proxy can be
+run just by opening a web page in a browser. Flash proxies are one of
+several pluggable transports for Tor.
+
+There are five main parts.
+1. The Tor client, running on someone's localhost.
+2. A client transport plugin, which is a program that waits for
+   connections from a flash proxy and connects them to the Tor client.
+3. A flash proxy, which is a JavaScript program running in someone's web
+   browser.
+4. A facilitator, which is a server that keeps a list of clients that
+   want a connection and assigns those addresses to proxies.
+5. A Tor relay running a server transport plugin capable of receiving
+   WebSocket connections.
+
+The purpose of this project is to create many ephemeral bridge IP
+addresses, with the goal of outpacing a censor's ability to block them.
+Rather than increasing the number of bridges at static addresses, we aim
+to make existing bridges reachable by a larger and changing pool of
+addresses.
+
+
+== Demonstration page
+
+This page has a description of the project; viewing it also turns your
+computer into a flash proxy as long as the page is open.
+
+http://crypto.stanford.edu/flashproxy/
+
+
+== Using a public connector
 
 Rather than running connector.py on your computer, you can use a public
 connector. This way is not as realistic because all your Tor traffic
@@ -83,7 +80,8 @@ be easily blocked. However this is an easy way to try out the system
 without having to do port forwarding.
 	$ tor ClientTransportPlugin "websocket socks4 tor-facilitator.bamsoftware.com:9999" UseBridges 1 Bridge "websocket 127.0.0.1:9001"
 
-=== Troubleshooting
+
+== Troubleshooting
 
 Make sure someone is viewing http://crypto.stanford.edu/flashproxy/, or
 another web page with a flash proxy badge on it.
