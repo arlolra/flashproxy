@@ -8,13 +8,3 @@ We need to solve the problem of potential changing fingerprints when
 reconnecting through a new proxy. Tor remembers the host fingerprint
 from the first connection (to the bridge it thinks is at 127.0.0.1) and
 balks at connecting to the same address with a different fingerprint.
-
-== How to use with an SSH proxy
-
-Start swfcat, giving it a relay parameter pointing to your SSH server.
-	http://example.com/swfcat.swf?facilitator=<facilitator_addr>:<facilitator_port>&relay=<ssh_addr>:<ssh_port>
-Start the connector.
-	python connector.py -f <facilitator_addr:facilitator_port>
-Start SSH, giving it a proxy command to connect through the connector.
-	ssh -v -N -D 1080 <ssh_addr> -p <ssh_port> \
-	    -o 'ProxyCommand=socat - SOCKS4A:localhost:dummy:0,socksport=9001'
