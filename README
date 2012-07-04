@@ -9,10 +9,9 @@ But as a user you only need these files:
 	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/connector.py
 	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/torrc
 
-You must be able to receive TCP connections in order
-The only communication your computer makes with a fixed IP address is
-registration with the facilitator: everything else happens over
-ephemeral proxies.
+You must be able to receive TCP connections; unfortunately means that
+you cannot be behind NAT. See the section "Using a public connector"
+below to try out the system even behind NAT.
 
 1. Run the connector.
 	$ python connector.py --register
