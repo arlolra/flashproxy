@@ -292,7 +292,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
                     raise
                 if err_num != errno.EPIPE:
                     raise
-                log(u"%s broken pipe" % safe_str(format_addr(self.client_address)))
         return ret
     handle = catch_epipe(BaseHTTPServer.BaseHTTPRequestHandler.handle)
     finish = catch_epipe(BaseHTTPServer.BaseHTTPRequestHandler.finish)
