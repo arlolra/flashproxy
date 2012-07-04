@@ -242,13 +242,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.wfile.write(message)
 
     def log_request(self, code):
-        addr_s = format_addr(self.client_address)
-        try:
-            referer = self.headers["Referer"]
-        except (AttributeError, KeyError):
-            referer = "-"
-        log(u"resp %s %s %d"
-            % (safe_str(addr_s), repr(self.requestline), code))
+        pass
 
     def log_message(self, format, *args):
         msg = format % args
