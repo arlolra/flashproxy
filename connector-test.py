@@ -4,10 +4,28 @@
 import socket
 import subprocess
 import unittest
-from connector import WebSocketDecoder, WebSocketEncoder
+from connector import parse_socks_request, WebSocketDecoder, WebSocketEncoder
 
 LOCAL_ADDRESS = ("127.0.0.1", 40000)
 REMOTE_ADDRESS = ("127.0.0.1", 40001)
+
+class TestSocks(unittest.TestCase):
+    def test_parse_socks_request_empty(self):
+        self.assertRaises(ValueError, parse_socks_request, "")
+    def test_parse_socks_request_short(self):
+        self.assertRaises(ValueError, parse_socks_request, "\x04\x01\x99\x99\x01\x02\x03\x04")
+    def test_parse_socks_request_ip_userid_missing(self):
+        dest, port = parse_socks_request("\x04\x01\x99\x99\x01\x02\x03\x04\x00")
+        dest, port = parse_socks_request("\x04\x01\x99\x99\x01\x02\x03\x04\x00userid")
+        self.assertEqual((dest, port), ("1.2.3.4", 0x9999))
+    def test_parse_socks_request_ip(self):
+        dest, port = parse_socks_request("\x04\x01\x99\x99\x01\x02\x03\x04userid\x00")
+        self.assertEqual((dest, port), ("1.2.3.4", 0x9999))
+    def test_parse_socks_request_hostname_missing(self):
+        self.assertRaises(ValueError, parse_socks_request, "\x04\x01\x99\x99\x00\x00\x00\x01userid\x00")
+        self.assertRaises(ValueError, parse_socks_request, "\x04\x01\x99\x99\x00\x00\x00\x01userid\x00abc")
+    def test_parse_socks_request_hostname(self):
+        dest, port = parse_socks_request("\x04\x01\x99\x99\x00\x00\x00\x01userid\x00abc\x00")
 
 def read_frames(dec):
     frames = []
