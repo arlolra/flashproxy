@@ -2,8 +2,7 @@
 
 This is a set of tools that make it possible to connect Tor through an
 browser-based proxy running on another computer. The flash proxy can be
-run just by opening a web page in a computer that has Flash Player
-installed.
+run just by opening a web page in a browser.
 
 There are five main parts. Our terminology for each part is in quotes.
 1. The Tor "client," running on someone's localhost.
@@ -46,9 +45,8 @@ if you are able to configure port forwarding or receive direct
 connections from the Internet.
 
 If you don't get a connection within 30 seconds or so, make sure someone
-with Flash Player is viewing http://crypto.stanford.edu/flashproxy/.
-There aren't yet enough operational proxies that one is available all
-the time.
+is viewing http://crypto.stanford.edu/flashproxy/. There aren't yet
+enough operational proxies that one is available all the time.
 
 === Direct TCP connection
 

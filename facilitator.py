@@ -253,9 +253,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         if reg:
             client_str = str(reg)
         else:
-            # Send an empty string rather than a 404 or similar because Flash
-            # Player's URLLoader can't always distinguish a 404 from, say,
-            # "server not found."
             client_str = ""
         self.send_response(200)
         self.send_header("Content-Type", "application/x-www-form-urlencoded")

@@ -19,16 +19,14 @@ Design of flash proxies
   temporary and short-lived, but their number will be great enough that
   they can't all be blocked effectively.
 
-  The implementation of a browser-based proxy using Adobe Flash or other
-  networking technologies is complicated by restrictions that prevent it
-  being a straightforward proxy. Chief among these is the lack of
-  listening sockets. Flash and, for example, WebSockets, can only
-  initiate outgoing connections, not receive incoming ones. The flash
-  proxy can only connect to external hosts by connecting directly to
-  them. The other significant restriction is that the proxy cannot
-  connect to just any destination. A third, but less important,
-  restriction is that browser-based networking does not provide
-  low-level socket access such as control of source address.
+  The implementation of a browser-based proxy using WebSocket is
+  complicated by restrictions that prevent it being a straightforward
+  proxy. Chief among these is the lack of listening sockets. WebSocket
+  can only initiate outgoing connections, not receive incoming ones. The
+  flash proxy can only connect to external hosts by connecting directly
+  to them. Another, but less important, restriction is that
+  browser-based networking does not provide low-level socket access such
+  as control of source address.
 
 2. Components
 
