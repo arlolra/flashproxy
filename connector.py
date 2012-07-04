@@ -553,6 +553,8 @@ def grab_string(s, pos):
         i += 1
     return pos, None
 
+# http://ftp.icm.edu.pl/packages/socks/socks4/SOCKS4.protocol
+# https://en.wikipedia.org/wiki/SOCKS#SOCKS4a
 def parse_socks_request(data):
     """Parse the 8-byte SOCKS header at the beginning of data. Returns a
     (dest, port) tuple. Raises ValueError on error."""
