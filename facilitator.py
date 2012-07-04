@@ -252,8 +252,8 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             referer = self.headers["Referer"]
         except (AttributeError, KeyError):
             referer = "-"
-        log(u"resp %s %s %d %s"
-            % (safe_str(addr_s), repr(self.requestline), code, repr(referer)))
+        log(u"resp %s %s %d"
+            % (safe_str(addr_s), repr(self.requestline), code))
 
     def log_message(self, format, *args):
         msg = format % args
