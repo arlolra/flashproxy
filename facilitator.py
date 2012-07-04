@@ -225,8 +225,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_error(400)
             return
 
-        log(u"client %s regs %s -> %s"
-            % (safe_str(client_addr_s), safe_str(repr(client_spec)), safe_str(unicode(reg))))
         if REGS.add(reg):
             log(u"client %s %s (now %d)"
                 % (safe_str(client_addr_s), safe_str(unicode(reg)), len(REGS)))
