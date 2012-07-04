@@ -195,8 +195,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         proxy_addr_s = format_addr(self.client_address)
 
-        log(u"proxy %s connects" % safe_str(proxy_addr_s))
-
         path = urlparse.urlsplit(self.path)[2]
 
         reg = REGS.fetch()
