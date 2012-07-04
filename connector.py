@@ -46,6 +46,7 @@ class options(object):
     daemonize = False
     register = False
     pid_filename = None
+    safe_logging = True
 
 # We accept up to this many bytes from a socket not yet matched with a partner
 # before disconnecting it.
@@ -72,12 +73,20 @@ facilitator is used; if omitted, it uses a public default.
   -h, --help                     show this help.
   -l, --log FILENAME             write log to FILENAME (default stdout).
       --pidfile FILENAME         write PID to FILENAME after daemonizing.
-  -r, --register                 register with the facilitator.\
+  -r, --register                 register with the facilitator.
+  --unsafe-logging               don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "local": format_addr((DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)),
     "remote": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
 }
+
+def safe_str(s):
+    """Return s if options.safe_logging is true, and "[scrubbed]" otherwise."""
+    if options.safe_logging:
+        return "[scrubbed]"
+    else:
+        return s
 
 def log(msg):
     print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
@@ -119,6 +128,22 @@ def parse_addr_spec(spec, defhost = None, defport = None):
     return host, int(port)
 
 def format_addr(addr):
+    host, port = addr
+    if not host:
+        return u":%d" % port
+    # Numeric IPv6 address?
+    try:
+        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+        af = addrs[0][0]
+    except socket.gaierror, e:
+        af = 0
+    if af == socket.AF_INET6:
+        return u"[%s]:%d" % (host, port)
+    else:
+        return u"%s:%d" % (host, port)
+
+def safe_format_addr(addr):
+    return safe_str(format_addr(addr))
     host, port = addr
     if not host:
         return u":%d" % port
@@ -419,7 +444,7 @@ def listen_socket(addr):
 
 def format_peername(s):
     try:
-        return format_addr(s.getpeername())
+        return safe_format_addr(s.getpeername())
     except socket.error, e:
         return "<unconnected>"
 
@@ -591,7 +616,7 @@ def handle_socks_request(fd):
         # Error reply.
         fd.sendall(struct.pack(">BBHBBBB", 0, 91, 0, 0, 0, 0, 0))
         return False
-    log(u"Got SOCKS request for %s." % format_addr(dest_addr))
+    log(u"Got SOCKS request for %s." % safe_format_addr(dest_addr))
     fd.sendall(struct.pack(">BBHBBBB", 0, 90, dest_addr[1], 127, 0, 0, 1))
     # Note we throw away the requested address and port.
     return True
@@ -770,15 +795,15 @@ def main():
         for fd in rset:
             if fd == remote_s:
                 remote_c, addr = fd.accept()
-                log(u"Remote connection from %s." % format_addr(addr))
+                log(u"Remote connection from %s." % safe_format_addr(addr))
                 websocket_pending.append(TimeoutSocket(remote_c))
             elif fd == local_s:
                 local_c, addr = fd.accept()
-                log(u"Local connection from %s." % format_addr(addr))
+                log(u"Local connection from %s." % safe_format_addr(addr))
                 socks_pending.append(local_c)
                 register()
             elif fd in websocket_pending:
-                log(u"Data from WebSocket-pending %s." % format_addr(addr))
+                log(u"Data from WebSocket-pending %s." % safe_format_addr(addr))
                 protocols = handle_websocket_request(fd)
                 if protocols is not None:
                     wrapped = RemoteSocket(fd, protocols)
@@ -789,7 +814,7 @@ def main():
                 websocket_pending.remove(fd)
                 report_pending()
             elif fd in socks_pending:
-                log(u"SOCKS request from %s." % format_addr(addr))
+                log(u"SOCKS request from %s." % safe_format_addr(addr))
                 if handle_socks_request(fd):
                     wrapped = LocalSocket(fd)
                     locals.append(wrapped)
@@ -833,7 +858,7 @@ def main():
             report_pending()
 
 if __name__ == "__main__":
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register", "unsafe-logging"])
     for o, a in opts:
         if o == "--daemon":
             options.daemonize = True
@@ -848,6 +873,8 @@ if __name__ == "__main__":
             options.pid_filename = a
         elif o == "-r" or o == "--register":
             options.register = True
+        elif o == "--unsafe-logging":
+            options.safe_logging = False
 
     if len(args) == 0:
         options.local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
