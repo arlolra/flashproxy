@@ -201,10 +201,9 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         if reg:
             log(u"proxy %s gets %s, relay %s (now %d)" %
                 (safe_str(proxy_addr_s), safe_str(unicode(reg)), options.relay_spec, len(REGS)))
-            self.send_client(reg)
         else:
             log(u"proxy %s gets none" % safe_str(proxy_addr_s))
-            self.send_client(None)
+        self.send_client(reg)
 
     def do_POST(self):
         client_addr_s = format_addr(self.client_address)
