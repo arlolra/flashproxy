@@ -445,7 +445,6 @@ class WebSocketRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 def handle_websocket_request(fd):
-    log(u"handle_websocket_request")
     request_text = fd.recv(10 * 1024)
     handler = WebSocketRequestHandler(request_text, fd)
     if handler.error or not hasattr(handler, "path"):
@@ -580,7 +579,6 @@ def parse_socks_request(data):
     return dest, dport
 
 def handle_socks_request(fd):
-    log(u"handle_socks_request")
     try:
         addr = fd.getpeername()
         data = fd.recv(100)
