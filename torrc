@@ -6,3 +6,5 @@
 ClientTransportPlugin websocket socks4 127.0.0.1:9001
 UseBridges 1
 Bridge websocket 127.0.0.1:9001
+LearnCircuitBuildTimeout 0
+CircuitBuildTimeout 60
