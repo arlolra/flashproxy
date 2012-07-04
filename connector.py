@@ -554,26 +554,23 @@ def grab_string(s, pos):
     return pos, None
 
 def parse_socks_request(data):
+    """Parse the 8-byte SOCKS header at the beginning of data. Returns a
+    (dest, port) tuple. Raises ValueError on error."""
     try:
         ver, cmd, dport, o1, o2, o3, o4 = struct.unpack(">BBHBBBB", data[:8])
     except struct.error:
-        log(u"Couldn't unpack SOCKS4 header.")
-        return None
+        raise ValueError("Couldn't unpack SOCKS4 header")
     if ver != 4:
-        log(u"SOCKS header has wrong version (%d)." % ver)
-        return None
+        raise ValueError("SOCKS header has wrong version (%d)" % ver)
     if cmd != 1:
-        log(u"SOCKS header had wrong command (%d)." % cmd)
-        return None
+        raise ValueError("SOCKS header had wrong command (%d)" % cmd)
     pos, userid = grab_string(data, 8)
     if userid is None:
-        log(u"Couldn't read userid from SOCKS header.")
-        return None
+        raise ValueError("Couldn't read userid from SOCKS header")
     if o1 == 0 and o2 == 0 and o3 == 0 and o4 != 0:
         pos, dest = grab_string(data, pos)
         if dest is None:
-            log(u"Couldn't read destination from SOCKS4a header.")
-            return None
+            raise ValueError("Couldn't read destination from SOCKS4a header")
     else:
         dest = "%d.%d.%d.%d" % (o1, o2, o3, o4)
     return dest, dport
@@ -585,8 +582,10 @@ def handle_socks_request(fd):
     except socket.error, e:
         log(u"Socket error from SOCKS-pending: %s" % repr(str(e)))
         return False
-    dest_addr = parse_socks_request(data)
-    if dest_addr is None:
+    try:
+        dest_addr = parse_socks_request(data)
+    except ValueError, e:
+        log(u"Error parsing SOCKS header: %s." % str(e))
         # Error reply.
         fd.sendall(struct.pack(">BBHBBBB", 0, 91, 0, 0, 0, 0, 0))
         return False
