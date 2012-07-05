@@ -21,7 +21,7 @@ below to try out the system even behind NAT.
    8888):
 	$ python connector.py --register 127.0.0.1:9001 :8888
 2. Run Tor using the included torrc file.
-	$ tor -f flashproxy/torrc
+	$ tor -f torrc
 
 Watch the output of connector.py and tor. From connector.py you are
 expecting output lines like this:
