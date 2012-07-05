@@ -86,7 +86,7 @@ Design of flash proxies
   sufficient:
     ClientTransportPlugin websocket socks4 127.0.0.1:9001
     UseBridges 1
-    Bridge websocket 127.0.0.1:9001
+    Bridge websocket 0.0.0.0:1
     LearnCircuitBuildTimeout 0
   The address given for the "Bridge" option is actually irrelevant. The
   client transport plugin will ignore it and connect (through the flash
