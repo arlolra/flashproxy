@@ -25,9 +25,9 @@ below to try out the system even behind NAT.
 
 Watch the output of connector.py and tor. From connector.py you are
 expecting output lines like this:
-	Remote connection from XXX.XXX.XXX.XXX:YYYYY.
-	Local connection from 127.0.0.1:ZZZZZ.
-	Linking 127.0.0.1:ZZZZZ and XXX.XXX.XXX.XXX:YYYYY.
+	Remote connection from [scrubbed].
+	Local connection from [scrubbed].
+	Linking [scrubbed] and [scrubbed].
 From tor you are looking for:
 	[notice] Tor has successfully opened a circuit. Looks like client functionality is working.
 	[notice] Bootstrapped 100%: Done.
