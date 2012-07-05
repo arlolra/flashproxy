@@ -4,7 +4,11 @@
 import socket
 import subprocess
 import unittest
-from connector import parse_socks_request, WebSocketDecoder, WebSocketEncoder
+flashproxy = __import__("flashproxy-client")
+parse_socks_request = flashproxy.parse_socks_request
+WebSocketDecoder = flashproxy.WebSocketDecoder
+WebSocketEncoder = flashproxy.WebSocketEncoder
+del flashproxy
 
 LOCAL_ADDRESS = ("127.0.0.1", 40000)
 REMOTE_ADDRESS = ("127.0.0.1", 40001)
@@ -204,14 +208,14 @@ def format_address(addr):
 
 class TestConnectionLimit(unittest.TestCase):
     def setUp(self):
-        self.p = subprocess.Popen(["./connector.py", format_address(LOCAL_ADDRESS), format_address(REMOTE_ADDRESS)])
+        self.p = subprocess.Popen(["./flashproxy-client.py", format_address(LOCAL_ADDRESS), format_address(REMOTE_ADDRESS)])
 
     def tearDown(self):
         self.p.terminate()
 
     def test_remote_limit(self):
-        """Test that the connector limits the number of remote connections that
-        it will accept."""
+        """Test that the client transport plugin limits the number of remote
+        connections that it will accept."""
         for i in range(5):
             s = socket.create_connection(REMOTE_ADDRESS, 2)
         self.assertRaises(socket.error, socket.create_connection, REMOTE_ADDRESS)

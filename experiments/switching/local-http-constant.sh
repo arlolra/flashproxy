@@ -44,8 +44,8 @@ echo "Start facilitator."
 PIDS_TO_KILL+=($!)
 visible_sleep 5
 
-echo "Start connector."
-"$FLASHPROXY_DIR"/connector.py --register --facilitator 127.0.0.1:9002 >/dev/null &
+echo "Start client transport plugin."
+"$FLASHPROXY_DIR"/flashproxy-client.py --register --facilitator 127.0.0.1:9002 >/dev/null &
 PIDS_TO_KILL+=($!)
 visible_sleep 1
 

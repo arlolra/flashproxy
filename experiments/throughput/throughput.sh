@@ -2,15 +2,15 @@
 
 # Usage: ./throughput.sh [-n NUM_CLIENTS]
 #
-# Tests the raw throughput of a single proxy. This script starts a web server
-# serving swfcat.swf and a large data file, starts a facilitator, connector, and
-# socat shim, and then starts multiple downloads through the proxy at once.
-# Results are saved in a file called results-NUM_CLIENTS-DATE, where DATE is the
-# current date.
+# Tests the raw throughput of a single proxy. This script starts a web
+# server serving swfcat.swf and a large data file, starts a facilitator,
+# client transport plugin, and socat shim, and then starts multiple
+# downloads through the proxy at once. Results are saved in a file
+# called results-NUM_CLIENTS-DATE, where DATE is the current date.
 
 #         plain       socks            ws               ws              plain
-# httpget <---> socat <---> connector <---> flashproxy <---> websockify <---> thttpd
-#             2000        9001     9000                    8001             8000
+# httpget <---> socat <---> flashproxy-client <---> flashproxy <---> websockify <---> thttpd
+#             2000        9001             9000                    8001             8000
 
 . ../common.sh
 
@@ -57,8 +57,8 @@ echo "Start facilitator."
 PIDS_TO_KILL+=($!)
 visible_sleep 1
 
-echo "Start connector."
-"$FLASHPROXY_DIR"/connector.py >/dev/null &
+echo "Start client transport plugin."
+"$FLASHPROXY_DIR"/flashproxy-client.py >/dev/null &
 PIDS_TO_KILL+=($!)
 visible_sleep 1
 

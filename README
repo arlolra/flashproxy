@@ -6,25 +6,25 @@ means version 0.2.2.32 (released 2011-08-29) or later.
 All the flashproxy programs and source code can be downloaded this way:
 	git clone https://git.torproject.org/flashproxy.git
 But as a user you only need these files:
-	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/connector.py
+	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/flashproxy-client.py
 	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/torrc
 
 You must be able to receive TCP connections; unfortunately means that
-you cannot be behind NAT. See the section "Using a public connector"
-below to try out the system even behind NAT.
+you cannot be behind NAT. See the section "Using a public client
+transport plugin" below to try out the system even behind NAT.
 
-1. Run the connector.
-	$ python connector.py --register
-   By default the connector listens on Internet-facing TCP port 9000. If
-   you have to use a different port (to get through a firewall, for
-   example), give it on the command lines like this (here using port
+1. Run the client transport plugin.
+	$ python flashproxy-client.py --register
+   By default the transport plugin listens on Internet-facing TCP port
+   9000. If you have to use a different port (to get through a firewall,
+   for example), give it on the command lines like this (here using port
    8888):
-	$ python connector.py --register 127.0.0.1:9001 :8888
+	$ python flashproxy-client.py --register 127.0.0.1:9001 :8888
 2. Run Tor using the included torrc file.
 	$ tor -f torrc
 
-Watch the output of connector.py and tor. From connector.py you are
-expecting output lines like this:
+Watch the output of flashproxy-client.py and tor. From
+flashproxy-client.py you are expecting output lines like this:
 	Remote connection from [scrubbed].
 	Local connection from [scrubbed].
 	Linking [scrubbed] and [scrubbed].
@@ -70,13 +70,13 @@ computer into a flash proxy as long as the page is open.
 http://crypto.stanford.edu/flashproxy/
 
 
-== Using a public connector
+== Using a public client transport plugin
 
-Rather than running connector.py on your computer, you can use a public
-connector. This way is not as realistic because all your Tor traffic
-will first go to a public connector, which is at a fixed address and can
-be easily blocked. However this is an easy way to try out the system
-without having to do port forwarding.
+Rather than running flashproxy-client.py on your computer, you can use a
+public instance of it. This way is not as realistic because all your Tor
+traffic will first go to a fixed address and can be easily blocked.
+However this is an easy way to try out the system without having to do
+port forwarding.
 	$ tor ClientTransportPlugin "websocket socks4 tor-facilitator.bamsoftware.com:9999" UseBridges 1 Bridge "websocket 127.0.0.1:9001" LearnCircuitBuildTimeout 0
 
 

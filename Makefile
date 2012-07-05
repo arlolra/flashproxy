@@ -6,13 +6,13 @@ all:
 
 install:
 	mkdir -p $(BINDIR)
-	cp -f connector.py facilitator.py flashproxy-reg-http.py $(BINDIR)
+	cp -f flashproxy-client.py flashproxy-reg-http.py facilitator.py $(BINDIR)
 
 clean:
 	rm -f *.pyc
 
 test:
-	./connector-test.py
+	./flashproxy-client-test.py
 	./flashproxy-test.js
 
 .PHONY: all clean test
