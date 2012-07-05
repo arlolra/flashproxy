@@ -28,7 +28,7 @@ dist:
 	cp -f $(CLIENT_DIST_FILES) $(DISTDIR)
 	cd dist && zip -q -r -9 $(DISTNAME).zip $(DISTNAME)
 
-dist/$(DISTNAME).zip:
+dist/$(DISTNAME).zip: $(CLIENT_DIST_FILES)
 	$(MAKE) dist
 
 sign: dist/$(DISTNAME).zip
