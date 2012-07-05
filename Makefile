@@ -1,6 +1,10 @@
 PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 
+VERSION = 0.0
+
+CLIENT_DIST_FILES = flashproxy-client.py flashproxy-reg-http.py README
+
 all:
 	:
 
@@ -10,9 +14,20 @@ install:
 
 clean:
 	rm -f *.pyc
+	rm -rf dist
 
 test:
 	./flashproxy-client-test.py
 	./flashproxy-test.js
 
-.PHONY: all clean test
+DISTNAME = flashproxy-client-$(VERSION)
+DISTDIR = dist/$(DISTNAME)
+dist/$(DISTNAME).zip:
+	rm -rf dist
+	mkdir -p $(DISTDIR)
+	cp -f $(CLIENT_DIST_FILES) $(DISTDIR)
+	cd dist && zip -q -r -9 $(DISTNAME).zip $(DISTNAME)
+
+dist: dist/$(DISTNAME).zip
+
+.PHONY: all clean test dist
