@@ -30,4 +30,7 @@ dist/$(DISTNAME).zip:
 
 dist: dist/$(DISTNAME).zip
 
-.PHONY: all clean test dist
+sign: dist/$(DISTNAME).zip
+	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
+
+.PHONY: all clean test dist sign
