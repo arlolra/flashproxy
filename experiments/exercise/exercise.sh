@@ -26,7 +26,7 @@ PIDS_TO_KILL+=($!)
 
 sleep 20
 
-"$TOR" ClientTransportPlugin "websocket socks4 127.0.0.1:$LOCAL_PORT" UseBridges 1 Bridge "websocket 127.0.0.1:$LOCAL_PORT" LearnCircuitBuildTimeout 0 CircuitBuildTimeout 60 &
+"$TOR" ClientTransportPlugin "websocket socks4 127.0.0.1:$LOCAL_PORT" UseBridges 1 Bridge "websocket 127.0.0.1:$LOCAL_PORT" LearnCircuitBuildTimeout 0 &
 PIDS_TO_KILL+=($!)
 
 sleep 60
