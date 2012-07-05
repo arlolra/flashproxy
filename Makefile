@@ -22,13 +22,14 @@ test:
 
 DISTNAME = flashproxy-client-$(VERSION)
 DISTDIR = dist/$(DISTNAME)
-dist/$(DISTNAME).zip:
+dist:
 	rm -rf dist
 	mkdir -p $(DISTDIR)
 	cp -f $(CLIENT_DIST_FILES) $(DISTDIR)
 	cd dist && zip -q -r -9 $(DISTNAME).zip $(DISTNAME)
 
-dist: dist/$(DISTNAME).zip
+dist/$(DISTNAME).zip:
+	$(MAKE) dist
 
 sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
