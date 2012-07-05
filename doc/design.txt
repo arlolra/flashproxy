@@ -84,9 +84,10 @@ Design of flash proxies
   The Tor client must be configured to make its connections through a
   local proxy (the client transport plugin). This configuration is
   sufficient:
+    ClientTransportPlugin websocket socks4 127.0.0.1:9001
     UseBridges 1
-    Bridge 127.0.0.1:9001
-    Socks4Proxy 127.0.0.1:9001
+    Bridge websocket 127.0.0.1:9001
+    LearnCircuitBuildTimeout 0
   The address given for the "Bridge" option is actually irrelevant. The
   client transport plugin will ignore it and connect (through the flash
   proxy) to a Tor relay. The Tor client does not have control of its
