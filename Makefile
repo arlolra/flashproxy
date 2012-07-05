@@ -9,7 +9,7 @@ install:
 	cp -f connector.py facilitator.py flashproxy-reg-http.py $(BINDIR)
 
 clean:
-	:
+	rm -f *.pyc
 
 test:
 	./connector-test.py
