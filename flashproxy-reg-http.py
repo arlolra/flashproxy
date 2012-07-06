@@ -101,7 +101,11 @@ else:
 
 spec = format_addr(options.remote_addr)
 http = httplib.HTTPConnection(*options.facilitator_addr)
-http.request("POST", "/", urllib.urlencode({"client": spec}))
+try:
+    http.request("POST", "/", urllib.urlencode({"client": spec}))
+except Exception, e:
+    print >> sys.stderr, "Failed to register: %s" % str(e)
+    sys.exit(1)
 http.close()
 
 print "Registered \"%s\" with %s." % (spec, format_addr(options.facilitator_addr))
