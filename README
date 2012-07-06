@@ -1,7 +1,7 @@
 == Quick start for users
 
 You must have a version of Tor that supports pluggable transports. This
-means version 0.2.2.32 (released 2011-08-29) or later.
+means version 0.2.3.2-alpha or later.
 
 All the flashproxy programs and source code can be downloaded this way:
 	git clone https://git.torproject.org/flashproxy.git
