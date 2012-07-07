@@ -16,6 +16,8 @@ DEFAULT_LOG_FILENAME = "facilitator.log"
 
 # Don't indulge clients for more than this many seconds.
 CLIENT_TIMEOUT = 1.0
+# Buffer no many than this many bytes when trying to read a line.
+READLINE_MAX_LENGTH = 10240
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -115,6 +117,8 @@ def format_addr(addr):
 class Handler(SocketServer.StreamRequestHandler):
     def __init__(self, *args, **kwargs):
         self.deadline = time.time() + CLIENT_TIMEOUT
+        # Buffer for readline.
+        self.buffer = ""
         SocketServer.StreamRequestHandler.__init__(self, *args, **kwargs)
 
     def recv(self):
@@ -123,13 +127,45 @@ class Handler(SocketServer.StreamRequestHandler):
         return self.connection.recv(1024)
 
     def readline(self):
-        while True:
-            self.connection.settimeout(timeout)
+        # A line already buffered?
+        i = self.buffer.find("\n")
+        if i >= 0:
+            line = self.buffer[:i+1]
+            self.buffer = self.buffer[i+1:]
+            return line
 
-    def handle(self):
+        auxbuf = []
+        buflen = len(self.buffer)
         while True:
             data = self.recv()
-            print repr(data)
+            if not data:
+                if self.buffer or auxbuf:
+                    raise socket.error("readline: stream does not end with a newline")
+                else:
+                    return ""
+            i = data.find("\n")
+            if i >= 0:
+                line = self.buffer + "".join(auxbuf) + data[:i+1]
+                self.buffer = data[i+1:]
+                return line
+            else:
+                auxbuf.append(data)
+                buflen += len(data)
+                if buflen >= READLINE_MAX_LENGTH:
+                    raise socket.error("readline: refusing to buffer %d bytes (last read was %d bytes)" % (buflen, len(data)))
+
+    def handle(self):
+        num_lines = 0
+        while True:
+            try:
+                line = self.readline()
+                if not line:
+                    break
+                num_lines += 1
+            except socket.error, e:
+                log("socket error after reading %d lines: %s" % (num_lines, str(e)))
+                break
+            print "line", repr(line)
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
