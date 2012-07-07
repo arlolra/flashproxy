@@ -1,7 +1,7 @@
 PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 
-VERSION = 0.0
+VERSION = 0.1
 
 CLIENT_DIST_FILES = flashproxy-client.py flashproxy-reg-http.py README torrc
 
