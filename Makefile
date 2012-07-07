@@ -17,6 +17,7 @@ clean:
 	rm -rf dist
 
 test:
+	./facilitator-test
 	./flashproxy-client-test
 	./flashproxy-test.js
 
