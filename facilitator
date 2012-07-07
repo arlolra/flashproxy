@@ -14,6 +14,9 @@ DEFAULT_LISTEN_PORT = 9002
 DEFAULT_RELAY_PORT = 9001
 DEFAULT_LOG_FILENAME = "facilitator.log"
 
+# Don't indulge clients for more than this many seconds.
+CLIENT_TIMEOUT = 1.0
+
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class options(object):
@@ -110,10 +113,22 @@ def format_addr(addr):
         return u"%s:%d" % (host, port)
 
 class Handler(SocketServer.StreamRequestHandler):
-    def handle(self):
-        self.connection.settimeout(1.0)
+    def __init__(self, *args, **kwargs):
+        self.deadline = time.time() + CLIENT_TIMEOUT
+        SocketServer.StreamRequestHandler.__init__(self, *args, **kwargs)
+
+    def recv(self):
+        timeout = self.deadline - time.time()
+        self.connection.settimeout(timeout)
+        return self.connection.recv(1024)
+
+    def readline(self):
         while True:
-            data = self.connection.recv(1024)
+            self.connection.settimeout(timeout)
+
+    def handle(self):
+        while True:
+            data = self.recv()
             print repr(data)
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
