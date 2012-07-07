@@ -3,7 +3,7 @@ BINDIR = $(PREFIX)/bin
 
 VERSION = 0.0
 
-CLIENT_DIST_FILES = flashproxy-client.py flashproxy-reg-http.py README
+CLIENT_DIST_FILES = flashproxy-client.py flashproxy-reg-http.py README torrc
 
 all:
 	:
