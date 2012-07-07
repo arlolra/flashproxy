@@ -41,5 +41,17 @@ class FacilitatorTest(unittest.TestCase):
         time.sleep(0.3)
         self.assertRaises(socket.error, s.send, "w")
 
+    def test_readline_limit(self):
+        """Test that reads won't buffer indefinitely."""
+        s = self.gimme_socket()
+        buflen = 0
+        try:
+            while buflen + 1024 < 200000:
+                s.send("X" * 1024)
+                buflen += 1024
+            self.fail("should have raised a socket error")
+        except socket.error:
+            pass
+
 if __name__ == "__main__":
     unittest.main()
