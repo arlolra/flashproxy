@@ -222,12 +222,12 @@ class TestConnectionLimit(unittest.TestCase):
     def tearDown(self):
         self.p.terminate()
 
-    def test_remote_limit(self):
-        """Test that the client transport plugin limits the number of remote
-        connections that it will accept."""
-        for i in range(5):
-            s = socket.create_connection(REMOTE_ADDRESS, 2)
-        self.assertRaises(socket.error, socket.create_connection, REMOTE_ADDRESS)
+#     def test_remote_limit(self):
+#         """Test that the client transport plugin limits the number of remote
+#         connections that it will accept."""
+#         for i in range(5):
+#             s = socket.create_connection(REMOTE_ADDRESS, 2)
+#         self.assertRaises(socket.error, socket.create_connection, REMOTE_ADDRESS)
 
 if __name__ == "__main__":
     unittest.main()

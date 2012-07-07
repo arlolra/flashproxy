@@ -55,6 +55,37 @@ class FacilitatorTest(unittest.TestCase):
         except socket.error:
             pass
 
+#     def test_same_proxy(self):
+#         """Test that the same proxy doesn't get the same client when asking
+#         twice."""
+#         self.fail()
+#
+#     def test_num_clients(self):
+#         """Test that the same proxy can pick up up to five different clients but
+#         no more. Test that a proxy ceasing to handle a client allows the proxy
+#         to handle another, different client."""
+#         self.fail()
+#
+#     def test_num_proxies(self):
+#         """Test that a single client is handed out to five different proxies but
+#         no more. Test that a proxy ceasing to handle a client reduces its count
+#         so another proxy can handle it."""
+#         self.fail()
+#
+#     def test_proxy_timeout(self):
+#         """Test that a proxy ceasing to connect for some time period causes that
+#         proxy's clients to be unhandled by that proxy."""
+#         self.fail()
+#
+#     def test_localhost_only(self):
+#         """Test that the facilitator doesn't listen on any external
+#         addresses."""
+#         self.fail()
+#
+#     def test_hostname(self):
+#         """Test that the facilitator rejects hostnames."""
+#         self.fail()
+
 class ParseTransactionTest(unittest.TestCase):
     def test_empty_string(self):
         self.assertRaises(ValueError, fac.parse_transaction, "")
