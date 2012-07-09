@@ -126,7 +126,7 @@ Add this line to torrc to make the relay use the external proxy:
 
 Paste in this HTML where you want the badge to appear:
 
-<iframe src="//crypto.stanford.edu/flashproxy/embed.html" width="70px" height="23px" frameBorder="0" scrolling="no"></iframe>
+<iframe src="//crypto.stanford.edu/flashproxy/embed.html" width="70" height="23" frameBorder="0" scrolling="no"></iframe>
 
 
 == For developers
