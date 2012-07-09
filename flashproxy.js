@@ -456,7 +456,6 @@ function FlashProxy() {
         while (this.proxy_pairs.length > 0)
             this.proxy_pairs.pop().close();
         this.badge.set_color("#777");
-        this.badge.refresh();
     };
 
     this.die = function() {
@@ -677,49 +676,31 @@ function escape_html(s) {
 function Badge() {
     /* Number of proxy pairs currently connected. */
     this.num_proxy_pairs = 0;
-    /* Number of proxy pairs ever connected. */
-    this.total_proxy_pairs = 0;
 
-    this.counter_text = document.createElement("td");
-
-    var div, img, table, tr, td;
-
-    div = document.createElement("div");
-
-    img = document.createElement("img");
-    img.setAttribute("src", "badge.png");
-    div.appendChild(img);
+    var img, table, tr, td;
 
     table = document.createElement("table");
-    div.appendChild(table)
     tr = document.createElement("tr");
     table.appendChild(tr);
     td = document.createElement("td");
     tr.appendChild(td);
+    img = document.createElement("img");
+    img.setAttribute("src", "badge.png");
+    td.appendChild(img);
 
-    this.counter_text = td;
-    this.elem = div;
+    this.elem = table;
 
     this.proxy_begin = function() {
         this.num_proxy_pairs++;
-        this.total_proxy_pairs++;
-        this.refresh();
     };
 
     this.proxy_end = function() {
         this.num_proxy_pairs--;
-        this.refresh();
     }
-
-    this.refresh = function() {
-        this.counter_text.innerHTML = escape_html(String(this.total_proxy_pairs));
-    };
 
     this.set_color = function(color) {
         this.elem.style.backgroundColor = color;
     };
-
-    this.refresh();
 }
 
 function quote(s) {
