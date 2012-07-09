@@ -686,6 +686,7 @@ function Badge() {
     tr.appendChild(td);
     img = document.createElement("img");
     img.setAttribute("src", "badge.png");
+    img.setAttribute("alt", "Internet freedom");
     td.appendChild(img);
 
     this.elem = table;
