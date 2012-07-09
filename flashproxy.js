@@ -691,11 +691,18 @@ function Badge() {
     this.elem = table;
 
     this.proxy_begin = function() {
+        if (this.num_proxy_pairs <= 0) {
+            this.idle_color = this.elem.getAttribute("background-color");
+        }
         this.num_proxy_pairs++;
+        this.set_color("#28f");
     };
 
     this.proxy_end = function() {
         this.num_proxy_pairs--;
+        if (this.num_proxy_pairs <= 0) {
+            this.set_color(this.idle_color);
+        }
     }
 
     this.disable = function() {
