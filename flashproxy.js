@@ -677,17 +677,21 @@ function Badge() {
     /* Number of proxy pairs currently connected. */
     this.num_proxy_pairs = 0;
 
-    var img, table, tr, td;
+    var table, tr, td, a, img;
 
     table = document.createElement("table");
     tr = document.createElement("tr");
     table.appendChild(tr);
     td = document.createElement("td");
     tr.appendChild(td);
+    a = document.createElement("a");
+    a.setAttribute("href", "http://crypto.stanford.edu/flashproxy/");
+    a.setAttribute("target", "_parent");
+    td.appendChild(a);
     img = document.createElement("img");
     img.setAttribute("src", "badge.png");
     img.setAttribute("alt", "Internet freedom");
-    td.appendChild(img);
+    a.appendChild(img);
 
     this.elem = table;
 
