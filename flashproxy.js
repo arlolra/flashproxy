@@ -455,12 +455,12 @@ function FlashProxy() {
         this.make_proxy_pair = function(client_addr, relay_addr) { };
         while (this.proxy_pairs.length > 0)
             this.proxy_pairs.pop().close();
-        this.badge.set_color("#777");
+        this.badge.disable();
     };
 
     this.die = function() {
         puts("die");
-        this.badge.set_color("#111");
+        this.badge.die();
     };
 }
 
@@ -696,6 +696,14 @@ function Badge() {
 
     this.proxy_end = function() {
         this.num_proxy_pairs--;
+    }
+
+    this.disable = function() {
+        this.set_color("#777");
+    }
+
+    this.die = function() {
+        this.set_color("#111");
     }
 
     this.set_color = function(color) {
