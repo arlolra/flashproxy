@@ -114,6 +114,65 @@ def format_addr(addr):
     else:
         return u"%s:%d" % (host, port)
 
+def skip_space(pos, line):
+    """Skip a (possibly empty) sequence of space characters (the ASCII character
+    '\x20' exactly). Returns a pair (pos, num_skipped)."""
+    begin = pos
+    while pos < len(line) and line[pos] == "\x20":
+        pos += 1
+    return pos, pos - begin
+
+TOKEN_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+def get_token(pos, line):
+    begin = pos
+    while pos < len(line) and line[pos] in TOKEN_CHARS:
+        pos += 1
+    if begin == pos:
+        raise ValueError("No token found at position %d" % pos)
+    return pos, line[begin:pos]
+
+def get_quoted_string(pos, line):
+    chars = []
+    if not (pos < len(line) and line[pos] == '"'):
+        raise ValueError("Expected '\"' at beginning of quoted string.")
+    pos += 1
+    while pos < len(line) and line[pos] != '"':
+        if line[pos] == '\\':
+            pos += 1
+            if not (pos < len(line)):
+                raise ValueError("End of line after backslash in quoted string")
+        chars.append(line[pos])
+        pos += 1
+    if not (pos < len(line) and line[pos] == '"'):
+        raise ValueError("Expected '\"' at end of quoted string.")
+    pos += 1
+    return pos, "".join(chars)
+
+def parse_command(line):
+    """A line is a command followed by zero or more key-value pairs. Like so:
+      COMMAND KEY="VALUE" KEY="\"ESCAPED\" VALUE"
+    Values must be quoted. Any byte value may be escaped with a backslash.
+    Returns a pair: (COMMAND, ((KEY1, VALUE1), (KEY2, VALUE2), ...)).
+    """
+    pos = 0
+    pos, skipped = skip_space(pos, line)
+    pos, command = get_token(pos, line)
+
+    pairs = []
+    while True:
+        pos, skipped = skip_space(pos, line)
+        if not (pos < len(line)):
+            break
+        if skipped == 0:
+            raise ValueError("Expected space before key-value pair")
+        pos, key = get_token(pos, line)
+        if not (pos < len(line) and line[pos] == '='):
+            raise ValueError("No '=' found after key")
+        pos += 1
+        pos, value = get_quoted_string(pos, line)
+        pairs.append((key, value))
+    return command, tuple(pairs)
+
 class Handler(SocketServer.StreamRequestHandler):
     def __init__(self, *args, **kwargs):
         self.deadline = time.time() + CLIENT_TIMEOUT
@@ -165,7 +224,13 @@ class Handler(SocketServer.StreamRequestHandler):
             except socket.error, e:
                 log("socket error after reading %d lines: %s" % (num_lines, str(e)))
                 break
-            print "line", repr(line)
+            self.handle_line(line)
+
+    def handle_line(self, line):
+        if not (len(line) > 0 and line[-1] == '\n'):
+            raise ValueError("No newline at end of string returned by readline")
+        command, pairs = parse_command(line[:-1])
+        print command, pairs
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
