@@ -186,6 +186,22 @@ def param_first(key, params):
             return v
     return None
 
+def quote_string(s):
+    chars = []
+    for c in s:
+        if c == "\\":
+            c = "\\\\"
+        elif c == "\"":
+            c = "\\\""
+        chars.append(c)
+    return "\"" + "".join(chars) + "\""
+
+def render_params(params):
+    parts = []
+    for key, value in params:
+        parts.append("%s=%s" % (key, quote_string(value)))
+    return " ".join(parts)
+
 class TCPReg(object):
     def __init__(self, host, port):
         self.host = host
@@ -320,6 +336,8 @@ class Handler(SocketServer.StreamRequestHandler):
             self.send_error()
             return False
 
+        if command == "GET":
+            return self.do_GET(params)
         if command == "PUT":
             return self.do_PUT(params)
         else:
@@ -331,6 +349,17 @@ class Handler(SocketServer.StreamRequestHandler):
 
     def send_error(self):
         print >> self.wfile, "ERROR"
+
+    def do_GET(self, params):
+        reg = REGS.fetch()
+        if reg:
+            log(u"proxy gets %s, relay %s (now %d)" %
+                (safe_str(unicode(reg)), options.relay_spec, len(REGS)))
+            print >> self.wfile, "OK", render_params((("CLIENT", str(reg)), ("RELAY", options.relay_spec)))
+        else:
+            log(u"proxy gets none")
+            print >> self.wfile, "NONE"
+        return True
 
     def do_PUT(self, params):
         client_spec = param_first("CLIENT", params)
