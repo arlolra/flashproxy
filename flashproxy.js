@@ -790,19 +790,24 @@ function flashproxy_should_disable() {
             var re = UA_LIST[i];
 
             if (ua.match(re)) {
+                puts("Disable because User-Agent matches mobile pattern " + re + ".");
                 return true;
             }
         }
     }
 
-    if (ua.match(/\bsafari\b/i) && !ua.match(/\bchrome\b/i))
+    if (ua.match(/\bsafari\b/i) && !ua.match(/\bchrome\b/i)) {
         /* Disable on Safari because it doesn't have the hybi/RFC type of
            WebSockets. */
+        puts("Disable because User-Agent is Safari.");
         return true;
+    }
 
-    if (!WebSocket)
+    if (!WebSocket) {
         /* No WebSocket support. */
+        puts("Disable because of no WebSocket support.");
         return true;
+    }
 
     return false;
 }
