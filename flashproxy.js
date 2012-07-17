@@ -457,7 +457,7 @@ function FlashProxy() {
 
     /* Cease all network operations and prevent any future ones. */
     this.disable = function() {
-        puts("disabling");
+        puts("Disabling.");
         this.proxy_main = function() { };
         this.make_proxy_pair = function(client_addr, relay_addr) { };
         while (this.proxy_pairs.length > 0)
@@ -466,7 +466,7 @@ function FlashProxy() {
     };
 
     this.die = function() {
-        puts("die");
+        puts("Dying.");
         this.badge.die();
     };
 }
