@@ -1,0 +1,5 @@
+name = Flashproxy Module
+description = Insert Flashproxy js into some or all pages on your site.
+core = 7.x
+scripts[] = flashproxy.js
+scripts[] = flashproxy-start.js
