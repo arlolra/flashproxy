@@ -32,6 +32,7 @@ dist/$(DISTNAME).zip: $(CLIENT_DIST_FILES)
 	$(MAKE) dist
 
 sign: dist/$(DISTNAME).zip
+	rm -f dist/$(DISTNAME).zip.asc
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
