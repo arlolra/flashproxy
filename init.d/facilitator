@@ -16,8 +16,8 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-# Replace this with the address of a Tor relay. You can use host:port
-# syntax.
+# Replace this with the address of a Tor relay with a websocket pluggable
+# transport. You can use host:port syntax.
 RELAY=...
 
 BINDIR=/usr/local/bin
