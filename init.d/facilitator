@@ -18,7 +18,7 @@
 
 # Replace this with the address of a Tor relay with a websocket pluggable
 # transport. You can use host:port syntax.
-RELAY=...
+RELAY=tor1.bamsoftware.com:9901
 
 BINDIR=/usr/local/bin
 VARDIR=/var/flashproxy
