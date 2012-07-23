@@ -53,12 +53,12 @@ echo "Start websockify."
 PIDS_TO_KILL+=($!)
 
 echo "Start facilitator."
-"$FLASHPROXY_DIR"/facilitator.py -d --relay 127.0.0.1:8001 127.0.0.1 9002 >/dev/null &
+"$FLASHPROXY_DIR"/facilitator -d --relay 127.0.0.1:8001 127.0.0.1 9002 >/dev/null &
 PIDS_TO_KILL+=($!)
 visible_sleep 1
 
 echo "Start client transport plugin."
-"$FLASHPROXY_DIR"/flashproxy-client.py >/dev/null &
+"$FLASHPROXY_DIR"/flashproxy-client >/dev/null &
 PIDS_TO_KILL+=($!)
 visible_sleep 1
 

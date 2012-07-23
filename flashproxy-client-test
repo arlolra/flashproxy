@@ -3,11 +3,20 @@
 
 import socket
 import subprocess
+import sys
 import unittest
-flashproxy = __import__("flashproxy-client")
+
+# Special tricks to load a module whose filename contains a dash and doesn't end
+# in ".py".
+import imp
+dont_write_bytecode = sys.dont_write_bytecode
+sys.dont_write_bytecode = True
+flashproxy = imp.load_source("flashproxy", "flashproxy-client")
 parse_socks_request = flashproxy.parse_socks_request
 WebSocketDecoder = flashproxy.WebSocketDecoder
 WebSocketEncoder = flashproxy.WebSocketEncoder
+sys.dont_write_bytecode = dont_write_bytecode
+del dont_write_bytecode
 del flashproxy
 
 LOCAL_ADDRESS = ("127.0.0.1", 40000)
@@ -208,7 +217,7 @@ def format_address(addr):
 
 class TestConnectionLimit(unittest.TestCase):
     def setUp(self):
-        self.p = subprocess.Popen(["./flashproxy-client.py", format_address(LOCAL_ADDRESS), format_address(REMOTE_ADDRESS)])
+        self.p = subprocess.Popen(["./flashproxy-client", format_address(LOCAL_ADDRESS), format_address(REMOTE_ADDRESS)])
 
     def tearDown(self):
         self.p.terminate()

@@ -3,21 +3,21 @@ BINDIR = $(PREFIX)/bin
 
 VERSION = 0.2
 
-CLIENT_DIST_FILES = flashproxy-client.py flashproxy-reg-http.py README LICENSE torrc
+CLIENT_DIST_FILES = flashproxy-client flashproxy-reg-http README LICENSE torrc
 
 all:
 	:
 
 install:
 	mkdir -p $(BINDIR)
-	cp -f flashproxy-client.py flashproxy-reg-http.py facilitator.py $(BINDIR)
+	cp -f flashproxy-client flashproxy-reg-http facilitator $(BINDIR)
 
 clean:
 	rm -f *.pyc
 	rm -rf dist
 
 test:
-	./flashproxy-client-test.py
+	./flashproxy-client-test
 	./flashproxy-test.js
 
 DISTNAME = flashproxy-client-$(VERSION)

@@ -6,7 +6,7 @@ means version 0.2.3.2-alpha or later.
 All the flashproxy programs and source code can be downloaded this way:
 	git clone https://git.torproject.org/flashproxy.git
 But as a user you only need these files:
-	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/flashproxy-client.py
+	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/flashproxy-client
 	https://gitweb.torproject.org/flashproxy.git/blob_plain/HEAD:/torrc
 
 You must be able to receive TCP connections; unfortunately means that
@@ -14,17 +14,17 @@ you cannot be behind NAT. See the section "Using a public client
 transport plugin" below to try out the system even behind NAT.
 
 1. Run the client transport plugin.
-	$ python flashproxy-client.py --register
+	$ flashproxy-client --register
    By default the transport plugin listens on Internet-facing TCP port
    9000. If you have to use a different port (to get through a firewall,
    for example), give it on the command lines like this (here using port
    8888):
-	$ python flashproxy-client.py --register 127.0.0.1:9001 :8888
+	$ flashproxy-client --register 127.0.0.1:9001 :8888
 2. Run Tor using the included torrc file.
 	$ tor -f torrc
 
-Watch the output of flashproxy-client.py and tor. From
-flashproxy-client.py you are expecting output lines like this:
+Watch the output of flashproxy-client and tor. From
+flashproxy-client you are expecting output lines like this:
 	Remote connection from [scrubbed].
 	Local connection from [scrubbed].
 	Linking [scrubbed] and [scrubbed].
@@ -72,7 +72,7 @@ http://crypto.stanford.edu/flashproxy/
 
 == Using a public client transport plugin
 
-Rather than running flashproxy-client.py on your computer, you can use a
+Rather than running flashproxy-client on your computer, you can use a
 public instance of it. This way is not as realistic because all your Tor
 traffic will first go to a fixed address and can be easily blocked.
 However this is an easy way to try out the system without having to do
@@ -106,7 +106,7 @@ wait a few minutes. It can take a while to download relay descriptors.
 
 If you suspect that the facilitator has lost your client registration, you can
 re-register:
-	$ python flashproxy-reg-http.py
+	$ flashproxy-reg-http
 
 
 == How to run a relay
@@ -136,7 +136,7 @@ See design.txt for some more technical information.
 === Running a facilitator
 
 On the facilitator, run
-	$ ./facilitator.py -r <relay-ip>
+	$ facilitator -r <relay-ip>
 You can use "tor1.bamsoftware.com" for <relay-ip>. The facilitator runs
 on port 9002 by default.
 

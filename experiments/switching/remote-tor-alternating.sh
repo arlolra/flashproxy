@@ -33,12 +33,12 @@ echo "Start web server."
 PIDS_TO_KILL+=($!)
 
 echo "Start facilitator."
-"$FLASHPROXY_DIR"/facilitator.py -d --relay tor1.bamsoftware.com:9901 >/dev/null &
+"$FLASHPROXY_DIR"/facilitator -d --relay tor1.bamsoftware.com:9901 >/dev/null &
 PIDS_TO_KILL+=($!)
 visible_sleep 15
 
 echo "Start client transport plugin."
-"$FLASHPROXY_DIR"/flashproxy-client.py --register --facilitator 127.0.0.1:9002 >/dev/null &
+"$FLASHPROXY_DIR"/flashproxy-client --register --facilitator 127.0.0.1:9002 >/dev/null &
 PIDS_TO_KILL+=($!)
 visible_sleep 1
 

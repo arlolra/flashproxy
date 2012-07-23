@@ -5,7 +5,7 @@
 #
 # chkconfig: 2345 90 10
 # description: Flash proxy facilitator.
-# processname: facilitator.py
+# processname: facilitator
 # pidfile: /var/flashproxy/facilitator.pid
 
 # Installation instructions:
@@ -22,7 +22,7 @@ RELAY=...
 
 BINDIR=/usr/local/bin
 VARDIR=/var/flashproxy
-PROG=$BINDIR/facilitator.py
+PROG=$BINDIR/facilitator
 PIDFILE=$VARDIR/facilitator.pid
 USER=flashproxy
 
