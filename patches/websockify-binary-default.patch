@@ -1,26 +1,40 @@
-From 066c665c2e437a399e2fd0b55394b0ec82c7aeab Mon Sep 17 00:00:00 2001
+From dc3a5f38d9921aa3cd128744ab3be5e6cfb7ff48 Mon Sep 17 00:00:00 2001
 From: David Fifield <david@bamsoftware.com>
-Date: Thu, 19 Apr 2012 14:16:16 -0700
+Date: Sun, 22 Jul 2012 20:52:47 -0700
 Subject: [PATCH] Assume binary transfer when no subprotocol is given.
 
 ---
- websocket.py |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ websocket.py |    8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
 
 diff --git a/websocket.py b/websocket.py
-index 646160c..d6cea57 100644
+index 96156b9..7a42ff6 100644
 --- a/websocket.py
 +++ b/websocket.py
-@@ -660,7 +660,8 @@ Sec-WebSocket-Accept: %s\r
-             elif 'base64' in protocols:
+@@ -585,12 +585,10 @@ Sec-WebSocket-Accept: %s\r
+             key = h['Sec-WebSocket-Key']
+ 
+             # Choose binary if client supports it
+-            if 'binary' in protocols:
+-                self.base64 = False
+-            elif 'base64' in protocols:
++            if 'base64' in protocols:
                  self.base64 = True
              else:
 -                raise self.EClose("Client must support 'binary' or 'base64' protocol")
 +                self.base64 = False
-+                # raise self.EClose("Client must support 'binary' or 'base64' protocol")
  
              # Generate the hash value for the accept header
              accept = b64encode(sha1(s2b(key + self.GUID)).digest())
+@@ -598,8 +596,6 @@ Sec-WebSocket-Accept: %s\r
+             response = self.server_handshake_hybi % b2s(accept)
+             if self.base64:
+                 response += "Sec-WebSocket-Protocol: base64\r\n"
+-            else:
+-                response += "Sec-WebSocket-Protocol: binary\r\n"
+             response += "\r\n"
+ 
+         else:
 -- 
-1.7.9.5
+1.7.10.4
 
