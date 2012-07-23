@@ -811,6 +811,7 @@ def main():
                     unlinked_remotes.append(wrapped)
                 else:
                     fd.close()
+                    register()
                 websocket_pending.remove(fd)
                 report_pending()
             elif fd in socks_pending:
