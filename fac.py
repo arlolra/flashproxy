@@ -38,18 +38,25 @@ def parse_addr_spec(spec, defhost = None, defport = None):
 
 def format_addr(addr):
     host, port = addr
-    if not host:
-        return u":%d" % port
-    # Numeric IPv6 address?
-    try:
-        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
-        af = addrs[0][0]
-    except socket.gaierror, e:
-        af = 0
-    if af == socket.AF_INET6:
-        return u"[%s]:%d" % (host, port)
-    else:
-        return u"%s:%d" % (host, port)
+    host_str = u""
+    port_str = u""
+    if host is not None:
+        # Numeric IPv6 address?
+        try:
+            addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+            af = addrs[0][0]
+        except socket.gaierror, e:
+            af = 0
+        if af == socket.AF_INET6:
+            host_str = u"[%s]" % host
+        else:
+            host_str = u"%s" % host
+    if port is not None:
+        port_str = u":%d" % port
+
+    if not host_str and not port_str:
+        raise ValueError("host and port may not both be None")
+    return u"%s%s" % (host_str, port_str)
 
 def skip_space(pos, line):
     """Skip a (possibly empty) sequence of space characters (the ASCII character
