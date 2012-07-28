@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import BaseHTTPServer
 import array
 import base64
 import cStringIO
@@ -16,7 +17,6 @@ import time
 import traceback
 import urllib
 import xml.sax.saxutils
-import BaseHTTPServer
 
 try:
     from hashlib import sha1
@@ -123,7 +123,7 @@ def parse_addr_spec(spec, defhost = None, defport = None):
         af = 0
     host = host or defhost
     port = port or defport
-    if not (host and port):
+    if not port:
         raise ValueError("Bad address specification \"%s\"" % spec)
     return host, int(port)
 

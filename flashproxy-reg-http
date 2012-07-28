@@ -2,19 +2,19 @@
 
 import getopt
 import httplib
-import socket
 import re
+import socket
 import sys
 import urllib
 
-DEFAULT_REMOTE_ADDR = ""
+DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_FACILITATOR_HOST = "tor-facilitator.bamsoftware.com"
 DEFAULT_FACILITATOR_PORT = 9002
 
 class options(object):
-    facilitator_addr = None
     remote_addr = None
+    facilitator_addr = None
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -27,7 +27,7 @@ facilitator address is "%(fac_addr)s".
 """ % {
     "progname": sys.argv[0],
     "fac_addr": format_addr((DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)),
-    "remote_addr": format_addr((DEFAULT_REMOTE_ADDR, DEFAULT_REMOTE_PORT)),
+    "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
 }
 
 def parse_addr_spec(spec, defhost = None, defport = None):
@@ -81,12 +81,12 @@ def format_addr(addr):
         return u"%s:%d" % (host, port)
 
 options.facilitator_addr = (DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)
-options.remote_addr = (DEFAULT_REMOTE_ADDR, DEFAULT_REMOTE_PORT)
+options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "a:h", ["address=", "help"])
 for o, a in opts:
     if o == "-a" or o == "--address":
-        options.remote_addr = parse_addr_spec(a, DEFAULT_REMOTE_ADDR, DEFAULT_REMOTE_PORT)
+        options.remote_addr = parse_addr_spec(a, DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
