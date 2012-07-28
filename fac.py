@@ -52,6 +52,8 @@ def format_addr(addr):
         else:
             host_str = u"%s" % host
     if port is not None:
+        if not (0 < port <= 65535):
+            raise ValueError("port must be between 1 and 65535 (is %d)" % port)
         port_str = u":%d" % port
 
     if not host_str and not port_str:
