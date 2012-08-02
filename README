@@ -85,14 +85,6 @@ port forwarding.
 Make sure someone is viewing http://crypto.stanford.edu/flashproxy/, or
 another web page with a flash proxy badge on it.
 
-Sometimes Tor can think that the bridge you reach through a proxy is
-unreachable after the proxy is disconnected, even if there is another
-proxy immediately available. If you are able to build Tor from source,
-try applying the patch patches/tor-ignore-bridge-failure.patch.
-	$ git apply ~/flashproxy/patches/tor-ignore-bridge-failure.patch
-or
-	$ patch -p1 < ~/flashproxy/patches/tor-ignore-bridge-failure.patch
-
 If tor hangs at 10% with these messages:
 	[notice] Bootstrapped 10%: Finishing handshake with directory server.
 	[notice] no known bridge descriptors running yet; stalling
