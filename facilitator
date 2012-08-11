@@ -3,11 +3,12 @@
 import SocketServer
 import getopt
 import os
-import re
 import socket
 import sys
 import threading
 import time
+
+import fac
 
 LISTEN_ADDRESS = "127.0.0.1"
 DEFAULT_LISTEN_PORT = 9002
@@ -32,10 +33,10 @@ class options(object):
 
     @staticmethod
     def set_relay_spec(spec):
-        af, host, port = parse_addr_spec(spec, defport = DEFAULT_RELAY_PORT)
+        af, host, port = fac.parse_addr_spec(spec, defport = DEFAULT_RELAY_PORT)
         # Resolve to get an IP address.
         addrs = socket.getaddrinfo(host, port, af)
-        options.relay_spec = format_addr(addrs[0][4])
+        options.relay_spec = fac.format_addr(addrs[0][4])
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -71,144 +72,13 @@ def log(msg):
     finally:
         log_lock.release()
 
-def parse_addr_spec(spec, defhost = None, defport = None):
-    host = None
-    port = None
-    m = None
-    # IPv6 syntax.
-    if not m:
-        m = re.match(ur'^\[(.+)\]:(\d+)$', spec)
-        if m:
-            host, port = m.groups()
-            af = socket.AF_INET6
-    if not m:
-        m = re.match(ur'^\[(.+)\]:?$', spec)
-        if m:
-            host, = m.groups()
-            af = socket.AF_INET6
-    # IPv4 syntax.
-    if not m:
-        m = re.match(ur'^(.+):(\d+)$', spec)
-        if m:
-            host, port = m.groups()
-            af = socket.AF_INET
-    if not m:
-        m = re.match(ur'^:?(\d+)$', spec)
-        if m:
-            port, = m.groups()
-            af = 0
-    if not m:
-        host = spec
-        af = 0
-    host = host or defhost
-    port = port or defport
-    if not (host and port):
-        raise ValueError("Bad address specification \"%s\"" % spec)
-    return af, host, int(port)
-
-def format_addr(addr):
-    host, port = addr
-    if not host:
-        return u":%d" % port
-    # Numeric IPv6 address?
-    try:
-        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
-        af = addrs[0][0]
-    except socket.gaierror, e:
-        af = 0
-    if af == socket.AF_INET6:
-        return u"[%s]:%d" % (host, port)
-    else:
-        return u"%s:%d" % (host, port)
-
-def skip_space(pos, line):
-    """Skip a (possibly empty) sequence of space characters (the ASCII character
-    '\x20' exactly). Returns a pair (pos, num_skipped)."""
-    begin = pos
-    while pos < len(line) and line[pos] == "\x20":
-        pos += 1
-    return pos, pos - begin
-
-TOKEN_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
-def get_token(pos, line):
-    begin = pos
-    while pos < len(line) and line[pos] in TOKEN_CHARS:
-        pos += 1
-    if begin == pos:
-        raise ValueError("No token found at position %d" % pos)
-    return pos, line[begin:pos]
-
-def get_quoted_string(pos, line):
-    chars = []
-    if not (pos < len(line) and line[pos] == '"'):
-        raise ValueError("Expected '\"' at beginning of quoted string.")
-    pos += 1
-    while pos < len(line) and line[pos] != '"':
-        if line[pos] == '\\':
-            pos += 1
-            if not (pos < len(line)):
-                raise ValueError("End of line after backslash in quoted string")
-        chars.append(line[pos])
-        pos += 1
-    if not (pos < len(line) and line[pos] == '"'):
-        raise ValueError("Expected '\"' at end of quoted string.")
-    pos += 1
-    return pos, "".join(chars)
-
-def parse_command(line):
-    """A line is a command followed by zero or more key-value pairs. Like so:
-      COMMAND KEY="VALUE" KEY="\"ESCAPED\" VALUE"
-    Values must be quoted. Any byte value may be escaped with a backslash.
-    Returns a pair: (COMMAND, ((KEY1, VALUE1), (KEY2, VALUE2), ...)).
-    """
-    pos = 0
-    pos, skipped = skip_space(pos, line)
-    pos, command = get_token(pos, line)
-
-    pairs = []
-    while True:
-        pos, skipped = skip_space(pos, line)
-        if not (pos < len(line)):
-            break
-        if skipped == 0:
-            raise ValueError("Expected space before key-value pair")
-        pos, key = get_token(pos, line)
-        if not (pos < len(line) and line[pos] == '='):
-            raise ValueError("No '=' found after key")
-        pos += 1
-        pos, value = get_quoted_string(pos, line)
-        pairs.append((key, value))
-    return command, tuple(pairs)
-
-def param_first(key, params):
-    for k, v in params:
-        if key == k:
-            return v
-    return None
-
-def quote_string(s):
-    chars = []
-    for c in s:
-        if c == "\\":
-            c = "\\\\"
-        elif c == "\"":
-            c = "\\\""
-        chars.append(c)
-    return "\"" + "".join(chars) + "\""
-
-def render_params(params):
-    parts = []
-    for key, value in params:
-        parts.append("%s=%s" % (key, quote_string(value)))
-    return " ".join(parts)
-
 class TCPReg(object):
     def __init__(self, host, port):
         self.host = host
         self.port = port
 
     def __unicode__(self):
-        return format_addr((self.host, self.port))
+        return fac.format_addr((self.host, self.port))
 
     def __str__(self):
         return unicode(self).encode("UTF-8")
@@ -223,7 +93,7 @@ class Reg(object):
     @staticmethod
     def parse(spec, defhost = None, defport = None):
         try:
-            af, host, port = parse_addr_spec(spec, defhost, defport)
+            af, host, port = fac.parse_addr_spec(spec, defhost, defport)
         except ValueError:
             pass
         else:
@@ -330,9 +200,9 @@ class Handler(SocketServer.StreamRequestHandler):
         if not (len(line) > 0 and line[-1] == '\n'):
             raise ValueError("No newline at end of string returned by readline")
         try:
-            command, params = parse_command(line[:-1])
+            command, params = fac.parse_transaction(line[:-1])
         except ValueError, e:
-            log("parse_command: %s" % e)
+            log("fac.parse_transaction: %s" % e)
             self.send_error()
             return False
 
@@ -355,14 +225,14 @@ class Handler(SocketServer.StreamRequestHandler):
         if reg:
             log(u"proxy gets %s, relay %s (now %d)" %
                 (safe_str(unicode(reg)), options.relay_spec, len(REGS)))
-            print >> self.wfile, "OK", render_params((("CLIENT", str(reg)), ("RELAY", options.relay_spec)))
+            print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", options.relay_spec))
         else:
             log(u"proxy gets none")
-            print >> self.wfile, "NONE"
+            print >> self.wfile, fac.render_transaction("NONE")
         return True
 
     def do_PUT(self, params):
-        client_spec = param_first("CLIENT", params)
+        client_spec = fac.param_first("CLIENT", params)
         if client_spec is None:
             log(u"PUT missing CLIENT param")
             self.send_error()
@@ -433,7 +303,7 @@ The -r option is required. Give it the relay that will be sent to proxies.
 
     server = Server(addrinfo[4], Handler)
 
-    log(u"start on %s" % format_addr(addrinfo[4]))
+    log(u"start on %s" % fac.format_addr(addrinfo[4]))
     log(u"using relay address %s" % options.relay_spec)
 
     if options.daemonize:
