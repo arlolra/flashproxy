@@ -5,6 +5,8 @@ import subprocess
 import time
 import unittest
 
+import fac
+
 FACILITATOR_HOST = "127.0.0.1"
 FACILITATOR_PORT = 9002
 
@@ -52,6 +54,40 @@ class FacilitatorTest(unittest.TestCase):
             self.fail("should have raised a socket error")
         except socket.error:
             pass
+
+class ParseTransactionTest(unittest.TestCase):
+    def test_empty_string(self):
+        self.assertRaises(ValueError, fac.parse_transaction, "")
+
+    def test_correct(self):
+        self.assertEqual(fac.parse_transaction("COMMAND"), ("COMMAND", ()))
+        self.assertEqual(fac.parse_transaction("COMMAND X=\"\""), ("COMMAND", (("X", ""),)))
+        self.assertEqual(fac.parse_transaction("COMMAND X=\"ABC\""), ("COMMAND", (("X", "ABC"),)))
+        self.assertEqual(fac.parse_transaction("COMMAND X=\"\\A\\B\\C\""), ("COMMAND", (("X", "ABC"),)))
+        self.assertEqual(fac.parse_transaction("COMMAND X=\"\\\\\\\"\""), ("COMMAND", (("X", "\\\""),)))
+        self.assertEqual(fac.parse_transaction("COMMAND X=\"ABC\" Y=\"DEF\""), ("COMMAND", (("X", "ABC"), ("Y", "DEF"))))
+        self.assertEqual(fac.parse_transaction("COMMAND KEY-NAME=\"ABC\""), ("COMMAND", (("KEY-NAME", "ABC"),)))
+        self.assertEqual(fac.parse_transaction("COMMAND KEY_NAME=\"ABC\""), ("COMMAND", (("KEY_NAME", "ABC"),)))
+
+    def test_missing_command(self):
+        self.assertRaises(ValueError, fac.parse_transaction, "X=\"ABC\"")
+        self.assertRaises(ValueError, fac.parse_transaction, " X=\"ABC\"")
+
+    def test_missing_space(self):
+        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND/X=\"ABC\"")
+        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC\"Y=\"DEF\"")
+
+    def test_bad_quotes(self):
+        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"")
+        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC")
+        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC\" Y=\"ABC")
+        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC\\")
+
+    def test_truncated(self):
+        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=")
+
+    def test_newline(self):
+        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC\" \nY=\"DEF\"")
 
 if __name__ == "__main__":
     unittest.main()
