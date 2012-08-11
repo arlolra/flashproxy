@@ -29,8 +29,15 @@ def transact(f, command, *params):
     return fac.parse_transaction(line[:-1])
 
 def put_reg(client_addr, registrant_addr):
-    # Pretending to register client_addr as reported by registrant_addr.
-    pass
+    f = fac_socket()
+    try:
+        command, params = transact(f, "PUT", ("CLIENT", fac.format_addr(client_addr)), ("FROM", fac.format_addr(registrant_addr)))
+    finally:
+        f.close()
+    if command == "OK":
+        pass
+    else:
+        exit_error(500)
 
 def get_reg(proxy_addr):
     f = fac_socket()
@@ -66,6 +73,8 @@ proxy_addr = (os.environ.get("REMOTE_ADDR"), None)
 if not method or not proxy_addr[0]:
     exit_error(400)
 
+fs = cgi.FieldStorage()
+
 def do_get():
     try:
         reg = get_reg(proxy_addr) or ""
@@ -80,7 +89,27 @@ Access-Control-Allow-Origin: *\r
 \r"""
     sys.stdout.write(urllib.urlencode(reg))
 
+def do_post():
+    client_specs = fs.getlist("client")
+    if len(client_specs) != 1:
+        exit_error(400)
+    client_spec = client_specs[0]
+    try:
+        client_addr = fac.parse_addr_spec(client_spec, defhost=proxy_addr[0])
+    except ValueError:
+        exit_error(400)
+    try:
+        put_reg(client_addr, proxy_addr)
+    except:
+        raise
+        exit_error(500)
+    print """\
+Status: 200\r
+\r"""
+
 if method == "GET":
     do_get()
+elif method == "POST":
+    do_post()
 else:
     exit_error(405)
