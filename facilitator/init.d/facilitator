@@ -1,67 +1,120 @@
-#!/bin/sh
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          facilitator
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Flash proxy facilitator
+# Description:       Debian init script for the flash proxy facilitator.
+### END INIT INFO
 #
-# facilitator  This shell script takes care of starting and stopping
-#              the flash proxy facilitator.
+# Author:	David Fifield <david@bamsoftware.com>
 #
-# chkconfig: 2345 90 10
-# description: Flash proxy facilitator.
-# processname: facilitator
-# pidfile: /var/flashproxy/facilitator.pid
 
-# Installation instructions:
-# cp facilitator /etc/init.d/facilitator
-# chkconfig --add facilitator
-# service facilitator start
+# Based on /etc/init.d/skeleton from Debian 6.
 
-# Source function library.
-. /etc/rc.d/init.d/functions
-
-# Replace this with the address of a Tor relay with a websocket pluggable
-# transport. You can use host:port syntax.
+# The relay must support the websocket pluggable transport.
 RELAY=tor1.bamsoftware.com:9901
 
-BINDIR=/usr/local/bin
-VARDIR=/var/flashproxy
-PROG=$BINDIR/facilitator
-PIDFILE=$VARDIR/facilitator.pid
-USER=flashproxy
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="Flash proxy facilitator"
+NAME=facilitator
+PIDFILE=/var/run/$NAME.pid
+LOGFILE=/var/log/facilitator.log
+DAEMON=/usr/local/bin/$NAME
+DAEMON_ARGS="-r $RELAY --log $LOGFILE --pidfile $PIDFILE"
+SCRIPTNAME=/etc/init.d/$NAME
 
-# See how we were called.
+# Exit if the package is not installed
+[ -x "$DAEMON" ] || exit 0
+
+. /lib/init/vars.sh
+. /lib/lsb/init-functions
+
+#
+# Function that starts the daemon/service
+#
+do_start()
+{
+	# Return
+	#   0 if daemon has been started
+	#   1 if daemon was already running
+	#   2 if daemon could not be started
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
+		|| return 1
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
+		$DAEMON_ARGS \
+		|| return 2
+}
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+	# Return
+	#   0 if daemon has been stopped
+	#   1 if daemon was already stopped
+	#   2 if daemon could not be stopped
+	#   other if a failure occurred
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE
+	RETVAL="$?"
+	[ "$RETVAL" = 2 ] && return 2
+	# Wait for children to finish too if this is a daemon that forks
+	# and if the daemon is only ever run from this initscript.
+	# If the above conditions are not satisfied then add some other code
+	# that waits for the process to drop all resources that could be
+	# needed by services started subsequently.  A last resort is to
+	# sleep for some time.
+	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
+	[ "$?" = 2 ] && return 2
+	rm -f $PIDFILE
+	return "$RETVAL"
+}
+
 case "$1" in
   start)
-	[ -x $PROG ] || exit 1
-	echo -n $"Starting flash proxy facilitator: "
-	cd $VARDIR && daemon --user $USER --pidfile $PIDFILE $PROG --pidfile $PIDFILE -r $RELAY
-	RETVAL=$?
-	echo
-	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/facilitator
+	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+	do_start
+	case "$?" in
+		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
 	;;
   stop)
-	# Stop daemon.
-	echo -n $"Shutting down flash proxy facilitator: "
-	killproc -p $PIDFILE
-	RETVAL=$?
-	echo
-	if [ $RETVAL -eq 0 ]; then
-		rm -f /var/lock/subsys/facilitator
-		rm -f $PIDFILE
-	fi
+	[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+	do_stop
+	case "$?" in
+		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
 	;;
   status)
-	status -p $PIDFILE facilitator
-	RETVAL=$?
-	;;
-  restart|reload)
-	$0 stop
-	$0 start
-	;;
-  condrestart)
-	[ -f /var/lock/subsys/facilitator ] && restart || :
+       status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+       ;;
+  restart|force-reload)
+	log_daemon_msg "Restarting $DESC" "$NAME"
+	do_stop
+	case "$?" in
+	  0|1)
+		do_start
+		case "$?" in
+			0) log_end_msg 0 ;;
+			1) log_end_msg 1 ;; # Old process is still running
+			*) log_end_msg 1 ;; # Failed to start
+		esac
+		;;
+	  *)
+	  	# Failed to stop
+		log_end_msg 1
+		;;
+	esac
 	;;
   *)
-	echo $"Usage: $0 {start|stop|status|restart}"
-	RETVAL=3
+	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+	exit 3
 	;;
 esac
 
-exit $RETVAL
+:
