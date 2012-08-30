@@ -32,10 +32,6 @@ From tor you are looking for:
 	[notice] Tor has successfully opened a circuit. Looks like client functionality is working.
 	[notice] Bootstrapped 100%: Done.
 
-If you don't get a connection within 30 seconds or so, make sure someone
-is viewing http://crypto.stanford.edu/flashproxy/. There aren't yet
-enough operational proxies that one is available all the time.
-
 
 == Overview
 
