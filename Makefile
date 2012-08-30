@@ -36,4 +36,4 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
-.PHONY: all clean test dist sign
+.PHONY: all install clean test dist sign
