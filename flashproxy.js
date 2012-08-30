@@ -51,7 +51,7 @@
 
 var DEFAULT_FACILITATOR_ADDR = {
     host: "tor-facilitator.bamsoftware.com",
-    port: 9002
+    port: 443
 };
 
 var DEFAULT_MAX_NUM_PROXY_PAIRS = 10;
@@ -372,7 +372,7 @@ function FlashProxy() {
             return;
         }
 
-        fac_url = "http://" + encodeURIComponent(this.fac_addr.host)
+        fac_url = "https://" + encodeURIComponent(this.fac_addr.host)
             + ":" + encodeURIComponent(this.fac_addr.port) + "/";
         xhr = new XMLHttpRequest();
         try {
