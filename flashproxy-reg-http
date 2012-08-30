@@ -103,6 +103,9 @@ spec = format_addr(options.remote_addr)
 http = httplib.HTTPConnection(*options.facilitator_addr)
 try:
     http.request("POST", "/", urllib.urlencode({"client": spec}))
+    resp = http.getresponse()
+    if resp.status != 200:
+        raise ValueError("Status code was %d, not 200" % resp.status)
 except Exception, e:
     print >> sys.stderr, "Failed to register: %s" % str(e)
     sys.exit(1)
