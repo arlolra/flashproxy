@@ -10,7 +10,7 @@ import urllib
 DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_FACILITATOR_HOST = "tor-facilitator.bamsoftware.com"
-DEFAULT_FACILITATOR_PORT = 9002
+DEFAULT_FACILITATOR_PORT = 443
 
 class options(object):
     remote_addr = None
@@ -103,7 +103,7 @@ else:
     sys.exit(1)
 
 spec = format_addr(options.remote_addr)
-http = httplib.HTTPConnection(*options.facilitator_addr)
+http = httplib.HTTPSConnection(*options.facilitator_addr)
 try:
     http.request("POST", "/", urllib.urlencode({"client": spec}))
     resp = http.getresponse()
