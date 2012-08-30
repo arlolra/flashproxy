@@ -147,20 +147,6 @@ def format_addr(addr):
 
 def safe_format_addr(addr):
     return safe_str(format_addr(addr))
-    host, port = addr
-    if not host:
-        return u":%d" % port
-    # Numeric IPv6 address?
-    try:
-        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
-        af = addrs[0][0]
-    except socket.gaierror, e:
-        af = 0
-    if af == socket.AF_INET6:
-        return u"[%s]:%d" % (host, port)
-    else:
-        return u"%s:%d" % (host, port)
-
 
 
 def apply_mask_numpy(payload, mask_key):
