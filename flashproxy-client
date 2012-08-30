@@ -29,7 +29,7 @@ try:
 except ImportError:
     numpy = None
 
-DEFAULT_REMOTE_ADDRESS = "0.0.0.0"
+DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_LOCAL_ADDRESS = "127.0.0.1"
 DEFAULT_LOCAL_PORT = 9001
@@ -423,6 +423,7 @@ class WebSocketBinaryEncoder(object):
 
 def listen_socket(addr):
     """Return a nonblocking socket listening on the given address."""
+    addr = (addr[0] or "0.0.0.0", addr[1])
     addrinfo = socket.getaddrinfo(addr[0], addr[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
     s = socket.socket(addrinfo[0], addrinfo[1], addrinfo[2])
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -624,7 +625,7 @@ def register():
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         return
     command = [os.path.join(script_dir, "flashproxy-reg-http")]
-    spec = format_addr((None, options.remote_addr[1]))
+    spec = format_addr(options.remote_addr)
     if options.facilitator_addr is None:
         log(u"Registering \"%s\"." % spec)
     else:
