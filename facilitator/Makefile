@@ -7,6 +7,7 @@ all:
 install:
 	mkdir -p $(BINDIR)
 	cp -f facilitator facilitator.cgi fac.py $(BINDIR)
+	cp -f init.d/facilitator /etc/init.d/
 
 clean:
 	rm -f *.pyc
