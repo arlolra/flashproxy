@@ -10,14 +10,13 @@ all:
 
 install:
 	mkdir -p $(BINDIR)
-	cp -f flashproxy-client flashproxy-reg-http facilitator $(BINDIR)
+	cp -f flashproxy-client flashproxy-reg-http $(BINDIR)
 
 clean:
 	rm -f *.pyc
 	rm -rf dist
 
 test:
-	./facilitator-test
 	./flashproxy-client-test
 	./flashproxy-test.js
 
