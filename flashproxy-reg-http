@@ -61,9 +61,9 @@ def parse_addr_spec(spec, defhost = None, defport = None):
         af = 0
     host = host or defhost
     port = port or defport
-    if not port:
-        raise ValueError("Bad address specification \"%s\"" % spec)
-    return host, int(port)
+    if port is not None:
+        port = int(port)
+    return host, port
 
 def format_addr(addr):
     host, port = addr
@@ -76,9 +76,12 @@ def format_addr(addr):
     except socket.gaierror, e:
         af = 0
     if af == socket.AF_INET6:
-        return u"[%s]:%d" % (host, port)
+        result = u"[%s]" % host
     else:
-        return u"%s:%d" % (host, port)
+        result = "%s" % host
+    if port is not None:
+        result += u":%d" % port
+    return result
 
 options.facilitator_addr = (DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
