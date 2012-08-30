@@ -1,0 +1,147 @@
+This document describes how to run a flash proxy facilitator on Debian 6.
+We will use the domain name tor-facilitator.example.com.
+
+== Overview
+
+The facilitator consists of three parts: an HTTP server, a CGI program,
+and a backend. The HTTP server is responsible for speaking TLS and
+invoking the CGI program. The CGI program receives client registrations
+and proxy requests for clients, parses them, and forwards them to the
+backend. The backend is stateful and is responsible for assigning
+clients to proxies and remembering client registrations.
+
+We use Apache 2 as the HTTP server. The CGI script is facilitator.cgi.
+The backend is facilitator. fac.py is a Python module containing code
+common to facilitator.cgi and facilitator.
+
+== Basic and security setup
+
+Install some essential packages and configure a firewall.
+
+	# cat >/etc/apt/apt.conf.d/90suggests<<EOF
+APT::Install-Recommends "0";
+APT::Install-Suggests "0";
+EOF
+	# apt-get remove nfs-common portmap
+	# apt-get update
+	# apt-get upgrade
+	# apt-get install shorewall shorewall6
+
+Away from the facilitator, generate an SSH key for authentication:
+
+	$ ssh-keygen -f ~/.ssh/tor-facilitator
+	$ ssh-copy-id -i ~/.ssh/tor-facilitator.pub root@tor-facilitator.example.com
+
+Then log in and edit /etc/ssh/sshd_config to disable password
+authentication:
+
+	PasswordAuthentication no
+
+Configure the firewall to allow only SSH and HTTPS.
+
+	# cd /etc/shorewall
+	# cp /usr/share/doc/shorewall/default-config/{interfaces,policy,rules,zones} .
+	Edit /etc/shorewall/interfaces:
+net	eth0		-	tcpflags,norfc1918,routefilter,nosmurfs,logmartians
+	Edit /etc/shorewall/policy:
+$FW		all		ACCEPT
+net		$FW		DROP
+all		all		DROP
+	Edit /etc/shorewall/rules:
+SECTION NEW
+SSH/ACCEPT	all	$FW
+HTTPS/ACCEPT	all	$FW
+	Edit /etc/shorewall/zones:
+fw	firewall
+net	ipv4
+
+	# cd /etc/shorewall6
+	# cp /usr/share/doc/shorewall6/default-config/{interfaces,policy,rules,zones} .
+	Edit /etc/shorewall/interfaces:
+net	eth0		-	tcpflags
+	Edit /etc/shorewall/policy:
+$FW		all		ACCEPT
+net		$FW		DROP
+all		all		DROP
+	Edit /etc/shorewall/rules:
+SECTION NEW
+SSH/ACCEPT	all	$FW
+HTTPS/ACCEPT	all	$FW
+	Edit /etc/shorewall/zones:
+fw	firewall
+net	ipv6
+
+Edit /etc/default/shorewall and /etc/default/shorewall6 and set
+
+	startup=1
+
+Restart servers.
+
+	# /etc/init.d/ssh restart
+	# /etc/init.d/shorewall start
+	# /etc/init.d/shorewall6 start
+
+== Facilitator program installation
+
+	# apt-get install git
+	# git clone https://git.torproject.org/flashproxy.git
+	# cd flashproxy/facilitator
+	# make install
+
+This installs facilitator.cgi, facilitator, and fac.py to
+/usr/local/bin. It also installs a System V init file to
+/etc/init.d/facilitator.
+
+	# update-rc.d facilitator defaults
+	# /etc/init.d/facilitator start
+
+== HTTP server setup
+
+Apache is the web server that runs the CGI program.
+
+	# apt-get install apache2
+	# a2enmod ssl
+
+Edit /etc/apache2/ports.conf and comment out the port 80 configuration.
+
+	# NameVirtualHost *:80
+	# Listen 80
+
+Create a new file /etc/apache2/sites-available/tor-facilitator with
+these contents:
+	<VirtualHost *:443>
+		ServerName tor-facilitator.bamsoftware.com
+		DocumentRoot /dev/null
+		ScriptAliasMatch ^(.*) /usr/local/bin/facilitator.cgi$1
+		ErrorLog ${APACHE_LOG_DIR}/error.log
+		LogLevel warn
+		SSLEngine on
+		SSLCertificateFile /etc/apache2/tor-facilitator.pem
+	</VirtualHost>
+
+We purposely do not include a CustomLog directive so as to not to log
+client and proxy IP addresses.
+
+=== HTTPS setup
+
+The HTTP server should serve only over HTTPS and not unencrypted HTTP.
+You will need a certificate and private key from a certificate
+authority. An article on making a certificate signing request and
+getting it signed is here:
+	http://www.debian-administration.org/articles/284
+The instructions below assume you have an offline private key
+in tor-facilitator.key and a certificate in tor-facilitator.crt.
+
+Remove any passphrase from the private key.
+
+	$ openssl rsa -in tor-facilitator.key -out tor-facilitator.pem
+
+Make a file containing both the private key and a certificate.
+
+	$ cat tor-facilitator.crt >> tor-facilitator.pem
+	$ chmod 400 tor-facilitator.pem
+
+Copy the new tor-facilitator.pem to the facilitator server as
+/etc/apache2/tor-facilitator.pem.
+
+	# /etc/init.d/apache2 restart

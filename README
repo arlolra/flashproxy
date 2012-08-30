@@ -100,12 +100,20 @@ re-register:
 == How to run a relay
 
 The relay runs with a WebSocket proxy in external proxy mode.
-	git clone git://github.com/kanaka/websockify.git
-	git apply ~/flashproxy/patches/websockify-binary-default.patch
-This command proxies WebSocket on port 9901 to a local ORPort on 9001.
-	./websockify :9901 127.0.0.1:9001
-The init.d script described under "Installing so as to restart at boot"
-does this automatically.
+	$ git clone git://github.com/kanaka/websockify.git
+	$ git apply ~/flashproxy/patches/websockify-binary-default.patch
+Install websockify as a daemon that will restart at boot. These
+instructions are for CentOS 5.
+	$ cd websockify
+	$ git apply ~/flashproxy/patches/websockify-binary-default.patch
+	$ su
+	# cp websockify websocket.py /usr/local/bin
+	# useradd -d /dev/null -s /bin/false websockify
+	# mkdir /var/websockify
+	# chown -R websockify.websockify /var/websockify
+	# cp ~/flashproxy/init.d/websockify /etc/init.d/websockify
+	# chkconfig --add websockify
+	# service websockify start
 
 Add this line to torrc to make the relay use the external proxy:
 	ServerTransportPlugin websocket proxy 127.0.0.1:9901
@@ -115,40 +123,3 @@ Add this line to torrc to make the relay use the external proxy:
 Paste in this HTML where you want the badge to appear:
 
 <iframe src="//crypto.stanford.edu/flashproxy/embed.html" width="80" height="15" frameborder="0" scrolling="no"></iframe>
-
-
-== For developers
-
-See design.txt for some more technical information.
-
-=== Running a facilitator
-
-On the facilitator, run
-	$ facilitator -r <relay-ip>
-You can use "tor1.bamsoftware.com" for <relay-ip>. The facilitator runs
-on port 9002 by default.
-
-=== Installing so as to restart at boot
-
-The directory init.d contains scripts to start the facilitator on
-CentOS. "make install" copies files to /usr/local/bin.
-
-	# make install
-	# useradd -d /dev/null -s /bin/false flashproxy
-	# mkdir /var/flashproxy
-	# chown -R flashproxy.flashproxy /var/flashproxy/
-
-	# cp init.d/facilitator /etc/init.d/facilitator
-	-- Edit /etc/init.d/facilitator to set $RELAY.
-	# chkconfig --add facilitator
-	# service facilitator start
-
-	# cd websockify
-	# git apply ~/flashproxy/patches/websockify-binary-default.patch
-	# cp websockify websocket.py /usr/local/bin
-	# useradd -d /dev/null -s /bin/false websockify
-	# mkdir /var/websockify
-	# chown -R websockify.websockify /var/websockify
-	# cp ~/flashproxy/init.d/websockify /etc/init.d/websockify
-	# chkconfig --add websockify
-	# service websockify start
