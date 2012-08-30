@@ -81,7 +81,7 @@ The base64 subprotocol
 
   or, for example, as two frames (one of 2 bytes and one of 6 bytes):
 
-    0x01 0x02 "SG" 0x81 0x06 "sbG8="
+    0x01 0x02 "SG" 0x81 0x06 "VsbG8="
 
   When sent by a client, all frames including these must be masked. Here
   is an example of a masked base64-encoded message sent as a single
