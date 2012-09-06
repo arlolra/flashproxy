@@ -117,7 +117,11 @@ these contents:
 		LogLevel warn
 		SSLEngine on
 		SSLCertificateFile /etc/apache2/tor-facilitator.pem
+		SSLCertificateChainFile /etc/apache2/intermediate.pem
 	</VirtualHost>
+intermediate.pem is a possible intermediate certificate file provided by
+the CA; if you did not get one, then leave off the
+SSLCertificateChainFile line.
 
 We purposely do not include a CustomLog directive so as to not to log
 client and proxy IP addresses.
