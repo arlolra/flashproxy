@@ -106,7 +106,7 @@ function parse_query_string(qs) {
     if (qs)
         strings = qs.split("&");
     else
-        strings = {};
+        strings = [];
     for (var i = 0; i < strings.length; i++) {
         var string = strings[i];
         var j, name, value;
