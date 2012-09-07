@@ -60,6 +60,52 @@ function fail(test, expected, actual)
     print("FAIL " + repr(test) + "  expected: " + repr(expected) + "  actual: " + repr(actual));
 }
 
+function test_build_url()
+{
+    var TESTS = [
+        { args: ["http", "example.com"],
+          expected: "http://example.com" },
+        { args: ["http", "example.com", 80],
+          expected: "http://example.com" },
+        { args: ["http", "example.com", 81],
+          expected: "http://example.com:81" },
+        { args: ["https", "example.com", 443],
+          expected: "https://example.com" },
+        { args: ["https", "example.com", 444],
+          expected: "https://example.com:444" },
+        { args: ["http", "example.com", 80, "/"],
+          expected: "http://example.com/" },
+        { args: ["http", "example.com", 80, "/test?k=%#v"],
+          expected: "http://example.com/test%3Fk%3D%25%23v" },
+        { args: ["http", "example.com", 80, "/test", []],
+          expected: "http://example.com/test?" },
+        { args: ["http", "example.com", 80, "/test", [["k", "%#v"]]],
+          expected: "http://example.com/test?k=%25%23v" },
+        { args: ["http", "example.com", 80, "/test", [["a", "b"], ["c", "d"]]],
+          expected: "http://example.com/test?a=b&c=d" },
+        { args: ["http", "1.2.3.4"],
+          expected: "http://1.2.3.4" },
+        { args: ["http", "1:2::3:4"],
+          expected: "http://[1:2::3:4]" },
+        { args: ["http", "bog][us"],
+          expected: "http://bog%5D%5Bus" },
+        { args: ["http", "bog:u]s"],
+          expected: "http://bog%3Au%5Ds" },
+    ];
+
+    announce("test_build_url");
+    for (var i = 0; i < TESTS.length; i++) {
+        var test = TESTS[i];
+        var actual;
+
+        actual = build_url.apply(undefined, test.args);
+        if (objects_equal(actual, test.expected))
+            pass(test.args);
+        else
+            fail(test.args, test.expected, actual);
+    }
+}
+
 function test_parse_query_string()
 {
     var TESTS = [
@@ -170,6 +216,7 @@ function test_get_query_param_addr()
     }
 }
 
+test_build_url();
 test_parse_query_string();
 test_parse_addr_spec();
 test_get_query_param_addr();
