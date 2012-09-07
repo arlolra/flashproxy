@@ -442,6 +442,8 @@ def format_peername(s):
 # to avoid Slowloris-like attacks.
 WEBSOCKET_REQUEST_TIMEOUT = 2.0
 
+# This subclass of BaseHTTPRequestHandler is essentially a means of parsing an
+# HTTP request.
 class WebSocketRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def __init__(self, request_text, fd):
         self.rfile = cStringIO.StringIO(request_text)
