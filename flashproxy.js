@@ -322,8 +322,7 @@ function make_websocket(addr) {
     var url;
     var ws;
 
-    url = "ws://" + encodeURIComponent(addr.host)
-            + ":" + encodeURIComponent(addr.port) + "/";
+    url = build_url("ws", addr.host, addr.port, "/");
 
     if (have_websocket_binary_frames())
         ws = new WebSocket(url);
@@ -425,8 +424,7 @@ function FlashProxy() {
             return;
         }
 
-        fac_url = "https://" + encodeURIComponent(this.fac_addr.host)
-            + ":" + encodeURIComponent(this.fac_addr.port) + "/";
+        fac_url = build_url("https", this.fac_addr.host, this.fac_addr.port, "/");
         xhr = new XMLHttpRequest();
         try {
             xhr.open("GET", fac_url);
