@@ -2,6 +2,7 @@
 
 import cgi
 import os
+import os.path
 import socket
 import sys
 import urllib
@@ -68,14 +69,19 @@ def get_reg(proxy_addr):
         exit_error(500)
 
 method = os.environ.get("REQUEST_METHOD")
+path_info = os.environ.get("PATH_INFO")
 proxy_addr = (os.environ.get("REMOTE_ADDR"), None)
 
-if not method or not proxy_addr[0]:
+if not method or not path_info or not proxy_addr[0]:
     exit_error(400)
+
+path = os.path.normpath(path_info)
 
 fs = cgi.FieldStorage()
 
 def do_get():
+    if path != "/":
+        exit_error(400)
     try:
         reg = get_reg(proxy_addr) or ""
     except:
@@ -90,6 +96,8 @@ Access-Control-Allow-Origin: *\r
     sys.stdout.write(urllib.urlencode(reg))
 
 def do_post():
+    if path != "/":
+        exit_error(400)
     client_specs = fs.getlist("client")
     if len(client_specs) != 1:
         exit_error(400)
