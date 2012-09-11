@@ -544,6 +544,9 @@ function FlashProxy() {
 
         /* Flash proxy protocol revision. */
         params = [["r", "1"]];
+        /* Clients we're currently handling. */
+        for (var i = 0; i < this.proxy_pairs.length; i++)
+            params.push(["client", format_addr(this.proxy_pairs[i].client_addr)]);
         url = this.fac_url.replace(/\?.*/, "") + "?" + build_query_string(params);
         xhr = new XMLHttpRequest();
         try {
