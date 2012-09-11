@@ -533,6 +533,8 @@ function FlashProxy() {
     };
 
     this.proxy_main = function() {
+        var params;
+        var url;
         var xhr;
 
         if (this.proxy_pairs.length >= this.max_num_proxy_pairs) {
@@ -540,9 +542,12 @@ function FlashProxy() {
             return;
         }
 
+        /* Flash proxy protocol revision. */
+        params = [["r", "1"]];
+        url = this.fac_url.replace(/\?.*/, "") + "?" + build_query_string(params);
         xhr = new XMLHttpRequest();
         try {
-            xhr.open("GET", this.fac_url);
+            xhr.open("GET", url);
         } catch (err) {
             /* An exception happens here when, for example, NoScript allows the
                domain on which the proxy badge runs, but not the domain to which
@@ -562,7 +567,7 @@ function FlashProxy() {
                     puts("Facilitator: can't connect: got status " + repr(xhr.status) + " and status text " + repr(xhr.statusText) + ".");
             }
         }.bind(this);
-        puts("Facilitator: connecting to " + this.fac_url + ".");
+        puts("Facilitator: connecting to " + url + ".");
         xhr.send(null);
     };
 
