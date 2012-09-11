@@ -18,12 +18,13 @@ class options(object):
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %(progname)s [HOSTNAME][:PORT]
+Usage: %(progname)s [REMOTE][:PORT]
 Register with a flash proxy facilitator using an HTTP POST. By default the
-facilitator address is "%(fac_addr)s".
+remote address registered is "%(remote_addr)s".
 
-  -a, --address=ADDRESS  register the given address instead of \"%(remote_addr)s\".
-  -h, --help             show this help. \
+  -f, --facilitator=HOST[:PORT]  register with the given facilitator (by
+                                   default "%(fac_addr)s".)
+  -h, --help                     show this help. \
 """ % {
     "progname": sys.argv[0],
     "fac_addr": format_addr((DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)),
@@ -86,10 +87,10 @@ def format_addr(addr):
 options.facilitator_addr = (DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "a:h", ["address=", "help"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "help"])
 for o, a in opts:
-    if o == "-a" or o == "--address":
-        options.remote_addr = parse_addr_spec(a, DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+    if o == "-f" or o == "--facilitator":
+        options.facilitator_addr = parse_addr_spec(a, DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
@@ -97,7 +98,7 @@ for o, a in opts:
 if len(args) == 0:
     pass
 elif len(args) == 1:
-    options.facilitator_addr = parse_addr_spec(args[0], DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)
+    options.remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 else:
     usage(sys.stderr)
     sys.exit(1)

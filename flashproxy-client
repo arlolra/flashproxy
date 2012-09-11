@@ -639,8 +639,8 @@ def register():
     if options.facilitator_addr is None:
         log(u"Registering \"%s\"." % spec)
     else:
-        command += [format_addr(options.facilitator_addr)]
-    command += ["-a", spec]
+        command += ["-f", format_addr(options.facilitator_addr)]
+    command += [spec]
     try:
         p = subprocess.Popen(command)
     except OSError, e:
