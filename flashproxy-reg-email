@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import getopt
+import os
 import re
 import smtplib
 import socket
@@ -140,15 +141,18 @@ try:
             spec = "[" + spec + "]"
         options.remote_addr = parse_addr_spec(spec, *options.remote_addr)
 
+    # Add a random subject to keep Gmail from threading everything.
+    rand_string = os.urandom(5).encode("hex")
     smtp.sendmail(options.email_addr, options.email_addr, """\
 To: %(to_addr)s\r
 From: %(from_addr)s\r
-Subject: client reg\r
+Subject: client reg %(rand_string)s\r
 \r
 client=%(client_spec)s
 """ % {
         "to_addr": options.email_addr,
         "from_addr": FROM_EMAIL_ADDRESS,
+        "rand_string": rand_string,
         "client_spec": format_addr(options.remote_addr),
     })
     smtp.quit()
