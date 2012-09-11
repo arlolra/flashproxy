@@ -170,8 +170,8 @@ try:
         code, msg = smtp.docmd("STARTTLS")
         if code != 220:
             raise ValueError("Got code %d after STARTTLS" % code)
-        smtp.sock = ssl.wrap_socket(smtp.sock, cert_reqs=ssl.CERT_REQUIRED,
-            ca_certs=ca_certs_file.name)
+        smtp.sock = ssl.wrap_socket(smtp.sock, ssl_version=ssl.PROTOCOL_TLSv1,
+            cert_reqs=ssl.CERT_REQUIRED, ca_certs=ca_certs_file.name)
         smtp.file = smtp.sock.makefile()
     finally:
         ca_certs_file.close()
