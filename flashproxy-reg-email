@@ -176,6 +176,10 @@ try:
     finally:
         ca_certs_file.close()
 
+    peercert_pem = ssl.DER_cert_to_PEM_cert(smtp.sock.getpeercert(binary_form=True))
+    if options.debug:
+        print peercert_pem
+
     smtp.ehlo(EHLO_FQDN)
 
     if not options.remote_addr[0]:
