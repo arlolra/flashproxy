@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import re
+import smtplib
+import sys
+
+smtp = smtplib.SMTP("gmail-smtp-in.l.google.com.", 25, "[127.0.0.1]")
+smtp.set_debuglevel(1)
+smtp.starttls()
+
+# Grep the EHLO response for our public IP address.
+smtp.ehlo()
+m = re.search(r'at your service, \[([0-9a-fA-F.:]+)\]', smtp.ehlo_resp)
+if not m:
+    print >> sys.stderr, "Could not determine external IP address."
+    sys.exit(1)
+client_spec = m.group(1)
+
+smtp.sendmail("hoddwee@gmail.com", "hoddwee@gmail.com", """\
+From: hoddwee@gmail.com
+To: hoddwee@gmail.com
+Subject: Flash proxy client registration
+
+client=%s
+""" % client_spec)
+smtp.quit()
+
+print "Registered %s." % client_spec
