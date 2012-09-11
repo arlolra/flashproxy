@@ -784,10 +784,6 @@ function Badge() {
         this.elem.className = "dead";
         this.disable_button.style.display = "none";
     }
-
-    this.set_color = function(color) {
-        this.elem.style.backgroundColor = color;
-    };
 }
 
 function quote(s) {
