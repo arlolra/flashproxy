@@ -1,28 +1,159 @@
 #!/usr/bin/env python
 
+import getopt
 import re
 import smtplib
+import socket
 import sys
 
-smtp = smtplib.SMTP("gmail-smtp-in.l.google.com.", 25, "[127.0.0.1]")
-smtp.set_debuglevel(1)
-smtp.starttls()
+DEFAULT_REMOTE_ADDRESS = ""
+DEFAULT_REMOTE_PORT = 9000
+DEFAULT_EMAIL_ADDRESS = "hoddwee@gmail.com"
+# dig MX gmail.com
+DEFAULT_SMTP_HOST = "gmail-smtp-in.l.google.com"
+DEFAULT_SMTP_PORT = 25
 
-# Grep the EHLO response for our public IP address.
-smtp.ehlo()
-m = re.search(r'at your service, \[([0-9a-fA-F.:]+)\]', smtp.ehlo_resp)
-if not m:
-    print >> sys.stderr, "Could not determine external IP address."
+# Use this to prevent Python smtplib from guessing and leaking our hostname.
+EHLO_FQDN = "[127.0.0.1]"
+FROM_EMAIL_ADDRESS = "nobody@localhost"
+
+class options(object):
+    remote_addr = None
+    email_addr = None
+    smtp_addr = None
+    debug = False
+
+def usage(f = sys.stdout):
+    print >> f, """\
+Usage: %(progname)s [REMOTE][:PORT]
+Register with a flash proxy facilitator through email. Makes a STARTTLS
+connection to an SMTP server and sends mail with a client IP address to a
+designated address. By default the remote address registered is
+"%(remote_addr)s" (the external IP address is guessed).
+
+Using an SMTP server or email address other than the defaults will not work
+unless you have made special arrangements to connect them to a facilitator.
+
+  -d, --debug             enable debugging output (Python smtplib messages).
+  -e, --email=ADDRESS     send mail to ADDRESS (default "%(email_addr)s").
+  -h, --help              show this help.
+  -s, --smtp=HOST[:PORT]  use the given SMTP server
+                            (default "%(smtp_addr)s"). \
+""" % {
+    "progname": sys.argv[0],
+    "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
+    "email_addr": DEFAULT_EMAIL_ADDRESS,
+    "smtp_addr": format_addr((DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)),
+}
+
+def parse_addr_spec(spec, defhost = None, defport = None):
+    host = None
+    port = None
+    af = 0
+    m = None
+    # IPv6 syntax.
+    if not m:
+        m = re.match(ur'^\[(.+)\]:(\d*)$', spec)
+        if m:
+            host, port = m.groups()
+            af = socket.AF_INET6
+    if not m:
+        m = re.match(ur'^\[(.+)\]$', spec)
+        if m:
+            host, = m.groups()
+            af = socket.AF_INET6
+    # IPv4/hostname/port-only syntax.
+    if not m:
+        try:
+            host, port = spec.split(":", 1)
+        except ValueError:
+            host = spec
+        if re.match(ur'^[\d.]+$', host):
+            af = socket.AF_INET
+        else:
+            af = 0
+    host = host or defhost
+    port = port or defport
+    if port is not None:
+        port = int(port)
+    return host, port
+
+def format_addr(addr):
+    host, port = addr
+    if not host:
+        return u":%d" % port
+    # Numeric IPv6 address?
+    try:
+        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+        af = addrs[0][0]
+    except socket.gaierror, e:
+        af = 0
+    if af == socket.AF_INET6:
+        result = u"[%s]" % host
+    else:
+        result = "%s" % host
+    if port is not None:
+        result += u":%d" % port
+    return result
+
+options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+options.email_addr = DEFAULT_EMAIL_ADDRESS
+options.smtp_addr = (DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
+
+opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hs:", ["debug", "email=", "help", "smtp="])
+for o, a in opts:
+    if o == "-d" or o == "--debug":
+        options.debug = True
+    elif o == "-e" or o == "--email":
+        options.email_addr = parse_addr_spec(a, DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)
+    elif o == "-h" or o == "--help":
+        usage()
+        sys.exit()
+    elif o == "-s" or o == "--smtp":
+        options.smtp_addr = parse_addr_spec(a, DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
+
+if len(args) == 0:
+    pass
+elif len(args) == 1:
+    options.remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+else:
+    usage(sys.stderr)
     sys.exit(1)
-client_spec = m.group(1)
 
-smtp.sendmail("hoddwee@gmail.com", "hoddwee@gmail.com", """\
-From: hoddwee@gmail.com
-To: hoddwee@gmail.com
-Subject: Flash proxy client registration
+smtp = smtplib.SMTP(options.smtp_addr[0], options.smtp_addr[1], EHLO_FQDN)
 
-client=%s
-""" % client_spec)
-smtp.quit()
+if options.debug:
+    smtp.set_debuglevel(1)
 
-print "Registered %s." % client_spec
+try:
+    smtp.starttls()
+    smtp.ehlo()
+
+    if not options.remote_addr[0]:
+        # Grep the EHLO response for our public IP address.
+        m = re.search(r'at your service, \[([0-9a-fA-F.:]+)\]', smtp.ehlo_resp)
+        if not m:
+            raise ValueError("Could not guess external IP address from EHLO response")
+        spec = m.group(1)
+        if ":" in spec:
+            # Guess IPv6.
+            spec = "[" + spec + "]"
+        options.remote_addr = parse_addr_spec(spec, *options.remote_addr)
+
+    smtp.sendmail(options.email_addr, options.email_addr, """\
+To: %(to_addr)s\r
+From: %(from_addr)s\r
+Subject: client reg\r
+\r
+client=%(client_spec)s
+""" % {
+        "to_addr": options.email_addr,
+        "from_addr": FROM_EMAIL_ADDRESS,
+        "client_spec": format_addr(options.remote_addr),
+    })
+    smtp.quit()
+except Exception, e:
+    print >> sys.stderr, "Failed to register: %s" % str(e)
+    sys.exit(1)
+
+print "Registered \"%s\" with %s." % (format_addr(options.remote_addr), options.email_addr)
