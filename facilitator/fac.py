@@ -29,32 +29,29 @@ def parse_addr_spec(spec, defhost = None, defport = None, resolve = False):
     IPv6 addresses must be enclosed in square brackets."""
     host = None
     port = None
+    af = 0
     m = None
     # IPv6 syntax.
     if not m:
-        m = re.match(ur'^\[(.+)\]:(\d+)$', spec)
+        m = re.match(ur'^\[(.+)\]:(\d*)$', spec)
         if m:
             host, port = m.groups()
             af = socket.AF_INET6
     if not m:
-        m = re.match(ur'^\[(.+)\]:?$', spec)
+        m = re.match(ur'^\[(.+)\]$', spec)
         if m:
             host, = m.groups()
             af = socket.AF_INET6
-    # IPv4 syntax.
+    # IPv4/hostname/port-only syntax.
     if not m:
-        m = re.match(ur'^(.+):(\d+)$', spec)
-        if m:
-            host, port = m.groups()
+        try:
+            host, port = spec.split(":", 1)
+        except ValueError:
+            host = spec
+        if re.match(ur'^[\d.]+$', host):
             af = socket.AF_INET
-    if not m:
-        m = re.match(ur'^:?(\d+)$', spec)
-        if m:
-            port, = m.groups()
+        else:
             af = 0
-    if not m:
-        host = spec
-        af = 0
     host = host or defhost
     port = port or defport
     if host is None or port is None:
