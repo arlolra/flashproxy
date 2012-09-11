@@ -12,10 +12,14 @@ def parse_addr_spec(spec, defhost = None, defport = None, resolve = False):
     >>> parse_addr_spec("192.168.0.2:8888", defhost="192.168.0.1", defport=9999)
     ('192.168.0.2', 8888)
     >>> parse_addr_spec(":8888", defhost="192.168.0.1", defport=9999)
-    ('192.168.0.1', 9999)
+    ('192.168.0.1', 8888)
+    >>> parse_addr_spec("192.168.0.2", defhost="192.168.0.1", defport=9999)
+    ('192.168.0.2', 9999)
     >>> parse_addr_spec("192.168.0.2:", defhost="192.168.0.1", defport=9999)
     ('192.168.0.2', 9999)
     >>> parse_addr_spec(":", defhost="192.168.0.1", defport=9999)
+    ('192.168.0.1', 9999)
+    >>> parse_addr_spec("", defhost="192.168.0.1", defport=9999)
     ('192.168.0.1', 9999)
 
     If resolve is true, then the host in the specification or the defhost may be
