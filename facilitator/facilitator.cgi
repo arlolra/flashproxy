@@ -17,57 +17,6 @@ Status: %d\r
 \r""" % status
     sys.exit()
 
-def fac_socket():
-    return socket.create_connection(FACILITATOR_ADDR, 1.0).makefile()
-
-def transact(f, command, *params):
-    transaction = fac.render_transaction(command, *params)
-    print >> f, transaction
-    f.flush()
-    line = f.readline()
-    if not (len(line) > 0 and line[-1] == '\n'):
-        raise ValueError("No newline at end of string returned by facilitator")
-    return fac.parse_transaction(line[:-1])
-
-def put_reg(client_addr, registrant_addr):
-    f = fac_socket()
-    try:
-        command, params = transact(f, "PUT", ("CLIENT", fac.format_addr(client_addr)), ("FROM", fac.format_addr(registrant_addr)))
-    finally:
-        f.close()
-    if command == "OK":
-        pass
-    else:
-        exit_error(500)
-
-def get_reg(proxy_addr):
-    f = fac_socket()
-    try:
-        command, params = transact(f, "GET", ("FROM", fac.format_addr(proxy_addr)))
-    finally:
-        f.close()
-    if command == "NONE":
-        return {
-            "client": ""
-        }
-    elif command == "OK":
-        client_spec = fac.param_first("CLIENT", params)
-        relay_spec = fac.param_first("RELAY", params)
-        if not client_spec or not relay_spec:
-            exit_error(500)
-        try:
-            # Check the syntax returned by the backend.
-            client = fac.parse_addr_spec(client_spec)
-            relay = fac.parse_addr_spec(relay_spec)
-        except ValueError:
-            exit_error(500)
-        return {
-            "client": fac.format_addr(client),
-            "relay": fac.format_addr(relay),
-        }
-    else:
-        exit_error(500)
-
 method = os.environ.get("REQUEST_METHOD")
 path_info = os.environ.get("PATH_INFO")
 proxy_addr = (os.environ.get("REMOTE_ADDR"), None)
@@ -83,7 +32,7 @@ def do_get():
     if path != "/":
         exit_error(400)
     try:
-        reg = get_reg(proxy_addr) or ""
+        reg = fac.get_reg(FACILITATOR_ADDR, proxy_addr) or ""
     except:
         exit_error(500)
     # Allow XMLHttpRequest from any domain. http://www.w3.org/TR/cors/.
@@ -106,10 +55,7 @@ def do_post():
         client_addr = fac.parse_addr_spec(client_spec, defhost=proxy_addr[0])
     except ValueError:
         exit_error(400)
-    try:
-        put_reg(client_addr, proxy_addr)
-    except:
-        raise
+    if not fac.put_reg(FACILITATOR_ADDR, client_addr, proxy_addr):
         exit_error(500)
     print """\
 Status: 200\r
