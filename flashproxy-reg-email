@@ -225,7 +225,7 @@ try:
 
     if pubkey_digest != PUBKEY_SHA1:
         raise ValueError("Public key does not match pin: got %s but expected %s" %
-            pubkey_digest.encode("hex"), PUBKEY_SHA1.encode("hex"))
+            (pubkey_digest.encode("hex"), PUBKEY_SHA1.encode("hex")))
 
     smtp.ehlo(EHLO_FQDN)
 
