@@ -12,7 +12,7 @@ import tempfile
 from hashlib import sha1
 
 try:
-    from M2Crypto import X509
+    from M2Crypto import BIO, RSA, X509
 except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
     X509 = None
@@ -60,6 +60,20 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 # http://www.imperialviolet.org/2011/05/04/pinning.html for the reason behind
 # hashing the public key, not the entire certificate.
 PUBKEY_SHA1 = "e341556ff3fd18e155ce30971fc93e740aa4b185".decode("hex")
+
+# openssl genrsa reg-email 2048
+# openssl rsa -pubout < reg-email > reg-email.pub
+FACILITATOR_PUBKEY_PEM = """\
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArzOJ0Ya0fVp6pcgIf2GW
+CBanFAyDygMFm9WfSwgQMf9XmMoHmI39bM4MftLjnhfmN75IT1DESFprmxca+vNA
+SYuN5rnCLcV5hcCFIHgDWRxQkDuRnQfYCZN7/lWgYUiMpU92vdlyYnP+XNVat7qw
+06tSHey2FS417zmIsNTcKUk9XhWb/uVHzOw/oCwG1wuxdUXKXLHjgwR5V17NbNwc
+FJ1qCmQeswQk44wfJHuXJiIxMgDWF6p4LH07hBrP68L1vtlOVpqVAAoi/wLUhBgZ
+WG0m/agJiktYR1qkLRNSH0afmpQn/v8kQg3T/5d0+HLECMfuBqoWEuJBACPSlA06
+5wIDAQAB
+-----END PUBLIC KEY-----
+"""
 
 class options(object):
     remote_addr = None
@@ -224,6 +238,11 @@ try:
             spec = "[" + spec + "]"
         options.remote_addr = parse_addr_spec(spec, *options.remote_addr)
 
+    body_plain = "client=%s" % format_addr(options.remote_addr)
+    rsa = RSA.load_pub_key_bio(BIO.MemoryBuffer(FACILITATOR_PUBKEY_PEM))
+    body_crypt = rsa.public_encrypt(body_plain, RSA.pkcs1_oaep_padding)
+    body = body_crypt.encode("base64")
+
     # Add a random subject to keep Gmail from threading everything.
     rand_string = os.urandom(5).encode("hex")
     smtp.sendmail(options.email_addr, options.email_addr, """\
@@ -231,12 +250,12 @@ To: %(to_addr)s\r
 From: %(from_addr)s\r
 Subject: client reg %(rand_string)s\r
 \r
-client=%(client_spec)s
+%(body)s
 """ % {
         "to_addr": options.email_addr,
         "from_addr": FROM_EMAIL_ADDRESS,
         "rand_string": rand_string,
-        "client_spec": format_addr(options.remote_addr),
+        "body": body,
     })
     smtp.quit()
 except Exception, e:
