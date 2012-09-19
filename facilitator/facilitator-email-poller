@@ -19,6 +19,7 @@ from M2Crypto import BIO, RSA, X509
 DEFAULT_IMAP_HOST = "imap.gmail.com"
 DEFAULT_IMAP_PORT = 993
 DEFAULT_EMAIL_ADDRESS = "hoddwee@gmail.com"
+DEFAULT_LOG_FILENAME = "facilitator-email-poller.log"
 
 POLL_INTERVAL = 60
 
@@ -57,12 +58,19 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 # hashing the public key, not the entire certificate.
 PUBKEY_SHA1 = "5d97e1ec007e48c1f36e736e652eeaf2184697c3".decode("hex")
 
+LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 class options(object):
     email_addr = None
     imap_addr = None
     key_filename = None
     password_filename = None
-    debug = False
+    log_filename = DEFAULT_LOG_FILENAME
+    log_file = sys.stdout
+    daemonize = True
+    pid_filename = None
+    safe_logging = True
+    imaplib_debug = False
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -71,26 +79,42 @@ Facilitator-side helper for the facilitator-reg-email rendezvous. Polls
 an IMAP server for email messages with client registrations, deletes
 them, and forwards the registrations to the facilitator.
 
-  -d, --debug             enable debugging output (Python imaplib messages);
-                            beware that the login password will be shown.
+  -d, --debug             don't daemonize, log to stdout.
   -e, --email=ADDRESS     log in as ADDRESS (default "%(email_addr)s").
   -h, --help              show this help.
   -i, --imap=HOST[:PORT]  use the given IMAP server (default "%(imap_addr)s").
+      --imaplib-debug     show raw IMAP messages.
   -k, --key=KEYFILE       read a facilitator private key from KEYFILE.
-  -p, --pass=PASSFILE     use the email password contained in PASSFILE.\
+  -l, --log FILENAME      write log to FILENAME (default \"%(log)s\").
+  -p, --pass=PASSFILE     use the email password contained in PASSFILE.
+      --pidfile FILENAME  write PID to FILENAME after daemonizing.
+      --unsafe-logging    don't scrub email password and IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "email_addr": DEFAULT_EMAIL_ADDRESS,
     "imap_addr": fac.format_addr((DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)),
+    "log": DEFAULT_LOG_FILENAME,
 }
+
+def safe_str(s):
+    """Return s if options.safe_logging is true, and "[scrubbed]" otherwise."""
+    if options.safe_logging:
+        return "[scrubbed]"
+    else:
+        return s
+
+def log(msg):
+    print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
+    options.log_file.flush()
 
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.imap_addr = (DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:k:p:", ["debug", "email=", "help", "imap=", "key=", "pass="])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:k:l:p:", ["debug", "email=", "help", "imap=", "imaplib-debug", "key=", "log=", "pass=", "pidfile=", "unsafe-logging"])
 for o, a in opts:
     if o == "-d" or o == "--debug":
-        options.debug = True
+        options.daemonize = False
+        options.log_filename = None
     elif o == "-e" or o == "--email":
         options.email_addr = a
     elif o == "-h" or o == "--help":
@@ -98,10 +122,18 @@ for o, a in opts:
         sys.exit()
     elif o == "-i" or o == "--imap":
         options.imap_addr = fac.parse_addr_spec(a, DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
+    if o == "--imaplib-debug":
+        options.imaplib_debug = True
     elif o == "-k" or o == "--key":
         options.key_filename = a
+    elif o == "-l" or o == "--log":
+        options.log_filename = a
     elif o == "-p" or o == "--pass":
         options.password_filename = a
+    elif o == "--pidfile":
+        options.pid_filename = a
+    elif o == "--unsafe-logging":
+        options.safe_logging = False
 
 if len(args) != 0:
     usage(sys.stderr)
@@ -179,6 +211,7 @@ def handle_message(msg):
     ciphertext = msg.get_payload().decode("base64")
     plaintext = rsa.private_decrypt(ciphertext, RSA.pkcs1_oaep_padding)
     client_addr = find_client_addr(plaintext)
+    log(u"registering %s" % safe_str(fac.format_addr(client_addr)))
     fac.put_reg(FACILITATOR_ADDR, client_addr)
 
 def imap_loop(imap):
@@ -204,7 +237,24 @@ def imap_loop(imap):
 
         time.sleep(POLL_INTERVAL)
 
-if options.debug:
+if options.log_filename:
+    options.log_file = open(options.log_filename, "a")
+    # Send error tracebacks to the log.
+    sys.stderr = options.log_file
+else:
+    options.log_file = sys.stdout
+
+if options.daemonize:
+    log(u"daemonizing")
+    pid = os.fork()
+    if pid != 0:
+        if options.pid_filename:
+            f = open(options.pid_filename, "w")
+            print >> f, pid
+            f.close()
+        sys.exit(0)
+
+if options.imaplib_debug:
     imaplib.Debug = 4
 
 ca_certs_file = tempfile.NamedTemporaryFile(prefix="facilitator-email-poller-", suffix=".crt", delete=True)
@@ -226,9 +276,17 @@ if pubkey_digest != PUBKEY_SHA1:
     raise ValueError("Public key does not match pin: got %s but expected %s" %
         (pubkey_digest.encode("hex"), PUBKEY_SHA1.encode("hex")))
 
+pre_debug = imap.debug
+if options.safe_logging:
+    # Don't log the login call without --unsafe-logging because it contains a
+    # secret password.
+    imap.debug = 0
+log(u"logging in as %s" % options.email_addr)
 imap.login(options.email_addr, email_password)
+imap.debug = pre_debug
 
 imap_loop(imap)
 
+log(u"closing")
 imap.close()
 imap.logout()
