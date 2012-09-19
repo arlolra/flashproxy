@@ -101,7 +101,7 @@ def do_post():
     client_specs = fs.getlist("client")
     if len(client_specs) != 1:
         exit_error(400)
-    client_spec = client_specs[0]
+    client_spec = client_specs[0].strip()
     try:
         client_addr = fac.parse_addr_spec(client_spec, defhost=proxy_addr[0])
     except ValueError:
