@@ -165,7 +165,7 @@ for o, a in opts:
     if o == "-d" or o == "--debug":
         options.debug = True
     elif o == "-e" or o == "--email":
-        options.email_addr = parse_addr_spec(a, DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)
+        options.email_addr = a
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
