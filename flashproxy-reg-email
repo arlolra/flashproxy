@@ -9,6 +9,9 @@ import ssl
 import sys
 import tempfile
 
+from hashlib import sha1
+from M2Crypto import X509
+
 DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_EMAIL_ADDRESS = "hoddwee@gmail.com"
@@ -48,6 +51,10 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 1voqZiegDfqnc1zqcPGUIWVEX/r87yloqaKHee9570+sB3c4
 -----END CERTIFICATE-----
 """
+# SHA-1 digest of expected public key. See
+# http://www.imperialviolet.org/2011/05/04/pinning.html for the reason behind
+# hashing the public key, not the entire certificate.
+PUBKEY_SHA1 = "e341556ff3fd18e155ce30971fc93e740aa4b185".decode("hex")
 
 class options(object):
     remote_addr = None
@@ -176,9 +183,15 @@ try:
     finally:
         ca_certs_file.close()
 
-    peercert_pem = ssl.DER_cert_to_PEM_cert(smtp.sock.getpeercert(binary_form=True))
-    if options.debug:
-        print peercert_pem
+    # Check that the public key is what we expect.
+    cert_der = smtp.sock.getpeercert(binary_form=True)
+    cert = X509.load_cert_string(cert_der, format=X509.FORMAT_DER)
+    pubkey_der = cert.get_pubkey().as_der()
+    pubkey_digest = sha1(pubkey_der).digest()
+
+    if pubkey_digest != PUBKEY_SHA1:
+        raise ValueError("Public key does not match pin: got %s but expected %s" %
+            pubkey_digest.encode("hex"), PUBKEY_SHA1.encode("hex"))
 
     smtp.ehlo(EHLO_FQDN)
 
