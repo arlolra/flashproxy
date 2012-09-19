@@ -238,7 +238,7 @@ try:
             spec = "[" + spec + "]"
         options.remote_addr = parse_addr_spec(spec, *options.remote_addr)
 
-    body_plain = "client=%s" % format_addr(options.remote_addr)
+    body_plain = (u"client=%s" % format_addr(options.remote_addr)).encode("utf-8")
     rsa = RSA.load_pub_key_bio(BIO.MemoryBuffer(FACILITATOR_PUBKEY_PEM))
     body_crypt = rsa.public_encrypt(body_plain, RSA.pkcs1_oaep_padding)
     body = body_crypt.encode("base64")
