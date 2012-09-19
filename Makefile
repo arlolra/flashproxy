@@ -3,14 +3,14 @@ BINDIR = $(PREFIX)/bin
 
 VERSION = 0.4
 
-CLIENT_DIST_FILES = flashproxy-client flashproxy-reg-http README LICENSE torrc
+CLIENT_DIST_FILES = flashproxy-client flashproxy-reg-email flashproxy-reg-http README LICENSE torrc
 
 all:
 	:
 
 install:
 	mkdir -p $(BINDIR)
-	cp -f flashproxy-client flashproxy-reg-http $(BINDIR)
+	cp -f flashproxy-client flashproxy-reg-email flashproxy-reg-http $(BINDIR)
 
 clean:
 	rm -f *.pyc
