@@ -40,3 +40,10 @@ on the gear icon, and select "Settings". Select "Filters" and add a new
 filter. For "Containing the words:" insert "in:spam". You will get a
 warning that says it will not match any incoming messages; this appears
 to be wrong and you can click through it.
+
+Enable IMAP. Click the gear icon, then "Settings". Click "Forwarding and
+POP/IMAP". Then
+* Disable POP
+* Enable IMAP
+* Auto-Expunge on
+"Save Changes".
