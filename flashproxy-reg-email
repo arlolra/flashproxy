@@ -10,7 +10,12 @@ import sys
 import tempfile
 
 from hashlib import sha1
-from M2Crypto import X509
+
+try:
+    from M2Crypto import X509
+except ImportError:
+    # Defer the error reporting so that --help works even without M2Crypto.
+    X509 = None
 
 DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
@@ -72,6 +77,8 @@ designated address. By default the remote address registered is
 
 Using an SMTP server or email address other than the defaults will not work
 unless you have made special arrangements to connect them to a facilitator.
+
+This program requires the M2Crypto library for Python.
 
   -d, --debug             enable debugging output (Python smtplib messages).
   -e, --email=ADDRESS     send mail to ADDRESS (default "%(email_addr)s").
@@ -157,6 +164,17 @@ elif len(args) == 1:
     options.remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 else:
     usage(sys.stderr)
+    sys.exit(1)
+
+if X509 is None:
+    print >> sys.stderr, """\
+This program requires the M2Crypto library, which is not installed.
+
+You can install it using one of the packages at
+http://chandlerproject.org/Projects/MeTooCrypto#Downloads.
+
+On Debian-like systems, use the command "apt-get install python-m2crypto".\
+"""
     sys.exit(1)
 
 smtp = smtplib.SMTP(options.smtp_addr[0], options.smtp_addr[1], EHLO_FQDN)
