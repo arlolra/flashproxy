@@ -155,12 +155,12 @@ if options.password_filename is None:
     sys.exit(1)
 try:
     password_file = open(options.password_filename)
-except OSError, e:
+except Exception, e:
     print >> sys.stderr, """\
 Failed to open password file "%s": %s.\
 """ % (options.password_filename, str(e))
     sys.exit(1)
-else:
+try:
     if not check_perms(password_file.fileno()):
         print >> sys.stderr, "Refusing to run with group- or world-readable password file. Try"
         print >> sys.stderr, "\tchmod 600 %s" % options.password_filename
@@ -175,12 +175,12 @@ if options.key_filename is None:
     sys.exit(1)
 try:
     key_file = open(options.key_filename)
-except OSError, e:
+except Exception, e:
     print >> sys.stderr, """\
 Failed to open private key file "%s": %s.\
 """ % (options.key_filename, str(e))
     sys.exit(1)
-else:
+try:
     if not check_perms(key_file.fileno()):
         print >> sys.stderr, "Refusing to run with group- or world-readable private key file. Try"
         print >> sys.stderr, "\tchmod 600 %s" % options.key_filename
