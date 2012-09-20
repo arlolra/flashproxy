@@ -11,9 +11,9 @@
  * If set (to any value), show verbose terminal-like output instead of the
  * badge.
  *
- * facilitator=<HOST>:<PORT>
- * The address of the facilitator to use. By default it is
- * DEFAULT_FACILITATOR_ADDR. Both <HOST> and <PORT> must be present.
+ * facilitator=https://host:port/
+ * The URL of the facilitator CGI script. By default it is
+ * DEFAULT_FACILITATOR_URL.
  *
  * facilitator_poll_interval=<FLOAT>
  * How often to poll the facilitator, in seconds. The default is
@@ -49,10 +49,7 @@
  * http://autobahn.ws/testsuite/reports/clients/index.html
  */
 
-var DEFAULT_FACILITATOR_ADDR = {
-    host: "tor-facilitator.bamsoftware.com",
-    port: 443
-};
+var DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/";
 
 var DEFAULT_MAX_NUM_PROXY_PAIRS = 10;
 
@@ -374,12 +371,7 @@ function FlashProxy() {
         var relay_addr;
         var rate_limit_bytes;
 
-        this.fac_addr = get_query_param_addr(query, "facilitator", DEFAULT_FACILITATOR_ADDR);
-        if (!this.fac_addr) {
-            puts("Error: Facilitator spec must be in the form \"host:port\".");
-            this.die();
-            return;
-        }
+        this.fac_url = get_query_param_string(query, "facilitator", DEFAULT_FACILITATOR_URL);
 
         this.max_num_proxy_pairs = get_query_param_integer(query, "max_clients", DEFAULT_MAX_NUM_PROXY_PAIRS);
         if (this.max_num_proxy_pairs === null || this.max_num_proxy_pairs < 0) {
@@ -427,7 +419,6 @@ function FlashProxy() {
     };
 
     this.proxy_main = function() {
-        var fac_url;
         var xhr;
 
         if (this.proxy_pairs.length >= this.max_num_proxy_pairs) {
@@ -435,10 +426,9 @@ function FlashProxy() {
             return;
         }
 
-        fac_url = build_url("https", this.fac_addr.host, this.fac_addr.port, "/");
         xhr = new XMLHttpRequest();
         try {
-            xhr.open("GET", fac_url);
+            xhr.open("GET", this.fac_url);
         } catch (err) {
             /* An exception happens here when, for example, NoScript allows the
                domain on which the proxy badge runs, but not the domain to which
@@ -458,7 +448,7 @@ function FlashProxy() {
                     puts("Facilitator: can't connect: got status " + repr(xhr.status) + " and status text " + repr(xhr.statusText) + ".");
             }
         }.bind(this);
-        puts("Facilitator: connecting to " + fac_url + ".");
+        puts("Facilitator: connecting to " + this.fac_url + ".");
         xhr.send(null);
     };
 
