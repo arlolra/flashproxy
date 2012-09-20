@@ -88,7 +88,7 @@ them, and forwards the registrations to the facilitator.
   -e, --email=ADDRESS     log in as ADDRESS (default "%(email_addr)s").
   -h, --help              show this help.
   -i, --imap=HOST[:PORT]  use the given IMAP server (default "%(imap_addr)s").
-      --imaplib-debug     show raw IMAP messages.
+      --imaplib-debug     show raw IMAP messages (will include email password).
   -k, --key=KEYFILE       read a facilitator private key from KEYFILE.
   -l, --log FILENAME      write log to FILENAME (default \"%(log)s\").
   -p, --pass=PASSFILE     use the email password contained in PASSFILE.
@@ -283,14 +283,8 @@ def imap_login():
         raise ValueError("Public key does not match pin: got %s but expected %s" %
             (pubkey_digest.encode("hex"), PUBKEY_SHA1.encode("hex")))
 
-    pre_debug = imap.debug
-    if options.safe_logging:
-        # Don't log the login call without --unsafe-logging because it contains a
-        # secret password.
-        imap.debug = 0
     log(u"logging in as %s" % options.email_addr)
     imap.login(options.email_addr, email_password)
-    imap.debug = pre_debug
 
     return imap
 
