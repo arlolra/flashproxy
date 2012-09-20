@@ -77,6 +77,17 @@ class options(object):
     safe_logging = True
     imaplib_debug = False
 
+class IMAP4_SSL_REQUIRED(imaplib.IMAP4_SSL):
+    """A subclass of of IMAP4_SSL that uses ssl_version=ssl.PROTOCOL_TLSv1 and
+    cert_reqs=ssl.CERT_REQUIRED."""
+    def open(self, host = "", port = imaplib.IMAP4_SSL_PORT):
+        self.host = host
+        self.port = port
+        self.sock = socket.create_connection((host, port))
+        self.sslobj = ssl.wrap_socket(self.sock, ssl_version=ssl.PROTOCOL_TLSv1,
+            cert_reqs=ssl.CERT_REQUIRED, ca_certs=self.certfile)
+        self.file = self.sslobj.makefile('rb')
+
 def usage(f = sys.stdout):
     print >> f, """\
 Usage: %(progname)s --key=KEYFILE --pass=PASSFILE
@@ -190,16 +201,25 @@ try:
 finally:
     key_file.close()
 
-class IMAP4_SSL_REQUIRED(imaplib.IMAP4_SSL):
-    """A subclass of of IMAP4_SSL that uses ssl_version=ssl.PROTOCOL_TLSv1 and
-    cert_reqs=ssl.CERT_REQUIRED."""
-    def open(self, host = "", port = imaplib.IMAP4_SSL_PORT):
-        self.host = host
-        self.port = port
-        self.sock = socket.create_connection((host, port))
-        self.sslobj = ssl.wrap_socket(self.sock, ssl_version=ssl.PROTOCOL_TLSv1,
-            cert_reqs=ssl.CERT_REQUIRED, ca_certs=self.certfile)
-        self.file = self.sslobj.makefile('rb')
+if options.log_filename:
+    options.log_file = open(options.log_filename, "a")
+    # Send error tracebacks to the log.
+    sys.stderr = options.log_file
+else:
+    options.log_file = sys.stdout
+
+if options.daemonize:
+    log(u"daemonizing")
+    pid = os.fork()
+    if pid != 0:
+        if options.pid_filename:
+            f = open(options.pid_filename, "w")
+            print >> f, pid
+            f.close()
+        sys.exit(0)
+
+if options.imaplib_debug:
+    imaplib.Debug = 4
 
 def find_client_addr(body):
     """Find and parse the first client line of the form
@@ -241,26 +261,6 @@ def imap_loop(imap):
             imap.expunge()
 
         time.sleep(POLL_INTERVAL)
-
-if options.log_filename:
-    options.log_file = open(options.log_filename, "a")
-    # Send error tracebacks to the log.
-    sys.stderr = options.log_file
-else:
-    options.log_file = sys.stdout
-
-if options.daemonize:
-    log(u"daemonizing")
-    pid = os.fork()
-    if pid != 0:
-        if options.pid_filename:
-            f = open(options.pid_filename, "w")
-            print >> f, pid
-            f.close()
-        sys.exit(0)
-
-if options.imaplib_debug:
-    imaplib.Debug = 4
 
 def imap_login():
     """Make an IMAP connection, check the certificate and public key, and log in."""
