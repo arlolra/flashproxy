@@ -319,8 +319,15 @@ function have_websocket_binary_frames() {
     if (ua === null)
         return false;
 
+    /* We are cool for Chrome 16 or Safari 6.0. */
+
     matches = ua.match(/\bchrome\/(\d+)/i);
     if (matches !== null && Number(matches[1]) >= 16)
+        return true;
+
+    matches = ua.match(/\bversion\/(\d+)/i);
+    if (ua.match(/\bsafari\b/i) && !ua.match(/\bchrome\b/i)
+        && Number(matches[1]) >= 6)
         return true;
 
     return false;
