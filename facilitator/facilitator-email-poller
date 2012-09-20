@@ -261,35 +261,47 @@ if options.daemonize:
 if options.imaplib_debug:
     imaplib.Debug = 4
 
-ca_certs_file = tempfile.NamedTemporaryFile(prefix="facilitator-email-poller-", suffix=".crt", delete=True)
-try:
-    ca_certs_file.write(CA_CERTS)
-    ca_certs_file.flush()
-    imap = IMAP4_SSL_REQUIRED(options.imap_addr[0], options.imap_addr[1],
-        None, ca_certs_file.name)
-finally:
-    ca_certs_file.close()
+def imap_login():
+    """Make an IMAP connection, check the certificate and public key, and log in."""
+    ca_certs_file = tempfile.NamedTemporaryFile(prefix="facilitator-email-poller-", suffix=".crt", delete=True)
+    try:
+        ca_certs_file.write(CA_CERTS)
+        ca_certs_file.flush()
+        imap = IMAP4_SSL_REQUIRED(options.imap_addr[0], options.imap_addr[1],
+            None, ca_certs_file.name)
+    finally:
+        ca_certs_file.close()
 
-# Check that the public key is what we expect.
-cert_der = imap.ssl().getpeercert(binary_form=True)
-cert = X509.load_cert_string(cert_der, format=X509.FORMAT_DER)
-pubkey_der = cert.get_pubkey().as_der()
-pubkey_digest = sha1(pubkey_der).digest()
+    # Check that the public key is what we expect.
+    cert_der = imap.ssl().getpeercert(binary_form=True)
+    cert = X509.load_cert_string(cert_der, format=X509.FORMAT_DER)
+    pubkey_der = cert.get_pubkey().as_der()
+    pubkey_digest = sha1(pubkey_der).digest()
 
-if pubkey_digest != PUBKEY_SHA1:
-    raise ValueError("Public key does not match pin: got %s but expected %s" %
-        (pubkey_digest.encode("hex"), PUBKEY_SHA1.encode("hex")))
+    if pubkey_digest != PUBKEY_SHA1:
+        raise ValueError("Public key does not match pin: got %s but expected %s" %
+            (pubkey_digest.encode("hex"), PUBKEY_SHA1.encode("hex")))
 
-pre_debug = imap.debug
-if options.safe_logging:
-    # Don't log the login call without --unsafe-logging because it contains a
-    # secret password.
-    imap.debug = 0
-log(u"logging in as %s" % options.email_addr)
-imap.login(options.email_addr, email_password)
-imap.debug = pre_debug
+    pre_debug = imap.debug
+    if options.safe_logging:
+        # Don't log the login call without --unsafe-logging because it contains a
+        # secret password.
+        imap.debug = 0
+    log(u"logging in as %s" % options.email_addr)
+    imap.login(options.email_addr, email_password)
+    imap.debug = pre_debug
 
-imap_loop(imap)
+    return imap
+
+while True:
+    imap = imap_login()
+    try:
+        imap_loop(imap)
+    except imaplib.IMAP4.abort, e:
+        # Try again after a disconnection.
+        log(u"lost server connection: %s" % str(e))
+    else:
+        break
 
 log(u"closing")
 imap.close()
