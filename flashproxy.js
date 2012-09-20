@@ -181,9 +181,20 @@ function build_url(scheme, host, port, path, params) {
     return parts.join("");
 }
 
-/* Get a query string parameter and parse it as an address spec. Returns
-   default_val if param is not defined in the query string. Returns null on a
-   parsing error. */
+/* Get a query string parameter and return it as a string. Returns default_val
+   if param is not defined in the query string. */
+function get_query_param_string(query, param, default_val) {
+    var val;
+
+    val = query[param];
+    if (val === undefined)
+        return default_val;
+    else
+        return val;
+}
+
+/* Get a query string parameter, or the given default, and parse it as an
+   address spec. Returns null on a parsing error. */
 function get_query_param_addr(query, param, default_val) {
     var val;
 
