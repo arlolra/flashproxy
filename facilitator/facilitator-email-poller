@@ -3,6 +3,7 @@
 import email
 import getopt
 import imaplib
+import math
 import os
 import socket
 import ssl
@@ -293,6 +294,26 @@ def imap_login():
 
     return imap
 
+class RateLimit(object):
+    INITIAL_INTERVAL = 1.0
+    # These constants are chosen to reach a steady state of one attempt every
+    # ten minutes, assuming a new failing attempt after each penalty interval.
+    MAX_INTERVAL = 10 * 60
+    MULTIPLIER = 2.0
+    DECAY = math.log(MULTIPLIER) / MAX_INTERVAL
+    def __init__(self):
+        self.time_last = time.time()
+        self.interval = self.INITIAL_INTERVAL
+    def time_to_wait(self):
+        now = time.time()
+        delta = now - self.time_last
+        # Discount time already served.
+        wait = max(self.interval - delta, 0)
+        self.time_last = now
+        self.interval = self.interval * math.exp(-self.DECAY * delta) * self.MULTIPLIER
+        return wait
+
+login_limit = RateLimit()
 while True:
     imap = imap_login()
     try:
@@ -300,6 +321,11 @@ while True:
     except imaplib.IMAP4.abort, e:
         # Try again after a disconnection.
         log(u"lost server connection: %s" % str(e))
+        # Don't reconnect too fast.
+        t = login_limit.time_to_wait()
+        if t > 0:
+            log(u"waiting %.2f seconds before logging in again" % t)
+            time.sleep(t)
     else:
         break
 
