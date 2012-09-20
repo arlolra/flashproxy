@@ -346,22 +346,23 @@ function make_websocket(addr) {
 }
 
 function FlashProxy() {
-    this.badge = new Badge();
-    this.badge.elem.onmouseover = function(event) {
-        this.badge.disable_button.style.display = "block";
-    }.bind(this);
-    this.badge.elem.onmouseout = function(event) {
-        this.badge.disable_button.style.display = "none";
-    }.bind(this);
-    /* Click a button to disable the badge. */
-    this.badge.disable_button.onclick = function(event) {
-        this.disable();
-        this.badge.disable_button.parentNode.removeChild(this.badge.disable_button);
-    }.bind(this);
-    if (query.debug)
+    if (query.debug) {
         this.badge_elem = debug_div;
-    else
+    } else {
+        this.badge = new Badge();
+        this.badge.elem.onmouseover = function(event) {
+            this.badge.disable_button.style.display = "block";
+        }.bind(this);
+        this.badge.elem.onmouseout = function(event) {
+            this.badge.disable_button.style.display = "none";
+        }.bind(this);
+        /* Click a button to disable the badge. */
+        this.badge.disable_button.onclick = function(event) {
+            this.disable();
+            this.badge.disable_button.parentNode.removeChild(this.badge.disable_button);
+        }.bind(this);
         this.badge_elem = this.badge.elem;
+    }
     this.badge_elem.setAttribute("id", "flashproxy-badge");
 
     this.proxy_pairs = [];
@@ -494,7 +495,8 @@ function FlashProxy() {
             puts("Complete.");
             /* Delete from the list of active proxy pairs. */
             this.proxy_pairs.splice(this.proxy_pairs.indexOf(proxy_pair), 1);
-            this.badge.proxy_end();
+            if (this.badge)
+                this.badge.proxy_end();
         }.bind(this);
         try {
             proxy_pair.connect();
@@ -504,7 +506,8 @@ function FlashProxy() {
             return;
         }
 
-        this.badge.proxy_begin();
+        if (this.badge)
+            this.badge.proxy_begin();
     };
 
     /* Cease all network operations and prevent any future ones. */
@@ -514,12 +517,14 @@ function FlashProxy() {
         this.make_proxy_pair = function(client_addr, relay_addr) { };
         while (this.proxy_pairs.length > 0)
             this.proxy_pairs.pop().close();
-        this.badge.disable();
+        if (this.badge)
+            this.badge.disable();
     };
 
     this.die = function() {
         puts("Dying.");
-        this.badge.die();
+        if (this.badge)
+            this.badge.die();
     };
 }
 
