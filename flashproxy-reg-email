@@ -62,8 +62,8 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 PUBKEY_SHA1 = "e341556ff3fd18e155ce30971fc93e740aa4b185".decode("hex")
 
 # Registrations are encrypted with this public key before being emailed. Only
-# the facilitator operators should have the corresponding private key.
-# openssl genrsa reg-email 2048
+# the facilitator operators should have the corresponding private key. Given a
+# private key in reg-email, get the public key like this:
 # openssl rsa -pubout < reg-email > reg-email.pub
 FACILITATOR_PUBKEY_PEM = """\
 -----BEGIN PUBLIC KEY-----

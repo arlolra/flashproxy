@@ -3,16 +3,27 @@ We will use the domain name tor-facilitator.example.com.
 
 == Overview
 
-The facilitator consists of three parts: an HTTP server, a CGI program,
-and a backend. The HTTP server is responsible for speaking TLS and
-invoking the CGI program. The CGI program receives client registrations
-and proxy requests for clients, parses them, and forwards them to the
-backend. The backend is stateful and is responsible for assigning
-clients to proxies and remembering client registrations.
+The facilitator consists of a backend server that is essentially a
+dynamic database of client addresses, as well as helper programs that
+receive client registrations from the Internet over various means and
+pass them to the backend. There are two supported helper rendezvous
+methods: HTTP and email.
 
-We use Apache 2 as the HTTP server. The CGI script is facilitator.cgi.
-The backend is facilitator. fac.py is a Python module containing code
-common to facilitator.cgi and facilitator.
+The HTTP rendezvous uses an HTTP server and a CGI program. The HTTP
+server is responsible for speaking TLS and invoking the CGI program. The
+CGI program receives client registrations and proxy requests for
+clients, parses them, and forwards them to the backend. We use Apache 2
+as the HTTP server. The CGI script is facilitator.cgi. The backend is
+facilitator.
+
+The email rendezvous uses the helper program facilitator-email-poller.
+Clients use the flashproxy-reg-email program to send an encrypted
+message to a Gmail address. The poller constantly checks for new
+messages, decrypts and deletes them, and forwards the registrations to
+the facilitator.
+
+fac.py is a Python module containing code common to the various
+facilitator programs.
 
 == Basic and security setup
 
@@ -88,12 +99,14 @@ Restart servers.
 	# cd flashproxy/facilitator
 	# make install
 
-This installs facilitator.cgi, facilitator, and fac.py to
-/usr/local/bin. It also installs a System V init file to
-/etc/init.d/facilitator.
+This installs facilitator.cgi, facilitator, facilitator-email-poller,
+and fac.py to /usr/local/bin. It also installs System V init files to
+/etc/init.d/.
 
 	# update-rc.d facilitator defaults
 	# /etc/init.d/facilitator start
+	# update-rc.d facilitator-email-poller defaults
+	# /etc/init.d/facilitator-email-poller start
 
 == HTTP server setup
 
@@ -149,3 +162,28 @@ Copy the new tor-facilitator.pem to the facilitator server as
 /etc/apache2/tor-facilitator.pem.
 
 	# /etc/init.d/apache2 restart
+
+=== Email poller setup
+
+The facilitator-email-poller program requires a private RSA key (used to
+decrypt encrypted client registrations), and a password that is used to
+log in to the designated Gmail account. See the file gmail-setup.txt for
+instructions on setting up a Gmail account. After you've set up the
+account and have the password, save it to a file reg-email.pass and make
+it not readable or writable by anyone but its owner.
+
+	# chmod 600 /etc/flashproxy/reg-email.pass
+
+You need an RSA keypair because all client registrations over email are
+encrypted.
+
+	# openssl genrsa /etc/flashproxy/reg-email.key 2048
+	# chmod 600 /etc/flashproxy/reg-email.key
+	# openssl rsa -pubout < /etc/flashproxy/reg-email.key > reg-email.pub
+
+You will have to edit flashproxy-reg-email and copy the contents of
+reg-email.pub into the appropriate place.
+
+Install reg-email.key and reg-email.pass to /etc/flashproxy to match
+what the init scritp expects, or else use the --key and --pass options
+if you have them stored in another place.
