@@ -631,7 +631,7 @@ def register():
     if not script_dir:
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         return
-    command = [os.path.join(script_dir, "flashproxy-reg-http")]
+    command = [os.path.join(script_dir, "flashproxy-reg-email")]
     spec = format_addr(options.remote_addr)
     if options.facilitator_addr is None:
         log(u"Registering \"%s\"." % spec)
