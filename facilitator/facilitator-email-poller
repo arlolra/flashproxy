@@ -255,7 +255,7 @@ def imap_loop(imap):
                 msg = email.message_from_string(data[0][1])
                 handle_message(msg)
             except Exception, e:
-                print >> sys.stderr, "Error processing message, deleting anyway:", e
+                log("Error processing message, deleting anyway: %s", str(e))
 
             imap.store(1, "+FLAGS", "\\Deleted")
             imap.expunge()
