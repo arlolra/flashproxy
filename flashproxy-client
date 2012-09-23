@@ -870,6 +870,8 @@ def main():
             report_pending()
 
 if __name__ == "__main__":
+    register_addr_spec = None
+
     opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register", "register-addr=", "unsafe-logging"])
     for o, a in opts:
         if o == "--daemon":
@@ -890,7 +892,7 @@ if __name__ == "__main__":
                 print >> sys.stderr, "%s: only one --register-addr is allowed." % sys.argv[0]
                 sys.exit(1)
             options.register = True
-            options.register_addr = parse_addr_spec(a, defport=DEFAULT_REMOTE_PORT)
+            register_addr_spec = a
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
@@ -927,8 +929,7 @@ if __name__ == "__main__":
         options.remote_addrs.append(("0.0.0.0", remote_addr[1]))
         if socket.has_ipv6:
             options.remote_addrs.append(("::", remote_addr[1]))
-    if options.register_addr is None:
-        options.register_addr = remote_addr
+    options.register_addr = parse_addr_spec(register_addr_spec or ":", *remote_addr)
 
     # Local sockets, accepting SOCKS requests from localhost
     local_listen = []
