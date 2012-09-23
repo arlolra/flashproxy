@@ -63,17 +63,20 @@ The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
 request are ignored and the local connection is always linked to a remote
 connection.
 
-If the --register option is used, then your IP address will be sent to the
-facilitator so that proxies can connect to you. You need to register in some way
-in order to get any service. The --facilitator option allows controlling which
-facilitator is used; if omitted, it uses a public default.
-  --daemon                daemonize (Unix only).
-  -f, --facilitator=URL   advertise willingness to receive connections to URL.
-  -h, --help              show this help.
-  -l, --log FILENAME      write log to FILENAME (default stdout).
-      --pidfile FILENAME  write PID to FILENAME after daemonizing.
-  -r, --register          register with the facilitator.
-  --unsafe-logging        don't scrub IP addresses from logs.\
+If the --register or --register-addr option is used, then your IP address will
+be sent to the facilitator so that proxies can connect to you. You need to
+register in some way in order to get any service. The --facilitator option
+allows controlling which facilitator is used; if omitted, it uses a public
+default.
+  --daemon                  daemonize (Unix only).
+  -f, --facilitator=URL     advertise willingness to receive connections to URL.
+  -h, --help                show this help.
+  -l, --log FILENAME        write log to FILENAME (default stdout).
+      --pidfile FILENAME    write PID to FILENAME after daemonizing.
+  -r, --register            register with the facilitator.
+      --register-addr=ADDR  register the given address (in case it differs from
+                              REMOTE). Implies --register.
+  --unsafe-logging          don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "local_port": DEFAULT_LOCAL_PORT,
@@ -867,7 +870,7 @@ def main():
             report_pending()
 
 if __name__ == "__main__":
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register", "register-addr=", "unsafe-logging"])
     for o, a in opts:
         if o == "--daemon":
             options.daemonize = True
@@ -882,6 +885,12 @@ if __name__ == "__main__":
             options.pid_filename = a
         elif o == "-r" or o == "--register":
             options.register = True
+        elif o == "--register-addr":
+            if options.register_addr is not None:
+                print >> sys.stderr, "%s: only one --register-addr is allowed." % sys.argv[0]
+                sys.exit(1)
+            options.register = True
+            options.register_addr = parse_addr_spec(a, defport=DEFAULT_REMOTE_PORT)
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
@@ -918,7 +927,8 @@ if __name__ == "__main__":
         options.remote_addrs.append(("0.0.0.0", remote_addr[1]))
         if socket.has_ipv6:
             options.remote_addrs.append(("::", remote_addr[1]))
-    options.register_addr = remote_addr
+    if options.register_addr is None:
+        options.register_addr = remote_addr
 
     # Local sockets, accepting SOCKS requests from localhost
     local_listen = []
