@@ -39,7 +39,7 @@ LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 class options(object):
     local_addr = None
     remote_addr = None
-    facilitator_addr = None
+    facilitator_url = None
 
     log_filename = None
     log_file = sys.stdout
@@ -67,14 +67,13 @@ If the --register option is used, then your IP address will be sent to the
 facilitator so that proxies can connect to you. You need to register in some way
 in order to get any service. The --facilitator option allows controlling which
 facilitator is used; if omitted, it uses a public default.
-  --daemon                       daemonize (Unix only).
-  -f, --facilitator=HOST[:PORT]  advertise willingness to receive connections to
-                                   HOST:PORT.
-  -h, --help                     show this help.
-  -l, --log FILENAME             write log to FILENAME (default stdout).
-      --pidfile FILENAME         write PID to FILENAME after daemonizing.
-  -r, --register                 register with the facilitator.
-  --unsafe-logging               don't scrub IP addresses from logs.\
+  --daemon                daemonize (Unix only).
+  -f, --facilitator=URL   advertise willingness to receive connections to URL.
+  -h, --help              show this help.
+  -l, --log FILENAME      write log to FILENAME (default stdout).
+      --pidfile FILENAME  write PID to FILENAME after daemonizing.
+  -r, --register          register with the facilitator.
+  --unsafe-logging        don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "local": format_addr((DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)),
@@ -633,10 +632,10 @@ def register():
         return
     command = [os.path.join(script_dir, "flashproxy-reg-http")]
     spec = format_addr(options.remote_addr)
-    if options.facilitator_addr is None:
+    if options.facilitator_url is None:
         log(u"Registering \"%s\"." % spec)
     else:
-        command += ["-f", format_addr(options.facilitator_addr)]
+        command += ["-f", options.facilitator_url]
     command += [spec]
     try:
         p = subprocess.Popen(command)
@@ -861,7 +860,7 @@ if __name__ == "__main__":
         if o == "--daemon":
             options.daemonize = True
         elif o == "-f" or o == "--facilitator":
-            options.facilitator_addr = parse_addr_spec(a)
+            options.facilitator_url = a
         elif o == "-h" or o == "--help":
             usage()
             sys.exit()

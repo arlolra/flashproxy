@@ -6,15 +6,15 @@ import re
 import socket
 import sys
 import urllib
+import urllib2
 
 DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
-DEFAULT_FACILITATOR_HOST = "tor-facilitator.bamsoftware.com"
-DEFAULT_FACILITATOR_PORT = 443
+DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/"
 
 class options(object):
     remote_addr = None
-    facilitator_addr = None
+    facilitator_url = None
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -22,12 +22,12 @@ Usage: %(progname)s [REMOTE][:PORT]
 Register with a flash proxy facilitator using an HTTP POST. By default the
 remote address registered is "%(remote_addr)s".
 
-  -f, --facilitator=HOST[:PORT]  register with the given facilitator (by
-                                   default "%(fac_addr)s".)
-  -h, --help                     show this help. \
+  -f, --facilitator=URL  register with the given facilitator
+                           (by default "%(fac_url)s").
+  -h, --help             show this help. \
 """ % {
     "progname": sys.argv[0],
-    "fac_addr": format_addr((DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)),
+    "fac_url": DEFAULT_FACILITATOR_URL,
     "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
 }
 
@@ -81,13 +81,13 @@ def format_addr(addr):
         result += u":%d" % port
     return result
 
-options.facilitator_addr = (DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)
+options.facilitator_url = DEFAULT_FACILITATOR_URL
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "help"])
 for o, a in opts:
     if o == "-f" or o == "--facilitator":
-        options.facilitator_addr = parse_addr_spec(a, DEFAULT_FACILITATOR_HOST, DEFAULT_FACILITATOR_PORT)
+        options.facilitator_url = a
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
@@ -101,15 +101,17 @@ else:
     sys.exit(1)
 
 spec = format_addr(options.remote_addr)
-http = httplib.HTTPSConnection(*options.facilitator_addr)
 try:
-    http.request("POST", "/", urllib.urlencode({"client": spec}))
-    resp = http.getresponse()
-    if resp.status != 200:
-        raise ValueError("Status code was %d, not 200" % resp.status)
+    http = urllib2.urlopen(options.facilitator_url, urllib.urlencode({"client": spec}), 10)
+except urllib2.HTTPError, e:
+    print >> sys.stderr, "Status code was %d, not 200" % e.code
+    sys.exit(1)
+except urllib2.URLError, e:
+    print >> sys.stderr, "Failed to register: %s" % str(e.reason)
+    sys.exit(1)
 except Exception, e:
     print >> sys.stderr, "Failed to register: %s" % str(e)
     sys.exit(1)
 http.close()
 
-print "Registered \"%s\" with %s." % (spec, format_addr(options.facilitator_addr))
+print "Registered \"%s\" with %s." % (spec, options.facilitator_url)
