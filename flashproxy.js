@@ -291,14 +291,19 @@ function get_query_param_byte_count(query, param, default_val) {
 /* Parse an address in the form "host:port". Returns an Object with
    keys "host" (String) and "port" (int). Returns null on error. */
 function parse_addr_spec(spec) {
-    var groups;
-    var host, port;
+    var m, host, port;
 
-    groups = spec.match(/^([^:]+):(\d+)$/);
-    if (!groups)
+    m = null;
+    /* IPv6 syntax. */
+    if (!m)
+        m = spec.match(/^\[([\0-9a-fA-F:.]+)\]:([0-9]+)$/);
+    /* IPv4 syntax. */
+    if (!m)
+        m = spec.match(/^([0-9.]+):([0-9]+)$/);
+    if (!m)
         return null;
-    host = groups[1];
-    port = parseInt(groups[2], 10);
+    host = m[1];
+    port = parseInt(m[2], 10);
     if (isNaN(port) || port < 0 || port > 65535)
         return null;
 
