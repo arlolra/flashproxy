@@ -68,6 +68,7 @@ be sent to the facilitator so that proxies can connect to you. You need to
 register in some way in order to get any service. The --facilitator option
 allows controlling which facilitator is used; if omitted, it uses a public
 default.
+
   --daemon                  daemonize (Unix only).
   -f, --facilitator=URL     advertise willingness to receive connections to URL.
   -h, --help                show this help.
