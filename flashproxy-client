@@ -650,9 +650,8 @@ def register():
         return
     command = [os.path.join(script_dir, "flashproxy-reg-http")]
     spec = format_addr(options.register_addr)
-    if options.facilitator_url is None:
-        log(u"Registering \"%s\"." % spec)
-    else:
+    log(u"Registering \"%s\"." % spec)
+    if options.facilitator_url is not None:
         command += ["-f", options.facilitator_url]
     command += [spec]
     try:
