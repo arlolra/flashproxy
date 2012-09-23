@@ -19,7 +19,7 @@ transport plugin" below to try out the system even behind NAT.
    9000. If you have to use a different port (to get through a firewall,
    for example), give it on the command lines like this (here using port
    8888):
-	$ flashproxy-client --register 127.0.0.1:9001 :8888
+	$ flashproxy-client --register :9001 :8888
 2. Run Tor using the included torrc file.
 	$ tor -f torrc
 

@@ -29,16 +29,15 @@ try:
 except ImportError:
     numpy = None
 
-DEFAULT_REMOTE_ADDRESS = None
-DEFAULT_REMOTE_PORT = 9000
-DEFAULT_LOCAL_ADDRESS = "127.0.0.1"
 DEFAULT_LOCAL_PORT = 9001
+DEFAULT_REMOTE_PORT = 9000
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class options(object):
-    local_addr = None
-    remote_addr = None
+    local_addrs = []
+    remote_addrs = []
+    register_addr = None
     facilitator_url = None
 
     log_filename = None
@@ -57,7 +56,8 @@ def usage(f = sys.stdout):
 Usage: %(progname)s --register [LOCAL][:PORT] [REMOTE][:PORT]
 Wait for connections on a local and a remote port. When any pair of connections
 exists, data is ferried between them until one side is closed. By default
-LOCAL is "%(local)s" and REMOTE is "%(remote)s".
+LOCAL is localhost addresses on port %(local_port)d and REMOTE is all addresses
+on port %(remote_port)d.
 
 The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
 request are ignored and the local connection is always linked to a remote
@@ -76,8 +76,8 @@ facilitator is used; if omitted, it uses a public default.
   --unsafe-logging        don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
-    "local": format_addr((DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)),
-    "remote": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
+    "local_port": DEFAULT_LOCAL_PORT,
+    "remote_port": DEFAULT_REMOTE_PORT,
 }
 
 def safe_str(s):
@@ -433,10 +433,16 @@ class WebSocketBinaryEncoder(object):
 
 def listen_socket(addr):
     """Return a nonblocking socket listening on the given address."""
-    addr = (addr[0] or "0.0.0.0", addr[1])
     addrinfo = socket.getaddrinfo(addr[0], addr[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
     s = socket.socket(addrinfo[0], addrinfo[1], addrinfo[2])
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    if addrinfo[0] == socket.AF_INET6 and socket.has_ipv6:
+        # Set the IPV6_V6ONLY socket option, otherwise some operating systems
+        # will listen on an IPv4 address as well as IPv6 by default. For
+        # example, "::" will listen on both "::" and "0.0.0.0", and "::1" will
+        # listen on both "::1" and "127.0.0.1". See
+        # https://trac.torproject.org/projects/tor/ticket/4760.
+        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
     s.bind(addr)
     s.listen(10)
     s.setblocking(0)
@@ -639,7 +645,7 @@ def register():
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         return
     command = [os.path.join(script_dir, "flashproxy-reg-http")]
-    spec = format_addr(options.remote_addr)
+    spec = format_addr(options.register_addr)
     if options.facilitator_url is None:
         log(u"Registering \"%s\"." % spec)
     else:
@@ -792,14 +798,14 @@ class LocalSocket(object):
 
 def main():
     while True:
-        rset = [remote_s, local_s] + websocket_pending + socks_pending + locals + remotes
+        rset = remote_listen + local_listen + websocket_pending + socks_pending + locals + remotes
         rset, _, _ = select.select(rset, [], [], WEBSOCKET_REQUEST_TIMEOUT)
         for fd in rset:
-            if fd == remote_s:
+            if fd in remote_listen:
                 remote_c, addr = fd.accept()
                 log(u"Remote connection from %s." % safe_format_sockaddr(addr))
                 websocket_pending.append(TimeoutSocket(remote_c))
-            elif fd == local_s:
+            elif fd in local_listen:
                 local_c, addr = fd.accept()
                 log(u"Local connection from %s." % safe_format_sockaddr(addr))
                 socks_pending.append(local_c)
@@ -879,19 +885,6 @@ if __name__ == "__main__":
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
-    if len(args) == 0:
-        options.local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-        options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-    elif len(args) == 1:
-        options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-        options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-    elif len(args) == 2:
-        options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-        options.remote_addr = parse_addr_spec(args[1], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-    else:
-        usage(sys.stderr)
-        sys.exit(1)
-
     if options.log_filename:
         options.log_file = open(options.log_filename, "a")
         # Send error tracebacks to the log.
@@ -899,10 +892,44 @@ if __name__ == "__main__":
     else:
         options.log_file = sys.stdout
 
-    # Local socket, accepting SOCKS requests from localhost
-    local_s = listen_socket(options.local_addr)
-    # Remote socket, accepting remote WebSocket connections from proxies.
-    remote_s = listen_socket(options.remote_addr)
+    if len(args) == 0:
+        local_addr = (None, DEFAULT_LOCAL_PORT)
+        remote_addr = (None, DEFAULT_REMOTE_PORT)
+    elif len(args) == 1:
+        local_addr = parse_addr_spec(args[0], defport=DEFAULT_LOCAL_PORT)
+        remote_addr = (None, DEFAULT_REMOTE_PORT)
+    elif len(args) == 2:
+        local_addr = parse_addr_spec(args[0], defport=DEFAULT_LOCAL_PORT)
+        remote_addr = parse_addr_spec(args[1], defport=DEFAULT_REMOTE_PORT)
+    else:
+        usage(sys.stderr)
+        sys.exit(1)
+
+    # Listen on both IPv4 and IPv6 if no host is given.
+    if local_addr[0]:
+        options.local_addrs.append(local_addr)
+    else:
+        options.local_addrs.append(("127.0.0.1", local_addr[1]))
+        if socket.has_ipv6:
+            options.local_addrs.append(("::1", local_addr[1]))
+    if remote_addr[0]:
+        options.remote_addrs.append(remote_addr)
+    else:
+        options.remote_addrs.append(("0.0.0.0", remote_addr[1]))
+        if socket.has_ipv6:
+            options.remote_addrs.append(("::", remote_addr[1]))
+    options.register_addr = remote_addr
+
+    # Local sockets, accepting SOCKS requests from localhost
+    local_listen = []
+    for addr in options.local_addrs:
+        local_listen.append(listen_socket(addr))
+        log(u"Listening local on %s." % format_addr(addr))
+    # Remote sockets, accepting remote WebSocket connections from proxies.
+    remote_listen = []
+    for addr in options.remote_addrs:
+        remote_listen.append(listen_socket(addr))
+        log(u"Listening remote on %s." % format_addr(addr))
 
     # New remote sockets waiting to finish their WebSocket negotiation.
     websocket_pending = []
