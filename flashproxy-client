@@ -738,8 +738,6 @@ def match_proxies():
     while unlinked_remotes and unlinked_locals:
         remote = unlinked_remotes.pop(0)
         local = unlinked_locals.pop(0)
-        remote_addr, remote_port = remote.getpeername()
-        local_addr, local_port = local.getpeername()
         log(u"Linking %s and %s." % (safe_format_peername(local), safe_format_peername(remote)))
         remote.partner = local
         local.partner = remote
