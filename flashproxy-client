@@ -807,7 +807,7 @@ def main():
                 socks_pending.append(local_c)
                 register()
             elif fd in websocket_pending:
-                log(u"Data from WebSocket-pending %s." % safe_format_sockaddr(addr))
+                log(u"Data from WebSocket-pending %s." % safe_format_peername(fd))
                 protocols = handle_websocket_request(fd)
                 if protocols is not None:
                     wrapped = RemoteSocket(fd, protocols)
@@ -819,7 +819,7 @@ def main():
                 websocket_pending.remove(fd)
                 report_pending()
             elif fd in socks_pending:
-                log(u"SOCKS request from %s." % safe_format_sockaddr(addr))
+                log(u"SOCKS request from %s." % safe_format_peername(fd))
                 if handle_socks_request(fd):
                     wrapped = LocalSocket(fd)
                     locals.append(wrapped)
