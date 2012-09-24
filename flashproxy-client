@@ -7,6 +7,7 @@ import cStringIO
 import getopt
 import httplib
 import os
+import os.path
 import re
 import select
 import socket
@@ -662,27 +663,31 @@ def register():
     register_condvar.release()
 
 def register_using_command(command):
+    basename = os.path.basename(command[0])
     try:
+        log(u"Running command: %s" % " ".join(command))
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
     except OSError, e:
-        log(u"Error running registration helper: %s" % str(e))
+        log(u"Error running %s: %s" % (basename, str(e)))
         return False
     for line in stdout.splitlines():
-        log(line)
+        log(u"%s: %s" % (basename, line))
     for line in stderr.splitlines():
-        log(line)
+        log(u"%s: %s" % (basename, line))
     if p.returncode != 0:
-        log("Registration helper ended with status %d." % p.returncode)
+        log("%s exited with status %d." % (basename, p.returncode))
         return False
     return True
 
 def register_one():
     spec = format_addr(options.register_addr)
-    log(u"Registering \"%s\"." % spec)
+    log(u"Trying to register \"%s\"." % spec)
     for command in options.register_commands:
         if register_using_command(command):
             break
+    else:
+        log(u"All registration commands failed.")
 
 def registration_thread_func():
     while True:
