@@ -980,12 +980,6 @@ if __name__ == "__main__":
     # Locals not yet linked with a remote. This is a subset of remotes.
     unlinked_locals = []
 
-    if options.register:
-        registration_thread = threading.Thread(target=registration_thread_func, name="register")
-        registration_thread.daemon = True
-        registration_thread.start()
-        register()
-
     if options.daemonize:
         log(u"Daemonizing.")
         pid = os.fork()
@@ -995,6 +989,13 @@ if __name__ == "__main__":
                 print >> f, pid
                 f.close()
             sys.exit(0)
+
+    if options.register:
+        registration_thread = threading.Thread(target=registration_thread_func, name="register")
+        registration_thread.daemon = True
+        registration_thread.start()
+        register()
+
     try:
         main()
     except Exception:
