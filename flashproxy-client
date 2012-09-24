@@ -70,7 +70,7 @@ register in some way in order to get any service. The --facilitator option
 allows controlling which facilitator is used; if omitted, it uses a public
 default.
 
-  --daemon                  daemonize (Unix only).
+      --daemon              daemonize (Unix only).
   -f, --facilitator=URL     advertise willingness to receive connections to URL.
   -h, --help                show this help.
   -l, --log FILENAME        write log to FILENAME (default stdout).
@@ -78,7 +78,7 @@ default.
   -r, --register            register with the facilitator.
       --register-addr=ADDR  register the given address (in case it differs from
                               REMOTE). Implies --register.
-  --unsafe-logging          don't scrub IP addresses from logs.\
+      --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "local_port": DEFAULT_LOCAL_PORT,
