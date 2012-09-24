@@ -42,6 +42,7 @@ def usage(f = sys.stdout):
 Usage: %(progname)s -r RELAY <OPTIONS>
 Flash proxy facilitator: Register client addresses and serve them out
 again. Listen on 127.0.0.1 and port PORT (by default %(port)d).
+
   -d, --debug             don't daemonize, log to stdout.
   -h, --help              show this help.
   -l, --log FILENAME      write log to FILENAME (default \"%(log)s\").

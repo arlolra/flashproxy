@@ -13,6 +13,7 @@ import socket
 import struct
 import subprocess
 import sys
+import threading
 import time
 import traceback
 import urllib
@@ -29,17 +30,16 @@ try:
 except ImportError:
     numpy = None
 
-DEFAULT_REMOTE_ADDRESS = None
-DEFAULT_REMOTE_PORT = 9000
-DEFAULT_LOCAL_ADDRESS = "127.0.0.1"
 DEFAULT_LOCAL_PORT = 9001
+DEFAULT_REMOTE_PORT = 9000
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class options(object):
-    local_addr = None
-    remote_addr = None
-    facilitator_addr = None
+    local_addrs = []
+    remote_addrs = []
+    register_addr = None
+    facilitator_url = None
 
     log_filename = None
     log_file = sys.stdout
@@ -57,28 +57,32 @@ def usage(f = sys.stdout):
 Usage: %(progname)s --register [LOCAL][:PORT] [REMOTE][:PORT]
 Wait for connections on a local and a remote port. When any pair of connections
 exists, data is ferried between them until one side is closed. By default
-LOCAL is "%(local)s" and REMOTE is "%(remote)s".
+LOCAL is localhost addresses on port %(local_port)d and REMOTE is all addresses
+on port %(remote_port)d.
 
 The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
 request are ignored and the local connection is always linked to a remote
 connection.
 
-If the --register option is used, then your IP address will be sent to the
-facilitator so that proxies can connect to you. You need to register in some way
-in order to get any service. The --facilitator option allows controlling which
-facilitator is used; if omitted, it uses a public default.
-  --daemon                       daemonize (Unix only).
-  -f, --facilitator=HOST[:PORT]  advertise willingness to receive connections to
-                                   HOST:PORT.
-  -h, --help                     show this help.
-  -l, --log FILENAME             write log to FILENAME (default stdout).
-      --pidfile FILENAME         write PID to FILENAME after daemonizing.
-  -r, --register                 register with the facilitator.
-  --unsafe-logging               don't scrub IP addresses from logs.\
+If the --register or --register-addr option is used, then your IP address will
+be sent to the facilitator so that proxies can connect to you. You need to
+register in some way in order to get any service. The --facilitator option
+allows controlling which facilitator is used; if omitted, it uses a public
+default.
+
+  --daemon                  daemonize (Unix only).
+  -f, --facilitator=URL     advertise willingness to receive connections to URL.
+  -h, --help                show this help.
+  -l, --log FILENAME        write log to FILENAME (default stdout).
+      --pidfile FILENAME    write PID to FILENAME after daemonizing.
+  -r, --register            register with the facilitator.
+      --register-addr=ADDR  register the given address (in case it differs from
+                              REMOTE). Implies --register.
+  --unsafe-logging          don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
-    "local": format_addr((DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)),
-    "remote": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
+    "local_port": DEFAULT_LOCAL_PORT,
+    "remote_port": DEFAULT_REMOTE_PORT,
 }
 
 def safe_str(s):
@@ -88,9 +92,14 @@ def safe_str(s):
     else:
         return s
 
+log_lock = threading.Lock()
 def log(msg):
-    print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
-    options.log_file.flush()
+    log_lock.acquire()
+    try:
+        print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
+        options.log_file.flush()
+    finally:
+        log_lock.release()
 
 def parse_addr_spec(spec, defhost = None, defport = None):
     host = None
@@ -144,6 +153,20 @@ def format_addr(addr):
 
 def safe_format_addr(addr):
     return safe_str(format_addr(addr))
+
+def format_sockaddr(sockaddr):
+    host, port = socket.getnameinfo(sockaddr, socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
+    port = int(port)
+    return format_addr((host, port))
+
+def safe_format_sockaddr(sockaddr):
+    return safe_str(format_sockaddr(sockaddr))
+
+def safe_format_peername(s):
+    try:
+        return safe_format_sockaddr(s.getpeername())
+    except socket.error, e:
+        return "<unconnected>"
 
 
 def apply_mask_numpy(payload, mask_key):
@@ -420,20 +443,20 @@ class WebSocketBinaryEncoder(object):
 
 def listen_socket(addr):
     """Return a nonblocking socket listening on the given address."""
-    addr = (addr[0] or "0.0.0.0", addr[1])
     addrinfo = socket.getaddrinfo(addr[0], addr[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
     s = socket.socket(addrinfo[0], addrinfo[1], addrinfo[2])
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    if addrinfo[0] == socket.AF_INET6 and socket.has_ipv6:
+        # Set the IPV6_V6ONLY socket option, otherwise some operating systems
+        # will listen on an IPv4 address as well as IPv6 by default. For
+        # example, "::" will listen on both "::" and "0.0.0.0", and "::1" will
+        # listen on both "::1" and "127.0.0.1". See
+        # https://trac.torproject.org/projects/tor/ticket/4760.
+        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
     s.bind(addr)
     s.listen(10)
     s.setblocking(0)
     return s
-
-def format_peername(s):
-    try:
-        return safe_format_addr(s.getpeername())
-    except socket.error, e:
-        return "<unconnected>"
 
 # How long to wait for a WebSocket request on the remote socket. It is limited
 # to avoid Slowloris-like attacks.
@@ -619,27 +642,46 @@ def handle_socks_request(fd):
     return True
 
 def report_pending():
-    log(u"locals  (%d): %s" % (len(locals), [format_peername(x) for x in locals]))
-    log(u"remotes (%d): %s" % (len(remotes), [format_peername(x) for x in remotes]))
+    log(u"locals  (%d): %s" % (len(locals), [safe_format_peername(x) for x in locals]))
+    log(u"remotes (%d): %s" % (len(remotes), [safe_format_peername(x) for x in remotes]))
  
+register_condvar = threading.Condition()
 def register():
     if not options.register:
         return
+    register_condvar.acquire()
+    register_condvar.notify()
+    register_condvar.release()
 
+def register_one():
     # sys.path[0] is initialized to the directory containing the Python script file.
     script_dir = sys.path[0]
     if not script_dir:
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         return
     command = [os.path.join(script_dir, "flashproxy-reg-email")]
-    spec = format_addr(options.remote_addr)
-    if options.facilitator_addr is None:
-        log(u"Registering \"%s\"." % spec)
+    spec = format_addr(options.register_addr)
+    log(u"Registering \"%s\"." % spec)
     command += [spec]
     try:
-        p = subprocess.Popen(command)
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
     except OSError, e:
-        log(u"Failed to register: %s" % str(e))
+        log(u"Error running registration helper: %s" % str(e))
+        return
+    for line in stdout.splitlines():
+        log(line)
+    for line in stderr.splitlines():
+        log(line)
+    if p.returncode != 0:
+        log("Registration helper ended with status %d." % p.returncode)
+
+def registration_thread_func():
+    while True:
+        register_condvar.acquire()
+        register_condvar.wait()
+        register_condvar.release()
+        register_one()
 
 def proxy_chunk_local_to_remote(local, remote, data = None):
     if data is None:
@@ -650,7 +692,7 @@ def proxy_chunk_local_to_remote(local, remote, data = None):
             remote.close()
             return False
     if not data:
-        log(u"EOF from local %s." % format_peername(local))
+        log(u"EOF from local %s." % safe_format_peername(local))
         local.close()
         remote.close()
         return False
@@ -672,7 +714,7 @@ def proxy_chunk_remote_to_local(remote, local, data = None):
             local.close()
             return False
     if not data:
-        log(u"EOF from remote %s." % format_peername(remote))
+        log(u"EOF from remote %s." % safe_format_peername(remote))
         remote.close()
         local.close()
         return False
@@ -689,7 +731,7 @@ def proxy_chunk_remote_to_local(remote, local, data = None):
             if data is None:
                 break
             elif not data:
-                log(u"WebSocket close from remote %s." % format_peername(remote))
+                log(u"WebSocket close from remote %s." % safe_format_peername(remote))
                 remote.close()
                 local.close()
                 return False
@@ -713,14 +755,14 @@ def receive_unlinked(fd, label):
         fd.close()
         return False
     if not data:
-        log(u"EOF from unlinked %s %s with %d bytes buffered." % (label, format_peername(fd), len(fd.buf)))
+        log(u"EOF from unlinked %s %s with %d bytes buffered." % (label, safe_format_peername(fd), len(fd.buf)))
         fd.close()
         return False
     else:
-        log(u"Data from unlinked %s %s (%d bytes)." % (label, format_peername(fd), len(data)))
+        log(u"Data from unlinked %s %s (%d bytes)." % (label, safe_format_peername(fd), len(data)))
         fd.buf += data
         if len(fd.buf) >= UNCONNECTED_BUFFER_LIMIT:
-            log(u"Refusing to buffer more than %d bytes from %s %s." % (UNCONNECTED_BUFFER_LIMIT, label, format_peername(fd)))
+            log(u"Refusing to buffer more than %d bytes from %s %s." % (UNCONNECTED_BUFFER_LIMIT, label, safe_format_peername(fd)))
             fd.close()
             return False
         return True
@@ -729,9 +771,7 @@ def match_proxies():
     while unlinked_remotes and unlinked_locals:
         remote = unlinked_remotes.pop(0)
         local = unlinked_locals.pop(0)
-        remote_addr, remote_port = remote.getpeername()
-        local_addr, local_port = local.getpeername()
-        log(u"Linking %s and %s." % (format_peername(local), format_peername(remote)))
+        log(u"Linking %s and %s." % (safe_format_peername(local), safe_format_peername(remote)))
         remote.partner = local
         local.partner = remote
         if remote.buf:
@@ -785,20 +825,20 @@ class LocalSocket(object):
 
 def main():
     while True:
-        rset = [remote_s, local_s] + websocket_pending + socks_pending + locals + remotes
+        rset = remote_listen + local_listen + websocket_pending + socks_pending + locals + remotes
         rset, _, _ = select.select(rset, [], [], WEBSOCKET_REQUEST_TIMEOUT)
         for fd in rset:
-            if fd == remote_s:
+            if fd in remote_listen:
                 remote_c, addr = fd.accept()
-                log(u"Remote connection from %s." % safe_format_addr(addr))
+                log(u"Remote connection from %s." % safe_format_sockaddr(addr))
                 websocket_pending.append(TimeoutSocket(remote_c))
-            elif fd == local_s:
+            elif fd in local_listen:
                 local_c, addr = fd.accept()
-                log(u"Local connection from %s." % safe_format_addr(addr))
+                log(u"Local connection from %s." % safe_format_sockaddr(addr))
                 socks_pending.append(local_c)
                 register()
             elif fd in websocket_pending:
-                log(u"Data from WebSocket-pending %s." % safe_format_addr(addr))
+                log(u"Data from WebSocket-pending %s." % safe_format_peername(fd))
                 protocols = handle_websocket_request(fd)
                 if protocols is not None:
                     wrapped = RemoteSocket(fd, protocols)
@@ -810,7 +850,7 @@ def main():
                 websocket_pending.remove(fd)
                 report_pending()
             elif fd in socks_pending:
-                log(u"SOCKS request from %s." % safe_format_addr(addr))
+                log(u"SOCKS request from %s." % safe_format_peername(fd))
                 if handle_socks_request(fd):
                     wrapped = LocalSocket(fd)
                     locals.append(wrapped)
@@ -848,18 +888,20 @@ def main():
             pending = websocket_pending[0]
             if pending.age() < WEBSOCKET_REQUEST_TIMEOUT:
                 break
-            log(u"Expired remote connection from %s." % format_peername(pending))
+            log(u"Expired remote connection from %s." % safe_format_peername(pending))
             pending.close()
             websocket_pending.pop(0)
             report_pending()
 
 if __name__ == "__main__":
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register", "unsafe-logging"])
+    register_addr_spec = None
+
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register", "register-addr=", "unsafe-logging"])
     for o, a in opts:
         if o == "--daemon":
             options.daemonize = True
         elif o == "-f" or o == "--facilitator":
-            options.facilitator_addr = parse_addr_spec(a)
+            options.facilitator_url = a
         elif o == "-h" or o == "--help":
             usage()
             sys.exit()
@@ -869,21 +911,14 @@ if __name__ == "__main__":
             options.pid_filename = a
         elif o == "-r" or o == "--register":
             options.register = True
+        elif o == "--register-addr":
+            if options.register_addr is not None:
+                print >> sys.stderr, "%s: only one --register-addr is allowed." % sys.argv[0]
+                sys.exit(1)
+            options.register = True
+            register_addr_spec = a
         elif o == "--unsafe-logging":
             options.safe_logging = False
-
-    if len(args) == 0:
-        options.local_addr = (DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-        options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-    elif len(args) == 1:
-        options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-        options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-    elif len(args) == 2:
-        options.local_addr = parse_addr_spec(args[0], DEFAULT_LOCAL_ADDRESS, DEFAULT_LOCAL_PORT)
-        options.remote_addr = parse_addr_spec(args[1], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-    else:
-        usage(sys.stderr)
-        sys.exit(1)
 
     if options.log_filename:
         options.log_file = open(options.log_filename, "a")
@@ -892,10 +927,44 @@ if __name__ == "__main__":
     else:
         options.log_file = sys.stdout
 
-    # Local socket, accepting SOCKS requests from localhost
-    local_s = listen_socket(options.local_addr)
-    # Remote socket, accepting remote WebSocket connections from proxies.
-    remote_s = listen_socket(options.remote_addr)
+    if len(args) == 0:
+        local_addr = (None, DEFAULT_LOCAL_PORT)
+        remote_addr = (None, DEFAULT_REMOTE_PORT)
+    elif len(args) == 1:
+        local_addr = parse_addr_spec(args[0], defport=DEFAULT_LOCAL_PORT)
+        remote_addr = (None, DEFAULT_REMOTE_PORT)
+    elif len(args) == 2:
+        local_addr = parse_addr_spec(args[0], defport=DEFAULT_LOCAL_PORT)
+        remote_addr = parse_addr_spec(args[1], defport=DEFAULT_REMOTE_PORT)
+    else:
+        usage(sys.stderr)
+        sys.exit(1)
+
+    # Listen on both IPv4 and IPv6 if no host is given.
+    if local_addr[0]:
+        options.local_addrs.append(local_addr)
+    else:
+        options.local_addrs.append(("127.0.0.1", local_addr[1]))
+        if socket.has_ipv6:
+            options.local_addrs.append(("::1", local_addr[1]))
+    if remote_addr[0]:
+        options.remote_addrs.append(remote_addr)
+    else:
+        options.remote_addrs.append(("0.0.0.0", remote_addr[1]))
+        if socket.has_ipv6:
+            options.remote_addrs.append(("::", remote_addr[1]))
+    options.register_addr = parse_addr_spec(register_addr_spec or ":", *remote_addr)
+
+    # Local sockets, accepting SOCKS requests from localhost
+    local_listen = []
+    for addr in options.local_addrs:
+        local_listen.append(listen_socket(addr))
+        log(u"Listening local on %s." % format_addr(addr))
+    # Remote sockets, accepting remote WebSocket connections from proxies.
+    remote_listen = []
+    for addr in options.remote_addrs:
+        remote_listen.append(listen_socket(addr))
+        log(u"Listening remote on %s." % format_addr(addr))
 
     # New remote sockets waiting to finish their WebSocket negotiation.
     websocket_pending = []
@@ -910,8 +979,6 @@ if __name__ == "__main__":
     # Locals not yet linked with a remote. This is a subset of remotes.
     unlinked_locals = []
 
-    register()
-
     if options.daemonize:
         log(u"Daemonizing.")
         pid = os.fork()
@@ -921,6 +988,13 @@ if __name__ == "__main__":
                 print >> f, pid
                 f.close()
             sys.exit(0)
+
+    if options.register:
+        registration_thread = threading.Thread(target=registration_thread_func, name="register")
+        registration_thread.daemon = True
+        registration_thread.start()
+        register()
+
     try:
         main()
     except Exception:

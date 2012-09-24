@@ -21,7 +21,7 @@ trap stop EXIT
 date
  
 cd "$FLASHPROXY_DIR"
-./flashproxy-client --register "127.0.0.1:$LOCAL_PORT" ":$REMOTE_PORT" &
+./flashproxy-client --register ":$LOCAL_PORT" ":$REMOTE_PORT" &
 PIDS_TO_KILL+=($!)
 
 sleep 20

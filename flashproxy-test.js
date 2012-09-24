@@ -174,6 +174,18 @@ function test_parse_addr_spec()
           expected: null },
         { spec: "3.3.3.3:65536",
           expected: null },
+        { spec: "[1:2::a:f]:4444",
+          expected: { host: "1:2::a:f", port: 4444 } },
+        { spec: "[1:2::a:f]",
+          expected: null },
+        { spec: "[1:2::a:f]:0x1111",
+          expected: null },
+        { spec: "[1:2::a:f]:-4444",
+          expected: null },
+        { spec: "[1:2::a:f]:65536",
+          expected: null },
+        { spec: "[1:2::ffff:1.2.3.4]:4444",
+          expected: { host: "1:2::ffff:1.2.3.4", port: 4444 } },
     ];
 
     announce("test_parse_addr_spec");

@@ -11,9 +11,9 @@
  * If set (to any value), show verbose terminal-like output instead of the
  * badge.
  *
- * facilitator=<HOST>:<PORT>
- * The address of the facilitator to use. By default it is
- * DEFAULT_FACILITATOR_ADDR. Both <HOST> and <PORT> must be present.
+ * facilitator=https://host:port/
+ * The URL of the facilitator CGI script. By default it is
+ * DEFAULT_FACILITATOR_URL.
  *
  * facilitator_poll_interval=<FLOAT>
  * How often to poll the facilitator, in seconds. The default is
@@ -49,10 +49,7 @@
  * http://autobahn.ws/testsuite/reports/clients/index.html
  */
 
-var DEFAULT_FACILITATOR_ADDR = {
-    host: "tor-facilitator.bamsoftware.com",
-    port: 443
-};
+var DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/";
 
 var DEFAULT_MAX_NUM_PROXY_PAIRS = 10;
 
@@ -181,9 +178,20 @@ function build_url(scheme, host, port, path, params) {
     return parts.join("");
 }
 
-/* Get a query string parameter and parse it as an address spec. Returns
-   default_val if param is not defined in the query string. Returns null on a
-   parsing error. */
+/* Get a query string parameter and return it as a string. Returns default_val
+   if param is not defined in the query string. */
+function get_query_param_string(query, param, default_val) {
+    var val;
+
+    val = query[param];
+    if (val === undefined)
+        return default_val;
+    else
+        return val;
+}
+
+/* Get a query string parameter, or the given default, and parse it as an
+   address spec. Returns null on a parsing error. */
 function get_query_param_addr(query, param, default_val) {
     var val;
 
@@ -283,14 +291,19 @@ function get_query_param_byte_count(query, param, default_val) {
 /* Parse an address in the form "host:port". Returns an Object with
    keys "host" (String) and "port" (int). Returns null on error. */
 function parse_addr_spec(spec) {
-    var groups;
-    var host, port;
+    var m, host, port;
 
-    groups = spec.match(/^([^:]+):(\d+)$/);
-    if (!groups)
+    m = null;
+    /* IPv6 syntax. */
+    if (!m)
+        m = spec.match(/^\[([\0-9a-fA-F:.]+)\]:([0-9]+)$/);
+    /* IPv4 syntax. */
+    if (!m)
+        m = spec.match(/^([0-9.]+):([0-9]+)$/);
+    if (!m)
         return null;
-    host = groups[1];
-    port = parseInt(groups[2], 10);
+    host = m[1];
+    port = parseInt(m[2], 10);
     if (isNaN(port) || port < 0 || port > 65535)
         return null;
 
@@ -311,8 +324,15 @@ function have_websocket_binary_frames() {
     if (ua === null)
         return false;
 
+    /* We are cool for Chrome 16 or Safari 6.0. */
+
     matches = ua.match(/\bchrome\/(\d+)/i);
     if (matches !== null && Number(matches[1]) >= 16)
+        return true;
+
+    matches = ua.match(/\bversion\/(\d+)/i);
+    if (ua.match(/\bsafari\b/i) && !ua.match(/\bchrome\b/i)
+        && Number(matches[1]) >= 6)
         return true;
 
     return false;
@@ -338,22 +358,23 @@ function make_websocket(addr) {
 }
 
 function FlashProxy() {
-    this.badge = new Badge();
-    this.badge.elem.onmouseover = function(event) {
-        this.badge.disable_button.style.display = "block";
-    }.bind(this);
-    this.badge.elem.onmouseout = function(event) {
-        this.badge.disable_button.style.display = "none";
-    }.bind(this);
-    /* Click a button to disable the badge. */
-    this.badge.disable_button.onclick = function(event) {
-        this.disable();
-        this.badge.disable_button.parentNode.removeChild(this.badge.disable_button);
-    }.bind(this);
-    if (query.debug)
+    if (query.debug) {
         this.badge_elem = debug_div;
-    else
+    } else {
+        this.badge = new Badge();
+        this.badge.elem.onmouseover = function(event) {
+            this.badge.disable_button.style.display = "block";
+        }.bind(this);
+        this.badge.elem.onmouseout = function(event) {
+            this.badge.disable_button.style.display = "none";
+        }.bind(this);
+        /* Click a button to disable the badge. */
+        this.badge.disable_button.onclick = function(event) {
+            this.disable();
+            this.badge.disable_button.parentNode.removeChild(this.badge.disable_button);
+        }.bind(this);
         this.badge_elem = this.badge.elem;
+    }
     this.badge_elem.setAttribute("id", "flashproxy-badge");
 
     this.proxy_pairs = [];
@@ -363,12 +384,7 @@ function FlashProxy() {
         var relay_addr;
         var rate_limit_bytes;
 
-        this.fac_addr = get_query_param_addr(query, "facilitator", DEFAULT_FACILITATOR_ADDR);
-        if (!this.fac_addr) {
-            puts("Error: Facilitator spec must be in the form \"host:port\".");
-            this.die();
-            return;
-        }
+        this.fac_url = get_query_param_string(query, "facilitator", DEFAULT_FACILITATOR_URL);
 
         this.max_num_proxy_pairs = get_query_param_integer(query, "max_clients", DEFAULT_MAX_NUM_PROXY_PAIRS);
         if (this.max_num_proxy_pairs === null || this.max_num_proxy_pairs < 0) {
@@ -416,7 +432,6 @@ function FlashProxy() {
     };
 
     this.proxy_main = function() {
-        var fac_url;
         var xhr;
 
         if (this.proxy_pairs.length >= this.max_num_proxy_pairs) {
@@ -424,10 +439,9 @@ function FlashProxy() {
             return;
         }
 
-        fac_url = build_url("https", this.fac_addr.host, this.fac_addr.port, "/");
         xhr = new XMLHttpRequest();
         try {
-            xhr.open("GET", fac_url);
+            xhr.open("GET", this.fac_url);
         } catch (err) {
             /* An exception happens here when, for example, NoScript allows the
                domain on which the proxy badge runs, but not the domain to which
@@ -447,7 +461,7 @@ function FlashProxy() {
                     puts("Facilitator: can't connect: got status " + repr(xhr.status) + " and status text " + repr(xhr.statusText) + ".");
             }
         }.bind(this);
-        puts("Facilitator: connecting to " + fac_url + ".");
+        puts("Facilitator: connecting to " + this.fac_url + ".");
         xhr.send(null);
     };
 
@@ -493,7 +507,8 @@ function FlashProxy() {
             puts("Complete.");
             /* Delete from the list of active proxy pairs. */
             this.proxy_pairs.splice(this.proxy_pairs.indexOf(proxy_pair), 1);
-            this.badge.proxy_end();
+            if (this.badge)
+                this.badge.proxy_end();
         }.bind(this);
         try {
             proxy_pair.connect();
@@ -503,7 +518,8 @@ function FlashProxy() {
             return;
         }
 
-        this.badge.proxy_begin();
+        if (this.badge)
+            this.badge.proxy_begin();
     };
 
     /* Cease all network operations and prevent any future ones. */
@@ -513,12 +529,14 @@ function FlashProxy() {
         this.make_proxy_pair = function(client_addr, relay_addr) { };
         while (this.proxy_pairs.length > 0)
             this.proxy_pairs.pop().close();
-        this.badge.disable();
+        if (this.badge)
+            this.badge.disable();
     };
 
     this.die = function() {
         puts("Dying.");
-        this.badge.die();
+        if (this.badge)
+            this.badge.die();
     };
 }
 
@@ -843,10 +861,11 @@ function flashproxy_should_disable() {
         }
     }
 
-    if (ua.match(/\bsafari\b/i) && !ua.match(/\bchrome\b/i)) {
-        /* Disable on Safari because it doesn't have the hybi/RFC type of
-           WebSockets. */
-        puts("Disable because User-Agent is Safari.");
+    if (ua.match(/\bsafari\b/i) && !ua.match(/\bchrome\b/i)
+        && !ua.match(/\bversion\/[6789]\./i)) {
+        /* Disable before Safari 6.0 because it doesn't have the hybi/RFC type
+           of WebSockets. */
+        puts("Disable because User-Agent is Safari before 6.0.");
         return true;
     }
 

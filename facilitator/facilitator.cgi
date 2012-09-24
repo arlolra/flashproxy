@@ -2,7 +2,6 @@
 
 import cgi
 import os
-import os.path
 import socket
 import sys
 import urllib
@@ -18,18 +17,16 @@ Status: %d\r
     sys.exit()
 
 method = os.environ.get("REQUEST_METHOD")
-path_info = os.environ.get("PATH_INFO")
 proxy_addr = (os.environ.get("REMOTE_ADDR"), None)
+path_info = os.environ.get("PATH_INFO") or "/"
 
-if not method or not path_info or not proxy_addr[0]:
+if not method or not proxy_addr[0]:
     exit_error(400)
-
-path = os.path.normpath(path_info)
 
 fs = cgi.FieldStorage()
 
 def do_get():
-    if path != "/":
+    if path_info != "/":
         exit_error(400)
     try:
         reg = fac.get_reg(FACILITATOR_ADDR, proxy_addr) or ""
@@ -45,12 +42,12 @@ Access-Control-Allow-Origin: *\r
     sys.stdout.write(urllib.urlencode(reg))
 
 def do_post():
-    if path != "/":
+    if path_info != "/":
         exit_error(400)
     client_specs = fs.getlist("client")
     if len(client_specs) != 1:
         exit_error(400)
-    client_spec = client_specs[0]
+    client_spec = client_specs[0].strip()
     try:
         client_addr = fac.parse_addr_spec(client_spec, defhost=proxy_addr[0])
     except ValueError:

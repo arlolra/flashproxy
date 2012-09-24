@@ -16,8 +16,8 @@ POLL_INTERVAL = 10.0
 def usage(f = sys.stdout):
     print >> f, """\
 Usage: %s -o OUTPUT [INPUTFILE]
-
 Makes a graph of flash proxy counts from a facilitator log.
+
   -h, --help           show this help.
   -o, --output=OUTPUT  output file name (required).\
 """ % sys.argv[0]
