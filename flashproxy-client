@@ -684,7 +684,7 @@ def register_one():
     spec = format_addr(options.register_addr)
     log(u"Trying to register \"%s\"." % spec)
     for command in options.register_commands:
-        if register_using_command(command):
+        if register_using_command(command + [spec]):
             break
     else:
         log(u"All registration commands failed.")
