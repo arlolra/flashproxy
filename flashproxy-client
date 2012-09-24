@@ -678,11 +678,11 @@ def register_one():
         log("Registration helper ended with status %d." % p.returncode)
 
 def registration_thread_func():
-    register_condvar.acquire()
     while True:
+        register_condvar.acquire()
         register_condvar.wait()
+        register_condvar.release()
         register_one()
-    register_condvar.release()
 
 def proxy_chunk_local_to_remote(local, remote, data = None):
     if data is None:
