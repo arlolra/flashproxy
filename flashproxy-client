@@ -670,6 +670,7 @@ def register_one():
         stdout, stderr = p.communicate()
     except OSError, e:
         log(u"Error running registration helper: %s" % str(e))
+        return
     for line in stdout.splitlines():
         log(line)
     for line in stderr.splitlines():
