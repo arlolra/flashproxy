@@ -94,6 +94,7 @@ wait a few minutes. It can take a while to download relay descriptors.
 
 If you suspect that the facilitator has lost your client registration, you can
 re-register:
+	$ flashproxy-reg-email
 	$ flashproxy-reg-http
 
 
