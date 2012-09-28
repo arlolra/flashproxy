@@ -1,7 +1,7 @@
 PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 
-VERSION = 0.4
+VERSION = 0.5
 
 CLIENT_DIST_FILES = flashproxy-client flashproxy-reg-email flashproxy-reg-http README LICENSE torrc
 
