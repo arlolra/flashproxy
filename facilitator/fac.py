@@ -181,3 +181,59 @@ def render_transaction(command, *params):
     for key, value in params:
         parts.append("%s=%s" % (key, quote_string(value)))
     return " ".join(parts)
+
+def fac_socket(facilitator_addr):
+    return socket.create_connection(facilitator_addr, 1.0).makefile()
+
+def transact(f, command, *params):
+    transaction = render_transaction(command, *params)
+    print >> f, transaction
+    f.flush()
+    line = f.readline()
+    if not (len(line) > 0 and line[-1] == '\n'):
+        raise ValueError("No newline at end of string returned by facilitator")
+    return parse_transaction(line[:-1])
+
+def put_reg(facilitator_addr, client_addr, registrant_addr=None):
+    """Send a registration to the facilitator using a one-time socket. Returns
+    true iff the command was successful."""
+    f = fac_socket(facilitator_addr)
+    params = [("CLIENT", format_addr(client_addr))]
+    if registrant_addr is not None:
+        params.append(("FROM", format_addr(registrant_addr)))
+    try:
+        command, params = transact(f, "PUT", *params)
+    finally:
+        f.close()
+    return command == "OK"
+
+def get_reg(facilitator_addr, proxy_addr):
+    """Get a registration from the facilitator using a one-time socket. Returns
+    a dict with keys "client" and "relay" if successful, or a dict with the key
+    "client" mapped to the value "" if there are no registrations available for
+    proxy_addr. Raises an exception otherwise."""
+    f = fac_socket(facilitator_addr)
+    try:
+        command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)))
+    finally:
+        f.close()
+    if command == "NONE":
+        return {
+            "client": ""
+        }
+    elif command == "OK":
+        client_spec = param_first("CLIENT", params)
+        relay_spec = param_first("RELAY", params)
+        if not client_spec:
+            raise ValueError("Facilitator did not return CLIENT")
+        if not relay_spec:
+            raise ValueError("Facilitator did not return RELAY")
+        # Check the syntax returned by the facilitator.
+        client = parse_addr_spec(client_spec)
+        relay = parse_addr_spec(relay_spec)
+        return {
+            "client": format_addr(client),
+            "relay": format_addr(relay),
+        }
+    else:
+        raise ValueError("Facilitator response was not \"OK\"")

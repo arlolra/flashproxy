@@ -1,0 +1,49 @@
+These are instructions for setting up a Gmail account for use with the
+email-based rendezvous and flashproxy-reg-email. These instructions were
+current as of September 2012.
+
+You may have trouble if you are using Tor to create the account, for two
+reasons. The first is that exit nodes are a source of abuse and Google
+is more suspicious of them. The second is that Gmail is suspicious and
+can lock you out of the account when your IP address is changing. While
+setting up the account, use a single node in your torrc ExitNodes
+configuration. Choose a U.S. exit node, one of the ones with the lowest
+bandwidth.
+
+Go to https://mail.google.com/. Allow JavaScript to run. Click the
+"CREATE AN ACCOUNT" button.
+
+Enter the account details and click "Next Step".
+
+What may go wrong is that after entering the account details you see a
+screen "Verify your account" that asks for a mobile phone number. Try
+again with a different low-bandwidth exit node. exit node, one of the
+ones with the lowest bandwidth. Also, it may be my imagination, but
+Gmail seems to be checking for user names that appear randomly
+generated; try inserting vowels between your randomly generated
+consonants to make the word pronouncable.
+
+You may be gently forced into joining Google+ at this point; I think
+that the Gmail account is already created, so you may be able to skip
+Google+ by browsing back to https://mail.google.com/. If not, you can
+delete the Google+ account by clicking on the account name from inside
+of Gmail.
+
+Log out of the account and log back in again. There will be new text in
+the lower right reading "Recent Activity". Click "Details" and turn off
+the suspicious activity warnings. This will keep you from getting locked
+out when you come from different IP addresses. At this point you should
+remove the temporary ExitNodes configuration from torrc.
+
+Add a filter to prevent registrations from being marked as spam. Click
+on the gear icon, and select "Settings". Select "Filters" and add a new
+filter. For "Containing the words:" insert "in:spam". You will get a
+warning that says it will not match any incoming messages; this appears
+to be wrong and you can click through it.
+
+Enable IMAP. Click the gear icon, then "Settings". Click "Forwarding and
+POP/IMAP". Then
+* Disable POP
+* Enable IMAP
+* Auto-Expunge on
+"Save Changes".

@@ -7,6 +7,7 @@ import cStringIO
 import getopt
 import httplib
 import os
+import os.path
 import re
 import select
 import socket
@@ -32,6 +33,7 @@ except ImportError:
 
 DEFAULT_LOCAL_PORT = 9001
 DEFAULT_REMOTE_PORT = 9000
+DEFAULT_REGISTER_METHODS = ["email", "http"]
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -45,6 +47,7 @@ class options(object):
     log_file = sys.stdout
     daemonize = False
     register = False
+    register_commands = []
     pid_filename = None
     safe_logging = True
 
@@ -64,11 +67,11 @@ The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
 request are ignored and the local connection is always linked to a remote
 connection.
 
-If the --register or --register-addr option is used, then your IP address will
-be sent to the facilitator so that proxies can connect to you. You need to
-register in some way in order to get any service. The --facilitator option
-allows controlling which facilitator is used; if omitted, it uses a public
-default.
+If any of the --register, --register-addr, or --register-methods options are
+used, then your IP address will be sent to the facilitator so that proxies can
+connect to you. You need to register in some way in order to get any service.
+The --facilitator option allows controlling which facilitator is used; if
+omitted, it uses a public default.
 
       --daemon              daemonize (Unix only).
   -f, --facilitator=URL     advertise willingness to receive connections to URL.
@@ -78,11 +81,17 @@ default.
   -r, --register            register with the facilitator.
       --register-addr=ADDR  register the given address (in case it differs from
                               REMOTE). Implies --register.
+      --register-methods=METHOD[,METHOD...]
+                            register using the given comma-separated list of
+                              methods. Implies --register. Possible methods are
+                                email http
+                              Default is "%(reg_methods)s".
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "local_port": DEFAULT_LOCAL_PORT,
     "remote_port": DEFAULT_REMOTE_PORT,
+    "reg_methods": ",".join(DEFAULT_REGISTER_METHODS),
 }
 
 def safe_str(s):
@@ -653,30 +662,32 @@ def register():
     register_condvar.notify()
     register_condvar.release()
 
-def register_one():
-    # sys.path[0] is initialized to the directory containing the Python script file.
-    script_dir = sys.path[0]
-    if not script_dir:
-        # Maybe the script was read from stdin; in any case don't guess at the directory.
-        return
-    command = [os.path.join(script_dir, "flashproxy-reg-http")]
-    spec = format_addr(options.register_addr)
-    log(u"Registering \"%s\"." % spec)
-    if options.facilitator_url is not None:
-        command += ["-f", options.facilitator_url]
-    command += [spec]
+def register_using_command(command):
+    basename = os.path.basename(command[0])
     try:
+        log(u"Running command: %s" % " ".join(command))
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
     except OSError, e:
-        log(u"Error running registration helper: %s" % str(e))
-        return
+        log(u"Error running %s: %s" % (basename, str(e)))
+        return False
     for line in stdout.splitlines():
-        log(line)
+        log(u"%s: %s" % (basename, line))
     for line in stderr.splitlines():
-        log(line)
+        log(u"%s: %s" % (basename, line))
     if p.returncode != 0:
-        log("Registration helper ended with status %d." % p.returncode)
+        log("%s exited with status %d." % (basename, p.returncode))
+        return False
+    return True
+
+def register_one():
+    spec = format_addr(options.register_addr)
+    log(u"Trying to register \"%s\"." % spec)
+    for command in options.register_commands:
+        if register_using_command(command + [spec]):
+            break
+    else:
+        log(u"All registration commands failed.")
 
 def registration_thread_func():
     while True:
@@ -895,10 +906,27 @@ def main():
             websocket_pending.pop(0)
             report_pending()
 
+def build_register_command(method):
+    # sys.path[0] is initialized to the directory containing the Python script file.
+    script_dir = sys.path[0]
+    if not script_dir:
+        # Maybe the script was read from stdin; in any case don't guess at the directory.
+        raise ValueError("Can't find executable directory for registration helpers")
+    if method == "email":
+        return [os.path.join(script_dir, "flashproxy-reg-email")]
+    elif method == "http":
+        command = [os.path.join(script_dir, "flashproxy-reg-http")]
+        if options.facilitator_url is not None:
+            command += ["-f", options.facilitator_url]
+        return command
+    else:
+        raise ValueError("Unknown registration method \"%s\"" % method)
+
 if __name__ == "__main__":
     register_addr_spec = None
+    register_methods = []
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register", "register-addr=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "unsafe-logging"])
     for o, a in opts:
         if o == "--daemon":
             options.daemonize = True
@@ -919,6 +947,9 @@ if __name__ == "__main__":
                 sys.exit(1)
             options.register = True
             register_addr_spec = a
+        elif o == "--register-methods":
+            options.register = True
+            register_methods.extend(a.split(","))
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
@@ -956,6 +987,11 @@ if __name__ == "__main__":
         if socket.has_ipv6:
             options.remote_addrs.append(("::", remote_addr[1]))
     options.register_addr = parse_addr_spec(register_addr_spec or ":", *remote_addr)
+
+    if not register_methods:
+        register_methods = DEFAULT_REGISTER_METHODS
+    for method in register_methods:
+        options.register_commands.append(build_register_command(method))
 
     # Local sockets, accepting SOCKS requests from localhost
     local_listen = []
