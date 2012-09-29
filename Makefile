@@ -18,6 +18,8 @@ clean:
 
 test:
 	./flashproxy-client-test
+	cd facilitator && ./facilitator-test
+	cd proxy && ./flashproxy-test.js
 
 DISTNAME = flashproxy-client-$(VERSION)
 DISTDIR = dist/$(DISTNAME)
