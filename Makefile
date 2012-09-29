@@ -18,7 +18,6 @@ clean:
 
 test:
 	./flashproxy-client-test
-	./flashproxy-test.js
 
 DISTNAME = flashproxy-client-$(VERSION)
 DISTDIR = dist/$(DISTNAME)
