@@ -491,7 +491,11 @@ class WebSocketRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 def handle_websocket_request(fd):
-    request_text = fd.recv(10 * 1024)
+    try:
+        request_text = fd.recv(10 * 1024)
+    except socket.error, e:
+        log(u"Socket error while receiving WebSocket request: %s" % repr(str(e)))
+        return None
     handler = WebSocketRequestHandler(request_text, fd)
     if handler.error or not hasattr(handler, "path"):
         return None
