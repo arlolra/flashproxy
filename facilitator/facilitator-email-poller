@@ -20,7 +20,7 @@ from M2Crypto import BIO, RSA, X509
 
 DEFAULT_IMAP_HOST = "imap.gmail.com"
 DEFAULT_IMAP_PORT = 993
-DEFAULT_EMAIL_ADDRESS = "hoddwee@gmail.com"
+DEFAULT_EMAIL_ADDRESS = "flashproxyreg.a@gmail.com"
 DEFAULT_LOG_FILENAME = "facilitator-email-poller.log"
 
 POLL_INTERVAL = 60
