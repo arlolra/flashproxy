@@ -41,3 +41,21 @@ POP/IMAP".
 	* Enable IMAP
 	* Auto-Expunge on
 Click "Save Changes".
+
+Enable two-factor authentication. We do this not so much for the
+two-factor, but because it allows creating an independent password that
+is used only for IMAP and does not have access to the web interface of
+Gmail. Click the email address in the upper right, then "Account". Click
+"Security". By "2-step verification" click "Edit". Click through until
+it lets you set up. The phone number you provided when the account was
+created will be automatically filled in. Choose "Text message (SMS)"
+then click "Send code". Get your text message, type it in, and hit
+"Verify". Uncheck "Trust this computer" on the next screen. Finally
+"Confirm". On the following summary page, click "Show backup codes" and
+save the codes to encrypted storage. Future codes can be generated at
+https://www.google.com/accounts/SmsAuthConfig.
+
+Still on the 2-step summary page, click "Manage application-specific
+passwords". Enter "IMAP" for the name and click "Generate password".
+Save the password to encrypted storage. This is the password that will
+be used with the --pass option of facilitator-email-poller.
