@@ -239,14 +239,32 @@ def handle_message(msg):
     log(u"registering %s" % safe_str(fac.format_addr(client_addr)))
     fac.put_reg(FACILITATOR_ADDR, client_addr)
 
+def imap_empty_trash(imap):
+    typ, data = imap.select("[Gmail]/Trash")
+    imap.store("1:*", "+FLAGS", "\\Deleted")
+    imap.expunge()
+
+# Gmail's IMAP folders are funny: they are not real folders, but actually views
+# of messages having a particular label. INBOX consists of messages having the
+# INBOX label, for example. Deleting a message from a folder just removes its
+# label, but the message itself continues to exist in "[Gmail]/All Mail".
+#   https://support.google.com/mail/bin/answer.py?answer=78755
+#   http://gmailblog.blogspot.com/2008/10/new-in-labs-advanced-imap-controls.html
+# To really delete a message, you must copy it to "[Gmail]/Trash" and then
+# delete it from there. Messages in Trash are deleted automatically after 30
+# days, but we do it immediately.
 def imap_loop(imap):
+    # Empty the trash first thing, in case there are messages there from a
+    # previous failed run of this program or something.
+    imap_empty_trash(imap)
+
     while True:
-        typ, data = imap.select()
+        typ, data = imap.select("[Gmail]/All Mail")
         exists = int(data[0])
 
         for i in range(exists):
-            # Grab and delete message 1 on each iteration; remaining messages
-            # shift down so the next message we process is also message 1.
+            # Grab message 1 on each iteration; remaining messages shift down so
+            # the next message we process is also message 1.
             typ, data = imap.fetch(1, "(BODY[])")
             if data[0] is None:
                 break
@@ -257,8 +275,13 @@ def imap_loop(imap):
             except Exception, e:
                 log("Error processing message, deleting anyway: %s" % str(e))
 
-            imap.store(1, "+FLAGS", "\\Deleted")
-            imap.expunge()
+            imap.copy(1, "[Gmail]/Trash")
+            # Attempting to delete from All Mail here would have no effect.
+            # Messages disappear from All Mail when they are deleted from Trash
+            # in the next step.
+
+        # Now delete all messages from Trash to really delete them.
+        imap_empty_trash(imap)
 
         time.sleep(POLL_INTERVAL)
 
