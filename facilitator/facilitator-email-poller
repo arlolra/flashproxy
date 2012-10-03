@@ -262,26 +262,27 @@ def imap_loop(imap):
         typ, data = imap.select("[Gmail]/All Mail")
         exists = int(data[0])
 
-        for i in range(exists):
-            # Grab message 1 on each iteration; remaining messages shift down so
-            # the next message we process is also message 1.
-            typ, data = imap.fetch(1, "(BODY[])")
-            if data[0] is None:
-                break
+        if exists > 0:
+            while True:
+                # Grab message 1 on each iteration; remaining messages shift down so
+                # the next message we process is also message 1.
+                typ, data = imap.fetch(1, "(BODY[])")
+                if data[0] is None:
+                    break
 
-            try:
-                msg = email.message_from_string(data[0][1])
-                handle_message(msg)
-            except Exception, e:
-                log("Error processing message, deleting anyway: %s" % str(e))
+                try:
+                    msg = email.message_from_string(data[0][1])
+                    handle_message(msg)
+                except Exception, e:
+                    log("Error processing message, deleting anyway: %s" % str(e))
 
-            imap.copy(1, "[Gmail]/Trash")
-            # Attempting to delete from All Mail here would have no effect.
-            # Messages disappear from All Mail when they are deleted from Trash
-            # in the next step.
+                imap.copy(1, "[Gmail]/Trash")
+                # Attempting to delete from All Mail here would have no effect.
+                # Messages disappear from All Mail when they are deleted from Trash
+                # in the next step.
 
-        # Now delete all messages from Trash to really delete them.
-        imap_empty_trash(imap)
+            # Now delete all messages from Trash to really delete them.
+            imap_empty_trash(imap)
 
         time.sleep(POLL_INTERVAL)
 
