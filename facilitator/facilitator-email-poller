@@ -5,6 +5,7 @@ import getopt
 import imaplib
 import math
 import os
+import re
 import socket
 import ssl
 import stat
@@ -239,6 +240,17 @@ def handle_message(msg):
     log(u"registering %s" % safe_str(fac.format_addr(client_addr)))
     fac.put_reg(FACILITATOR_ADDR, client_addr)
 
+def imap_get_uid(imap, index):
+    typ, data = imap.fetch(str(index), "(UID)")
+    if data[0] is None:
+        return None
+    assert typ == "OK"
+    # This grepping for the UID is bogus, but imaplib doesn't properly break up
+    # the list of name-value pairs for us.
+    m = re.match(r'^\d+\s+\(.*\bUID\s+(\d+)\b.*\)\s*$', data[0])
+    assert m is not None
+    return m.group(1)
+
 def imap_empty_trash(imap):
     typ, data = imap.select("[Gmail]/Trash")
     imap.store("1:*", "+FLAGS", "\\Deleted")
@@ -266,9 +278,12 @@ def imap_loop(imap):
             while True:
                 # Grab message 1 on each iteration; remaining messages shift down so
                 # the next message we process is also message 1.
-                typ, data = imap.fetch(1, "(BODY[])")
-                if data[0] is None:
+                uid = imap_get_uid(imap, "1")
+                if uid is None:
                     break
+
+                typ, data = imap.uid("FETCH", uid, "(BODY[])")
+                assert typ == "OK"
 
                 try:
                     msg = email.message_from_string(data[0][1])
@@ -276,7 +291,7 @@ def imap_loop(imap):
                 except Exception, e:
                     log("Error processing message, deleting anyway: %s" % str(e))
 
-                imap.copy(1, "[Gmail]/Trash")
+                imap.uid("COPY", uid, "[Gmail]/Trash")
                 # Attempting to delete from All Mail here would have no effect.
                 # Messages disappear from All Mail when they are deleted from Trash
                 # in the next step.
