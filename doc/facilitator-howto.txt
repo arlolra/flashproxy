@@ -177,7 +177,7 @@ it not readable or writable by anyone but its owner.
 You need an RSA keypair because all client registrations over email are
 encrypted.
 
-	# openssl genrsa /etc/flashproxy/reg-email.key 2048
+	# openssl genrsa -out /etc/flashproxy/reg-email.key 2048
 	# chmod 600 /etc/flashproxy/reg-email.key
 	# openssl rsa -pubout < /etc/flashproxy/reg-email.key > reg-email.pub
 
@@ -185,5 +185,5 @@ You will have to edit flashproxy-reg-email and copy the contents of
 reg-email.pub into the appropriate place.
 
 Install reg-email.key and reg-email.pass to /etc/flashproxy to match
-what the init scritp expects, or else use the --key and --pass options
+what the init script expects, or else use the --key and --pass options
 if you have them stored in another place.
