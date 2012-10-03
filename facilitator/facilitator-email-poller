@@ -57,7 +57,7 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 # SHA-1 digest of expected public key. See
 # http://www.imperialviolet.org/2011/05/04/pinning.html for the reason behind
 # hashing the public key, not the entire certificate.
-PUBKEY_SHA1 = "5d97e1ec007e48c1f36e736e652eeaf2184697c3".decode("hex")
+PUBKEY_SHA1 = "fc54c0b2fcfcdfe4abf2f1755dfd3376f6481703".decode("hex")
 
 # Generating an RSA keypair for use by this program:
 # openssl genrsa reg-email 2048
