@@ -240,11 +240,22 @@ def handle_message(msg):
     log(u"registering %s" % safe_str(fac.format_addr(client_addr)))
     fac.put_reg(FACILITATOR_ADDR, client_addr)
 
+def truncate_repr(s, n):
+    if not isinstance(s, basestring):
+        s = repr(s)
+    if len(s) > n:
+        return repr(s[:n]) + "[...]"
+    else:
+        return repr(s)
+def check_imap_return(typ, data):
+    if typ != "OK":
+        raise imaplib.IMAP4.abort("Got type \"%s\": %s" % (typ, truncate_repr(data, 100)))
+
 def imap_get_uid(imap, index):
     typ, data = imap.fetch(str(index), "(UID)")
     if data[0] is None:
         return None
-    assert typ == "OK"
+    check_imap_return(typ, data)
     # This grepping for the UID is bogus, but imaplib doesn't properly break up
     # the list of name-value pairs for us.
     m = re.match(r'^\d+\s+\(.*\bUID\s+(\d+)\b.*\)\s*$', data[0])
@@ -266,11 +277,11 @@ def imap_loop(imap):
         # failsafe so that messages will eventually be deleted if we are not
         # able to retrieve them. This act of copying also deletes from All Mail.
         typ, data = imap.select("[Gmail]/All Mail")
-        assert typ == "OK"
+        check_imap_return(typ, data)
         imap.copy("1:*", "[Gmail]/Trash")
 
         typ, data = imap.select("[Gmail]/Trash")
-        assert typ == "OK"
+        check_imap_return(typ, data)
         exists = int(data[0])
         if exists > 0:
             while True:
@@ -281,12 +292,12 @@ def imap_loop(imap):
                     break
 
                 typ, data = imap.uid("FETCH", uid, "(BODY[])")
-                assert typ == "OK"
+                check_imap_return(typ, data)
                 msg_text = data[0][1]
                 typ, data = imap.uid("STORE", uid, "+FLAGS", "\\Deleted")
-                assert typ == "OK"
+                check_imap_return(typ, data)
                 typ, data = imap.expunge()
-                assert typ == "OK"
+                check_imap_return(typ, data)
 
                 try:
                     msg = email.message_from_string(msg_text)
