@@ -415,7 +415,17 @@ function FlashProxy() {
         }
 
         client_addr = get_query_param_addr(query, "client");
+        if (client_addr === null) {
+            puts("Error: can't parse \"client\" parameter.");
+            this.die();
+            return;
+        }
         relay_addr = get_query_param_addr(query, "relay");
+        if (relay_addr === null) {
+            puts("Error: can't parse \"relay\" parameter.");
+            this.die();
+            return;
+        }
         if (client_addr !== undefined && relay_addr !== undefined) {
             this.make_proxy_pair(client_addr, relay_addr);
         } else if (client_addr !== undefined) {
