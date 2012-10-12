@@ -259,7 +259,8 @@ def imap_get_uid(imap, index):
     # This grepping for the UID is bogus, but imaplib doesn't properly break up
     # the list of name-value pairs for us.
     m = re.match(r'^\d+\s+\(.*\bUID\s+(\d+)\b.*\)\s*$', data[0])
-    assert m is not None
+    if m is None:
+        raise imaplib.IMAP4.abort("Can't find UID in %s" % repr(data[0]))
     return m.group(1)
 
 # Gmail's IMAP folders are funny: they are not real folders, but actually views
