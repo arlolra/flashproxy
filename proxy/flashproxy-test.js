@@ -159,6 +159,42 @@ function test_parse_query_string()
     }
 }
 
+function test_get_query_param_boolean()
+{
+    var TESTS = [
+        {qs: "param=true",
+         expected: true},
+        {qs: "param",
+         expected: true},
+        {qs: "param=",
+         expected: true},
+        {qs: "param=1",
+         expected: true},
+        {qs: "param=0",
+         expected: false},
+        {qs: "param=false",
+         expected: false},
+        {qs: "param=unexpected",
+         expected: null},
+        {qs: "pram=true",
+         expected: false},
+    ];
+
+    announce("test_get_query_param_boolean");
+    for (var i = 0; i < TESTS.length; i++) {
+        var test = TESTS[i];
+        var actual;
+        var query;
+
+        query = parse_query_string(test.qs);
+        actual = get_query_param_boolean(query, "param", false);
+        if (objects_equal(actual, test.expected))
+            pass(test.qs);
+        else
+            fail(test.qs, test.expected, actual);
+    }
+}
+
 function test_parse_addr_spec()
 {
     var TESTS = [
@@ -230,6 +266,7 @@ function test_get_query_param_addr()
 
 test_build_url();
 test_parse_query_string();
+test_get_query_param_boolean();
 test_parse_addr_spec();
 test_get_query_param_addr();
 

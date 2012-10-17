@@ -7,9 +7,10 @@
  * information from the facilitator. When this option is used, the facilitator
  * query is not done. The "relay" parameter must be given as well.
  *
- * debug=1
- * If set (to any value), show verbose terminal-like output instead of the
- * badge.
+ * debug=<value>
+ * If set to true, 1, or present in the query string with no value, show
+ * verbose terminal-like output instead of the badge. To disable debug output,
+ * omit the debug parameter, or set it to false or 0.
  *
  * facilitator=https://host:port/
  * The URL of the facilitator CGI script. By default it is
@@ -67,9 +68,10 @@ var RATE_LIMIT_HISTORY = 5.0;
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
 var query = parse_query_string(window.location.search.substr(1));
+var DEBUG = get_query_param_boolean(query, "debug", false);
 var debug_div;
 
-if (query.debug) {
+if (DEBUG) {
     debug_div = document.createElement("pre");
     debug_div.className = "debug";
 }
@@ -176,6 +178,26 @@ function build_url(scheme, host, port, path, params) {
     }
 
     return parts.join("");
+}
+
+/* Get a query string parameter and return it as a boolean, or return
+    default_val if param is not present in the query string.
+    Parameter values of "true", "1" and "" evalutate to true.
+    "false" and "0" evalutate to false.
+    Any other value evaluates to null.
+*/
+function get_query_param_boolean(query, param, default_val) {
+    var val;
+
+    val = query[param];
+    if (val === undefined)
+        return default_val;
+    else if (val === "true" || val === "1" || val === "")
+        return true;
+    else if (val === "false" || val === "0")
+        return false;
+    else
+        return null;
 }
 
 /* Get a query string parameter and return it as a string. Returns default_val
@@ -358,7 +380,7 @@ function make_websocket(addr) {
 }
 
 function FlashProxy() {
-    if (query.debug) {
+    if (DEBUG) {
         this.badge_elem = debug_div;
     } else {
         this.badge = new Badge();
