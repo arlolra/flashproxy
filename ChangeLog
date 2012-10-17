@@ -1,0 +1,5 @@
+Changes in version 0.8
+  o The proxy badge does more intelligent parsing of the boolean "debug"
+    parameter. "0", "false", and other values are now interpreted as
+    false and do not activate debug mode. Formerly any non-empty value
+    was interpreted as true. Fixes bug 7110. Patch by Alexandre Allaire.
