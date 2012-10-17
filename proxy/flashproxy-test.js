@@ -162,22 +162,22 @@ function test_parse_query_string()
 function test_get_query_param_boolean()
 {
     var TESTS = [
-        {qs: "param=true",
-         expected: true},
-        {qs: "param",
-         expected: true},
-        {qs: "param=",
-         expected: true},
-        {qs: "param=1",
-         expected: true},
-        {qs: "param=0",
-         expected: false},
-        {qs: "param=false",
-         expected: false},
-        {qs: "param=unexpected",
-         expected: null},
-        {qs: "pram=true",
-         expected: false},
+        { qs: "param=true",
+          expected: true },
+        { qs: "param",
+          expected: true },
+        { qs: "param=",
+          expected: true },
+        { qs: "param=1",
+          expected: true },
+        { qs: "param=0",
+          expected: false },
+        { qs: "param=false",
+          expected: false },
+        { qs: "param=unexpected",
+          expected: null },
+        { qs: "pram=true",
+          expected: false },
     ];
 
     announce("test_get_query_param_boolean");

@@ -7,10 +7,10 @@
  * information from the facilitator. When this option is used, the facilitator
  * query is not done. The "relay" parameter must be given as well.
  *
- * debug=<value>
- * If set to true, 1, or present in the query string with no value, show
- * verbose terminal-like output instead of the badge. To disable debug output,
- * omit the debug parameter, or set it to false or 0.
+ * debug=0|1
+ * If true, show verbose terminal-like output instead of the badge. The values
+ * "1", "true", and the empty string "" all enable debug mode. Any other value
+ * uses the normal badge display.
  *
  * facilitator=https://host:port/
  * The URL of the facilitator CGI script. By default it is
@@ -181,11 +181,12 @@ function build_url(scheme, host, port, path, params) {
 }
 
 /* Get a query string parameter and return it as a boolean, or return
-    default_val if param is not present in the query string.
-    Parameter values of "true", "1" and "" evalutate to true.
-    "false" and "0" evalutate to false.
-    Any other value evaluates to null.
-*/
+   default_val if param is not present in the query string. True values are "1",
+   "true", and "". False values are "0" and "false". Any other value causes the
+   function to return null (effectively false).
+   
+   The empty string is true so that URLs like http://example.com/?debug will
+   enable debug mode. */
 function get_query_param_boolean(query, param, default_val) {
     var val;
 
