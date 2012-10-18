@@ -355,8 +355,8 @@ class RateLimit(object):
 
 login_limit = RateLimit()
 while True:
-    imap = imap_login()
     try:
+        imap = imap_login()
         imap_loop(imap)
     except imaplib.IMAP4.abort, e:
         # Try again after a disconnection.
