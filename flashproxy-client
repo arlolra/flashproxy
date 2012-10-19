@@ -461,7 +461,14 @@ def listen_socket(addr):
         # example, "::" will listen on both "::" and "0.0.0.0", and "::1" will
         # listen on both "::1" and "127.0.0.1". See
         # https://trac.torproject.org/projects/tor/ticket/4760.
-        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+        # Python2.7.3 on Windows does not define IPPROTO_IPV6,
+        # see http://bugs.python.org/issue6926.
+        # Default behavior on Windows is to listen on IPv6 addresses only,
+        # so we can skip the setsockopt call.
+        try:
+            s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+        except AttributeError:
+            pass
     s.bind(addr)
     s.listen(10)
     s.setblocking(0)
