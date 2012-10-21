@@ -3,3 +3,7 @@ Changes in version 0.8
     parameter. "0", "false", and other values are now interpreted as
     false and do not activate debug mode. Formerly any non-empty value
     was interpreted as true. Fixes bug 7110. Patch by Alexandre Allaire.
+
+  o Fixed a runtime error in flashproxy-client on Windows:
+    AttributeError: 'module' object has no attribute 'IPPROTO_IPV6'
+    Fixes bug 7147. Patch by Alexandre Allaire.
