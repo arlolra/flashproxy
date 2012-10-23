@@ -846,7 +846,7 @@ class LocalSocket(object):
     def __getattr__(self, name):
         return getattr(self.fd, name)
 
-def main():
+def proxy_loop():
     while True:
         rset = remote_listen + local_listen + websocket_pending + socks_pending + locals + remotes
         rset, _, _ = select.select(rset, [], [], WEBSOCKET_REQUEST_TIMEOUT)
@@ -932,7 +932,12 @@ def build_register_command(method):
     else:
         raise ValueError("Unknown registration method \"%s\"" % method)
 
-if __name__ == "__main__":
+def main():
+    global remote_listen, local_listen
+    global locals, remotes
+    global websocket_pending, socks_pending
+    global unlinked_locals, unlinked_remotes
+
     register_addr_spec = None
     register_methods = []
 
@@ -1044,7 +1049,10 @@ if __name__ == "__main__":
         register()
 
     try:
-        main()
+        proxy_loop()
     except Exception:
         exc = traceback.format_exc()
         log("".join(exc))
+
+if __name__ == "__main__":
+    main()
