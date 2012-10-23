@@ -931,6 +931,36 @@ def build_register_command(method):
     else:
         raise ValueError("Unknown registration method \"%s\"" % method)
 
+def pt_escape(s):
+    result = []
+    for c in s:
+        if c == "\n":
+            result.append("\\n")
+        elif c == "\\":
+            result.append("\\\\")
+        elif 0 < ord(c) < 128:
+            result.append(c)
+        else:
+            result.append("\\x%02x" % ord(c))
+    return "".join(result)
+
+def pt_line(keyword, *args):
+    log(keyword + " " +  " ".join(pt_escape(x) for x in args))
+    print keyword, " ".join(pt_escape(x) for x in args)
+    sys.stdout.flush()
+
+def pt_enverror(msg):
+    pt_line("ENV-ERROR", msg)
+    sys.exit(1)
+
+def pt_versionerror(msg):
+    pt_line("VERSION-ERROR", msg)
+    sys.exit(1)
+
+def pt_smethoderror(msg):
+    pt_line("SMETHOD-ERROR", msg)
+    sys.exit(1)
+
 def main():
     global remote_listen, local_listen
     global locals, remotes
