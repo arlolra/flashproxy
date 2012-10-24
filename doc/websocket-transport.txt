@@ -54,10 +54,10 @@ Method name
   respectively:
 
 UseBridges 1
-ClientTransportPlugin websocket exec /usr/libexec/tor-websocket-proxy --client --managed
+ClientTransportPlugin websocket exec /usr/libexec/tor-websocket-proxy --client
 Bridge websocket 198.51.100.1
 
-ServerTransportPlugin websocket exec /usr/libexec/tor-websocket-proxy --server --managed
+ServerTransportPlugin websocket exec /usr/libexec/tor-websocket-proxy --server
 
 The base64 subprotocol
 

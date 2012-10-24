@@ -1,9 +1,8 @@
 ## Configuration file for Tor over flash proxies.
 ## Usage:
-##   flashproxy-client --register
 ##   tor -f torrc
 
-ClientTransportPlugin websocket socks4 127.0.0.1:9001
+ClientTransportPlugin websocket exec ./flashproxy-client --register
 UseBridges 1
 # The address and port are ignored by the client transport plugin.
 Bridge websocket 0.0.1.0:1
