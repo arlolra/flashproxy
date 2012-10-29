@@ -82,6 +82,7 @@ class options(object):
     email_addr = None
     smtp_addr = None
     debug = False
+    address_family = socket.AF_UNSPEC
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -96,6 +97,8 @@ unless you have made special arrangements to connect them to a facilitator.
 
 This program requires the M2Crypto library for Python.
 
+  -4                      name lookups use only IPv4.
+  -6                      name lookups use only IPv6.
   -d, --debug             enable debugging output (Python smtplib messages).
   -e, --email=ADDRESS     send mail to ADDRESS (default "%(email_addr)s").
   -h, --help              show this help.
@@ -162,9 +165,13 @@ options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.smtp_addr = (DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hs:", ["debug", "email=", "help", "smtp="])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:hs:", ["debug", "email=", "help", "smtp="])
 for o, a in opts:
-    if o == "-d" or o == "--debug":
+    if o == "-4":
+        options.address_family = socket.AF_INET
+    elif o == "-6":
+        options.address_family = socket.AF_INET6
+    elif o == "-d" or o == "--debug":
         options.debug = True
     elif o == "-e" or o == "--email":
         options.email_addr = a
@@ -192,6 +199,12 @@ http://chandlerproject.org/Projects/MeTooCrypto#Downloads.
 On Debian-like systems, use the command "apt-get install python-m2crypto".\
 """
     sys.exit(1)
+
+if options.address_family != socket.AF_UNSPEC:
+    getaddrinfo = socket.getaddrinfo
+    def getaddrinfo_replacement(host, port, family, *args, **kwargs):
+        return getaddrinfo(host, port, options.address_family, *args, **kwargs)
+    socket.getaddrinfo = getaddrinfo_replacement
 
 smtp = smtplib.SMTP(options.smtp_addr[0], options.smtp_addr[1], EHLO_FQDN)
 
