@@ -212,10 +212,10 @@ if options.debug:
     smtp.set_debuglevel(1)
 
 try:
-    ca_certs_file = tempfile.NamedTemporaryFile(prefix="flashproxy-reg-email-", suffix=".crt", delete=True)
+    ca_certs_fd, ca_certs_path = tempfile.mkstemp(prefix="flashproxy-reg-email-", suffix=".crt")
     try:
-        ca_certs_file.write(CA_CERTS)
-        ca_certs_file.flush()
+        os.write(ca_certs_fd, CA_CERTS)
+        os.close(ca_certs_fd)
         # We roll our own initial EHLO/STARTTLS because smtplib.SMTP.starttls
         # doesn't allow enough certificate validation.
         code, msg = smtp.docmd("EHLO", EHLO_FQDN)
@@ -225,10 +225,10 @@ try:
         if code != 220:
             raise ValueError("Got code %d after STARTTLS" % code)
         smtp.sock = ssl.wrap_socket(smtp.sock, ssl_version=ssl.PROTOCOL_TLSv1,
-            cert_reqs=ssl.CERT_REQUIRED, ca_certs=ca_certs_file.name)
+            cert_reqs=ssl.CERT_REQUIRED, ca_certs=ca_certs_path)
         smtp.file = smtp.sock.makefile()
     finally:
-        ca_certs_file.close()
+        os.unlink(ca_certs_path)
 
     # Check that the public key is what we expect.
     cert_der = smtp.sock.getpeercert(binary_form=True)
