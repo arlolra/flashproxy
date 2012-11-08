@@ -7,3 +7,13 @@ Changes in version 0.8
   o Fixed a runtime error in flashproxy-client on Windows:
     AttributeError: 'module' object has no attribute 'IPPROTO_IPV6'
     Fixes bug 7147. Patch by Alexandre Allaire.
+
+  o Fixed an exception that happened in Windows in flashproxy-reg-email
+    in reading the trusted CA list. The exception message was:
+      Failed to register: [Errno 185090050] _ssl.c:340: error:0B084002:x509 certificate routines:X509_load_cert_crl_file:system lib
+    Fixes bug 7271. Patch by Alexandre Allaire.
+
+  o Fixed an exception that heppened on Windows in flashproxy-client,
+    relating to the use of nonblocking sockets:
+      Socket error writing to local: '[Errno 10035] A non-blocking socket operation could not be completed immediately'
+    Fixed bug 7272. Patch by Alexandre Allaire.
