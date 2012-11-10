@@ -968,10 +968,6 @@ def pt_enverror(msg):
     pt_line("ENV-ERROR", msg)
     sys.exit(1)
 
-def pt_versionerror(msg):
-    pt_line("VERSION-ERROR", msg)
-    sys.exit(1)
-
 def pt_smethoderror(msg):
     pt_line("SMETHOD-ERROR", msg)
     sys.exit(1)
@@ -986,12 +982,25 @@ def pt_get_client_transports(known):
     return result
 
 def pt_setup_managed():
-    for ver in os.environ.get("TOR_PT_MANAGED_TRANSPORT_VER", "").split(","):
+    TOR_PT_MANAGED_TRANSPORT_VER = os.environ.get("TOR_PT_MANAGED_TRANSPORT_VER")
+    if TOR_PT_MANAGED_TRANSPORT_VER is None:
+        pt_line("VERSION-ERROR", "no-version")
+        print >> sys.stderr, """\
+
+No TOR_PT_MANAGED_TRANSPORT_VER found in environment.
+If you are running flashproxy-client from the command line and not from
+a ClientTransportPlugin configuration line, you must use the --external
+option.\
+"""
+        sys.exit(1)
+
+    for ver in TOR_PT_MANAGED_TRANSPORT_VER.split(","):
         if ver == "1":
             pt_line("VERSION", ver)
             break
     else:
-        pt_versionerror("no-version")
+        pt_line("VERSION-ERROR", "no-version")
+        sys.exit(1)
 
     client_transports = pt_get_client_transports(["websocket"])
     if not client_transports:
