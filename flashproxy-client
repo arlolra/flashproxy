@@ -1004,7 +1004,7 @@ option.\
 
     client_transports = pt_get_client_transports(["websocket"])
     if not client_transports:
-        pt_line("CMETHODS", "DONE")
+        pt_cmethods_done()
         sys.exit(1)
 
 def pt_cmethod(method_name, addr):
