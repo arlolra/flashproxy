@@ -1,4 +1,11 @@
 Changes in version 0.8
+  o flashproxy-client now operates as a managed proxy by default. This
+    means that there is no longer a need to start flashproxy-client
+    separately from Tor. Use a "ClientTransportPlugin websocket exec"
+    line as in the included torrc. To use flashproxy-client as an
+    external proxy (the way it worked before), use the --external
+    option.
+
   o The proxy badge does more intelligent parsing of the boolean "debug"
     parameter. "0", "false", and other values are now interpreted as
     false and do not activate debug mode. Formerly any non-empty value
