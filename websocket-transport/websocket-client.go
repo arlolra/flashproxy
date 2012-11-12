@@ -14,6 +14,10 @@ import (
 const socksTimeout = 2
 const bufSiz = 1500
 
+// When a connection handler starts, +1 is written to this channel; when it
+// ends, -1 is written.
+var handlerChan = make(chan int)
+
 func logDebug(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
 }
@@ -94,6 +98,11 @@ func proxy(local *net.TCPConn, ws *websocket.Conn) {
 func handleConnection(conn *net.TCPConn) error {
 	defer conn.Close()
 
+	handlerChan <- 1
+	defer func() {
+		handlerChan <- -1
+	}()
+
 	conn.SetDeadline(time.Now().Add(socksTimeout * time.Second))
 	dest, err := readSocks4aConnect(conn)
 	if err != nil {
@@ -167,16 +176,44 @@ func main() {
 
 	ptClientSetup([]string{ptMethodName})
 
+	listeners := make([]*net.TCPListener, 0)
 	for _, socksAddrStr := range socksAddrStrs {
 		ln, err := startListener(socksAddrStr)
 		if err != nil {
 			ptCmethodError(ptMethodName, err.Error())
 		}
 		ptCmethod(ptMethodName, "socks4", ln.Addr())
+		listeners = append(listeners, ln)
 	}
 	ptCmethodsDone()
 
+	var numHandlers int = 0
+
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
-	<-signalChan
+	var sigint bool = false
+	for !sigint {
+		select {
+		case n := <-handlerChan:
+			numHandlers += n
+		case <-signalChan:
+			logDebug("SIGINT")
+			sigint = true
+		}
+	}
+
+	for _, ln := range listeners {
+		ln.Close()
+	}
+
+	sigint = false
+	for numHandlers != 0 && !sigint {
+		select {
+		case n := <-handlerChan:
+			numHandlers += n
+		case <-signalChan:
+			logDebug("SIGINT")
+			sigint = true
+		}
+	}
 }
