@@ -11,26 +11,83 @@ import (
 )
 
 const socksTimeout = 2
+const bufSiz = 1500
 
 func logDebug(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
 }
 
-func proxy(local *net.TCPConn, ws *websocket.Conn) error {
+func proxy(local *net.TCPConn, ws *websocket.Conn) {
+	var localToWs chan bool
+	var wsToLocal chan bool
+
 	// Local-to-WebSocket read loop.
+	localToWs = make(chan bool, 1)
 	go func() {
-		n, err := io.Copy(ws, local)
-		logDebug("end local-to-WebSocket %d %s", n, err)
+		buf := make([]byte, bufSiz)
+		var err error
+		for {
+			n, er := local.Read(buf[:])
+			if n > 0 {
+				ew := websocket.Message.Send(ws, buf[:n])
+				if ew != nil {
+					err = ew
+					break
+				}
+			}
+			if er != nil {
+				err = er
+				break
+			}
+		}
+		if err != nil && err != io.EOF {
+			logDebug("%s", err)
+		}
+		local.CloseRead()
+		ws.Close()
+
+		localToWs <- true
 	}()
 
 	// WebSocket-to-local read loop.
+	wsToLocal = make(chan bool, 1)
 	go func() {
-		n, err := io.Copy(local, ws)
-		logDebug("end WebSocket-to-local %d %s", n, err)
+		var buf []byte
+		var err error
+		for {
+			er := websocket.Message.Receive(ws, &buf)
+			if er != nil {
+				err = er
+				break
+			}
+			n, ew := local.Write(buf)
+			if ew != nil {
+				err = ew
+				break
+			}
+			if n != len(buf) {
+				err = io.ErrShortWrite
+				break
+			}
+		}
+		if err != nil && err != io.EOF {
+			logDebug("%s", err)
+		}
+		local.CloseWrite()
+		ws.Close()
+
+		wsToLocal <- true
 	}()
 
-	select {}
-	return nil
+	// Select twice, once for each read loop.
+	select {
+	case <-localToWs:
+	case <-wsToLocal:
+	}
+	select {
+	case <-localToWs:
+	case <-wsToLocal:
+	}
 }
 
 func handleConnection(conn *net.TCPConn) error {
@@ -64,7 +121,9 @@ func handleConnection(conn *net.TCPConn) error {
 
 	sendSocks4aResponseGranted(conn, destAddr)
 
-	return proxy(conn, ws)
+	proxy(conn, ws)
+
+	return nil
 }
 
 func socksAcceptLoop(ln *net.TCPListener) error {
