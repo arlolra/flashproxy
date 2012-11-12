@@ -23,11 +23,9 @@ func logDebug(format string, v ...interface{}) {
 }
 
 func proxy(local *net.TCPConn, ws *websocket.Conn) {
-	var localToWs chan bool
-	var wsToLocal chan bool
+	finishedChan := make(chan int)
 
 	// Local-to-WebSocket read loop.
-	localToWs = make(chan bool, 1)
 	go func() {
 		buf := make([]byte, bufSiz)
 		var err error
@@ -51,11 +49,10 @@ func proxy(local *net.TCPConn, ws *websocket.Conn) {
 		local.CloseRead()
 		ws.Close()
 
-		localToWs <- true
+		finishedChan <- 1
 	}()
 
 	// WebSocket-to-local read loop.
-	wsToLocal = make(chan bool, 1)
 	go func() {
 		var buf []byte
 		var err error
@@ -81,17 +78,12 @@ func proxy(local *net.TCPConn, ws *websocket.Conn) {
 		local.CloseWrite()
 		ws.Close()
 
-		wsToLocal <- true
+		finishedChan <- 1
 	}()
 
-	// Select twice, once for each read loop.
-	select {
-	case <-localToWs:
-	case <-wsToLocal:
-	}
-	select {
-	case <-localToWs:
-	case <-wsToLocal:
+	// Wait for both read loops to finish.
+	for i := 0; i < 2; i++ {
+		<-finishedChan
 	}
 }
 
