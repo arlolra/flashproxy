@@ -69,7 +69,7 @@ OPTIONS
     Register the given address (in case it differs from REMOTE). Implies --register.
 
 **--register-methods**=__METHOD__[,__METHOD__]::
-    register using the given comma-separated list of methods. Implies --register. 
+    Register using the given comma-separated list of methods. Implies --register. 
     Possible methods are: email, http. Default is "email,http".
 
 **--unsafe-logging**::
