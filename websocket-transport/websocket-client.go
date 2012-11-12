@@ -2,6 +2,7 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
+	"flag"
 	"fmt"
 	"io"
 	"net"
@@ -164,7 +165,16 @@ func startListener(addrStr string) (*net.TCPListener, error) {
 
 func main() {
 	const ptMethodName = "websocket"
-	var socksAddrStrs = [...]string{"127.0.0.1:0", "[::1]:0"}
+	var defaultSocksAddrStrs = []string{"127.0.0.1:0", "[::1]:0"}
+	var socksAddrStrs []string
+
+	var socksArg = flag.String("socks", "", "address on which to listen for SOCKS connections")
+	flag.Parse()
+	if *socksArg != "" {
+		socksAddrStrs = []string{*socksArg}
+	} else {
+		socksAddrStrs = defaultSocksAddrStrs
+	}
 
 	ptClientSetup([]string{ptMethodName})
 
