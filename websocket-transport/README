@@ -1,0 +1,3 @@
+ClientTransportPlugin websocket exec ./websocket-client
+Bridge websocket tor1.bamsoftware.com:9901
+UseBridges 1
