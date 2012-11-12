@@ -1,0 +1,90 @@
+// This file is asciidoc source code.
+// To generate manpages, use the a2x command i.e.
+// a2x --no-xmllint -d manpage -f manpage flashproxy-client.1.txt
+// see http://www.methods.co.nz/asciidoc/userguide.html#X1
+:man source: Flashproxy Client
+:man manual: Flashproxy Manual
+FLASHPROXY-CLIENT(1)
+====================
+
+NAME
+----
+flashproxy-client - The Flashproxy pluggable transport client program
+
+SYNOPSIS
+--------
+**flashproxy-client** **--register** [__OPTIONS__] [__LOCAL__][:__PORT__] [__REMOTE__][:__PORT__]
+
+DESCRIPTION
+-----------
+Wait for connections on a local and a remote port. When any pair of connections
+exists, data is ferried between them until one side is closed. By default
+__LOCAL__ is localhost addresses on port 9001 and __REMOTE__ is all addresses
+on port 9000.
+
+The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
+request are ignored and the local connection is always linked to a remote
+connection.
+
+By default, runs as a managed proxy: informs a parent Tor project of support for
+the "websocket" pluggable transport. In managed mode, the __LOCAL__ port is chosen
+arbitrarily instead of defaulting to 9001; however this can be
+overridden by including a __LOCAL__ port in the command. This is the way the
+program should be invoked in a torrc ClientTransportPlugin "exec" line.
+Use the --external option to run as an external proxy that does not
+interact with Tor.
+
+If any of the **--register**, **--register-addr**, or **--register-methods** options are
+used, then your IP address will be sent to the facilitator so that proxies can
+connect to you. You need to register in some way in order to get any service.
+The **--facilitator** option allows controlling which facilitator is used; if
+omitted, it uses a public default.
+
+OPTIONS
+-------
+
+**--daemon**::
+    Daemonize (Unix only).
+
+**--external**::
+    Be an external proxy (don't interact with Tor using environment variables
+    and stdout).
+
+**-f**, **--facilitator**=__URL__::
+    Advertise willingness to receive connections to URL.
+
+**-h**, **--help**::
+    Display a help message and exit.
+
+**-l**, **--log** __FILENAME__::
+    Write log to __FILENAME__ (default is stdout).
+
+**--pidfile** __FILENAME__::
+    Write PID to __FILENAME__ after daemonizing.
+
+**-r**, **--register**::
+    Register with the facilitator.
+
+**--register-addr**=__ADDR__::
+    Register the given address (in case it differs from REMOTE). Implies --register.
+
+**--register-methods**=__METHOD__[,__METHOD__]::
+    register using the given comma-separated list of methods. Implies --register. 
+    Possible methods are: email, http. Default is "email,http".
+
+**--unsafe-logging**::
+    Don't scrub IP addresses from logs.
+
+SEE ALSO
+--------
+**http://crypto.stanford.edu/flashproxy/**
+
+**https://www.torproject.org/docs/pluggable-transports.html.en**
+
+BUGS
+----
+Please report using **https://trac.torproject.org/projects/tor**.
+
+AUTHORS
+-------
+David Fifield [dcf at torproject.org]. 
