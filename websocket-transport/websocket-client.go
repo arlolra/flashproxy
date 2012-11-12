@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"sync"
 	"time"
 )
 
@@ -24,7 +25,9 @@ func logDebug(format string, v ...interface{}) {
 }
 
 func proxy(local *net.TCPConn, ws *websocket.Conn) {
-	finishedChan := make(chan int)
+	var wg sync.WaitGroup
+
+	wg.Add(2)
 
 	// Local-to-WebSocket read loop.
 	go func() {
@@ -50,7 +53,7 @@ func proxy(local *net.TCPConn, ws *websocket.Conn) {
 		local.CloseRead()
 		ws.Close()
 
-		finishedChan <- 1
+		wg.Done()
 	}()
 
 	// WebSocket-to-local read loop.
@@ -79,13 +82,10 @@ func proxy(local *net.TCPConn, ws *websocket.Conn) {
 		local.CloseWrite()
 		ws.Close()
 
-		finishedChan <- 1
+		wg.Done()
 	}()
 
-	// Wait for both read loops to finish.
-	for i := 0; i < 2; i++ {
-		<-finishedChan
-	}
+	wg.Wait()
 }
 
 func handleConnection(conn *net.TCPConn) error {
