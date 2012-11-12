@@ -31,7 +31,10 @@ try:
 except ImportError:
     numpy = None
 
-DEFAULT_LOCAL_PORT = 9001
+# Default local port in managed mode (choose one arbitrarily).
+DEFAULT_LOCAL_PORT_MANAGED = 0
+# Default local port in external mode.
+DEFAULT_LOCAL_PORT_EXTERNAL = 9001
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_REGISTER_METHODS = ["email", "http"]
 
@@ -42,6 +45,8 @@ class options(object):
     remote_addrs = []
     register_addr = None
     facilitator_url = None
+
+    managed = True
 
     log_filename = None
     log_file = sys.stdout
@@ -67,6 +72,14 @@ The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
 request are ignored and the local connection is always linked to a remote
 connection.
 
+By default, runs as a managed proxy: informs a parent Tor project of support for
+the "websocket" pluggable transport. In managed mode, the LOCAL port is chosen
+arbitrarily instead of defaulting to %(local_port)d; however this can be
+overridden by including a LOCAL port in the command. This is the way the
+program should be invoked in a torrc ClientTransportPlugin "exec" line.
+Use the --external option to run as an external proxy that does not
+interact with Tor.
+
 If any of the --register, --register-addr, or --register-methods options are
 used, then your IP address will be sent to the facilitator so that proxies can
 connect to you. You need to register in some way in order to get any service.
@@ -74,6 +87,8 @@ The --facilitator option allows controlling which facilitator is used; if
 omitted, it uses a public default.
 
       --daemon              daemonize (Unix only).
+      --external            be an external proxy (don't interact with Tor using
+                              environment variables and stdout).
   -f, --facilitator=URL     advertise willingness to receive connections to URL.
   -h, --help                show this help.
   -l, --log FILENAME        write log to FILENAME (default stdout).
@@ -89,7 +104,7 @@ omitted, it uses a public default.
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
-    "local_port": DEFAULT_LOCAL_PORT,
+    "local_port": DEFAULT_LOCAL_PORT_EXTERNAL,
     "remote_port": DEFAULT_REMOTE_PORT,
     "reg_methods": ",".join(DEFAULT_REGISTER_METHODS),
 }
@@ -931,6 +946,73 @@ def build_register_command(method):
     else:
         raise ValueError("Unknown registration method \"%s\"" % method)
 
+def pt_escape(s):
+    result = []
+    for c in s:
+        if c == "\n":
+            result.append("\\n")
+        elif c == "\\":
+            result.append("\\\\")
+        elif 0 < ord(c) < 128:
+            result.append(c)
+        else:
+            result.append("\\x%02x" % ord(c))
+    return "".join(result)
+
+def pt_line(keyword, *args):
+    log(keyword + " " +  " ".join(pt_escape(x) for x in args))
+    print keyword, " ".join(pt_escape(x) for x in args)
+    sys.stdout.flush()
+
+def pt_enverror(msg):
+    pt_line("ENV-ERROR", msg)
+    sys.exit(1)
+
+def pt_smethoderror(msg):
+    pt_line("SMETHOD-ERROR", msg)
+    sys.exit(1)
+
+def pt_get_client_transports(known):
+    result = []
+    if os.environ.get("TOR_PT_CLIENT_TRANSPORTS") == "*":
+        return known
+    for method in os.environ.get("TOR_PT_CLIENT_TRANSPORTS", "").split(","):
+        if method in known:
+            result.append(method)
+    return result
+
+def pt_setup_managed():
+    TOR_PT_MANAGED_TRANSPORT_VER = os.environ.get("TOR_PT_MANAGED_TRANSPORT_VER")
+    if TOR_PT_MANAGED_TRANSPORT_VER is None:
+        pt_line("VERSION-ERROR", "no-version")
+        print >> sys.stderr, """\
+
+No TOR_PT_MANAGED_TRANSPORT_VER found in environment.
+If you are running flashproxy-client from the command line and not from
+a ClientTransportPlugin configuration line, you must use the --external
+option.\
+"""
+        sys.exit(1)
+
+    for ver in TOR_PT_MANAGED_TRANSPORT_VER.split(","):
+        if ver == "1":
+            pt_line("VERSION", ver)
+            break
+    else:
+        pt_line("VERSION-ERROR", "no-version")
+        sys.exit(1)
+
+    client_transports = pt_get_client_transports(["websocket"])
+    if not client_transports:
+        pt_cmethods_done()
+        sys.exit(1)
+
+def pt_cmethod(method_name, addr):
+	pt_line("CMETHOD", method_name, "socks4", format_sockaddr(addr))
+
+def pt_cmethods_done():
+	pt_line("CMETHODS", "DONE")
+
 def main():
     global remote_listen, local_listen
     global locals, remotes
@@ -940,10 +1022,12 @@ def main():
     register_addr_spec = None
     register_methods = []
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "facilitator=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "external", "facilitator=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "unsafe-logging"])
     for o, a in opts:
         if o == "--daemon":
             options.daemonize = True
+        elif o == "--external":
+            options.managed = False
         elif o == "-f" or o == "--facilitator":
             options.facilitator_url = a
         elif o == "-h" or o == "--help":
@@ -972,17 +1056,26 @@ def main():
         # Send error tracebacks to the log.
         sys.stderr = options.log_file
     else:
-        options.log_file = sys.stdout
+        options.log_file = sys.stderr
+
+    if options.managed:
+        pt_setup_managed()
+
+    if options.managed:
+        default_local_port = DEFAULT_LOCAL_PORT_MANAGED
+    else:
+        default_local_port = DEFAULT_LOCAL_PORT_EXTERNAL
+    default_remote_port = DEFAULT_REMOTE_PORT
 
     if len(args) == 0:
-        local_addr = (None, DEFAULT_LOCAL_PORT)
-        remote_addr = (None, DEFAULT_REMOTE_PORT)
+        local_addr = (None, default_local_port)
+        remote_addr = (None, default_remote_port)
     elif len(args) == 1:
-        local_addr = parse_addr_spec(args[0], defport=DEFAULT_LOCAL_PORT)
-        remote_addr = (None, DEFAULT_REMOTE_PORT)
+        local_addr = parse_addr_spec(args[0], defport=default_local_port)
+        remote_addr = (None, default_remote_port)
     elif len(args) == 2:
-        local_addr = parse_addr_spec(args[0], defport=DEFAULT_LOCAL_PORT)
-        remote_addr = parse_addr_spec(args[1], defport=DEFAULT_REMOTE_PORT)
+        local_addr = parse_addr_spec(args[0], defport=default_local_port)
+        remote_addr = parse_addr_spec(args[1], defport=default_remote_port)
     else:
         usage(sys.stderr)
         sys.exit(1)
@@ -1007,16 +1100,22 @@ def main():
     for method in register_methods:
         options.register_commands.append(build_register_command(method))
 
-    # Local sockets, accepting SOCKS requests from localhost
-    local_listen = []
-    for addr in options.local_addrs:
-        local_listen.append(listen_socket(addr))
-        log(u"Listening local on %s." % format_addr(addr))
     # Remote sockets, accepting remote WebSocket connections from proxies.
     remote_listen = []
     for addr in options.remote_addrs:
-        remote_listen.append(listen_socket(addr))
-        log(u"Listening remote on %s." % format_addr(addr))
+        listen = listen_socket(addr)
+        remote_listen.append(listen)
+        log(u"Listening remote on %s." % format_sockaddr(listen.getsockname()))
+    # Local sockets, accepting SOCKS requests from localhost
+    local_listen = []
+    for addr in options.local_addrs:
+        listen = listen_socket(addr)
+        local_listen.append(listen)
+        log(u"Listening local on %s." % format_sockaddr(listen.getsockname()))
+        if options.managed:
+            pt_cmethod("websocket", listen.getsockname())
+    if options.managed:
+        pt_cmethods_done()
 
     # New remote sockets waiting to finish their WebSocket negotiation.
     websocket_pending = []

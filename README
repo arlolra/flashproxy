@@ -13,24 +13,20 @@ You must be able to receive TCP connections; unfortunately means that
 you cannot be behind NAT. See the section "Using a public client
 transport plugin" below to try out the system even behind NAT.
 
-1. Run the client transport plugin.
-	$ flashproxy-client --register
-   By default the transport plugin listens on Internet-facing TCP port
-   9000. If you have to use a different port (to get through a firewall,
-   for example), give it on the command lines like this (here using port
-   8888):
-	$ flashproxy-client --register :9001 :8888
-2. Run Tor using the included torrc file.
+Run Tor using the included torrc file:
 	$ tor -f torrc
+By default the transport plugin listens on Internet-facing TCP port
+9000. If you have to use a different port (to get through a firewall,
+for example), edit the ClientTransportPlugin line of the torrc to give a
+different port number:
+	ClientTransportPlugin websocket exec ./flashproxy-client --register :0 :8888
+If the flashproxy-client program is in a different directoy (after being
+installed, for example), use the full path in the ClientTransportPlugin
+line:
+	ClientTransportPlugin websocket exec /usr/local/bin/flashproxy-client --register
 
-Watch the output of flashproxy-client and tor. From
-flashproxy-client you are expecting output lines like this:
-	Remote connection from [scrubbed].
-	Local connection from [scrubbed].
-	Linking [scrubbed] and [scrubbed].
-From tor you are looking for:
-	[notice] Tor has successfully opened a circuit. Looks like client functionality is working.
-	[notice] Bootstrapped 100%: Done.
+You should receive a flash proxy connection within about 60 seconds. See
+"Troubleshooting" below if it doesn't work.
 
 
 == Overview
@@ -80,6 +76,9 @@ port forwarding.
 
 Make sure someone is viewing http://crypto.stanford.edu/flashproxy/, or
 another web page with a flash proxy badge on it.
+
+You can add the --log option to the ClientTransportPlugin command line
+in order to save debugging log messages.
 
 If tor hangs at 10% with these messages:
 	[notice] Bootstrapped 10%: Finishing handshake with directory server.

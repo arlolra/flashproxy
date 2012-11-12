@@ -1,4 +1,11 @@
 Changes in version 0.8
+  o flashproxy-client now operates as a managed proxy by default. This
+    means that there is no longer a need to start flashproxy-client
+    separately from Tor. Use a "ClientTransportPlugin websocket exec"
+    line as in the included torrc. To use flashproxy-client as an
+    external proxy (the way it worked before), use the --external
+    option. Fixes bug 7016.
+
   o The proxy badge does more intelligent parsing of the boolean "debug"
     parameter. "0", "false", and other values are now interpreted as
     false and do not activate debug mode. Formerly any non-empty value
@@ -13,7 +20,7 @@ Changes in version 0.8
       Failed to register: [Errno 185090050] _ssl.c:340: error:0B084002:x509 certificate routines:X509_load_cert_crl_file:system lib
     Fixes bug 7271. Patch by Alexandre Allaire.
 
-  o Fixed an exception that heppened on Windows in flashproxy-client,
+  o Fixed an exception that happened on Windows in flashproxy-client,
     relating to the use of nonblocking sockets:
       Socket error writing to local: '[Errno 10035] A non-blocking socket operation could not be completed immediately'
     Fixed bug 7272. Patch by Alexandre Allaire.
