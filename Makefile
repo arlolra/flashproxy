@@ -4,9 +4,9 @@ MANDIR = $(PREFIX)/share/man
 
 VERSION = 0.8
 
-CLIENT_EXECUTABLES = flashproxy-client flashproxy-reg-email flashproxy-reg-http
-CLIENT_MANPAGES = doc/flashproxy-client.1 doc/flashproxy-reg-email.1 doc/flashproxy-reg-http.1
-CLIENT_DIST_FILES = $(CLIENT_EXECUTABLES) README LICENSE torrc
+CLIENT_BIN = flashproxy-client flashproxy-reg-email flashproxy-reg-http
+CLIENT_MAN = doc/flashproxy-client.1 doc/flashproxy-reg-email.1 doc/flashproxy-reg-http.1
+CLIENT_DIST_FILES = $(CLIENT_BIN) README LICENSE torrc
 
 all:
 	:
@@ -14,8 +14,8 @@ all:
 install:
 	mkdir -p $(BINDIR)
 	mkdir -p $(MANDIR)/man1
-	cp -f $(CLIENT_EXECUTABLES) $(BINDIR)
-	cp -f $(CLIENT_MANPAGES) $(MANDIR)/man1
+	cp -f $(CLIENT_BIN) $(BINDIR)
+	cp -f $(CLIENT_MAN) $(MANDIR)/man1
 
 clean:
 	rm -f *.pyc
@@ -28,12 +28,12 @@ test:
 
 DISTNAME = flashproxy-client-$(VERSION)
 DISTDIR = dist/$(DISTNAME)
-dist: $(CLIENT_MANPAGES)
+dist: $(CLIENT_MAN)
 	rm -rf dist
 	mkdir -p $(DISTDIR)
 	mkdir $(DISTDIR)/doc
 	cp -f $(CLIENT_DIST_FILES) $(DISTDIR)
-	cp -f $(CLIENT_MANPAGES) $(DISTDIR)/doc
+	cp -f $(CLIENT_MAN) $(DISTDIR)/doc
 	cd dist && zip -q -r -9 $(DISTNAME).zip $(DISTNAME)
 
 dist/$(DISTNAME).zip: $(CLIENT_DIST_FILES)
