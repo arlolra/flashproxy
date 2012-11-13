@@ -4,7 +4,6 @@ BINDIR = $(PREFIX)/bin
 VERSION = 0.8
 
 CLIENT_EXECUTABLES = flashproxy-client flashproxy-reg-email flashproxy-reg-http
-CLIENT_ASCIIDOCS = $(CLIENT_EXECUTABLES:%=doc/%.1.txt)
 CLIENT_MANPAGES = $(CLIENT_EXECUTABLES:%=doc/%.1)
 CLIENT_DIST_FILES = $(CLIENT_EXECUTABLES) README LICENSE torrc
 
@@ -42,9 +41,9 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
-%.1: $(CLIENT_ASCIIDOCS)
+%.1: %.1.txt
 	rm -rf $@
 	a2x --no-xmllint --xsltproc-opts "--stringparam man.th.title.max.length 23" \
-		-d manpage -f manpage $@.txt
+		-d manpage -f manpage $<
 
 .PHONY: all install clean test dist sign
