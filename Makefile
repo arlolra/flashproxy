@@ -45,6 +45,6 @@ sign: dist/$(DISTNAME).zip
 %.1: $(CLIENT_ASCIIDOCS)
 	rm -rf $@
 	a2x --no-xmllint --xsltproc-opts "--stringparam man.th.title.max.length 23" \
-		-d manpage -f manpage $@.txt;
+		-d manpage -f manpage $@.txt
 
 .PHONY: all install clean test dist sign
