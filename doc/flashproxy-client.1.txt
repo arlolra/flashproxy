@@ -2,14 +2,12 @@
 // To generate manpages, use the a2x command i.e.
 // a2x --no-xmllint -d manpage -f manpage flashproxy-client.1.txt
 // see http://www.methods.co.nz/asciidoc/userguide.html#X1
-:man source: Flashproxy Client
-:man manual: Flashproxy Manual
 FLASHPROXY-CLIENT(1)
 ====================
 
 NAME
 ----
-flashproxy-client - The Flashproxy pluggable transport client program
+flashproxy-client - The flash proxy client transport plugin
 
 SYNOPSIS
 --------

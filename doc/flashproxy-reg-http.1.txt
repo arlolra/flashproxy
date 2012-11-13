@@ -3,15 +3,12 @@
 // This one has a long name, if you don't change the 
 // default length parameter it will be truncated, use:
 // a2x --no-xmllint --xsltproc-opts "--stringparam man.th.title.max.length 22" -d manpage -f manpage flashproxy-reg-http.1.txt
-:man source: Flashproxy Register HTTP
-:man manual: Flashproxy Manual
-
 FLASHPROXY-REG-HTTP(1)
 ======================
 
 NAME
 ----
-flashproxy-reg-http - Register with a facilitator using the http method
+flashproxy-reg-http - Register with a facilitator using the HTTP method
 
 SYNOPSIS
 --------
