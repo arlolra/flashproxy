@@ -1,5 +1,6 @@
 PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
+MANDIR = $(PREFIX)/share/man
 
 VERSION = 0.8
 
@@ -12,7 +13,9 @@ all:
 
 install:
 	mkdir -p $(BINDIR)
-	cp -f flashproxy-client flashproxy-reg-email flashproxy-reg-http $(BINDIR)
+	mkdir -p $(MANDIR)/man1
+	cp -f $(CLIENT_EXECUTABLES) $(BINDIR)
+	cp -f $(CLIENT_MANPAGES) $(MANDIR)/man1
 
 clean:
 	rm -f *.pyc
