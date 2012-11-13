@@ -31,7 +31,7 @@ the "websocket" pluggable transport. In managed mode, the __LOCAL__ port is chos
 arbitrarily instead of defaulting to 9001; however this can be
 overridden by including a __LOCAL__ port in the command. This is the way the
 program should be invoked in a torrc ClientTransportPlugin "exec" line.
-Use the --external option to run as an external proxy that does not
+Use the **--external** option to run as an external proxy that does not
 interact with Tor.
 
 If any of the **--register**, **--register-addr**, or **--register-methods** options are
