@@ -4,7 +4,7 @@ BINDIR = $(PREFIX)/bin
 VERSION = 0.8
 
 CLIENT_EXECUTABLES = flashproxy-client flashproxy-reg-email flashproxy-reg-http
-CLIENT_MANPAGES = $(CLIENT_EXECUTABLES:%=doc/%.1)
+CLIENT_MANPAGES = doc/flashproxy-client.1 doc/flashproxy-reg-email.1 doc/flashproxy-reg-http.1
 CLIENT_DIST_FILES = $(CLIENT_EXECUTABLES) README LICENSE torrc
 
 all:
