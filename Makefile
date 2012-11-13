@@ -45,7 +45,7 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
 %.1: %.1.txt
-	rm -rf $@
+	rm -f $@
 	a2x --no-xmllint --xsltproc-opts "--stringparam man.th.title.max.length 23" \
 		-d manpage -f manpage $<
 
