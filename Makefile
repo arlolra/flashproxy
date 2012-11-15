@@ -49,4 +49,16 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
-.PHONY: all install clean test dist sign
+exe: $(CLIENT_BIN)
+	rm -Rf $(DISTDIR)
+	mkdir -p $(DISTDIR)
+	for file in $(CLIENT_BIN); \
+	do \
+	    python $(PYINSTALLER_PATH) --onedir $$file; \
+	    cp -Rf dist/$$file/* $(DISTDIR); \
+	    $$(cygpath -aw $$(which pyinstaller.py)); \
+	    rm -Rf dist/$$file; \
+	done
+	mv $(DISTDIR)/M2Crypto.__m2crypto.pyd $(DISTDIR)/__m2crypto.pyd
+
+.PHONY: all install clean test dist sign exe
