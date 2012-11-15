@@ -50,14 +50,14 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
 exe: $(CLIENT_BIN)
-	rm -Rf $(DISTDIR)
+	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)
 	for file in $(CLIENT_BIN); \
 	do \
-	    python $(PYINSTALLER_PATH) --onedir $$file; \
-	    cp -Rf dist/$$file/* $(DISTDIR); \
-	    $$(cygpath -aw $$(which pyinstaller.py)); \
-	    rm -Rf dist/$$file; \
+	    python $$(cygpath -aw $$(which pyinstaller.py)) --onedir $$file; \
+	    cp dist/$$file/* $(DISTDIR); \
+	    mv $(DISTDIR)/$$file.exe $(DISTDIR)/$$file; \
+	    rm -rf dist/$$file; \
 	done
 	mv $(DISTDIR)/M2Crypto.__m2crypto.pyd $(DISTDIR)/__m2crypto.pyd
 
