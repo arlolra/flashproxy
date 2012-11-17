@@ -1,0 +1,63 @@
+This document describes the setup required to bundle
+the client programs with a Python interpreter, for 
+deployment on Windows machines without Python installed.
+
+== Overview
+
+The client programs are written in Python, an interpreted
+language. The Python interpreter does not ship with Windows,
+so in order for users to be able to download and  run the 
+programs with no extra setup, it must be included in the 
+distribution. This is currently done using PyInstaller.
+PyInstaller collects the Python interpreter, any libraries
+the Python script requires, and converts the script into
+a standalone executable. 
+
+The makefile has an "exe" target which automates the
+budling process once all the required dependencies are 
+installed. It should be run in Cygwin.
+
+== Dependencies
+
+The client programs use a few libraries, which must
+be present on the system in order for PyInstaller to
+bundle them. Bundling also requires a Windows Python
+installation and PyInstaller.
+
+1. Python
+
+The official 2.7.3 Windows binary can be found at
+http://www.python.org/download/.
+
+2. PyInstaller
+
+The 2.0 release can be found at http://www.pyinstaller.org.
+The program is a Python script, there is no installation
+required, just extract the archive somehwere.
+
+3. OpenSSL
+
+There are no official binary distributions of OpenSSL.
+The source is available at http://www.openssl.org/source/.
+This page provides links to unofficial binary distributions,
+http://www.openssl.org/related/binaries.html.
+
+4. M2Crypto
+
+There are no official binary distributions of M2Crypto.
+The official source along, with several unofficial
+binaries, is available at http://chandlerproject.org/Projects/MeTooCrypto.
+
+== Bundling
+
+Once the dependencies are installed, you should be able
+to bundle the programs, using the "exe" make target.
+Do not install Cygwin Python, make sure you are using the
+native Windows version. Add Python and PyInstaller to your 
+path, then in a Cygwin terminal run:
+
+$ make exe
+
+This will create a dist/flashproxy-client-<version> directory
+containing the required binaries. If you encounter any
+problems, please report them using https://trac.torproject.org/projects/tor.
