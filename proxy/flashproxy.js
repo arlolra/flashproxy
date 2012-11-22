@@ -865,21 +865,13 @@ function repr(x) {
     }
 }
 
-/* The function is trying to detect that the proxy is running in a Tor Browser. A Tor Browser has
-   an specific 'navigator.userAgent' string, it is also entirely disabling the DOM storage and
-   not listing the supported MIME types.
-
-   https://trac.torproject.org/projects/tor/ticket/6293
-
-*/
+/* Do we seem to be running in Tor Browser? Check the user-agent string, lack of
+   DOM storage, and no listing of supported MIME types. */
+var TBB_UA = "Mozilla/5.0 (Windows NT 6.1; rv:10.0) Gecko/20100101 Firefox/10.0";
 function is_likely_tor_browser() {
-
-        var isTB = false;
-
-        if ( (navigator.userAgent == "Mozilla/5.0 (Windows NT 6.1; rv:10.0) Gecko/20100101 Firefox/10.0") && (sessionStorage === null) && (navigator.mimeTypes.length == 0) )
-          isTB = true;
-
-        return isTB;
+    return window.navigator.userAgent === TBB_UA
+        && window.sessionStorage === null
+        && (window.navigator.mimeTypes && window.navigator.mimeTypes.length === 0);
 }
 
 /* Are circumstances such that we should self-disable and not be a
@@ -893,10 +885,9 @@ function is_likely_tor_browser() {
 function flashproxy_should_disable() {
     var ua;
 
-    /* If the proxy is running in a Tor Browser there is a possible security problem:
-          It is reported at: https://trac.torproject.org/projects/tor/ticket/6293  */
+    /* https://trac.torproject.org/projects/tor/ticket/6293 */
     if (is_likely_tor_browser()) {
-         puts("Disable because is running in a Tor Browser.");
+         puts("Disable because running in Tor Browser.");
          return true;
     }
 
