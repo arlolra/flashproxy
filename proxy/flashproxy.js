@@ -865,6 +865,23 @@ function repr(x) {
     }
 }
 
+/* The function is trying to detect that the proxy is running in a Tor Browser. A Tor Browser has
+   an specific 'navigator.userAgent' string, it is also entirely disabling the DOM storage and
+   not listing the supported MIME types.
+
+   https://trac.torproject.org/projects/tor/ticket/6293
+
+*/
+function is_likely_tor_browser() {
+
+        var isTB = false;
+
+        if ( (navigator.userAgent == "Mozilla/5.0 (Windows NT 6.1; rv:10.0) Gecko/20100101 Firefox/10.0") && (sessionStorage === null) && (navigator.mimeTypes.length == 0) )
+          isTB = true;
+
+        return isTB;
+}
+
 /* Are circumstances such that we should self-disable and not be a
    proxy? We take a best-effort guess as to whether this device runs on
    a battery or the data transfer might be expensive.
@@ -875,6 +892,13 @@ function repr(x) {
 */
 function flashproxy_should_disable() {
     var ua;
+
+    /* If the proxy is running in a Tor Browser there is a possible security problem:
+          It is reported at: https://trac.torproject.org/projects/tor/ticket/6293  */
+    if (is_likely_tor_browser()) {
+         puts("Disable because is running in a Tor Browser.");
+         return true;
+    }
 
     ua = window.navigator.userAgent;
     if (ua !== null) {
