@@ -1,3 +1,8 @@
+Changes in version 0.9
+  o The proxy now tries to determine whether it is running in Tor
+    Browser, and disables itself if so. Fixes bug #6293. Patch by Jorge
+    Couchet.
+
 Changes in version 0.8
   o flashproxy-client now operates as a managed proxy by default. This
     means that there is no longer a need to start flashproxy-client
