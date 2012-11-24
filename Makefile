@@ -2,6 +2,9 @@ PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
 
+PYTHON = python
+PYINSTALLER_PY = ../pyinstaller-2.0/pyinstaller.py
+
 VERSION = 0.8
 
 CLIENT_BIN = flashproxy-client flashproxy-reg-email flashproxy-reg-http
@@ -54,7 +57,7 @@ exe: $(CLIENT_BIN)
 	mkdir -p $(DISTDIR)
 	for file in $(CLIENT_BIN); \
 	do \
-	    python $$(cygpath -aw $$(which pyinstaller.py)) --onedir $$file; \
+	    $(PYTHON) $(PYINSTALLER_PY) --onedir $$file; \
 	    cp dist/$$file/* $(DISTDIR); \
 	    mv $(DISTDIR)/$$file.exe $(DISTDIR)/$$file; \
 	    rm -rf dist/$$file; \
