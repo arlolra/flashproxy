@@ -24,10 +24,21 @@ be present on the system in order for PyInstaller to
 bundle them. Bundling also requires a Windows Python
 installation and PyInstaller.
 
-1. Python
+1. Python  http://python.org/download/
 
-The official 2.7.3 Windows binary can be found at
-http://www.python.org/download/.
+Get the latest 32-bit installer in the 2.x series.
+http://python.org/ftp/python/2.7.3/python-2.7.3.msi
+http://python.org/ftp/python/2.7.3/python-2.7.3.msi.asc
+There are instructions for verifying the signature on the download page.
+$ gpg --verify python-2.7.3.msi.asc
+
+Run the installer. "Install for all users". You can disable "Tcl/Tk",
+"Documentation", "Utility Scripts", and "Test suite".
+
+Set the PATH environment variable as described at
+http://docs.python.org/2/using/windows.html#configuring-python
+PATH=...;C:\Python27
+You will have to restart your shells to pick up the new PATH.
 
 1.5 pywin32  http://sourceforge.net/projects/pywin32/files/pywin32/
 
