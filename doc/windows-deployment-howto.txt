@@ -56,12 +56,21 @@ The 2.0 release can be found at http://www.pyinstaller.org.
 The program is a Python script, there is no installation
 required, just extract the archive somehwere.
 
-3. OpenSSL
+3. OpenSSL  http://www.openssl.org/source/
 
-There are no official binary distributions of OpenSSL.
-The source is available at http://www.openssl.org/source/.
-This page provides links to unofficial binary distributions,
-http://www.openssl.org/related/binaries.html.
+http://openssl.org/source/openssl-1.0.1c.tar.gz
+http://openssl.org/source/openssl-1.0.1c.tar.gz.asc
+$ gpg --verify openssl-1.0.1c.tar.gz.asc
+
+Build OpenSSL from source using Cygwin and MinGW. Install the package
+mingw-gcc-core. Run these commands in the OpenSSL source directory:
+
+CROSS_COMPILE=i686-pc-mingw32- ./Configure shared mingw
+make
+make install
+
+Then, add C:\cygwin\usr\local\ssl\bin to PATH as you did for Python
+above.
 
 4. M2Crypto
 
