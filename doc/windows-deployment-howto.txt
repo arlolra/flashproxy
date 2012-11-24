@@ -29,6 +29,16 @@ installation and PyInstaller.
 The official 2.7.3 Windows binary can be found at
 http://www.python.org/download/.
 
+1.5 pywin32  http://sourceforge.net/projects/pywin32/files/pywin32/
+
+This is a prerequisite for PyInstaller. Enter the directory containing
+the latest build number, then download the "win32-py2.7" package.
+
+The installers don't seem to have signatures. The sha256sum of the
+package I downloaded was
+
+dd665cca88cb059fec960516ed5f29474b33fce50fcb2633d397d4a3aa705c16 *pywin32-218.win32-py2.7.exe
+
 2. PyInstaller
 
 The 2.0 release can be found at http://www.pyinstaller.org.
