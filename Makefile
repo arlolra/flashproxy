@@ -10,6 +10,7 @@ VERSION = 0.8
 CLIENT_BIN = flashproxy-client flashproxy-reg-email flashproxy-reg-http
 CLIENT_MAN = doc/flashproxy-client.1 doc/flashproxy-reg-email.1 doc/flashproxy-reg-http.1
 CLIENT_DIST_FILES = $(CLIENT_BIN) README LICENSE torrc
+CLIENT_DIST_DOC_FILES = $(CLIENT_MAN)
 
 all: $(CLIENT_DIST_FILES) $(CLIENT_MAN)
 	:
@@ -41,7 +42,7 @@ dist: $(CLIENT_MAN)
 	mkdir -p $(DISTDIR)
 	mkdir $(DISTDIR)/doc
 	cp -f $(CLIENT_DIST_FILES) $(DISTDIR)
-	cp -f $(CLIENT_MAN) $(DISTDIR)/doc
+	cp -f $(CLIENT_DIST_DOC_FILES) $(DISTDIR)/doc
 	cd dist && zip -q -r -9 $(DISTNAME).zip $(DISTNAME)
 
 dist/$(DISTNAME).zip: $(CLIENT_DIST_FILES)
