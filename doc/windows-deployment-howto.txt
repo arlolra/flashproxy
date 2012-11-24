@@ -78,6 +78,8 @@ There are no official binary distributions of M2Crypto.
 The official source along, with several unofficial
 binaries, is available at http://chandlerproject.org/Projects/MeTooCrypto.
 
+http://chandlerproject.org/pub/Projects/MeTooCrypto/M2Crypto-0.21.1.win32-py2.7.msi
+
 == Bundling
 
 Once the dependencies are installed, you should be able
