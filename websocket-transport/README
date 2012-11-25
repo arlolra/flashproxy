@@ -1,3 +1,17 @@
 ClientTransportPlugin websocket exec ./websocket-client
 Bridge websocket tor1.bamsoftware.com:9901
 UseBridges 1
+
+"Denial of Service Protection in Go HTTP Servers"
+https://code.google.com/p/go/issues/detail?id=2093
+
+"go.websocket: Read/Copy fail with long frames"
+https://code.google.com/p/go/issues/detail?id=2134
+
+http://golang.org/pkg/net/textproto/#pkg-bugs
+"To let callers manage exposure to denial of service attacks, Reader
+should allow them to set and reset a limit on the number of bytes read
+from the connection."
+
+"websocket.Dial doesn't limit response header length as http.Get does"
+https://groups.google.com/forum/?fromgroups=#!topic/golang-nuts/2Tge6U8-QYI
