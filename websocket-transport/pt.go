@@ -74,6 +74,7 @@ func ptGetClientTransports(supported []string) []string {
 		for _, methodName := range supported {
 			if requested == methodName {
 				result = append(result, methodName)
+				break
 			}
 		}
 	}
