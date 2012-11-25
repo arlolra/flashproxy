@@ -2,11 +2,15 @@ PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
 
+PYTHON = python
+PYINSTALLER_PY = ../pyinstaller-2.0/pyinstaller.py
+
 VERSION = 0.8
 
 CLIENT_BIN = flashproxy-client flashproxy-reg-email flashproxy-reg-http
 CLIENT_MAN = doc/flashproxy-client.1 doc/flashproxy-reg-email.1 doc/flashproxy-reg-http.1
 CLIENT_DIST_FILES = $(CLIENT_BIN) README LICENSE torrc
+CLIENT_DIST_DOC_FILES = $(CLIENT_MAN) doc/LICENSE.GPL doc/LICENSE.PYTHON
 
 all: $(CLIENT_DIST_FILES) $(CLIENT_MAN)
 	:
@@ -38,7 +42,7 @@ dist: $(CLIENT_MAN)
 	mkdir -p $(DISTDIR)
 	mkdir $(DISTDIR)/doc
 	cp -f $(CLIENT_DIST_FILES) $(DISTDIR)
-	cp -f $(CLIENT_MAN) $(DISTDIR)/doc
+	cp -f $(CLIENT_DIST_DOC_FILES) $(DISTDIR)/doc
 	cd dist && zip -q -r -9 $(DISTNAME).zip $(DISTNAME)
 
 dist/$(DISTNAME).zip: $(CLIENT_DIST_FILES)
@@ -54,7 +58,7 @@ exe: $(CLIENT_BIN)
 	mkdir -p $(DISTDIR)
 	for file in $(CLIENT_BIN); \
 	do \
-	    python $$(cygpath -aw $$(which pyinstaller.py)) --onedir $$file; \
+	    $(PYTHON) $(PYINSTALLER_PY) --onedir $$file; \
 	    cp dist/$$file/* $(DISTDIR); \
 	    mv $(DISTDIR)/$$file.exe $(DISTDIR)/$$file; \
 	    rm -rf dist/$$file; \

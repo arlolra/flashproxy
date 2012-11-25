@@ -1080,12 +1080,13 @@ def main():
         usage(sys.stderr)
         sys.exit(1)
 
-    # Listen on both IPv4 and IPv6 if no host is given.
     if local_addr[0]:
         options.local_addrs.append(local_addr)
     else:
         options.local_addrs.append(("127.0.0.1", local_addr[1]))
-        if socket.has_ipv6:
+        # Listen on both IPv4 and IPv6 if no host is given, unless we are in
+        # managed mode.
+        if not options.managed and socket.has_ipv6:
             options.local_addrs.append(("::1", local_addr[1]))
     if remote_addr[0]:
         options.remote_addrs.append(remote_addr)

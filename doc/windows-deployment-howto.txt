@@ -24,10 +24,31 @@ be present on the system in order for PyInstaller to
 bundle them. Bundling also requires a Windows Python
 installation and PyInstaller.
 
-1. Python
+1. Python  http://python.org/download/
 
-The official 2.7.3 Windows binary can be found at
-http://www.python.org/download/.
+Get the latest 32-bit installer in the 2.x series.
+http://python.org/ftp/python/2.7.3/python-2.7.3.msi
+http://python.org/ftp/python/2.7.3/python-2.7.3.msi.asc
+There are instructions for verifying the signature on the download page.
+$ gpg --verify python-2.7.3.msi.asc
+
+Run the installer. "Install for all users". You can disable "Tcl/Tk",
+"Documentation", "Utility Scripts", and "Test suite".
+
+Set the PATH environment variable as described at
+http://docs.python.org/2/using/windows.html#configuring-python
+PATH=...;C:\Python27
+You will have to restart your shells to pick up the new PATH.
+
+1.5 pywin32  http://sourceforge.net/projects/pywin32/files/pywin32/
+
+This is a prerequisite for PyInstaller. Enter the directory containing
+the latest build number, then download the "win32-py2.7" package.
+
+The installers don't seem to have signatures. The sha256sum of the
+package I downloaded was
+
+dd665cca88cb059fec960516ed5f29474b33fce50fcb2633d397d4a3aa705c16 *pywin32-218.win32-py2.7.exe
 
 2. PyInstaller
 
@@ -35,18 +56,29 @@ The 2.0 release can be found at http://www.pyinstaller.org.
 The program is a Python script, there is no installation
 required, just extract the archive somehwere.
 
-3. OpenSSL
+3. OpenSSL  http://www.openssl.org/source/
 
-There are no official binary distributions of OpenSSL.
-The source is available at http://www.openssl.org/source/.
-This page provides links to unofficial binary distributions,
-http://www.openssl.org/related/binaries.html.
+http://openssl.org/source/openssl-1.0.1c.tar.gz
+http://openssl.org/source/openssl-1.0.1c.tar.gz.asc
+$ gpg --verify openssl-1.0.1c.tar.gz.asc
+
+Build OpenSSL from source using Cygwin and MinGW. Install the package
+mingw-gcc-core. Run these commands in the OpenSSL source directory:
+
+CROSS_COMPILE=i686-pc-mingw32- ./Configure shared mingw
+make
+make install
+
+Then, add C:\cygwin\usr\local\ssl\bin to PATH as you did for Python
+above.
 
 4. M2Crypto
 
 There are no official binary distributions of M2Crypto.
 The official source along, with several unofficial
 binaries, is available at http://chandlerproject.org/Projects/MeTooCrypto.
+
+http://chandlerproject.org/pub/Projects/MeTooCrypto/M2Crypto-0.21.1.win32-py2.7.msi
 
 == Bundling
 
