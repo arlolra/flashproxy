@@ -4,14 +4,18 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"time"
 )
 
 const defaultPort = 9901
+
+var ptInfo ptServerInfo
 
 // When a connection handler starts, +1 is written to this channel; when it
 // ends, -1 is written.
@@ -114,8 +118,49 @@ func NewWebsocketConn(ws *websocket) websocketConn {
 	return conn
 }
 
+func proxy(local *net.TCPConn, conn *websocketConn) {
+	var wg sync.WaitGroup
+
+	wg.Add(2)
+
+	go func() {
+		_, err := io.Copy(conn, local)
+		if err != nil {
+			logDebug("error copying ORPort to WebSocket: " + err.Error())
+		}
+		local.CloseRead()
+		conn.Close()
+		wg.Done()
+	}()
+
+	go func() {
+		_, err := io.Copy(local, conn)
+		if err != nil {
+			logDebug("error copying WebSocket to ORPort: " + err.Error())
+		}
+		local.CloseWrite()
+		conn.Close()
+		wg.Done()
+	}()
+
+	wg.Wait()
+}
+
 func websocketHandler(ws *websocket) {
-	fmt.Printf("blah\n")
+	conn := NewWebsocketConn(ws)
+
+	handlerChan <- 1
+	defer func() {
+		handlerChan <- -1
+	}()
+
+	s, err := net.DialTCP("tcp", nil, ptInfo.OrAddr)
+	if err != nil {
+		logDebug("Failed to connect to ORPort: " + err.Error())
+		return
+	}
+
+	proxy(s, &conn)
 }
 
 func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
@@ -139,7 +184,7 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 func main() {
 	const ptMethodName = "websocket"
 
-	ptInfo := ptServerSetup([]string{ptMethodName})
+	ptInfo = ptServerSetup([]string{ptMethodName})
 
 	listeners := make([]*net.TCPListener, 0)
 	for _, bindAddr := range ptInfo.BindAddrs {
