@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/binary"
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -12,6 +15,14 @@ import (
 
 type websocketConfig struct {
 	Subprotocols []string
+	MaxMessageSize uint64
+}
+
+func (config *websocketConfig) maxMessageSize() uint64 {
+	if config.MaxMessageSize == 0 {
+		return 64000
+	}
+	return config.MaxMessageSize
 }
 
 type websocket struct {
@@ -19,7 +30,88 @@ type websocket struct {
 	Bufrw       *bufio.ReadWriter
 	// Whether we are a client or a server implications for masking.
 	IsClient    bool
+	MaxMessageSize uint64
 	Subprotocol string
+}
+
+type websocketFrame struct {
+	Fin bool
+	Opcode byte
+	Payload []byte
+}
+
+func (frame *websocketFrame) IsControl() bool {
+	return (frame.Opcode & 0x08) != 0
+}
+
+func applyMask(payload []byte, maskKey [4]byte) {
+	for i, _ := range payload {
+		payload[i] = payload[i] ^ maskKey[i % 4]
+	}
+}
+
+func (ws *websocket) ReadFrame() (frame websocketFrame, err error) {
+	var b byte
+	err = binary.Read(ws.Bufrw, binary.BigEndian, &b)
+	if err != nil {
+		return
+	}
+	frame.Fin = (b & 0x80) != 0
+	frame.Opcode = b & 0x0f
+	err = binary.Read(ws.Bufrw, binary.BigEndian, &b)
+	if err != nil {
+		return
+	}
+	masked := (b & 0x80) != 0
+
+	payloadLen := uint64(b & 0x7f)
+	if payloadLen == 126 {
+		var short uint16
+		err = binary.Read(ws.Bufrw, binary.BigEndian, &short)
+		if err != nil {
+			return
+		}
+		payloadLen = uint64(short)
+	} else if payloadLen == 127 {
+		var long uint64
+		err = binary.Read(ws.Bufrw, binary.BigEndian, &long)
+		if err != nil {
+			return
+		}
+		payloadLen = long
+	}
+	if payloadLen > ws.MaxMessageSize {
+		err = errors.New(fmt.Sprintf("frame payload length of %d exceeds maximum of %d", payloadLen, ws.MaxMessageSize))
+		return
+	}
+
+	maskKey := [4]byte{}
+	if masked {
+		if ws.IsClient {
+			err = errors.New("client got masked frame")
+			return
+		}
+		err = binary.Read(ws.Bufrw, binary.BigEndian, &maskKey)
+		if err != nil {
+			return
+		}
+	} else {
+		if !ws.IsClient {
+			err = errors.New("server got unmasked frame")
+			return
+		}
+	}
+
+	frame.Payload = make([]byte, payloadLen)
+	_, err = io.ReadFull(ws.Bufrw, frame.Payload)
+	if err != nil {
+		return
+	}
+	if masked {
+		applyMask(frame.Payload, maskKey)
+	}
+
+	return frame, nil
 }
 
 func commaSplit(s string) []string {
@@ -129,6 +221,7 @@ func (handler *WebSocketHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.
 	ws.Conn = conn
 	ws.Bufrw = bufrw
 	ws.IsClient = false
+	ws.MaxMessageSize = handler.config.MaxMessageSize
 
 	// See RFC 6455 section 4.2.2, item 5 for these steps.
 
