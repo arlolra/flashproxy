@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"time"
 )
 
 const defaultPort = 9901
@@ -74,6 +75,36 @@ func (conn *websocketConn) Write(b []byte) (n int, err error) {
 		n = len(b)
 	}
 	return
+}
+
+func (conn *websocketConn) Close() (err error) {
+	err = conn.Ws.WriteFrame(8, nil)
+	if err != nil {
+		conn.Ws.Conn.Close()
+		return
+	}
+	err = conn.Ws.Conn.Close()
+	return
+}
+
+func (conn *websocketConn) LocalAddr() net.Addr {
+	return conn.Ws.Conn.LocalAddr()
+}
+
+func (conn *websocketConn) RemoteAddr() net.Addr {
+	return conn.Ws.Conn.RemoteAddr()
+}
+
+func (conn *websocketConn) SetDeadline(t time.Time) error {
+	return conn.Ws.Conn.SetDeadline(t)
+}
+
+func (conn *websocketConn) SetReadDeadline(t time.Time) error {
+	return conn.Ws.Conn.SetReadDeadline(t)
+}
+
+func (conn *websocketConn) SetWriteDeadline(t time.Time) error {
+	return conn.Ws.Conn.SetWriteDeadline(t)
 }
 
 func NewWebsocketConn(ws *websocket) websocketConn {
