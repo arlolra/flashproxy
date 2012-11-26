@@ -4,7 +4,7 @@ MANDIR = $(PREFIX)/share/man
 
 PYTHON = python
 PYINSTALLER_PY = ../pyinstaller-2.0/pyinstaller.py
-
+export PYINSTALLER_TMPDIR = pyi
 VERSION = 0.8
 
 CLIENT_BIN = flashproxy-client flashproxy-reg-email flashproxy-reg-http
@@ -53,16 +53,17 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
-exe: $(CLIENT_BIN)
-	rm -rf $(DISTDIR)
-	mkdir -p $(DISTDIR)
-	for file in $(CLIENT_BIN); \
-	do \
-	    $(PYTHON) $(PYINSTALLER_PY) --onedir $$file; \
-	    cp dist/$$file/* $(DISTDIR); \
-	    mv $(DISTDIR)/$$file.exe $(DISTDIR)/$$file; \
-	    rm -rf dist/$$file; \
-	done
-	mv $(DISTDIR)/M2Crypto.__m2crypto.pyd $(DISTDIR)/__m2crypto.pyd
+dist-exe: $(CLIENT_BIN)
+	rm -rf $(DISTDIR)-win32
+	mkdir -p $(DISTDIR)-win32
+	mkdir $(DISTDIR)-win32/doc
+	$(PYTHON) $(PYINSTALLER_PY) --buildpath=$(PYINSTALLER_TMPDIR)/build flashproxy-client.spec 2>&1 \
+	    | grep "ERROR"; [ $$? == 1 ]
+	cp -f $(PYINSTALLER_TMPDIR)/dist/* $(DISTDIR)-win32
+	cp -f README LICENSE torrc $(DISTDIR)-win32
+	cp -f $(CLIENT_DIST_DOC_FILES) $(DISTDIR)-win32/doc
+	mv $(DISTDIR)-win32/M2Crypto.__m2crypto.pyd $(DISTDIR)-win32/__m2crypto.pyd
+	cd dist && zip -q -r -9 $(DISTNAME)-win32.zip $(DISTNAME)-win32
+	rm -rf logdict* $(PYINSTALLER_TMPDIR)
 
 .PHONY: all install clean test dist sign exe
