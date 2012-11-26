@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -16,6 +18,69 @@ var handlerChan = make(chan int)
 
 func logDebug(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
+}
+
+type websocketConn struct {
+	Ws *websocket
+	Base64 bool
+	messageBuf []byte
+}
+
+func (conn *websocketConn) Read(b []byte) (n int, err error) {
+	for len(conn.messageBuf) == 0 {
+		var m websocketMessage
+		m, err = conn.Ws.ReadMessage()
+		if err != nil {
+			return
+		}
+		if conn.Base64 {
+			if m.Opcode != 1 {
+				err = errors.New(fmt.Sprintf("got non-text opcode %d with the base64 subprotocol", m.Opcode))
+				return
+			}
+			conn.messageBuf = make([]byte, base64.StdEncoding.DecodedLen(len(m.Payload)))
+			var num int
+			num, err = base64.StdEncoding.Decode(conn.messageBuf, m.Payload)
+			if err != nil {
+				return
+			}
+			conn.messageBuf = conn.messageBuf[:num]
+		} else {
+			if m.Opcode != 2 {
+				err = errors.New(fmt.Sprintf("got non-binary opcode %d with no subprotocol", m.Opcode))
+				return
+			}
+			conn.messageBuf = m.Payload
+		}
+	}
+
+	n = copy(b, conn.messageBuf)
+	conn.messageBuf = conn.messageBuf[n:]
+
+	return
+}
+
+func (conn *websocketConn) Write(b []byte) (n int, err error) {
+	if conn.Base64 {
+		buf := make([]byte, base64.StdEncoding.EncodedLen(len(b)))
+		base64.StdEncoding.Encode(buf, b)
+		err = conn.Ws.WriteMessage(1, buf)
+		if err != nil {
+			return
+		}
+		n = len(b)
+	} else {
+		err = conn.Ws.WriteMessage(2, b)
+		n = len(b)
+	}
+	return
+}
+
+func NewWebsocketConn(ws *websocket) websocketConn {
+	var conn websocketConn
+	conn.Ws = ws
+	conn.Base64 = (ws.Subprotocol == "base64")
+	return conn
 }
 
 func websocketHandler(ws *websocket) {
