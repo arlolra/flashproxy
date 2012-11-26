@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net"
@@ -13,7 +14,7 @@ import (
 	"time"
 )
 
-const defaultPort = 9901
+var defaultPort int
 
 var ptInfo ptServerInfo
 
@@ -183,6 +184,9 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 
 func main() {
 	const ptMethodName = "websocket"
+
+	flag.IntVar(&defaultPort, "port", 0, "port to listen on if unspecified by Tor")
+	flag.Parse()
 
 	ptInfo = ptServerSetup([]string{ptMethodName})
 
