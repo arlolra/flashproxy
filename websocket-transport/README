@@ -2,6 +2,8 @@ ClientTransportPlugin websocket exec ./websocket-client
 Bridge websocket tor1.bamsoftware.com:9901
 UseBridges 1
 
+ServerTransportPlugin websocket exec ./websocket-server
+
 "Denial of Service Protection in Go HTTP Servers"
 https://code.google.com/p/go/issues/detail?id=2093
 
