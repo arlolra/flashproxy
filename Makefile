@@ -66,4 +66,4 @@ dist-exe: $(CLIENT_BIN)
 	cd dist && zip -q -r -9 $(DISTNAME)-win32.zip $(DISTNAME)-win32
 	rm -rf logdict* $(PYINSTALLER_TMPDIR)
 
-.PHONY: all install clean test dist sign exe
+.PHONY: all install clean test dist sign dist-exe
