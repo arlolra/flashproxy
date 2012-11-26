@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/binary"
@@ -32,6 +33,7 @@ type websocket struct {
 	IsClient    bool
 	MaxMessageSize uint64
 	Subprotocol string
+	messageBuf bytes.Buffer
 }
 
 type websocketFrame struct {
@@ -42,6 +44,11 @@ type websocketFrame struct {
 
 func (frame *websocketFrame) IsControl() bool {
 	return (frame.Opcode & 0x08) != 0
+}
+
+type websocketMessage struct {
+	Opcode byte
+	Payload []byte
 }
 
 func applyMask(payload []byte, maskKey [4]byte) {
@@ -112,6 +119,48 @@ func (ws *websocket) ReadFrame() (frame websocketFrame, err error) {
 	}
 
 	return frame, nil
+}
+
+func (ws *websocket) ReadMessage() (message websocketMessage, err error) {
+	var opcode byte = 0
+	for {
+		var frame websocketFrame
+		frame, err = ws.ReadFrame()
+		if err != nil {
+			return
+		}
+		if frame.IsControl() {
+			if !frame.Fin {
+				err = errors.New("control frame has fin bit unset")
+				return
+			}
+			message.Opcode = frame.Opcode
+			message.Payload = frame.Payload
+			return message, nil
+		}
+
+		if opcode == 0 {
+			if frame.Opcode == 0 {
+				err = errors.New("first frame has opcode 0")
+				return
+			}
+			opcode = frame.Opcode
+		} else {
+			if frame.Opcode != 0 {
+				err = errors.New(fmt.Sprintf("non-first frame has nonzero opcode %d", frame.Opcode))
+				return
+			}
+		}
+		ws.messageBuf.Write(frame.Payload)
+		if frame.Fin {
+			break
+		}
+	}
+	message.Opcode = opcode
+	message.Payload = ws.messageBuf.Bytes()
+	ws.messageBuf.Reset()
+
+	return message, nil
 }
 
 func commaSplit(s string) []string {
