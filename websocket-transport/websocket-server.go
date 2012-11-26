@@ -172,7 +172,7 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 	go func() {
 		var config websocketConfig
 		config.Subprotocols = []string{"base64"}
-		config.MaxMessageSize = 1500
+		config.MaxMessageSize = 2500
 		http.Handle("/", config.Handler(websocketHandler))
 		err = http.Serve(ln, nil)
 		if err != nil {
