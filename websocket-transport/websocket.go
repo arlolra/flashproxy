@@ -16,7 +16,7 @@ import (
 )
 
 type websocketConfig struct {
-	Subprotocols []string
+	Subprotocols   []string
 	MaxMessageSize uint64
 }
 
@@ -28,18 +28,18 @@ func (config *websocketConfig) maxMessageSize() uint64 {
 }
 
 type websocket struct {
-	Conn        net.Conn
-	Bufrw       *bufio.ReadWriter
+	Conn  net.Conn
+	Bufrw *bufio.ReadWriter
 	// Whether we are a client or a server implications for masking.
-	IsClient    bool
+	IsClient       bool
 	MaxMessageSize uint64
-	Subprotocol string
-	messageBuf bytes.Buffer
+	Subprotocol    string
+	messageBuf     bytes.Buffer
 }
 
 type websocketFrame struct {
-	Fin bool
-	Opcode byte
+	Fin     bool
+	Opcode  byte
 	Payload []byte
 }
 
@@ -48,13 +48,13 @@ func (frame *websocketFrame) IsControl() bool {
 }
 
 type websocketMessage struct {
-	Opcode byte
+	Opcode  byte
 	Payload []byte
 }
 
 func applyMask(payload []byte, maskKey [4]byte) {
 	for i, _ := range payload {
-		payload[i] = payload[i] ^ maskKey[i % 4]
+		payload[i] = payload[i] ^ maskKey[i%4]
 	}
 }
 

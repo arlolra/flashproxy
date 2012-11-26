@@ -26,8 +26,8 @@ func logDebug(format string, v ...interface{}) {
 }
 
 type websocketConn struct {
-	Ws *websocket
-	Base64 bool
+	Ws         *websocket
+	Base64     bool
 	messageBuf []byte
 }
 
