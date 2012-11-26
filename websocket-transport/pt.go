@@ -8,6 +8,15 @@ import (
 	"strings"
 )
 
+// Abort with an ENV-ERROR if the environment variable isn't set.
+func getenvRequired(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		ptEnvError(fmt.Sprintf("no %s environment variable", key))
+	}
+	return value
+}
+
 // Escape a string so it contains no byte values over 127 and doesn't contain
 // any of the characters '\x00', '\n', or '\\'.
 func escape(s string) string {
@@ -52,7 +61,7 @@ func ptCmethodError(methodName, msg string) {
 
 func ptGetManagedTransportVer() string {
 	const transportVersion = "1"
-	for _, offered := range strings.Split(os.Getenv("TOR_PT_MANAGED_TRANSPORT_VER"), ",") {
+	for _, offered := range strings.Split(getenvRequired("TOR_PT_MANAGED_TRANSPORT_VER"), ",") {
 		if offered == transportVersion {
 			return offered
 		}
@@ -61,14 +70,10 @@ func ptGetManagedTransportVer() string {
 }
 
 func ptGetClientTransports(supported []string) []string {
-	clientTransports := os.Getenv("TOR_PT_CLIENT_TRANSPORTS")
-	if clientTransports == "" {
-		ptEnvError("no TOR_PT_CLIENT_TRANSPORTS environment variable")
-	}
+	clientTransports := getenvRequired("TOR_PT_CLIENT_TRANSPORTS")
 	if clientTransports == "*" {
 		return supported
 	}
-
 	result := make([]string, 0)
 	for _, requested := range strings.Split(clientTransports, ",") {
 		for _, methodName := range supported {
