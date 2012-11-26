@@ -1,8 +1,9 @@
-PROGRAMS = websocket-client
+PROGRAMS = websocket-client websocket-server
 
 all: $(PROGRAMS)
 
 websocket-client: websocket-client.go socks.go pt.go
+websocket-server: websocket-server.go pt.go
 
 %: %.go
 	go build -o $@ $^
