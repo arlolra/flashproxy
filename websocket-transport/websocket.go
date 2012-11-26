@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/binary"
@@ -161,6 +162,54 @@ func (ws *websocket) ReadMessage() (message websocketMessage, err error) {
 	ws.messageBuf.Reset()
 
 	return message, nil
+}
+
+// Destructively masks payload in place if ws.IsClient.
+func (ws *websocket) WriteFrame(opcode byte, payload []byte) (err error) {
+	if opcode >= 16 {
+		err = errors.New(fmt.Sprintf("opcode %d is >= 16", opcode))
+		return
+	}
+	ws.Bufrw.WriteByte(0x80 | opcode)
+
+	var maskBit byte
+	var maskKey [4]byte
+	if ws.IsClient {
+		_, err = io.ReadFull(rand.Reader, maskKey[:])
+		applyMask(payload, maskKey)
+		maskBit = 0x80
+	} else {
+		maskBit = 0x00
+	}
+
+	if len(payload) < 126 {
+		ws.Bufrw.WriteByte(maskBit | byte(len(payload)))
+	} else if len(payload) <= 0xffff {
+		ws.Bufrw.WriteByte(maskBit | 126)
+		binary.Write(ws.Bufrw, binary.BigEndian, uint16(len(payload)))
+	} else {
+		ws.Bufrw.WriteByte(maskBit | 127)
+		binary.Write(ws.Bufrw, binary.BigEndian, uint64(len(payload)))
+	}
+
+	if ws.IsClient {
+		_, err = ws.Bufrw.Write(maskKey[:])
+		if err != nil {
+			return
+		}
+	}
+	_, err = ws.Bufrw.Write(payload)
+	if err != nil {
+		return
+	}
+
+	ws.Bufrw.Flush()
+
+	return
+}
+
+func (ws *websocket) WriteMessage(opcode byte, payload []byte) (err error) {
+	return ws.WriteFrame(opcode, payload)
 }
 
 func commaSplit(s string) []string {
