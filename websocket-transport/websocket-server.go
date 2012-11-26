@@ -175,7 +175,7 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 		http.Handle("/", config.Handler(websocketHandler))
 		err = http.Serve(ln, nil)
 		if err != nil {
-			panic("http.Serve: " + err.Error())
+			logDebug("http.Serve: " + err.Error())
 		}
 	}()
 	return ln, nil
