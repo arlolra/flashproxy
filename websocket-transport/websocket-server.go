@@ -14,8 +14,6 @@ import (
 	"time"
 )
 
-var defaultPort int
-
 var ptInfo PtServerInfo
 
 // When a connection handler starts, +1 is written to this channel; when it
@@ -188,6 +186,7 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 
 func main() {
 	const ptMethodName = "websocket"
+	var defaultPort int
 
 	flag.IntVar(&defaultPort, "port", 0, "port to listen on if unspecified by Tor")
 	flag.Parse()
