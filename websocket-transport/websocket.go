@@ -1,3 +1,19 @@
+// WebSocket library. Only the RFC 6455 variety of WebSocket is supported.
+//
+// Reading and writing is strictly per-frame (or per-message). There is no way
+// to partially read a frame. WebsocketConfig.MaxMessageSize affords control of
+// the maximum buffering of messages.
+//
+// Example usage:
+//
+// func doSomething(ws *Websocket) {
+// }
+// var config WebsocketConfig
+// config.Subprotocols = []string{"base64"}
+// config.MaxMessageSize = 2500
+// http.Handle("/", config.Handler(doSomething))
+// err = http.ListenAndServe(":8080", nil)
+
 package main
 
 import (
@@ -15,11 +31,17 @@ import (
 	"strings"
 )
 
+// Settings for potential WebSocket connections. Subprotocols is a list of
+// supported subprotocols as in RFC 6455 section 1.9. When answering client
+// requests, the first of the client's requests subprotocols that is also in
+// this list (if any) will be used as the subprotocol for the connection.
+// MaxMessageSize is a limit on buffering messages.
 type WebsocketConfig struct {
 	Subprotocols   []string
 	MaxMessageSize uint64
 }
 
+// Return the WebSocket's maximum message size, or a default maximum size.
 func (config *WebsocketConfig) maxMessageSize() uint64 {
 	if config.MaxMessageSize == 0 {
 		return 64000
@@ -27,29 +49,38 @@ func (config *WebsocketConfig) maxMessageSize() uint64 {
 	return config.MaxMessageSize
 }
 
-type Websocket struct {
-	Conn  net.Conn
-	Bufrw *bufio.ReadWriter
-	// Whether we are a client or a server implications for masking.
-	IsClient       bool
-	MaxMessageSize uint64
-	Subprotocol    string
-	messageBuf     bytes.Buffer
-}
-
+// Representation of a WebSocket frame. The Payload is always without masking.
 type WebsocketFrame struct {
 	Fin     bool
 	Opcode  byte
 	Payload []byte
 }
 
+// Return true iff the frame's opcode says it is a control frame.
 func (frame *WebsocketFrame) IsControl() bool {
 	return (frame.Opcode & 0x08) != 0
 }
 
+// Representation of a WebSocket message. The Payload is always without masking.
 type WebsocketMessage struct {
 	Opcode  byte
 	Payload []byte
+}
+
+// A WebSocket connection after hijacking from HTTP.
+type Websocket struct {
+	// Conn and ReadWriter from http.ResponseWriter.Hijack.
+	Conn  net.Conn
+	Bufrw *bufio.ReadWriter
+	// Whether we are a client or a server has implications for masking.
+	IsClient       bool
+	// Set from a parent WebsocketConfig.
+	MaxMessageSize int
+	// The single selected subprotocol after negotiation, or "".
+	Subprotocol    string
+	// Buffer for message payloads, which may be interrupted by control
+	// messages.
+	messageBuf     bytes.Buffer
 }
 
 func applyMask(payload []byte, maskKey [4]byte) {
@@ -58,6 +89,7 @@ func applyMask(payload []byte, maskKey [4]byte) {
 	}
 }
 
+// Read a single frame from the WebSocket.
 func (ws *Websocket) ReadFrame() (frame WebsocketFrame, err error) {
 	var b byte
 	err = binary.Read(ws.Bufrw, binary.BigEndian, &b)
@@ -122,6 +154,10 @@ func (ws *Websocket) ReadFrame() (frame WebsocketFrame, err error) {
 	return frame, nil
 }
 
+// Read a single message from the WebSocket. Multiple fragmented frames are
+// combined into a single message before being returned. Non-control messages
+// may be interrupted by control frames. The control frames are returned as
+// individual messages before the message that they interrupt.
 func (ws *Websocket) ReadMessage() (message WebsocketMessage, err error) {
 	var opcode byte = 0
 	for {
@@ -168,7 +204,8 @@ func (ws *Websocket) ReadMessage() (message WebsocketMessage, err error) {
 	return message, nil
 }
 
-// Destructively masks payload in place if ws.IsClient.
+// Write a single frame to the WebSocket stream. Destructively masks payload in
+// place if ws.IsClient. Frames are always unfragmented.
 func (ws *Websocket) WriteFrame(opcode byte, payload []byte) (err error) {
 	if opcode >= 16 {
 		err = errors.New(fmt.Sprintf("opcode %d is >= 16", opcode))
@@ -212,10 +249,14 @@ func (ws *Websocket) WriteFrame(opcode byte, payload []byte) (err error) {
 	return
 }
 
+// Write a single message to the WebSocket stream. Destructively masks payload
+// in place if ws.IsClient. Messages are always sent as a single unfragmented
+// frame.
 func (ws *Websocket) WriteMessage(opcode byte, payload []byte) (err error) {
 	return ws.WriteFrame(opcode, payload)
 }
 
+// Split a strong on commas and trim whitespace.
 func commaSplit(s string) []string {
 	var result []string
 	if strings.TrimSpace(s) == "" {
@@ -227,6 +268,7 @@ func commaSplit(s string) []string {
 	return result
 }
 
+// Returns true iff one of the strings in haystack is needle.
 func containsCase(haystack []string, needle string) bool {
 	for _, e := range haystack {
 		if strings.ToLower(e) == strings.ToLower(needle) {
@@ -236,6 +278,7 @@ func containsCase(haystack []string, needle string) bool {
 	return false
 }
 
+// One-step SHA-1 hash of a string.
 func sha1Hash(data string) []byte {
 	h := sha1.New()
 	h.Write([]byte(data))
@@ -250,11 +293,15 @@ func httpError(w http.ResponseWriter, bufrw *bufio.ReadWriter, code int) {
 	bufrw.Flush()
 }
 
+// An implementation of http.Handler with a WebsocketConfig. The ServeHTTP
+// function calls websocketCallback assuming WebSocket HTTP negotiation is
+// successful.
 type WebSocketHTTPHandler struct {
 	Config            *WebsocketConfig
 	WebsocketCallback func(*Websocket)
 }
 
+// Implements the http.Handler interface.
 func (handler *WebSocketHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	conn, bufrw, err := w.(http.Hijacker).Hijack()
 	if err != nil {
@@ -362,6 +409,7 @@ func (handler *WebSocketHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.
 	handler.WebsocketCallback(&ws)
 }
 
-func (config *WebsocketConfig) Handler(f func(*Websocket)) http.Handler {
-	return &WebSocketHTTPHandler{config, f}
+// Return an http.Handler with the given callback function.
+func (config *WebsocketConfig) Handler(callback func(*Websocket)) http.Handler {
+	return &WebSocketHTTPHandler{config, callback}
 }

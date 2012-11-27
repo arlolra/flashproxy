@@ -1,3 +1,5 @@
+// SOCKS4a server library.
+
 package main
 
 import (
@@ -16,6 +18,7 @@ const (
 	socksRequestFailed   = 0x5b
 )
 
+// Read a SOCKS4a connect request. Returns a "host:port" string.
 func ReadSocks4aConnect(s io.Reader) (string, error) {
 	r := bufio.NewReader(s)
 
@@ -57,6 +60,7 @@ func ReadSocks4aConnect(s io.Reader) (string, error) {
 	return fmt.Sprintf("%s:%d", host, port), nil
 }
 
+// Send a SOCKS4a response with the given code and address.
 func SendSocks4aResponse(w io.Writer, code byte, addr *net.TCPAddr) error {
 	var resp [8]byte
 	resp[0] = socksResponseVersion
@@ -73,10 +77,12 @@ func SendSocks4aResponse(w io.Writer, code byte, addr *net.TCPAddr) error {
 
 var emptyAddr = net.TCPAddr{net.IPv4(0, 0, 0, 0), 0}
 
+// Send a SOCKS4a response code 0x5a.
 func SendSocks4aResponseGranted(w io.Writer, addr *net.TCPAddr) error {
 	return SendSocks4aResponse(w, socksRequestGranted, addr)
 }
 
+// Send a SOCKS4a response code 0x5b (with an all-zero address).
 func SendSocks4aResponseFailed(w io.Writer) error {
 	return SendSocks4aResponse(w, socksRequestFailed, &emptyAddr)
 }

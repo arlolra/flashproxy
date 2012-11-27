@@ -1,3 +1,27 @@
+// Tor pluggable transports library.
+//
+// Sample client usage:
+//
+// PtClientSetup([]string{"foo"}
+// ln, err := startSocksListener()
+// if err != nil {
+// 	panic(err.Error())
+// }
+// PtCmethod("foo", "socks4", ln.Addr())
+// PtCmethodsDone()
+//
+// Sample server usage:
+//
+// info := PtServerSetup([]string{"foo", "bar"})
+// for _, bindAddr := range info.BindAddrs {
+// 	ln, err := startListener(bindAddr.Addr)
+// 	if err != nil {
+// 		panic(err.Error())
+// 	}
+// 	PtSmethod(bindAddr.MethodName, ln.Addr())
+// }
+// PtSmethodsDone()
+
 package main
 
 import (
@@ -35,6 +59,8 @@ func escape(s string) string {
 	return buf.String()
 }
 
+// Print a pluggable transports protocol line to stdout. The line consists of an
+// unescaped keyword, followed by any number of escaped strings.
 func PtLine(keyword string, v ...string) {
 	var buf bytes.Buffer
 	buf.WriteString(keyword)
@@ -44,21 +70,56 @@ func PtLine(keyword string, v ...string) {
 	fmt.Println(buf.String())
 }
 
+// All of the Pt*Error functions call os.Exit(1).
+
+// Emit an ENV-ERROR with explanation text.
 func PtEnvError(msg string) {
 	PtLine("ENV-ERROR", msg)
 	os.Exit(1)
 }
 
+// Emit a VERSION-ERROR with explanation text.
 func PtVersionError(msg string) {
 	PtLine("VERSION-ERROR", msg)
 	os.Exit(1)
 }
 
+// Emit a CMETHOD-ERROR with explanation text.
 func PtCmethodError(methodName, msg string) {
 	PtLine("CMETHOD-ERROR", methodName, msg)
 	os.Exit(1)
 }
 
+// Emit an SMETHOD-ERROR with explanation text.
+func PtSmethodError(methodName, msg string) {
+	PtLine("SMETHOD-ERROR", methodName, msg)
+	os.Exit(1)
+}
+
+// Emit a CMETHOD line. socks must be "socks4" or "socks5". Call this once for
+// each listening client SOCKS port.
+func PtCmethod(name string, socks string, addr net.Addr) {
+	PtLine("CMETHOD", name, socks, addr.String())
+}
+
+// Emit a CMETHODS DONE line. Call this after opening all client listeners.
+func PtCmethodsDone() {
+	PtLine("CMETHODS", "DONE")
+}
+
+// Emit an SMETHOD line. Call this once for each listening server port.
+func PtSmethod(name string, addr net.Addr) {
+	PtLine("SMETHOD", name, addr.String())
+}
+
+// Emit an SMETHODS DONE line. Call this after opening all server listeners.
+func PtSmethodsDone() {
+	PtLine("SMETHODS", "DONE")
+}
+
+// Get a pluggable transports version offered by Tor and understood by us, if
+// any. The only version we understand is "1". This function reads the
+// environment variable TOR_PT_MANAGED_TRANSPORT_VER.
 func PtGetManagedTransportVer() string {
 	const transportVersion = "1"
 	for _, offered := range strings.Split(getenvRequired("TOR_PT_MANAGED_TRANSPORT_VER"), ",") {
@@ -69,14 +130,17 @@ func PtGetManagedTransportVer() string {
 	return ""
 }
 
-func PtGetClientTransports(supported []string) []string {
+// Get the intersection of the method names offered by Tor and those in
+// methodNames. This function reads the environment variable
+// TOR_PT_CLIENT_TRANSPORTS.
+func PtGetClientTransports(methodNames []string) []string {
 	clientTransports := getenvRequired("TOR_PT_CLIENT_TRANSPORTS")
 	if clientTransports == "*" {
-		return supported
+		return methodNames
 	}
 	result := make([]string, 0)
 	for _, requested := range strings.Split(clientTransports, ",") {
-		for _, methodName := range supported {
+		for _, methodName := range methodNames {
 			if requested == methodName {
 				result = append(result, methodName)
 				break
@@ -86,14 +150,9 @@ func PtGetClientTransports(supported []string) []string {
 	return result
 }
 
-func PtCmethod(name string, socks string, addr net.Addr) {
-	PtLine("CMETHOD", name, socks, addr.String())
-}
-
-func PtCmethodsDone() {
-	PtLine("CMETHODS", "DONE")
-}
-
+// Check the client pluggable transports environments, emitting an error message
+// and exiting the program if any error is encountered. Returns a subset of
+// methodNames requested by Tor.
 func PtClientSetup(methodNames []string) []string {
 	ver := PtGetManagedTransportVer()
 	if ver == "" {
@@ -111,19 +170,14 @@ func PtClientSetup(methodNames []string) []string {
 	return methods
 }
 
-func PtSmethodError(methodName, msg string) {
-	PtLine("SMETHOD-ERROR", methodName, msg)
-	os.Exit(1)
+// A combination of a method name and an address, as extracted from
+// TOR_PT_SERVER_BINDADDR.
+type PtBindAddr struct {
+	MethodName string
+	Addr       *net.TCPAddr
 }
 
-func PtSmethod(name string, addr net.Addr) {
-	PtLine("SMETHOD", name, addr.String())
-}
-
-func PtSmethodsDone() {
-	PtLine("SMETHODS", "DONE")
-}
-
+// Resolve an address string into a net.TCPAddr.
 func resolveBindAddr(bindAddr string) (*net.TCPAddr, error) {
 	addr, err := net.ResolveTCPAddr("tcp", bindAddr)
 	if err == nil {
@@ -140,16 +194,13 @@ func resolveBindAddr(bindAddr string) (*net.TCPAddr, error) {
 	return net.ResolveTCPAddr("tcp", bindAddr)
 }
 
-type PtBindAddr struct {
-	MethodName string
-	Addr       *net.TCPAddr
-}
-
-func filterBindAddrs(addrs []PtBindAddr, supported []string) []PtBindAddr {
+// Return a new slice, the members of which are those members of addrs having a
+// MethodName in methodsNames.
+func filterBindAddrs(addrs []PtBindAddr, methodNames []string) []PtBindAddr {
 	var result []PtBindAddr
 
 	for _, ba := range addrs {
-		for _, methodName := range supported {
+		for _, methodName := range methodNames {
 			if ba.MethodName == methodName {
 				result = append(result, ba)
 				break
@@ -162,8 +213,8 @@ func filterBindAddrs(addrs []PtBindAddr, supported []string) []PtBindAddr {
 
 // Return a map from method names to bind addresses. The map is the contents of
 // TOR_PT_SERVER_BINDADDR, with keys filtered by TOR_PT_SERVER_TRANSPORTS, and
-// further filtered by methods that we know.
-func PtGetServerBindAddrs(supported []string) []PtBindAddr {
+// further filtered by the methods in methodNames.
+func PtGetServerBindAddrs(methodNames []string) []PtBindAddr {
 	var result []PtBindAddr
 
 	// Get the list of all requested bindaddrs.
@@ -191,16 +242,22 @@ func PtGetServerBindAddrs(supported []string) []PtBindAddr {
 	}
 
 	// Finally filter by what we understand.
-	result = filterBindAddrs(result, supported)
+	result = filterBindAddrs(result, methodNames)
 
 	return result
 }
 
+// This structure is returned by PtServerSetup. It consists of a list of
+// PtBindAddrs, along with a single address for the ORPort.
 type PtServerInfo struct {
 	BindAddrs []PtBindAddr
 	OrAddr    *net.TCPAddr
 }
 
+// Check the server pluggable transports environments, emitting an error message
+// and exiting the program if any error is encountered. Resolves the various
+// requested bind addresses and the server ORPort. Returns a PtServerInfo
+// struct.
 func PtServerSetup(methodNames []string) PtServerInfo {
 	var info PtServerInfo
 	var err error
