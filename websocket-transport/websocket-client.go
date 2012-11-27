@@ -101,36 +101,30 @@ func handleConnection(conn *net.TCPConn) error {
 		handlerChan <- -1
 	}()
 
+	var ws *websocket.Conn
+
 	conn.SetDeadline(time.Now().Add(socksTimeout * time.Second))
-	dest, err := ReadSocks4aConnect(conn)
+	err := AwaitSocks4aConnect(conn, func(dest string) (*net.TCPAddr, error) {
+		// Disable deadline.
+		conn.SetDeadline(time.Time{})
+		logDebug("SOCKS request for %s", dest)
+		destAddr, err := net.ResolveTCPAddr("tcp", dest)
+		if err != nil {
+			return nil, err
+		}
+		wsUrl := url.URL{Scheme: "ws", Host: dest}
+		ws, err = websocket.Dial(wsUrl.String(), "", wsUrl.String())
+		if err != nil {
+			return nil, err
+		}
+		logDebug("WebSocket connection to %s", ws.Config().Location.String())
+		return destAddr, nil
+	})
 	if err != nil {
-		SendSocks4aResponseFailed(conn)
-		return err
-	}
-	// Disable deadline.
-	conn.SetDeadline(time.Time{})
-	logDebug("SOCKS request for %s", dest)
-
-	// We need the parsed IP and port for the SOCKS reply.
-	destAddr, err := net.ResolveTCPAddr("tcp", dest)
-	if err != nil {
-		SendSocks4aResponseFailed(conn)
-		return err
-	}
-
-	wsUrl := url.URL{Scheme: "ws", Host: dest}
-	ws, err := websocket.Dial(wsUrl.String(), "", wsUrl.String())
-	if err != nil {
-		SendSocks4aResponseFailed(conn)
 		return err
 	}
 	defer ws.Close()
-	logDebug("WebSocket connection to %s", ws.Config().Location.String())
-
-	SendSocks4aResponseGranted(conn, destAddr)
-
 	proxy(conn, ws)
-
 	return nil
 }
 

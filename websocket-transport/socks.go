@@ -18,6 +18,25 @@ const (
 	socksRequestFailed   = 0x5b
 )
 
+// Read a SOCKS4a connect request, and call the given connect callback with the
+// requested destination string. If the callback returns an error, sends a SOCKS
+// request failed message. Otherwise, sends a SOCKS request granted message for
+// the destination address returned by the callback.
+func AwaitSocks4aConnect(conn *net.TCPConn, connect func(string) (*net.TCPAddr, error)) error {
+	dest, err := ReadSocks4aConnect(conn)
+	if err != nil {
+		SendSocks4aResponseFailed(conn)
+		return err
+	}
+	destAddr, err := connect(dest)
+	if err != nil {
+		SendSocks4aResponseFailed(conn)
+		return err
+	}
+	SendSocks4aResponseGranted(conn, destAddr)
+	return nil
+}
+
 // Read a SOCKS4a connect request. Returns a "host:port" string.
 func ReadSocks4aConnect(s io.Reader) (string, error) {
 	r := bufio.NewReader(s)
