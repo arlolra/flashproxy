@@ -170,7 +170,7 @@ func startListener(addrStr string) (*net.TCPListener, error) {
 
 func main() {
 	const ptMethodName = "websocket"
-	var defaultSocksAddrStrs = []string{"127.0.0.1:0", "[::1]:0"}
+	var defaultSocksAddrStrs = []string{"127.0.0.1:0"}
 	var socksAddrStrs []string
 
 	var socksArg = flag.String("socks", "", "address on which to listen for SOCKS connections")
