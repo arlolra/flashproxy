@@ -1,3 +1,8 @@
+// Tor websocket client transport plugin.
+//
+// Usage:
+// ClientTransportPlugin websocket exec ./websocket-client
+
 package main
 
 import (

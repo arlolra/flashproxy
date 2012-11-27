@@ -1,3 +1,8 @@
+// Tor websocket server transport plugin.
+//
+// Usage:
+// ServerTransportPlugin websocket exec ./websocket-server --port 9901
+
 package main
 
 import (
@@ -23,12 +28,16 @@ func logDebug(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
 }
 
+// An abstraction that makes an underlying WebSocket connection look like an
+// io.ReadWriteCloser. It internally takes care of things like base64 encoding and
+// decoding.
 type websocketConn struct {
 	Ws         *Websocket
 	Base64     bool
 	messageBuf []byte
 }
 
+// Implements io.Reader.
 func (conn *websocketConn) Read(b []byte) (n int, err error) {
 	for len(conn.messageBuf) == 0 {
 		var m WebsocketMessage
@@ -67,6 +76,7 @@ func (conn *websocketConn) Read(b []byte) (n int, err error) {
 	return
 }
 
+// Implements io.Writer.
 func (conn *websocketConn) Write(b []byte) (n int, err error) {
 	if conn.Base64 {
 		buf := make([]byte, base64.StdEncoding.EncodedLen(len(b)))
@@ -83,6 +93,7 @@ func (conn *websocketConn) Write(b []byte) (n int, err error) {
 	return
 }
 
+// Implements io.Closer.
 func (conn *websocketConn) Close() (err error) {
 	err = conn.Ws.WriteFrame(8, nil)
 	if err != nil {
@@ -93,6 +104,7 @@ func (conn *websocketConn) Close() (err error) {
 	return
 }
 
+// Create a new websocketConn.
 func NewWebsocketConn(ws *Websocket) websocketConn {
 	var conn websocketConn
 	conn.Ws = ws
@@ -100,6 +112,7 @@ func NewWebsocketConn(ws *Websocket) websocketConn {
 	return conn
 }
 
+// Copy from WebSocket to socket and vice versa.
 func proxy(local *net.TCPConn, conn *websocketConn) {
 	var wg sync.WaitGroup
 
