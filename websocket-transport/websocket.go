@@ -15,19 +15,19 @@ import (
 	"strings"
 )
 
-type websocketConfig struct {
+type WebsocketConfig struct {
 	Subprotocols   []string
 	MaxMessageSize uint64
 }
 
-func (config *websocketConfig) maxMessageSize() uint64 {
+func (config *WebsocketConfig) maxMessageSize() uint64 {
 	if config.MaxMessageSize == 0 {
 		return 64000
 	}
 	return config.MaxMessageSize
 }
 
-type websocket struct {
+type Websocket struct {
 	Conn  net.Conn
 	Bufrw *bufio.ReadWriter
 	// Whether we are a client or a server implications for masking.
@@ -37,17 +37,17 @@ type websocket struct {
 	messageBuf     bytes.Buffer
 }
 
-type websocketFrame struct {
+type WebsocketFrame struct {
 	Fin     bool
 	Opcode  byte
 	Payload []byte
 }
 
-func (frame *websocketFrame) IsControl() bool {
+func (frame *WebsocketFrame) IsControl() bool {
 	return (frame.Opcode & 0x08) != 0
 }
 
-type websocketMessage struct {
+type WebsocketMessage struct {
 	Opcode  byte
 	Payload []byte
 }
@@ -58,7 +58,7 @@ func applyMask(payload []byte, maskKey [4]byte) {
 	}
 }
 
-func (ws *websocket) ReadFrame() (frame websocketFrame, err error) {
+func (ws *Websocket) ReadFrame() (frame WebsocketFrame, err error) {
 	var b byte
 	err = binary.Read(ws.Bufrw, binary.BigEndian, &b)
 	if err != nil {
@@ -122,10 +122,10 @@ func (ws *websocket) ReadFrame() (frame websocketFrame, err error) {
 	return frame, nil
 }
 
-func (ws *websocket) ReadMessage() (message websocketMessage, err error) {
+func (ws *Websocket) ReadMessage() (message WebsocketMessage, err error) {
 	var opcode byte = 0
 	for {
-		var frame websocketFrame
+		var frame WebsocketFrame
 		frame, err = ws.ReadFrame()
 		if err != nil {
 			return
@@ -169,7 +169,7 @@ func (ws *websocket) ReadMessage() (message websocketMessage, err error) {
 }
 
 // Destructively masks payload in place if ws.IsClient.
-func (ws *websocket) WriteFrame(opcode byte, payload []byte) (err error) {
+func (ws *Websocket) WriteFrame(opcode byte, payload []byte) (err error) {
 	if opcode >= 16 {
 		err = errors.New(fmt.Sprintf("opcode %d is >= 16", opcode))
 		return
@@ -212,7 +212,7 @@ func (ws *websocket) WriteFrame(opcode byte, payload []byte) (err error) {
 	return
 }
 
-func (ws *websocket) WriteMessage(opcode byte, payload []byte) (err error) {
+func (ws *Websocket) WriteMessage(opcode byte, payload []byte) (err error) {
 	return ws.WriteFrame(opcode, payload)
 }
 
@@ -251,8 +251,8 @@ func httpError(w http.ResponseWriter, bufrw *bufio.ReadWriter, code int) {
 }
 
 type WebSocketHTTPHandler struct {
-	config            *websocketConfig
-	websocketCallback func(*websocket)
+	Config            *WebsocketConfig
+	WebsocketCallback func(*Websocket)
 }
 
 func (handler *WebSocketHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -319,11 +319,11 @@ func (handler *WebSocketHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.
 	// 9. Optionally, a |Sec-WebSocket-Extensions| header field...
 	// 10. Optionally, other header fields...
 
-	var ws websocket
+	var ws Websocket
 	ws.Conn = conn
 	ws.Bufrw = bufrw
 	ws.IsClient = false
-	ws.MaxMessageSize = handler.config.MaxMessageSize
+	ws.MaxMessageSize = handler.Config.MaxMessageSize
 
 	// See RFC 6455 section 4.2.2, item 5 for these steps.
 
@@ -345,7 +345,7 @@ func (handler *WebSocketHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.
 	// 5.  Optionally, a |Sec-WebSocket-Protocol| header field, with a value
 	// /subprotocol/ as defined in step 4 in Section 4.2.2.
 	for _, clientProto := range clientProtocols {
-		for _, serverProto := range handler.config.Subprotocols {
+		for _, serverProto := range handler.Config.Subprotocols {
 			if clientProto == serverProto {
 				ws.Subprotocol = clientProto
 				w.Header().Set("Sec-WebSocket-Protocol", clientProto)
@@ -359,9 +359,9 @@ func (handler *WebSocketHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.
 	bufrw.Flush()
 
 	// Call the WebSocket-specific handler.
-	handler.websocketCallback(&ws)
+	handler.WebsocketCallback(&ws)
 }
 
-func (config *websocketConfig) Handler(f func(*websocket)) http.Handler {
+func (config *WebsocketConfig) Handler(f func(*Websocket)) http.Handler {
 	return &WebSocketHTTPHandler{config, f}
 }

@@ -12,7 +12,7 @@ import (
 func getenvRequired(key string) string {
 	value := os.Getenv(key)
 	if value == "" {
-		ptEnvError(fmt.Sprintf("no %s environment variable", key))
+		PtEnvError(fmt.Sprintf("no %s environment variable", key))
 	}
 	return value
 }
@@ -35,7 +35,7 @@ func escape(s string) string {
 	return buf.String()
 }
 
-func ptLine(keyword string, v ...string) {
+func PtLine(keyword string, v ...string) {
 	var buf bytes.Buffer
 	buf.WriteString(keyword)
 	for _, x := range v {
@@ -44,22 +44,22 @@ func ptLine(keyword string, v ...string) {
 	fmt.Println(buf.String())
 }
 
-func ptEnvError(msg string) {
-	ptLine("ENV-ERROR", msg)
+func PtEnvError(msg string) {
+	PtLine("ENV-ERROR", msg)
 	os.Exit(1)
 }
 
-func ptVersionError(msg string) {
-	ptLine("VERSION-ERROR", msg)
+func PtVersionError(msg string) {
+	PtLine("VERSION-ERROR", msg)
 	os.Exit(1)
 }
 
-func ptCmethodError(methodName, msg string) {
-	ptLine("CMETHOD-ERROR", methodName, msg)
+func PtCmethodError(methodName, msg string) {
+	PtLine("CMETHOD-ERROR", methodName, msg)
 	os.Exit(1)
 }
 
-func ptGetManagedTransportVer() string {
+func PtGetManagedTransportVer() string {
 	const transportVersion = "1"
 	for _, offered := range strings.Split(getenvRequired("TOR_PT_MANAGED_TRANSPORT_VER"), ",") {
 		if offered == transportVersion {
@@ -69,7 +69,7 @@ func ptGetManagedTransportVer() string {
 	return ""
 }
 
-func ptGetClientTransports(supported []string) []string {
+func PtGetClientTransports(supported []string) []string {
 	clientTransports := getenvRequired("TOR_PT_CLIENT_TRANSPORTS")
 	if clientTransports == "*" {
 		return supported
@@ -86,42 +86,42 @@ func ptGetClientTransports(supported []string) []string {
 	return result
 }
 
-func ptCmethod(name string, socks string, addr net.Addr) {
-	ptLine("CMETHOD", name, socks, addr.String())
+func PtCmethod(name string, socks string, addr net.Addr) {
+	PtLine("CMETHOD", name, socks, addr.String())
 }
 
-func ptCmethodsDone() {
-	ptLine("CMETHODS", "DONE")
+func PtCmethodsDone() {
+	PtLine("CMETHODS", "DONE")
 }
 
-func ptClientSetup(methodNames []string) []string {
-	ver := ptGetManagedTransportVer()
+func PtClientSetup(methodNames []string) []string {
+	ver := PtGetManagedTransportVer()
 	if ver == "" {
-		ptVersionError("no-version")
+		PtVersionError("no-version")
 	} else {
-		ptLine("VERSION", ver)
+		PtLine("VERSION", ver)
 	}
 
-	methods := ptGetClientTransports(methodNames)
+	methods := PtGetClientTransports(methodNames)
 	if len(methods) == 0 {
-		ptCmethodsDone()
+		PtCmethodsDone()
 		os.Exit(1)
 	}
 
 	return methods
 }
 
-func ptSmethodError(methodName, msg string) {
-	ptLine("SMETHOD-ERROR", methodName, msg)
+func PtSmethodError(methodName, msg string) {
+	PtLine("SMETHOD-ERROR", methodName, msg)
 	os.Exit(1)
 }
 
-func ptSmethod(name string, addr net.Addr) {
-	ptLine("SMETHOD", name, addr.String())
+func PtSmethod(name string, addr net.Addr) {
+	PtLine("SMETHOD", name, addr.String())
 }
 
-func ptSmethodsDone() {
-	ptLine("SMETHODS", "DONE")
+func PtSmethodsDone() {
+	PtLine("SMETHODS", "DONE")
 }
 
 func resolveBindAddr(bindAddr string) (*net.TCPAddr, error) {
@@ -140,13 +140,13 @@ func resolveBindAddr(bindAddr string) (*net.TCPAddr, error) {
 	return net.ResolveTCPAddr("tcp", bindAddr)
 }
 
-type ptBindAddr struct {
+type PtBindAddr struct {
 	MethodName string
 	Addr       *net.TCPAddr
 }
 
-func filterBindAddrs(addrs []ptBindAddr, supported []string) []ptBindAddr {
-	var result []ptBindAddr
+func filterBindAddrs(addrs []PtBindAddr, supported []string) []PtBindAddr {
+	var result []PtBindAddr
 
 	for _, ba := range addrs {
 		for _, methodName := range supported {
@@ -163,22 +163,22 @@ func filterBindAddrs(addrs []ptBindAddr, supported []string) []ptBindAddr {
 // Return a map from method names to bind addresses. The map is the contents of
 // TOR_PT_SERVER_BINDADDR, with keys filtered by TOR_PT_SERVER_TRANSPORTS, and
 // further filtered by methods that we know.
-func ptGetServerBindAddrs(supported []string) []ptBindAddr {
-	var result []ptBindAddr
+func PtGetServerBindAddrs(supported []string) []PtBindAddr {
+	var result []PtBindAddr
 
 	// Get the list of all requested bindaddrs.
 	var serverBindAddr = getenvRequired("TOR_PT_SERVER_BINDADDR")
 	for _, spec := range strings.Split(serverBindAddr, ",") {
-		var bindAddr ptBindAddr
+		var bindAddr PtBindAddr
 
 		parts := strings.SplitN(spec, "-", 2)
 		if len(parts) != 2 {
-			ptEnvError(fmt.Sprintf("TOR_PT_SERVER_BINDADDR: %q: doesn't contain \"-\"", spec))
+			PtEnvError(fmt.Sprintf("TOR_PT_SERVER_BINDADDR: %q: doesn't contain \"-\"", spec))
 		}
 		bindAddr.MethodName = parts[0]
 		addr, err := resolveBindAddr(parts[1])
 		if err != nil {
-			ptEnvError(fmt.Sprintf("TOR_PT_SERVER_BINDADDR: %q: %s", spec, err.Error()))
+			PtEnvError(fmt.Sprintf("TOR_PT_SERVER_BINDADDR: %q: %s", spec, err.Error()))
 		}
 		bindAddr.Addr = addr
 		result = append(result, bindAddr)
@@ -196,31 +196,31 @@ func ptGetServerBindAddrs(supported []string) []ptBindAddr {
 	return result
 }
 
-type ptServerInfo struct {
-	BindAddrs []ptBindAddr
+type PtServerInfo struct {
+	BindAddrs []PtBindAddr
 	OrAddr    *net.TCPAddr
 }
 
-func ptServerSetup(methodNames []string) ptServerInfo {
-	var info ptServerInfo
+func PtServerSetup(methodNames []string) PtServerInfo {
+	var info PtServerInfo
 	var err error
 
-	ver := ptGetManagedTransportVer()
+	ver := PtGetManagedTransportVer()
 	if ver == "" {
-		ptVersionError("no-version")
+		PtVersionError("no-version")
 	} else {
-		ptLine("VERSION", ver)
+		PtLine("VERSION", ver)
 	}
 
 	var orPort = getenvRequired("TOR_PT_ORPORT")
 	info.OrAddr, err = net.ResolveTCPAddr("tcp", orPort)
 	if err != nil {
-		ptEnvError(fmt.Sprintf("cannot resolve TOR_PT_ORPORT %q: %s", orPort, err.Error()))
+		PtEnvError(fmt.Sprintf("cannot resolve TOR_PT_ORPORT %q: %s", orPort, err.Error()))
 	}
 
-	info.BindAddrs = ptGetServerBindAddrs(methodNames)
+	info.BindAddrs = PtGetServerBindAddrs(methodNames)
 	if len(info.BindAddrs) == 0 {
-		ptSmethodsDone()
+		PtSmethodsDone()
 		os.Exit(1)
 	}
 

@@ -16,7 +16,7 @@ const (
 	socksRequestFailed   = 0x5b
 )
 
-func readSocks4aConnect(s io.Reader) (string, error) {
+func ReadSocks4aConnect(s io.Reader) (string, error) {
 	r := bufio.NewReader(s)
 
 	var h [8]byte
@@ -57,7 +57,7 @@ func readSocks4aConnect(s io.Reader) (string, error) {
 	return fmt.Sprintf("%s:%d", host, port), nil
 }
 
-func sendSocks4aResponse(w io.Writer, code byte, addr *net.TCPAddr) error {
+func SendSocks4aResponse(w io.Writer, code byte, addr *net.TCPAddr) error {
 	var resp [8]byte
 	resp[0] = socksResponseVersion
 	resp[1] = code
@@ -73,10 +73,10 @@ func sendSocks4aResponse(w io.Writer, code byte, addr *net.TCPAddr) error {
 
 var emptyAddr = net.TCPAddr{net.IPv4(0, 0, 0, 0), 0}
 
-func sendSocks4aResponseGranted(w io.Writer, addr *net.TCPAddr) error {
-	return sendSocks4aResponse(w, socksRequestGranted, addr)
+func SendSocks4aResponseGranted(w io.Writer, addr *net.TCPAddr) error {
+	return SendSocks4aResponse(w, socksRequestGranted, addr)
 }
 
-func sendSocks4aResponseFailed(w io.Writer) error {
-	return sendSocks4aResponse(w, socksRequestFailed, &emptyAddr)
+func SendSocks4aResponseFailed(w io.Writer) error {
+	return SendSocks4aResponse(w, socksRequestFailed, &emptyAddr)
 }

@@ -16,7 +16,7 @@ import (
 
 var defaultPort int
 
-var ptInfo ptServerInfo
+var ptInfo PtServerInfo
 
 // When a connection handler starts, +1 is written to this channel; when it
 // ends, -1 is written.
@@ -27,14 +27,14 @@ func logDebug(format string, v ...interface{}) {
 }
 
 type websocketConn struct {
-	Ws         *websocket
+	Ws         *Websocket
 	Base64     bool
 	messageBuf []byte
 }
 
 func (conn *websocketConn) Read(b []byte) (n int, err error) {
 	for len(conn.messageBuf) == 0 {
-		var m websocketMessage
+		var m WebsocketMessage
 		m, err = conn.Ws.ReadMessage()
 		if err != nil {
 			return
@@ -112,7 +112,7 @@ func (conn *websocketConn) SetWriteDeadline(t time.Time) error {
 	return conn.Ws.Conn.SetWriteDeadline(t)
 }
 
-func NewWebsocketConn(ws *websocket) websocketConn {
+func NewWebsocketConn(ws *Websocket) websocketConn {
 	var conn websocketConn
 	conn.Ws = ws
 	conn.Base64 = (ws.Subprotocol == "base64")
@@ -147,7 +147,7 @@ func proxy(local *net.TCPConn, conn *websocketConn) {
 	wg.Wait()
 }
 
-func websocketHandler(ws *websocket) {
+func websocketHandler(ws *Websocket) {
 	conn := NewWebsocketConn(ws)
 
 	handlerChan <- 1
@@ -170,7 +170,7 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 		return nil, err
 	}
 	go func() {
-		var config websocketConfig
+		var config WebsocketConfig
 		config.Subprotocols = []string{"base64"}
 		config.MaxMessageSize = 2500
 		http.Handle("/", config.Handler(websocketHandler))
@@ -188,7 +188,7 @@ func main() {
 	flag.IntVar(&defaultPort, "port", 0, "port to listen on if unspecified by Tor")
 	flag.Parse()
 
-	ptInfo = ptServerSetup([]string{ptMethodName})
+	ptInfo = PtServerSetup([]string{ptMethodName})
 
 	listeners := make([]*net.TCPListener, 0)
 	for _, bindAddr := range ptInfo.BindAddrs {
@@ -200,12 +200,12 @@ func main() {
 
 		ln, err := startListener(bindAddr.Addr)
 		if err != nil {
-			ptSmethodError(bindAddr.MethodName, err.Error())
+			PtSmethodError(bindAddr.MethodName, err.Error())
 		}
-		ptSmethod(bindAddr.MethodName, ln.Addr())
+		PtSmethod(bindAddr.MethodName, ln.Addr())
 		listeners = append(listeners, ln)
 	}
-	ptSmethodsDone()
+	PtSmethodsDone()
 
 	var numHandlers int = 0
 

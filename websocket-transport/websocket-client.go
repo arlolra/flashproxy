@@ -97,9 +97,9 @@ func handleConnection(conn *net.TCPConn) error {
 	}()
 
 	conn.SetDeadline(time.Now().Add(socksTimeout * time.Second))
-	dest, err := readSocks4aConnect(conn)
+	dest, err := ReadSocks4aConnect(conn)
 	if err != nil {
-		sendSocks4aResponseFailed(conn)
+		SendSocks4aResponseFailed(conn)
 		return err
 	}
 	// Disable deadline.
@@ -109,20 +109,20 @@ func handleConnection(conn *net.TCPConn) error {
 	// We need the parsed IP and port for the SOCKS reply.
 	destAddr, err := net.ResolveTCPAddr("tcp", dest)
 	if err != nil {
-		sendSocks4aResponseFailed(conn)
+		SendSocks4aResponseFailed(conn)
 		return err
 	}
 
 	wsUrl := url.URL{Scheme: "ws", Host: dest}
 	ws, err := websocket.Dial(wsUrl.String(), "", wsUrl.String())
 	if err != nil {
-		sendSocks4aResponseFailed(conn)
+		SendSocks4aResponseFailed(conn)
 		return err
 	}
 	defer ws.Close()
 	logDebug("WebSocket connection to %s", ws.Config().Location.String())
 
-	sendSocks4aResponseGranted(conn, destAddr)
+	SendSocks4aResponseGranted(conn, destAddr)
 
 	proxy(conn, ws)
 
@@ -176,18 +176,18 @@ func main() {
 		socksAddrStrs = defaultSocksAddrStrs
 	}
 
-	ptClientSetup([]string{ptMethodName})
+	PtClientSetup([]string{ptMethodName})
 
 	listeners := make([]*net.TCPListener, 0)
 	for _, socksAddrStr := range socksAddrStrs {
 		ln, err := startListener(socksAddrStr)
 		if err != nil {
-			ptCmethodError(ptMethodName, err.Error())
+			PtCmethodError(ptMethodName, err.Error())
 		}
-		ptCmethod(ptMethodName, "socks4", ln.Addr())
+		PtCmethod(ptMethodName, "socks4", ln.Addr())
 		listeners = append(listeners, ln)
 	}
-	ptCmethodsDone()
+	PtCmethodsDone()
 
 	var numHandlers int = 0
 
