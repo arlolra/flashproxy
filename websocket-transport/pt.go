@@ -150,10 +150,18 @@ func PtGetClientTransports(methodNames []string) []string {
 	return result
 }
 
+// This structure is returned by PtClientSetup. It consists of a list of method
+// names.
+type PtClientInfo struct {
+	MethodNames []string
+}
+
 // Check the client pluggable transports environments, emitting an error message
 // and exiting the program if any error is encountered. Returns a subset of
 // methodNames requested by Tor.
-func PtClientSetup(methodNames []string) []string {
+func PtClientSetup(methodNames []string) PtClientInfo {
+	var info PtClientInfo
+
 	ver := PtGetManagedTransportVer()
 	if ver == "" {
 		PtVersionError("no-version")
@@ -161,13 +169,13 @@ func PtClientSetup(methodNames []string) []string {
 		PtLine("VERSION", ver)
 	}
 
-	methods := PtGetClientTransports(methodNames)
-	if len(methods) == 0 {
+	info.MethodNames = PtGetClientTransports(methodNames)
+	if len(info.MethodNames) == 0 {
 		PtCmethodsDone()
 		os.Exit(1)
 	}
 
-	return methods
+	return info
 }
 
 // A combination of a method name and an address, as extracted from
