@@ -84,7 +84,7 @@ type Websocket struct {
 }
 
 func applyMask(payload []byte, maskKey [4]byte) {
-	for i, _ := range payload {
+	for i := 0; i < len(payload); i++ {
 		payload[i] = payload[i] ^ maskKey[i%4]
 	}
 }
