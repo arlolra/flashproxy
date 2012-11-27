@@ -361,6 +361,8 @@ class WebSocketDecoder(object):
             else:
                 if frame.opcode != 0:
                     raise ValueError("Non-first frame has nonzero opcode %d" % frame.opcode)
+            if len(self.message_buf) + len(frame.payload) > self.MAX_MESSAGE_LENGTH:
+                raise ValueError("Refusing to buffer payload of %d bytes" % (len(self.message_buf) + len(frame.payload)))
             self.message_buf += frame.payload
 
             if frame.fin:
