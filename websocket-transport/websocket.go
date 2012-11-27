@@ -38,11 +38,11 @@ import (
 // MaxMessageSize is a limit on buffering messages.
 type WebsocketConfig struct {
 	Subprotocols   []string
-	MaxMessageSize uint64
+	MaxMessageSize int
 }
 
 // Return the WebSocket's maximum message size, or a default maximum size.
-func (config *WebsocketConfig) maxMessageSize() uint64 {
+func (config *WebsocketConfig) maxMessageSize() int {
 	if config.MaxMessageSize == 0 {
 		return 64000
 	}
@@ -120,7 +120,7 @@ func (ws *Websocket) ReadFrame() (frame WebsocketFrame, err error) {
 		}
 		payloadLen = long
 	}
-	if payloadLen > ws.MaxMessageSize {
+	if payloadLen > uint64(ws.MaxMessageSize) {
 		err = errors.New(fmt.Sprintf("frame payload length of %d exceeds maximum of %d", payloadLen, ws.MaxMessageSize))
 		return
 	}
@@ -191,6 +191,11 @@ func (ws *Websocket) ReadMessage() (message WebsocketMessage, err error) {
 				err = errors.New(fmt.Sprintf("non-first frame has nonzero opcode %d", frame.Opcode))
 				return
 			}
+		}
+		if ws.messageBuf.Len() + len(frame.Payload) > ws.MaxMessageSize {
+			err = errors.New(fmt.Sprintf("message payload length of %d exceeds maximum of %d",
+				ws.messageBuf.Len() + len(frame.Payload), ws.MaxMessageSize))
+			return
 		}
 		ws.messageBuf.Write(frame.Payload)
 		if frame.Fin {
