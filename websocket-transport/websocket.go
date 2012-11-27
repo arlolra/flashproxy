@@ -41,14 +41,6 @@ type WebsocketConfig struct {
 	MaxMessageSize int
 }
 
-// Return the WebSocket's maximum message size, or a default maximum size.
-func (config *WebsocketConfig) maxMessageSize() int {
-	if config.MaxMessageSize == 0 {
-		return 64000
-	}
-	return config.MaxMessageSize
-}
-
 // Representation of a WebSocket frame. The Payload is always without masking.
 type WebsocketFrame struct {
 	Fin     bool
@@ -89,6 +81,13 @@ func applyMask(payload []byte, maskKey [4]byte) {
 	}
 }
 
+func (ws *Websocket) maxMessageSize() int {
+	if ws.MaxMessageSize == 0 {
+		return 64000
+	}
+	return ws.MaxMessageSize
+}
+
 // Read a single frame from the WebSocket.
 func (ws *Websocket) ReadFrame() (frame WebsocketFrame, err error) {
 	var b byte
@@ -120,7 +119,7 @@ func (ws *Websocket) ReadFrame() (frame WebsocketFrame, err error) {
 		}
 		payloadLen = long
 	}
-	if payloadLen > uint64(ws.MaxMessageSize) {
+	if payloadLen > uint64(ws.maxMessageSize()) {
 		err = errors.New(fmt.Sprintf("frame payload length of %d exceeds maximum of %d", payloadLen, ws.MaxMessageSize))
 		return
 	}
