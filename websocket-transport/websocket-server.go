@@ -39,6 +39,10 @@ func (conn *websocketConn) Read(b []byte) (n int, err error) {
 		if err != nil {
 			return
 		}
+		if m.Opcode == 8 {
+			err = io.EOF
+			return
+		}
 		if conn.Base64 {
 			if m.Opcode != 1 {
 				err = errors.New(fmt.Sprintf("got non-text opcode %d with the base64 subprotocol", m.Opcode))

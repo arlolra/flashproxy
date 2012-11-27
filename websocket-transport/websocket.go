@@ -170,10 +170,6 @@ func (ws *Websocket) ReadMessage() (message WebsocketMessage, err error) {
 				err = errors.New("control frame has fin bit unset")
 				return
 			}
-			if frame.Opcode == 8 {
-				err = io.EOF
-				return
-			}
 			message.Opcode = frame.Opcode
 			message.Payload = frame.Payload
 			return message, nil
