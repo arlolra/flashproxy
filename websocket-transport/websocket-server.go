@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"time"
 )
 
 var ptInfo PtServerInfo
@@ -92,26 +91,6 @@ func (conn *websocketConn) Close() (err error) {
 	}
 	err = conn.Ws.Conn.Close()
 	return
-}
-
-func (conn *websocketConn) LocalAddr() net.Addr {
-	return conn.Ws.Conn.LocalAddr()
-}
-
-func (conn *websocketConn) RemoteAddr() net.Addr {
-	return conn.Ws.Conn.RemoteAddr()
-}
-
-func (conn *websocketConn) SetDeadline(t time.Time) error {
-	return conn.Ws.Conn.SetDeadline(t)
-}
-
-func (conn *websocketConn) SetReadDeadline(t time.Time) error {
-	return conn.Ws.Conn.SetReadDeadline(t)
-}
-
-func (conn *websocketConn) SetWriteDeadline(t time.Time) error {
-	return conn.Ws.Conn.SetWriteDeadline(t)
 }
 
 func NewWebsocketConn(ws *Websocket) websocketConn {
