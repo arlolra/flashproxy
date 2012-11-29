@@ -865,6 +865,15 @@ function repr(x) {
     }
 }
 
+/* Do we seem to be running in Tor Browser? Check the user-agent string, lack of
+   DOM storage, and no listing of supported MIME types. */
+var TBB_UA = "Mozilla/5.0 (Windows NT 6.1; rv:10.0) Gecko/20100101 Firefox/10.0";
+function is_likely_tor_browser() {
+    return window.navigator.userAgent === TBB_UA
+        && window.sessionStorage === null
+        && (window.navigator.mimeTypes && window.navigator.mimeTypes.length === 0);
+}
+
 /* Are circumstances such that we should self-disable and not be a
    proxy? We take a best-effort guess as to whether this device runs on
    a battery or the data transfer might be expensive.
@@ -875,6 +884,12 @@ function repr(x) {
 */
 function flashproxy_should_disable() {
     var ua;
+
+    /* https://trac.torproject.org/projects/tor/ticket/6293 */
+    if (is_likely_tor_browser()) {
+         puts("Disable because running in Tor Browser.");
+         return true;
+    }
 
     ua = window.navigator.userAgent;
     if (ua !== null) {
