@@ -64,16 +64,10 @@ $(PYINSTALLER_TMPDIR)/dist: $(CLIENT_BIN)
 	rm -rf logdict*.log
 
 # See doc/windows-deployment-howto.txt.
-DISTNAME_WIN32 = $(DISTNAME)-win32
-DISTDIR_WIN32 = $(DISTDIR)-win32
+dist-exe: DISTNAME := $(DISTNAME)-win32
 dist-exe: CLIENT_BIN := $(PYINSTALLER_TMPDIR)/dist/*
 dist-exe: CLIENT_MAN := $(addsuffix .txt,$(CLIENT_MAN))
-dist-exe: $(PYINSTALLER_TMPDIR)/dist flashproxy-client.spec
-	rm -rf dist
-	mkdir -p $(DISTDIR_WIN32)
-	mkdir $(DISTDIR_WIN32)/doc
-	cp -f $(CLIENT_DIST_FILES) $(DISTDIR_WIN32)
-	cp -f $(CLIENT_DIST_DOC_FILES) $(DISTDIR_WIN32)/doc
-	cd dist && zip -q -r -9 $(DISTNAME_WIN32).zip $(DISTNAME_WIN32)
+# Delegate to the "dist" target using the substitutions above.
+dist-exe: $(PYINSTALLER_TMPDIR)/dist flashproxy-client.spec dist
 
 .PHONY: all install clean test dist sign dist-exe
