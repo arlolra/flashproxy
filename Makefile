@@ -54,6 +54,7 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
+# See doc/windows-deployment-howto.txt.
 DISTNAME_WIN32 = $(DISTNAME)-win32
 DISTDIR_WIN32 = $(DISTDIR)-win32
 dist-exe: $(CLIENT_BIN) flashproxy-client.spec
