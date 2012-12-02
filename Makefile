@@ -54,23 +54,26 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
-# See doc/windows-deployment-howto.txt.
-DISTNAME_WIN32 = $(DISTNAME)-win32
-DISTDIR_WIN32 = $(DISTDIR)-win32
-dist-exe: CLIENT_MAN := $(addsuffix .txt,$(CLIENT_MAN))
-dist-exe: $(CLIENT_BIN) flashproxy-client.spec
-	rm -rf dist $(PYINSTALLER_TMPDIR)
-	mkdir -p $(DISTDIR_WIN32)
-	mkdir $(DISTDIR_WIN32)/doc
+$(PYINSTALLER_TMPDIR)/dist: $(CLIENT_BIN)
+	rm -rf $(PYINSTALLER_TMPDIR)
 # PyInstaller writes "ERROR" to stderr (along with its other messages) when it
 # fails to find a hidden import like M2Crypto, but continues anyway and doesn't
 # change its error code. Grep for "ERROR" and stop if found.
 	$(PYTHON) $(PYINSTALLER_PY) --buildpath=$(PYINSTALLER_TMPDIR)/build --log-level=WARN flashproxy-client.spec 2>&1 | tee /dev/tty | grep -q "ERROR"; test $$? == 1
+	mv $(PYINSTALLER_TMPDIR)/dist/M2Crypto.__m2crypto.pyd $(PYINSTALLER_TMPDIR)/dist/__m2crypto.pyd
+	rm -rf logdict*.log
+
+# See doc/windows-deployment-howto.txt.
+DISTNAME_WIN32 = $(DISTNAME)-win32
+DISTDIR_WIN32 = $(DISTDIR)-win32
+dist-exe: CLIENT_MAN := $(addsuffix .txt,$(CLIENT_MAN))
+dist-exe: $(PYINSTALLER_TMPDIR)/dist flashproxy-client.spec
+	rm -rf dist
+	mkdir -p $(DISTDIR_WIN32)
+	mkdir $(DISTDIR_WIN32)/doc
 	cp -f $(PYINSTALLER_TMPDIR)/dist/* $(DISTDIR_WIN32)
 	cp -f README LICENSE torrc $(DISTDIR_WIN32)
 	cp -f $(CLIENT_DIST_DOC_FILES) $(DISTDIR_WIN32)/doc
-	mv $(DISTDIR_WIN32)/M2Crypto.__m2crypto.pyd $(DISTDIR_WIN32)/__m2crypto.pyd
 	cd dist && zip -q -r -9 $(DISTNAME_WIN32).zip $(DISTNAME_WIN32)
-	rm -rf logdict* $(PYINSTALLER_TMPDIR)
 
 .PHONY: all install clean test dist sign dist-exe
