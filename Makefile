@@ -29,7 +29,7 @@ install:
 
 clean:
 	rm -f *.pyc
-	rm -rf dist
+	rm -rf dist $(PYINSTALLER_TMPDIR)
 
 test:
 	./flashproxy-client-test
