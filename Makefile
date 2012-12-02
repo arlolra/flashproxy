@@ -4,7 +4,7 @@ MANDIR = $(PREFIX)/share/man
 
 PYTHON = python
 PYINSTALLER_PY = ../pyinstaller-2.0/pyinstaller.py
-export PYINSTALLER_TMPDIR = pyi
+export PYINSTALLER_TMPDIR = pyinstaller-tmp
 
 VERSION = 0.8
 
