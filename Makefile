@@ -54,17 +54,19 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
+DISTNAME_WIN32 = $(DISTNAME)-win32
+DISTDIR_WIN32 = $(DISTDIR)-win32
 dist-exe: $(CLIENT_BIN)
-	rm -rf $(DISTDIR)-win32
-	mkdir -p $(DISTDIR)-win32
-	mkdir $(DISTDIR)-win32/doc
+	rm -rf $(DISTDIR_WIN32)
+	mkdir -p $(DISTDIR_WIN32)
+	mkdir $(DISTDIR_WIN32)/doc
 	$(PYTHON) $(PYINSTALLER_PY) --buildpath=$(PYINSTALLER_TMPDIR)/build flashproxy-client.spec 2>&1 \
 	    | grep "ERROR"; [ $$? == 1 ]
-	cp -f $(PYINSTALLER_TMPDIR)/dist/* $(DISTDIR)-win32
-	cp -f README LICENSE torrc $(DISTDIR)-win32
-	cp -f $(CLIENT_DIST_DOC_FILES) $(DISTDIR)-win32/doc
-	mv $(DISTDIR)-win32/M2Crypto.__m2crypto.pyd $(DISTDIR)-win32/__m2crypto.pyd
-	cd dist && zip -q -r -9 $(DISTNAME)-win32.zip $(DISTNAME)-win32
+	cp -f $(PYINSTALLER_TMPDIR)/dist/* $(DISTDIR_WIN32)
+	cp -f README LICENSE torrc $(DISTDIR_WIN32)
+	cp -f $(CLIENT_DIST_DOC_FILES) $(DISTDIR_WIN32)/doc
+	mv $(DISTDIR_WIN32)/M2Crypto.__m2crypto.pyd $(DISTDIR_WIN32)/__m2crypto.pyd
+	cd dist && zip -q -r -9 $(DISTNAME_WIN32).zip $(DISTNAME_WIN32)
 	rm -rf logdict* $(PYINSTALLER_TMPDIR)
 
 .PHONY: all install clean test dist sign dist-exe
