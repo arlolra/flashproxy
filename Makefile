@@ -56,7 +56,7 @@ sign: dist/$(DISTNAME).zip
 
 DISTNAME_WIN32 = $(DISTNAME)-win32
 DISTDIR_WIN32 = $(DISTDIR)-win32
-dist-exe: $(CLIENT_BIN)
+dist-exe: $(CLIENT_BIN) flashproxy-client.spec
 	rm -rf $(DISTDIR_WIN32)
 	mkdir -p $(DISTDIR_WIN32)
 	mkdir $(DISTDIR_WIN32)/doc
