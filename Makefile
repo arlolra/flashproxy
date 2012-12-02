@@ -57,6 +57,7 @@ sign: dist/$(DISTNAME).zip
 # See doc/windows-deployment-howto.txt.
 DISTNAME_WIN32 = $(DISTNAME)-win32
 DISTDIR_WIN32 = $(DISTDIR)-win32
+dist-exe: CLIENT_MAN := $(addsuffix .txt,$(CLIENT_MAN))
 dist-exe: $(CLIENT_BIN) flashproxy-client.spec
 	rm -rf dist
 	mkdir -p $(DISTDIR_WIN32)
