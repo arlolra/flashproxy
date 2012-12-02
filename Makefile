@@ -13,8 +13,7 @@ all: $(CLIENT_DIST_FILES) $(CLIENT_MAN)
 
 %.1: %.1.txt
 	rm -f $@
-	a2x --no-xmllint --xsltproc-opts "--stringparam man.th.title.max.length 23" \
-		-d manpage -f manpage $<
+	a2x --no-xmllint --xsltproc-opts "--stringparam man.th.title.max.length 23" -d manpage -f manpage $<
 
 install:
 	mkdir -p $(BINDIR)
