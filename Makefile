@@ -22,15 +22,6 @@ install:
 	cp -f $(CLIENT_BIN) $(BINDIR)
 	cp -f $(CLIENT_MAN) $(MANDIR)/man1
 
-clean:
-	rm -f *.pyc
-	rm -rf dist
-
-test:
-	./flashproxy-client-test
-	cd facilitator && ./facilitator-test
-	cd proxy && ./flashproxy-test.js
-
 DISTNAME = flashproxy-client-$(VERSION)
 DISTDIR = dist/$(DISTNAME)
 dist: $(CLIENT_MAN)
@@ -49,4 +40,13 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
-.PHONY: all install clean test dist sign
+clean:
+	rm -f *.pyc
+	rm -rf dist
+
+test:
+	./flashproxy-client-test
+	cd facilitator && ./facilitator-test
+	cd proxy && ./flashproxy-test.js
+
+.PHONY: all install dist sign clean test
