@@ -1,7 +1,5 @@
-#
-# PyInstaller spec file for the flashproxy client programs. 
+# PyInstaller spec file for the flash proxy client programs.
 # Modelled after example at http://www.pyinstaller.org/export/v2.0/project/doc/Manual.html?format=raw#merge.
-#
 
 # Top-level directory.
 tmpdir = os.environ['PYINSTALLER_TMPDIR']

@@ -5,6 +5,7 @@ MANDIR = $(PREFIX)/share/man
 PYTHON = python
 PYINSTALLER_PY = ../pyinstaller-2.0/pyinstaller.py
 export PYINSTALLER_TMPDIR = pyi
+
 VERSION = 0.8
 
 CLIENT_BIN = flashproxy-client flashproxy-reg-email flashproxy-reg-http
