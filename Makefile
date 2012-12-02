@@ -58,7 +58,7 @@ sign: dist/$(DISTNAME).zip
 DISTNAME_WIN32 = $(DISTNAME)-win32
 DISTDIR_WIN32 = $(DISTDIR)-win32
 dist-exe: $(CLIENT_BIN) flashproxy-client.spec
-	rm -rf $(DISTDIR_WIN32)
+	rm -rf dist
 	mkdir -p $(DISTDIR_WIN32)
 	mkdir $(DISTDIR_WIN32)/doc
 	$(PYTHON) $(PYINSTALLER_PY) --buildpath=$(PYINSTALLER_TMPDIR)/build flashproxy-client.spec 2>&1 \
