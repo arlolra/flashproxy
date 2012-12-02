@@ -65,7 +65,7 @@ dist-exe: $(CLIENT_BIN) flashproxy-client.spec
 # PyInstaller writes "ERROR" to stderr (along with its other messages) when it
 # fails to find a hidden import like M2Crypto, but continues anyway and doesn't
 # change its error code. Grep for "ERROR" and stop if found.
-	$(PYTHON) $(PYINSTALLER_PY) --buildpath=$(PYINSTALLER_TMPDIR)/build flashproxy-client.spec 2>&1 | tee /dev/tty | grep -q "ERROR"; test $$? == 1
+	$(PYTHON) $(PYINSTALLER_PY) --buildpath=$(PYINSTALLER_TMPDIR)/build --log-level=WARN flashproxy-client.spec 2>&1 | tee /dev/tty | grep -q "ERROR"; test $$? == 1
 	cp -f $(PYINSTALLER_TMPDIR)/dist/* $(DISTDIR_WIN32)
 	cp -f README LICENSE torrc $(DISTDIR_WIN32)
 	cp -f $(CLIENT_DIST_DOC_FILES) $(DISTDIR_WIN32)/doc
