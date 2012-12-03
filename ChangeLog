@@ -1,6 +1,14 @@
 Changes in version 0.9
+  o There are executable Windows packages of the client programs, so
+    that the programs can be run without Python being installed. Fixes
+    bug 7283. Alexandre Allaire and David Fifield.
+
+  o There are now man pages for the client programs (flashproxy-client,
+    flashproxy-reg-email, and flashproxy-reg-http). Fixes bug 6453.
+    Alexandre Allaire.
+
   o The proxy now tries to determine whether it is running in Tor
-    Browser, and disables itself if so. Fixes bug #6293. Patch by Jorge
+    Browser, and disables itself if so. Fixes bug 6293. Patch by Jorge
     Couchet.
 
 Changes in version 0.8
