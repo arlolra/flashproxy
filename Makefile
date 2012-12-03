@@ -4,9 +4,14 @@ PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
 
+PYTHON = python
+PYINSTALLER_PY = ../pyinstaller-2.0/pyinstaller.py
+export PYINSTALLER_TMPDIR = pyinstaller-tmp
+
 CLIENT_BIN = flashproxy-client flashproxy-reg-email flashproxy-reg-http
 CLIENT_MAN = doc/flashproxy-client.1 doc/flashproxy-reg-email.1 doc/flashproxy-reg-http.1
 CLIENT_DIST_FILES = $(CLIENT_BIN) README LICENSE torrc
+CLIENT_DIST_DOC_FILES = $(CLIENT_MAN) doc/LICENSE.GPL doc/LICENSE.PYTHON
 
 all: $(CLIENT_DIST_FILES) $(CLIENT_MAN)
 	:
@@ -28,7 +33,7 @@ dist: $(CLIENT_MAN)
 	mkdir -p $(DISTDIR)
 	mkdir $(DISTDIR)/doc
 	cp -f $(CLIENT_DIST_FILES) $(DISTDIR)
-	cp -f $(CLIENT_MAN) $(DISTDIR)/doc
+	cp -f $(CLIENT_DIST_DOC_FILES) $(DISTDIR)/doc
 	cd dist && zip -q -r -9 $(DISTNAME).zip $(DISTNAME)
 
 dist/$(DISTNAME).zip: $(CLIENT_DIST_FILES)
@@ -39,13 +44,29 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
+$(PYINSTALLER_TMPDIR)/dist: $(CLIENT_BIN)
+	rm -rf $(PYINSTALLER_TMPDIR)
+# PyInstaller writes "ERROR" to stderr (along with its other messages) when it
+# fails to find a hidden import like M2Crypto, but continues anyway and doesn't
+# change its error code. Grep for "ERROR" and stop if found.
+	$(PYTHON) $(PYINSTALLER_PY) --buildpath=$(PYINSTALLER_TMPDIR)/build --log-level=WARN flashproxy-client.spec 2>&1 | tee /dev/tty | grep -q "ERROR"; test $$? == 1
+	mv $(PYINSTALLER_TMPDIR)/dist/M2Crypto.__m2crypto.pyd $(PYINSTALLER_TMPDIR)/dist/__m2crypto.pyd
+	rm -rf logdict*.log
+
+# See doc/windows-deployment-howto.txt.
+dist-exe: DISTNAME := $(DISTNAME)-win32
+dist-exe: CLIENT_BIN := $(PYINSTALLER_TMPDIR)/dist/*
+dist-exe: CLIENT_MAN := $(addsuffix .txt,$(CLIENT_MAN))
+# Delegate to the "dist" target using the substitutions above.
+dist-exe: $(PYINSTALLER_TMPDIR)/dist flashproxy-client.spec dist
+
 clean:
 	rm -f *.pyc
-	rm -rf dist
+	rm -rf dist $(PYINSTALLER_TMPDIR)
 
 test:
 	./flashproxy-client-test
 	cd facilitator && ./facilitator-test
 	cd proxy && ./flashproxy-test.js
 
-.PHONY: all install dist sign clean test
+.PHONY: all install dist sign dist-exe clean test
