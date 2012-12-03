@@ -187,9 +187,10 @@ func main() {
 
 	listeners := make([]*net.TCPListener, 0)
 	for _, bindAddr := range ptInfo.BindAddrs {
-		// When tor tells us a port of 0, we are supposed to pick a
-		// random port. But we actually want to use the configured port.
-		if bindAddr.Addr.Port == 0 {
+		// Override tor's requested port (which is 0 if this transport
+		// has not been run before) with the one requested by the --port
+		// option.
+		if defaultPort != 0 {
 			bindAddr.Addr.Port = defaultPort
 		}
 
