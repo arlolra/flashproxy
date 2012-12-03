@@ -1,95 +1,134 @@
-This document describes the setup required to bundle
-the client programs with a Python interpreter, for 
-deployment on Windows machines without Python installed.
+This document describes how to build standalone Windows executables of
+the flash proxy client programs. The client programs are written in
+Python, so we use a program called PyInstaller that compiles them into
+executables.
 
-== Overview
+These instructions were last tested in December 2012. Tarball version
+numbers were up to date then; check for newer versions.
 
-The client programs are written in Python, an interpreted
-language. The Python interpreter does not ship with Windows,
-so in order for users to be able to download and  run the 
-programs with no extra setup, it must be included in the 
-distribution. This is currently done using PyInstaller.
-PyInstaller collects the Python interpreter, any libraries
-the Python script requires, and converts the script into
-a standalone executable. 
+== Summary
 
-The makefile has an "exe" target which automates the
-budling process once all the required dependencies are 
-installed. It should be run in Cygwin.
+Install the below dependencies, run
+	$ make dist-exe
+and a zip containing the executables will end up in the dist directory.
 
 == Dependencies
 
-The client programs use a few libraries, which must
-be present on the system in order for PyInstaller to
-bundle them. Bundling also requires a Windows Python
-installation and PyInstaller.
+=== Cygwin
 
-1. Python  http://python.org/download/
+Cygwin is used to provide a shell environment and other commands. We
+don't actually use the Cygwin compatibility layer.
+
+http://cygwin.com/install.html
+http://cygwin.com/setup.exe
+http://cygwin.com/setup.exe.sig
+
+Verify the signature (do it on another machine if you don't already have
+GnuPG installed locally).
+	$ gpg --verify setup.exe.sig
+You need to install at least the following packages:
+	bash
+	coreutils
+	gnupg
+	grep
+	make
+	mingw-gcc-core
+	perl
+	zip
+Don't install the Cygwin python package. Use Python's own Windows
+installer as described in the next section.
+
+=== Python
 
 Get the latest 32-bit installer in the 2.x series.
+
+http://python.org/download/
 http://python.org/ftp/python/2.7.3/python-2.7.3.msi
 http://python.org/ftp/python/2.7.3/python-2.7.3.msi.asc
-There are instructions for verifying the signature on the download page.
-$ gpg --verify python-2.7.3.msi.asc
 
-Run the installer. "Install for all users". You can disable "Tcl/Tk",
+Verify the signature (instructions are on the download page).
+	$ gpg --verify python-2.7.3.msi.asc
+Run the installer. "Install for all users". Disable "Tcl/Tk",
 "Documentation", "Utility Scripts", and "Test suite".
 
 Set the PATH environment variable as described at
-http://docs.python.org/2/using/windows.html#configuring-python
-PATH=...;C:\Python27
-You will have to restart your shells to pick up the new PATH.
+http://docs.python.org/2/using/windows.html#configuring-python:
+	PATH=<existing path>;C:\Python27
+You will have to restart your Cygwin shells to pick up the new PATH.
 
-1.5 pywin32  http://sourceforge.net/projects/pywin32/files/pywin32/
+=== pywin32
 
 This is a prerequisite for PyInstaller. Enter the directory containing
-the latest build number, then download the "win32-py2.7" package.
+the latest build number, then download the "win32-py2.7" version of the
+package.
 
-The installers don't seem to have signatures. The sha256sum of the
-package I downloaded was
+http://sourceforge.net/projects/pywin32/files/pywin32/
+http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20218/pywin32-218.win32-py2.7.exe
 
-dd665cca88cb059fec960516ed5f29474b33fce50fcb2633d397d4a3aa705c16 *pywin32-218.win32-py2.7.exe
+The sha256sum of the package I used was
 
-2. PyInstaller
+dd665cca88cb059fec960516ed5f29474b33fce50fcb2633d397d4a3aa705c16  pywin32-218.win32-py2.7.exe
 
-The 2.0 release can be found at http://www.pyinstaller.org.
-The program is a Python script, there is no installation
-required, just extract the archive somehwere.
+=== PyInstaller
 
-3. OpenSSL  http://www.openssl.org/source/
+http://www.pyinstaller.org/#Downloads
+https://github.com/downloads/pyinstaller/pyinstaller/pyinstaller-2.0.zip
 
-http://openssl.org/source/openssl-1.0.1c.tar.gz
-http://openssl.org/source/openssl-1.0.1c.tar.gz.asc
-$ gpg --verify openssl-1.0.1c.tar.gz.asc
+The sha256sum of the package I used was
 
-Build OpenSSL from source using Cygwin and MinGW. Install the package
-mingw-gcc-core. Run these commands in the OpenSSL source directory:
+7f944ff131f6488ebad68e8db4a6f53f2d8054c618b6095d7cbba3ca0f733bab  pyinstaller-2.0.zip
 
-CROSS_COMPILE=i686-pc-mingw32- ./Configure shared mingw
-make
-make install
+You don't install this package; just unzip it at the same directory
+level as the flashproxy source code. (The flashproxy makefile expects to
+find PyInstaller at ../pyinstaller-2.0.)
 
-Then, add C:\cygwin\usr\local\ssl\bin to PATH as you did for Python
+=== OpenSSL  http://www.openssl.org/source/
+
+https://openssl.org/source/
+https://openssl.org/source/openssl-1.0.1c.tar.gz
+https://openssl.org/source/openssl-1.0.1c.tar.gz.asc
+
+Verify the signature.
+	$ gpg --verify openssl-1.0.1c.tar.gz.asc
+Build OpenSSL from source using Cygwin and MinGW. Install the Cygwin
+package mingw-gcc-core if it's not already installed. Run these commands
+in the OpenSSL source directory:
+	CROSS_COMPILE=i686-pc-mingw32- ./Configure shared mingw
+	make
+	make install
+Then, add C:\cygwin\usr\local\ssl\bin to PATH as you did with Python
 above.
 
-4. M2Crypto
+=== SWIG
 
-There are no official binary distributions of M2Crypto.
-The official source along, with several unofficial
-binaries, is available at http://chandlerproject.org/Projects/MeTooCrypto.
+This is a prerequisite for building M2Crypto.
 
-http://chandlerproject.org/pub/Projects/MeTooCrypto/M2Crypto-0.21.1.win32-py2.7.msi
+http://www.swig.org/download.html
+http://downloads.sourceforge.net/project/swig/swigwin/swigwin-2.0.8/swigwin-2.0.8.zip
 
-== Bundling
+The sha256sum of the package I used was
 
-Once the dependencies are installed, you should be able
-to bundle the programs, using the "exe" make target.
-Do not install Cygwin Python, make sure you are using the
-native Windows version. Add Python and PyInstaller to your 
-path, then in a Cygwin terminal run:
+35bc3013d43e0034677c08bab30bfc94ed6d44fbfffa4c5158f5788d29f4636d  swigwin-2.0.8.zip
 
-$ make exe
+Just extract the zip in the same directory in which you will extract
+M2Crypto.
 
-This will create a dist/flashproxy-client-<version> directory
-containing the required binaries. If you encounter any
-problems, please report them using https://trac.torproject.org/projects/tor.
+=== M2Crypto
+
+http://chandlerproject.org/Projects/MeTooCrypto#Downloads
+http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-0.21.1.tar.gz
+http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-0.21.1.tar.gz.asc
+
+There are binary installers on the M2Crypto page, but it says they are
+"provided by volunteers, untested by M2Crypto author." Instead build
+from source.
+
+The distutils build_ext command hardcodes the compiler name "gcc" when
+using the "mingw32" compiler. Make a copy of the MinGW compiler with
+that name.
+	$ cp /usr/bin/i686-pc-mingw32-gcc /usr/bin/gcc
+Build the package.
+	$ PATH=$PATH:../swigwin-2.0.8 python setup.py build_ext -c mingw32 --openssl C:\\cygwin\\usr\\local\\ssl -L C:\\cygwin\\usr\\local\\ssl\\bin
+	$ python setup.py bdist_wininst
+This will leave an MSI installer in the dist directory. Double-click it
+to install M2Crypto amid the other Python files.
