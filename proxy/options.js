@@ -23,11 +23,7 @@ window.addEventListener("load", function () {
         return false;
     }
 
-    /* Updates the text telling the user what his current setting is.
-       According to the DOM level 2 specification,
-       http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-8747038,
-       document.cookie is always defined and non-null, so this function
-       is safe if cookies are disabled. */
+    /* Updates the text telling the user what his current setting is.*/
     function update_setting_text() {
         var setting = document.getElementById("setting");
         var prefix = "<p>Your current setting is: ";
