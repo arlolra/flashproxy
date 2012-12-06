@@ -8,7 +8,6 @@ var COOKIE_LIFETIME = "Thu, 01 Jan 2020 00:00:00 GMT";
 
 window.addEventListener("load", function () {
 
-    /* Checks for a cookie with name cookie */
     function cookie_present() {
         var cookies = document.cookie.split(";");
 
