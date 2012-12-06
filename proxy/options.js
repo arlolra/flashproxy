@@ -54,8 +54,8 @@ window.addEventListener("load", function () {
         update_setting_text();
     } else {
         document.getElementById("cookies_disabled").style.display = "block";
-        /* Manually set the text here as it refers to the buttons,
-           which won't show up if cookies are disabled. */
+        /* Manually set the text here as otherwise it will refer to
+           the buttons, which don't show if cookies are disabled. */
         document.getElementById("setting").innerHTML = "<p>Your current setting is: " +
                                                        "do not use my browser as a proxy.</p>";
     }
