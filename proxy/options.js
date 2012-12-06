@@ -17,7 +17,22 @@ window.addEventListener("load", function () {
             return true;
         } else if (navigator.cookieEnabled === undefined) {
             document.cookie = "test";
-            if (document.cookie.indexOf("test") !== -1)
+            if (cookie_present("test"))
+                return true;
+        }
+        return false;
+    }
+
+    /* Checks for a cookie with name cookie */
+    function cookie_present(cookie) {
+        var cookies = document.cookie.split(";");
+
+        for (i in cookies) {
+            var name = cookies[i].split("=")[0];
+
+            while (name[0] === " ")
+                name = name.substr(1);
+            if (cookie === name)
                 return true;
         }
         return false;
@@ -28,7 +43,7 @@ window.addEventListener("load", function () {
         var setting = document.getElementById("setting");
         var prefix = "<p>Your current setting is: ";
 
-        if (document.cookie.indexOf(COOKIE_NAME) !== -1) {
+        if (cookie_present(COOKIE_NAME)) {
             setting.innerHTML = prefix + "use my browser as a proxy. " +
                                          "Click no below to change your setting.</p>";
         } else {
