@@ -8,23 +8,8 @@ var COOKIE_LIFETIME = "Thu, 01 Jan 2020 00:00:00 GMT";
 
 window.addEventListener("load", function () {
 
-    /* This checks if cookies are enabled in the browser.
-       document.cookie has special behavior, if cookies
-       are disabled it will not retain any values stored in it. */
-    function cookies_enabled() {
-        /*Not supported in all browsers.*/
-        if (navigator.cookieEnabled) {
-            return true;
-        } else if (navigator.cookieEnabled === undefined) {
-            document.cookie = "test";
-            if (cookie_present("test"))
-                return true;
-        }
-        return false;
-    }
-
     /* Checks for a cookie with name cookie */
-    function cookie_present(cookie) {
+    function cookie_present() {
         var cookies = document.cookie.split(";");
 
         for (i in cookies) {
@@ -32,7 +17,7 @@ window.addEventListener("load", function () {
 
             while (name[0] === " ")
                 name = name.substr(1);
-            if (cookie === name)
+            if (COOKIE_NAME === name)
                 return true;
         }
         return false;
@@ -43,7 +28,7 @@ window.addEventListener("load", function () {
         var setting = document.getElementById("setting");
         var prefix = "<p>Your current setting is: ";
 
-        if (cookie_present(COOKIE_NAME)) {
+        if (cookie_present()) {
             setting.innerHTML = prefix + "use my browser as a proxy. " +
                                          "Click no below to change your setting.</p>";
         } else {
@@ -60,7 +45,7 @@ window.addEventListener("load", function () {
         document.cookie = COOKIE_NAME + "= ;path=/ ;expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
 
-    if (cookies_enabled()) {
+    if (navigator.cookieEnabled) {
         var buttons = document.getElementById("buttons");
         buttons.addEventListener("click", update_setting_text);
         document.getElementById("yes").addEventListener("click", set_cookie);
