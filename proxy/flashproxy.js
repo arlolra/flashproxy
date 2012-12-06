@@ -794,7 +794,7 @@ function Badge() {
     td = document.createElement("td");
     tr.appendChild(td);
     a = document.createElement("a");
-    a.setAttribute("href", "http://crypto.stanford.edu/flashproxy/");
+    a.setAttribute("href", "options.html");
     a.setAttribute("target", "_parent");
     td.appendChild(a);
     img = document.createElement("img");
