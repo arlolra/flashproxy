@@ -2,20 +2,69 @@
 <html>
 <head>
 <meta charset="utf-8">
+<style type="text/css">
+body {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: small;
+    background-image: url(top-gradient.gif);
+    background-repeat: repeat-x;
+    background-color: #E7D19A;
+    text-align: center;
+}
+.content {
+    width: 760px;
+    margin: 0 auto;
+    background-color: white;
+    text-align: left;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #D0A760;
+}
+h1 {
+    padding: 18px 7px;
+    margin: 0 auto;
+    background-color: #900;
+    color: white;
+    font-size: 200%;
+    font-weight: bold;
+}
+p {
+    margin: 7px;
+}
+button {
+    margin: 0px 7px 7px;
+}
+.blank-link {
+    text-decoration: none;
+    color: white;
+}
+#flashproxy-badge {
+    background-color: #227;
+    vertical-align: middle;
+    margin-left: 2px;
+}
+</style>
 </head>
 <body>
+<div class="content">
 <div>
-  <h4>Flash proxy options</h4>
+  <h1>Flash proxy options</h1>
   <p>
     This page enables you to use your web browser as a proxy to help
     censored Internet users. When you click yes, your browser will act as a
     censorship circumvention proxy as long as you are viewing a page with the
-    flash proxy badge: <img src="badge.png" alt="Internet Freedom">
+    flash proxy badge:<a class="blank-link" href="http://crypto.stanford.edu/flashproxy/"><img id="flashproxy-badge" src="badge.png" alt="Internet Freedom"></a>.
   </p>
   <p>
     <a href="http://crypto.stanford.edu/flashproxy/">For more information on this system click here</a>.
   </p>
 </div>
+<noscript>
+  <p>
+    While javascript is disabled, your computer will not be a proxy.
+    Enable JavaScript to change your options.
+  </p>
+</noscript>
 <div id="setting">
 </div>
 <div id="buttons" style="display: none;">
@@ -26,6 +75,7 @@
     It seems your browser has cookies disabled. You will need to enable them in
     order to set flash proxy settings.
   </p>
+</div>
 </div>
 <script type="text/javascript" src="options.js"></script>
 </body>
