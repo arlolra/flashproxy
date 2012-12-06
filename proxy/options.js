@@ -3,8 +3,8 @@
    code should run or disable itself. */
 
 var COOKIE_NAME = "flashproxy";
-/* In seconds. */
-var COOKIE_LIFETIME = 60 * 60 * 24 * 365;
+/* max-age is not supported in IE. */
+var COOKIE_LIFETIME = "Thu, 01 Jan 2020 00:00:00 GMT";
 
 window.addEventListener("load", function () {
 
@@ -38,11 +38,11 @@ window.addEventListener("load", function () {
     }
 
     function set_cookie() {
-        document.cookie = COOKIE_NAME + "=; max-age=" + COOKIE_LIFETIME;
+        document.cookie = COOKIE_NAME + "= ;path=/ ;expires=" + COOKIE_LIFETIME;
     }
 
     function del_cookie() {
-        document.cookie = COOKIE_NAME + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = COOKIE_NAME + "= ;path=/ ;expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
 
     if (cookies_enabled()) {
