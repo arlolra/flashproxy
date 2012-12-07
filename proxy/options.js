@@ -6,7 +6,16 @@ var COOKIE_NAME = "flashproxy";
 /* max-age is not supported in IE. */
 var COOKIE_LIFETIME = "Thu, 01 Jan 2020 00:00:00 GMT";
 
-window.addEventListener("load", function () {
+/* This wrapper will attach events correctly in older
+   versions of IE. */
+function add_event(elem, evt, handler) {
+    if (elem.attachEvent)
+        elem.attachEvent("on" + evt, handler);
+    else
+        elem.addEventListener(evt, handler);
+}
+
+add_event(window, "load", function () {
 
     function cookie_present() {
         var cookies = document.cookie.split(";");
@@ -46,9 +55,9 @@ window.addEventListener("load", function () {
 
     if (navigator.cookieEnabled) {
         var buttons = document.getElementById("buttons");
-        buttons.addEventListener("click", update_setting_text);
-        document.getElementById("yes").addEventListener("click", set_cookie);
-        document.getElementById("no").addEventListener("click", del_cookie);
+        add_event(buttons, "click", update_setting_text);
+        add_event(document.getElementById("yes"), "click", set_cookie);
+        add_event(document.getElementById("no"), "click", del_cookie);
         buttons.style.display = "block";
         update_setting_text();
     } else {
