@@ -5,7 +5,7 @@
 tmpdir = os.environ['PYINSTALLER_TMPDIR']
 scripts = ('flashproxy-client', 'flashproxy-reg-email', 'flashproxy-reg-http')
 
-# M2Crypto is listed as hidden import so PyInstaller fails if it cannot find it.
+# M2Crypto is a hidden import so that PyInstaller will print an error if the module is missing.
 analyses = [(Analysis([script], hiddenimports=['M2Crypto']),
             script,
             os.path.join(tmpdir, 'build', script + '.exe')) for script in scripts]
