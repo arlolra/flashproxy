@@ -720,7 +720,8 @@ def registration_thread_func():
         register_condvar.acquire()
         register_condvar.wait()
         register_condvar.release()
-        register_one()
+        if not unlinked_remotes:
+            register_one()
 
 def proxy_chunk_local_to_remote(local, remote, data = None):
     if data is None:
