@@ -39,7 +39,7 @@ Then boot the VM. You need your normal user to be in the "kvm" group for
 this to work (sudo usermod -a -G kvm user).
 
 	$ kvm -hda debian-6-i386-bundle.hda -cdrom debian-6.0.6-i386-netinst.iso
-	$ kvm -hda debian-6-x86_64-bundle.hda -cdrom debian-6.0.6-i386-netinst.iso
+	$ kvm -hda debian-6-amd64-bundle.hda -cdrom debian-6.0.6-amd64-netinst.iso
 
 Choose "Install" when it boots. Here are settings:
 

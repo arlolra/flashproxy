@@ -43,7 +43,7 @@ $ python setup.py install --root ~/bundle --prefix=/usr
 
 == Browser bundle
 
-Run "make-dist" in the flashproxy source directory.
+Run "make dist" in the flashproxy source directory.
 
 Download the 32-bit obfsproxy bundle from
 https://www.torproject.org/projects/obfsproxy.

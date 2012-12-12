@@ -15,6 +15,8 @@ fe4807b4698ec89f82de7d85d32deaa4c772fc871537e31fb0fccf4473455cb8 7z920.msi
 
 == Browser bundle
 
+Run "make dist-exe" in the flashproxy source directory.
+
 Download the obfsproxy bundle from
 https://www.torproject.org/projects/obfsproxy.
 
@@ -31,9 +33,9 @@ Copy files into the bundle. We could remove obfsproxy here but don't.
 The -n option to cp prevents the existing LIBEAY32.dll and SSLEAY32.dll
 from being overwritten.
 
-	$ cp -n ~/flashproxy/dist/flashproxy-client-0.9-win32/{*.pyd,*.dll,*.exe,*.manifest} App
+	$ cp -n ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
 	$ mkdir -p Docs/FlashProxy
-	$ cp ~/flashproxy/dist/flashproxy-client-0.9-win32/{doc/*,README,LICENSE} Docs/FlashProxy
+	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE} Docs/FlashProxy
 
 Make the second half of Data/Tor/torrc look like this (i.e., keep
 the generic configuration, but change the obfsproxy-specific stuff).
