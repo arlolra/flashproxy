@@ -532,6 +532,10 @@ function FlashProxy() {
     };
 
     this.begin_proxy = function(client_addr, relay_addr) {
+        /* Start two proxy connections because of some versions of Tor making
+           two pt connections:
+           https://lists.torproject.org/pipermail/tor-dev/2012-December/004221.html */
+        this.make_proxy_pair(client_addr, relay_addr);
         this.make_proxy_pair(client_addr, relay_addr);
     };
 
