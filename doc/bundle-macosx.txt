@@ -43,6 +43,8 @@ $ python setup.py install --root ~/bundle --prefix=/usr
 
 == Browser bundle
 
+Run "make-dist" in the flashproxy source directory.
+
 Download the 32-bit obfsproxy bundle from
 https://www.torproject.org/projects/obfsproxy.
 
@@ -57,10 +59,10 @@ Extract the bundle.
 
 Copy files into the bundle.
 
-	$ cp ~/flashproxy/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} Contents/MacOS
+	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} Contents/MacOS
 	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/M2Crypto Contents/MacOS
 	$ mkdir -p Contents/Resources/Docs/FlashProxy
-	$ cp ~/flashproxy/{doc/*,README,LICENSE} Contents/Resources/Docs/FlashProxy
+	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE} Contents/Resources/Docs/FlashProxy
 
 Make the second half of Data/Tor/torrc look like this (i.e., keep
 the generic configuration, but change the obfsproxy-specific stuff).
