@@ -1,3 +1,11 @@
+Changes in version 0.10
+  o Fixed a bug in flashproxy-client that made it susceptible to a
+    denial of service (program crash) when receiving large WebSocket
+    messages made up of many small fragmented frames.
+
+  o Made the facilitator hand out more proxies by default, reducing a
+    client's need to re-register.
+
 Changes in version 0.9
   o There are executable Windows packages of the client programs, so
     that the programs can be run without Python being installed. Fixes
