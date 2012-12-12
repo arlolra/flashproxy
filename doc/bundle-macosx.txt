@@ -54,7 +54,7 @@ https://www.torproject.org/dist/torbrowser/osx/TorBrowser-Obfsproxy-2.4.6-alpha-
 Extract the bundle.
 
 	$ gpg --verify TorBrowser-Obfsproxy-2.4.6-alpha-2-osx-i386-en-US.zip.asc
-	$ tar xzvf TorBrowser-Obfsproxy-2.4.6-alpha-2-osx-i386-en-US.zip
+	$ unzip TorBrowser-Obfsproxy-2.4.6-alpha-2-osx-i386-en-US.zip
 	$ cd TorBrowser_en-US.app
 
 Copy files into the bundle.
@@ -64,7 +64,7 @@ Copy files into the bundle.
 	$ mkdir -p Contents/Resources/Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE} Contents/Resources/Docs/FlashProxy
 
-Make the second half of Data/Tor/torrc look like this (i.e., keep
+Make the second half of Library/Vidalia/torrc look like this (i.e., keep
 the generic configuration, but change the obfsproxy-specific stuff).
 Basically you are concatenating the normal flashproxy-client torrc, but
 changing "./flashproxy-client" to "flashproxy-client".
