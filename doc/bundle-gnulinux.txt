@@ -1,0 +1,129 @@
+== Creating a Debian VM
+
+Set up Debian VMs for building bundles. You need one for i386 and one
+for amd64.
+
+http://cdimage.debian.org/debian-cd/6.0.6/i386/iso-cd/debian-6.0.6-i386-netinst.iso
+http://cdimage.debian.org/debian-cd/6.0.6/i386/iso-cd/SHA256SUMS
+http://cdimage.debian.org/debian-cd/6.0.6/i386/iso-cd/SHA256SUMS.sign
+
+http://cdimage.debian.org/debian-cd/6.0.6/amd64/iso-cd/debian-6.0.6-amd64-netinst.iso
+http://cdimage.debian.org/debian-cd/6.0.6/amd64/iso-cd/SHA256SUMS
+http://cdimage.debian.org/debian-cd/6.0.6/amd64/iso-cd/SHA256SUMS.sign
+
+Verify the digests.
+	http://www.debian.org/CD/verify
+If you are using Debian, you can get the signing key by installing the
+debian-keyring package (apt-get install debian-keyring). Add
+	--keyring /usr/share/keyrings/debian-role-keys.gpg
+to the gpg --verify command.
+
+	$ gpg --verify SHA256SUMS.sign SHA256SUMS
+
+	$ sha256sum debian-6.0.6-i386-netinst.iso
+	2b4bcd9e782dfd6a5af9cac3e981be375652b2e5579402405eaf84ac4fe3754f  debian-6.0.6-i386-netinst.iso
+	$ grep netinst SHA256SUMS
+	2b4bcd9e782dfd6a5af9cac3e981be375652b2e5579402405eaf84ac4fe3754f  debian-6.0.6-i386-netinst.iso
+
+	$ sha256sum debian-6.0.6-amd64-netinst.iso
+	41d74134bf967b65d0b61a314ee07dfb539e03502ca69d9d3be8ab3b01da02d2  debian-6.0.6-amd64-netinst.iso
+	$ grep netinst SHA256SUMS
+	41d74134bf967b65d0b61a314ee07dfb539e03502ca69d9d3be8ab3b01da02d2  debian-6.0.6-amd64-netinst.iso
+
+Create the disk images.
+
+	$ qemu-img create -f qcow2 debian-6-i386-bundle.hda 10G
+	$ qemu-img create -f qcow2 debian-6-amd64-bundle.hda 10G
+
+Then boot the VM. You need your normal user to be in the "kvm" group for
+this to work (sudo usermod -a -G kvm user).
+
+	$ kvm -hda debian-6-i386-bundle.hda -cdrom debian-6.0.6-i386-netinst.iso
+	$ kvm -hda debian-6-x86_64-bundle.hda -cdrom debian-6.0.6-i386-netinst.iso
+
+Choose "Install" when it boots. Here are settings:
+
+	English
+	United States
+	American English
+	Hostname: debian
+	Domain name:
+	Root password:
+	User full name: bundle
+	User name: bundle
+	User password: password
+	Any time zone
+	Guided - use entire disk
+	All files in one partition
+	Any mirror
+	popularity-contest: no
+	Software select: uncheck all but "Standard system utilities"
+	GRUB on MBR: yes
+
+Packages to install:
+
+	sudo apt-get update
+	sudo apt-get upgrade
+	sudo apt-get install git make python-m2crypto zip
+
+== Browser bundle
+
+Clone and build the flashproxy source.
+
+	$ git clone https://git.torproject.org/flashproxy.git
+	$ cd flashproxy
+	$ make dist
+
+Within the VM, download the 32-bit or 64-bit obfsproxy bundle from
+https://www.torproject.org/projects/obfsproxy. The instructions below
+are for the 32-bit (i686) version.
+
+https://www.torproject.org/dist/torbrowser/linux/tor-obfsproxy-browser-gnu-linux-i686-2.4.6-alpha-2-dev-en-US.tar.gz
+https://www.torproject.org/dist/torbrowser/linux/tor-obfsproxy-browser-gnu-linux-i686-2.4.6-alpha-2-dev-en-US.tar.gz.asc
+
+https://www.torproject.org/dist/torbrowser/linux/tor-obfsproxy-browser-gnu-linux-x86_64-2.4.6-alpha-2-dev-en-US.tar.gz
+https://www.torproject.org/dist/torbrowser/linux/tor-obfsproxy-browser-gnu-linux-x86_64-2.4.6-alpha-2-dev-en-US.tar.gz.asc
+
+Extract the bundle.
+
+	$ gpg --verify tor-obfsproxy-browser-gnu-linux-i686-2.4.6-alpha-2-dev-en-US.tar.gz.asc
+	$ tar xzvf tor-obfsproxy-browser-gnu-linux-i686-2.4.6-alpha-2-dev-en-US.tar.gz.asc
+	$ cd tor-browser_en-US
+
+Copy files into the bundle.
+
+	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} App
+	$ cp -r /usr/lib/pymodules/python2.6/M2Crypto App
+	$ mkdir -p Docs/FlashProxy
+	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE} Docs/FlashProxy
+
+Make the second half of Data/Tor/torrc look like this (i.e., keep
+the generic configuration, but change the obfsproxy-specific stuff).
+Basically you are concatenating the normal flashproxy-client torrc, but
+changing "./flashproxy-client" to "./App/flashproxy-client".
+
+UseBridges 1
+# The address and port are ignored by the client transport plugin.
+Bridge websocket 0.0.1.0:1
+LearnCircuitBuildTimeout 0
+CircuitBuildTimeout 60
+# Change the second number here (9000) to the number of a port that can
+# receive connections from the Internet (the port for which you
+# configured port forwarding).
+ClientTransportPlugin websocket exec ./App/flashproxy-client --register :0 :9000
+
+Re-zip the bundle. The "alpha" number should be independent of the
+obfsproxy bundle's alpha.
+
+	$ cd ..
+	$ tar czvf tor-flashproxy-browser-gnu-linux-i686-2.4.6-alpha-1-dev-en-US.tar.gz tor-browser_en-US
+
+Test running the bundle. Extract into a separate directory, double-click
+the icon to unzip, and run TorBrowser_en-US.app.
+
+	$ mkdir tmp
+	$ cp tor-flashproxy-browser-gnu-linux-i686-2.4.6-alpha-1-dev-en-US.tar.gz tmp
+	$ cd tmp
+	$ tar xzvf tor-flashproxy-browser-gnu-linux-i686-2.4.6-alpha-1-dev-en-US.tar.gz
+	$ cd tor-browser_en-US
+	$ ./start-tor-browser
