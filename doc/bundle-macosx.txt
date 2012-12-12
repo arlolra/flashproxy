@@ -51,14 +51,14 @@ https://www.torproject.org/dist/torbrowser/osx/TorBrowser-Obfsproxy-2.4.6-alpha-
 
 Extract the bundle.
 
+	$ gpg --verify TorBrowser-Obfsproxy-2.4.6-alpha-2-osx-i386-en-US.zip.asc
 	$ tar xzvf TorBrowser-Obfsproxy-2.4.6-alpha-2-osx-i386-en-US.zip
 	$ cd TorBrowser_en-US.app
 
 Copy files into the bundle.
 
 	$ cp ~/flashproxy/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} Contents/MacOS
-	$ cp -R ~/bundle/usr/lib/python2.7/site-packages/M2Crypto Contents/MacOS
-	$ cp ~/flashproxy/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} Contents/MacOS
+	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/M2Crypto Contents/MacOS
 	$ mkdir -p Contents/Resources/Docs/FlashProxy
 	$ cp ~/flashproxy/{doc/*,README,LICENSE} Contents/Resources/Docs/FlashProxy
 
@@ -81,11 +81,11 @@ Re-zip the bundle. The "alpha" number should be independent of the
 obfsproxy bundle's alpha.
 
 	$ cd ..
-	$ rm -f TorBrowser-FlashProxy-2.4.6-alpha-2-osx-i386-en-US.zip
-	$ zip -r -9 TorBrowser-FlashProxy-2.4.6-alpha-2-osx-i386-en-US.zip TorBrowser_en-US.app/
+	$ rm -f TorBrowser-FlashProxy-2.4.6-alpha-1-osx-i386-en-US.zip
+	$ zip -r -9 TorBrowser-FlashProxy-2.4.6-alpha-1-osx-i386-en-US.zip TorBrowser_en-US.app/
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon to unzip, and run TorBrowser_en-US.app.
 
 	$ mkdir tmp
-	$ cp TorBrowser-FlashProxy-2.4.6-alpha-2-osx-i386-en-US.zip tmp
+	$ cp TorBrowser-FlashProxy-2.4.6-alpha-1-osx-i386-en-US.zip tmp
