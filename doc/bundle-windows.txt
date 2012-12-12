@@ -35,7 +35,7 @@ from being overwritten.
 
 	$ cp -n ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
 	$ mkdir -p Docs/FlashProxy
-	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE} Docs/FlashProxy
+	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
 
 Make the second half of Data/Tor/torrc look like this (i.e., keep
 the generic configuration, but change the obfsproxy-specific stuff).

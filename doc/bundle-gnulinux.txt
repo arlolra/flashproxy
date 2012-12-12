@@ -95,7 +95,7 @@ Copy files into the bundle.
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} App
 	$ cp -r /usr/lib/pymodules/python2.6/M2Crypto App
 	$ mkdir -p Docs/FlashProxy
-	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE} Docs/FlashProxy
+	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
 
 Make the second half of Data/Tor/torrc look like this (i.e., keep
 the generic configuration, but change the obfsproxy-specific stuff).

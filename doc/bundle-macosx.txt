@@ -62,7 +62,7 @@ Copy files into the bundle.
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} Contents/MacOS
 	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/M2Crypto Contents/MacOS
 	$ mkdir -p Contents/Resources/Docs/FlashProxy
-	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE} Contents/Resources/Docs/FlashProxy
+	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE,ChangeLog} Contents/Resources/Docs/FlashProxy
 
 Make the second half of Library/Vidalia/torrc look like this (i.e., keep
 the generic configuration, but change the obfsproxy-specific stuff).

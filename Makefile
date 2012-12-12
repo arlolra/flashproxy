@@ -10,7 +10,7 @@ export PYINSTALLER_TMPDIR = pyinstaller-tmp
 
 CLIENT_BIN = flashproxy-client flashproxy-reg-email flashproxy-reg-http
 CLIENT_MAN = doc/flashproxy-client.1 doc/flashproxy-reg-email.1 doc/flashproxy-reg-http.1
-CLIENT_DIST_FILES = $(CLIENT_BIN) README LICENSE torrc
+CLIENT_DIST_FILES = $(CLIENT_BIN) README LICENSE ChangeLog torrc
 CLIENT_DIST_DOC_FILES = $(CLIENT_MAN) doc/LICENSE.GPL doc/LICENSE.PYTHON
 
 all: $(CLIENT_DIST_FILES) $(CLIENT_MAN)
