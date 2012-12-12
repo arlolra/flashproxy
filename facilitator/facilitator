@@ -21,6 +21,8 @@ CLIENT_TIMEOUT = 1.0
 # Buffer no more than this many bytes when trying to read a line.
 READLINE_MAX_LENGTH = 10240
 
+MAX_PROXIES_PER_CLIENT = 5
+
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class options(object):
@@ -97,34 +99,41 @@ class Reg(object):
 
 class RegSet(object):
     def __init__(self):
-        self.set = []
+        self.tiers = [[] for i in range(MAX_PROXIES_PER_CLIENT)]
         self.cv = threading.Condition()
 
     def add(self, reg):
         self.cv.acquire()
         try:
-            if reg not in list(self.set):
-                self.set.append(reg)
+            for tier in self.tiers:
+                if reg in tier:
+                    break
+            else:
+                self.tiers[0].append(reg)
                 self.cv.notify()
                 return True
-            else:
-                return False
+            return False
         finally:
             self.cv.release()
 
     def fetch(self):
         self.cv.acquire()
         try:
-            if not self.set:
-                return None
-            return self.set.pop(0)
+            for i in range(len(self.tiers)):
+                tier = self.tiers[i]
+                if tier:
+                    reg = tier.pop(0)
+                    if i + 1 < len(self.tiers):
+                        self.tiers[i+1].append(reg)
+                    return reg
+            return None
         finally:
             self.cv.release()
 
     def __len__(self):
         self.cv.acquire()
         try:
-            return len(self.set)
+            return sum(len(tier) for tier in self.tiers)
         finally:
             self.cv.release()
 
