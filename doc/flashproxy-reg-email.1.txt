@@ -19,10 +19,14 @@ DESCRIPTION
 Register with a flash proxy facilitator through email. Makes a STARTTLS
 connection to an SMTP server and sends mail with a client IP address to a
 designated address. By default the remote address registered is
-":9000" (the external IP address is guessed).
+":9000" (the external IP address is guessed based on the SMTP server's
+response).
 
 Using an SMTP server or email address other than the defaults will not work
 unless you have made special arrangements to connect them to a facilitator.
+
+The email address is not polled continually. After running the program,
+it may take up to a minute for the registration to be recognized.
 
 This program requires the M2Crypto library for Python.
 
