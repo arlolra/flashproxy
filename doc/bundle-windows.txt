@@ -53,10 +53,11 @@ CircuitBuildTimeout 60
 ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
 
 Re-zip the bundle. The "alpha" number should be independent of the
-obfsproxy bundle's alpha.
+obfsproxy bundle's alpha. The 7zg program (as opposed to 7z) causes the
+self-extractor to show a GUI.
 
 	$ cd ..
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" a -sfx tor-flashproxy-browser-2.4.6-alpha-1_en-US.exe "Tor Browser"
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-flashproxy-browser-2.4.6-alpha-1_en-US.exe "Tor Browser"
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon and "Start Tor Browser.exe".
