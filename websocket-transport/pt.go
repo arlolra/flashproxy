@@ -2,7 +2,7 @@
 //
 // Sample client usage:
 //
-// PtClientSetup([]string{"foo"}
+// PtClientSetup([]string{"foo"})
 // ln, err := startSocksListener()
 // if err != nil {
 // 	panic(err.Error())
