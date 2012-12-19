@@ -52,36 +52,30 @@ def timedelta_to_seconds(delta):
     return delta.days * (24 * 60 * 60) + delta.seconds + delta.microseconds / 1000000.0
 
 class Block(object):
-    def __init__(self, ip, date):
-        self.ip = ip
+    def __init__(self, date):
         self.begin_date = date
         self.end_date = date
 
 prev_date = None
-seen = {}
 current = []
 blocks = []
 for line in input_file:
-    m = re.match(r'(\d+-\d+-\d+ \d+:\d+:\d+) proxy ([\d.]+):\d+ connects', line)
+    m = re.match(r'^(\d+-\d+-\d+ \d+:\d+:\d+) proxy gets', line)
     if not m:
         continue
-    date_str, ip = m.groups()
+    date_str, = m.groups()
     date = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
 
     if prev_date is None or prev_date != date.date():
         print date.date()
         prev_date = date.date()
 
-    block = seen.get(ip)
-    if block is None:
-        block = Block(ip, date)
-        seen[ip] = block
-        current.append(block)
-        # Poor man's priority queue: keep the first to expire (oldest) at the
-        # tail of the list.
-        current.sort(key = lambda x: x.end_date, reverse = True)
-    else:
-        block.end_date = date
+    block = Block(date)
+    block.end_date = date + datetime.timedelta(0, 10)
+    current.append(block)
+    # Poor man's priority queue: keep the first to expire (oldest) at the
+    # tail of the list.
+    current.sort(key = lambda x: x.end_date, reverse = True)
 
     # Delete all those that are now expired.
     while current:
@@ -90,7 +84,6 @@ for line in input_file:
         if delta > POLL_INTERVAL * 1.5:
             blocks.append(block)
             current.pop()
-            del seen[block.ip]
         else:
             break
 
@@ -104,7 +97,6 @@ while current:
     events.append(("begin", block.begin_date))
     events.append(("end", date))
     current.pop()
-    del seen[block.ip]
 
 events.sort(key = lambda x: x[1])
 
