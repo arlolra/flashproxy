@@ -234,30 +234,7 @@ class Handler(SocketServer.StreamRequestHandler):
         print >> self.wfile, "ERROR"
 
     def do_GET(self, params):
-        # Get the proxy's address so we know what kind of client to give it
-        # (IPv4 or IPv6).
-        proxy_spec = fac.param_first("FROM", params)
-        if proxy_spec is None:
-            log(u"GET missing FROM param")
-            self.send_error()
-            return False
-        try:
-            _, _, af = fac.parse_addr_spec_af(proxy_spec, defport=0)
-        except ValueError, e:
-            log(u"syntax error in proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
-            self.send_error()
-            return False
-
-        if af == socket.AF_INET:
-            regs = REGS_IPV4
-        elif af == socket.AF_INET6:
-            regs = REGS_IPV6
-        else:
-            log(u"unknown address family %d in proxy address %s" % (af, safe_str(repr(proxy_spec))))
-            self.send_error()
-            return False
-
-        reg = regs.fetch()
+        reg = REGS.fetch()
         if reg:
             log(u"proxy gets %s, relay %s (now %d)" %
                 (safe_str(unicode(reg)), options.relay_spec, len(REGS)))
@@ -296,9 +273,7 @@ class Handler(SocketServer.StreamRequestHandler):
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
-# Separate pools for IPv4 and IPv6 clients.
-REGS_IPV4 = RegSet()
-REGS_IPV6 = RegSet()
+REGS = RegSet()
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
