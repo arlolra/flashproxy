@@ -313,6 +313,12 @@ def regs_for_af(af):
     else:
         raise ValueError("unknown address family %d" % af)
 
+def addr_af(addr_str):
+    """Return the address family for an address string. This is a plain string,
+    not a tuple, and IPv6 addresses are not bracketed."""
+    addrs = socket.getaddrinfo(addr_str, 0, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+    return addrs[0][0]
+
 def get_reg_for_proxy(proxy_addr):
     """Get a client registration appropriate for the given proxy (one of a
     matching address family)."""
