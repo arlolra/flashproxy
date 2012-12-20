@@ -15,6 +15,14 @@ function add_event(elem, evt, handler) {
         elem.addEventListener(evt, handler);
 }
 
+function set_cookie_allowed() {
+    document.cookie = COOKIE_NAME + "= ;path=/ ;expires=" + COOKIE_LIFETIME;
+}
+
+function set_cookie_disallowed() {
+    document.cookie = COOKIE_NAME + "= ;path=/ ;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+}
+
 add_event(window, "load", function () {
 
     function cookie_present() {
@@ -45,19 +53,9 @@ add_event(window, "load", function () {
         }
     }
 
-    function set_cookie() {
-        document.cookie = COOKIE_NAME + "= ;path=/ ;expires=" + COOKIE_LIFETIME;
-    }
-
-    function del_cookie() {
-        document.cookie = COOKIE_NAME + "= ;path=/ ;expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    }
-
     if (navigator.cookieEnabled) {
         var buttons = document.getElementById("buttons");
         add_event(buttons, "click", update_setting_text);
-        add_event(document.getElementById("yes"), "click", set_cookie);
-        add_event(document.getElementById("no"), "click", del_cookie);
         buttons.style.display = "block";
         update_setting_text();
     } else {
