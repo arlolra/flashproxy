@@ -234,10 +234,10 @@ class Handler(SocketServer.StreamRequestHandler):
         print >> self.wfile, "ERROR"
 
     def do_GET(self, params):
-        reg = REGS.fetch()
+        reg = REGS_IPV4.fetch()
         if reg:
             log(u"proxy gets %s, relay %s (now %d)" %
-                (safe_str(unicode(reg)), options.relay_spec, len(REGS)))
+                (safe_str(unicode(reg)), options.relay_spec, num_regs()))
             print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", options.relay_spec))
         else:
             log(u"proxy gets none")
@@ -260,10 +260,10 @@ class Handler(SocketServer.StreamRequestHandler):
             self.send_error()
             return False
 
-        if REGS.add(reg):
-            log(u"client %s (now %d)" % (safe_str(unicode(reg)), len(REGS)))
+        if REGS_IPV4.add(reg):
+            log(u"client %s (now %d)" % (safe_str(unicode(reg)), num_regs()))
         else:
-            log(u"client %s (already present, now %d)" % (safe_str(unicode(reg)), len(REGS)))
+            log(u"client %s (already present, now %d)" % (safe_str(unicode(reg)), num_regs()))
 
         self.send_ok()
         return True
@@ -273,7 +273,13 @@ class Handler(SocketServer.StreamRequestHandler):
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
-REGS = RegSet()
+# Separate pools for IPv4 and IPv6 clients.
+REGS_IPV4 = RegSet()
+REGS_IPV6 = RegSet()
+
+def num_regs():
+    """Return the total number of registrations."""
+    return len(REGS_IPV4) + len(REGS_IPV6)
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
