@@ -234,7 +234,24 @@ class Handler(SocketServer.StreamRequestHandler):
         print >> self.wfile, "ERROR"
 
     def do_GET(self, params):
-        reg = REGS_IPV4.fetch()
+        proxy_spec = fac.param_first("FROM", params)
+        if proxy_spec is None:
+            log(u"GET missing FROM param")
+            self.send_error()
+            return False
+        try:
+            proxy_addr = fac.parse_addr_spec(proxy_spec, defport=0)
+        except ValueError, e:
+            log(u"syntax error in proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
+            self.send_error()
+            return False
+
+        try:
+            reg = get_reg_for_proxy(proxy_addr)
+        except Exception, e:
+            log(u"error getting reg for proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
+            self.send_error()
+            return False
         if reg:
             log(u"proxy gets %s, relay %s (now %d)" %
                 (safe_str(unicode(reg)), options.relay_spec, num_regs()))
@@ -260,7 +277,13 @@ class Handler(SocketServer.StreamRequestHandler):
             self.send_error()
             return False
 
-        if REGS_IPV4.add(reg):
+        try:
+            ok = put_reg(reg)
+        except Exception, e:
+            log(u"error putting reg %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
+            self.send_error()
+            return False
+        if ok:
             log(u"client %s (now %d)" % (safe_str(unicode(reg)), num_regs()))
         else:
             log(u"client %s (already present, now %d)" % (safe_str(unicode(reg)), num_regs()))
@@ -280,6 +303,24 @@ REGS_IPV6 = RegSet()
 def num_regs():
     """Return the total number of registrations."""
     return len(REGS_IPV4) + len(REGS_IPV6)
+
+def regs_for_af(af):
+    """Return the correct regs pool for the given address family."""
+    if af == socket.AF_INET:
+        return REGS_IPV4
+    elif af == socket.AF_INET6:
+        return REGS_IPV6
+    else:
+        raise ValueError("unknown address family %d" % af)
+
+def get_reg_for_proxy(proxy_addr):
+    """Get a client registration appropriate for the given proxy (one of a
+    matching address family)."""
+    return REGS_IPV4.fetch()
+
+def put_reg(reg):
+    """Add a registration."""
+    REGS_IPV4.add(reg)
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
