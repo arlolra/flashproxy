@@ -16,11 +16,11 @@ function add_event(elem, evt, handler) {
 }
 
 function set_cookie_allowed() {
-    document.cookie = COOKIE_NAME + "= ;path=/ ;expires=" + COOKIE_LIFETIME;
+    document.cookie = COOKIE_NAME + "=1;path=/ ;expires=" + COOKIE_LIFETIME;
 }
 
 function set_cookie_disallowed() {
-    document.cookie = COOKIE_NAME + "= ;path=/ ;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = COOKIE_NAME + "=0;path=/ ;expires=" + COOKIE_LIFETIME;
 }
 
 add_event(window, "load", function () {
