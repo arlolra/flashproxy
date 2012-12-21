@@ -1,3 +1,7 @@
+Changes in version 0.11
+  o Added -4 and -6 options to flashproxy-reg-http. Partial fix for bug
+    7622. Patch by Jorge Couchet.
+
 Changes in version 0.10
   o Fixed a bug in flashproxy-client that made it susceptible to a
     denial of service (program crash) when receiving large WebSocket
