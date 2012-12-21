@@ -795,7 +795,7 @@ function Badge() {
     tr.appendChild(td);
     a = document.createElement("a");
     a.setAttribute("href", "options.html");
-    a.setAttribute("target", "_parent");
+    a.setAttribute("target", "_blank");
     td.appendChild(a);
     img = document.createElement("img");
     img.setAttribute("src", "badge.png");
