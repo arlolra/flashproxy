@@ -56,7 +56,7 @@ JavaScript to change your options.
 </noscript>
 <div id="setting">
 </div>
-<div id="buttons" style="display: none;">
+<div onclick="update_setting_text()" id="buttons" style="display: none;">
 <button onclick="set_cookie_allowed()">Yes</button>
 <button onclick="set_cookie_disallowed()">No</button>
 </div>
@@ -67,6 +67,74 @@ in order to set flash proxy settings.
 </p>
 </div>
 </div>
-<script type="text/javascript" src="options.js"></script>
+<script type="text/javascript">
+
+var COOKIE_NAME = "flashproxy-allow";
+/* max-age is not supported in IE. */
+var COOKIE_LIFETIME = "Thu, 01 Jan 2038 00:00:00 GMT";
+
+function set_cookie_allowed() {
+    document.cookie = COOKIE_NAME + "=1 ;path=/ ;expires=" + COOKIE_LIFETIME;
+}
+
+function set_cookie_disallowed() {
+    document.cookie = COOKIE_NAME + "=0 ;path=/ ;expires=" + COOKIE_LIFETIME;
+}
+
+/* Returns the value of the cookie, or undefined
+   if the cookie is not present. */
+function read_cookie() {
+    var split, name, value;
+    var cookies = document.cookie.split(";");
+
+    for (i in cookies) {
+        split = cookies[i].split("=");
+        name = split[0];
+        value = split[1];
+
+        while (name[0] === " ")
+            name = name.substr(1);
+        if (COOKIE_NAME === name)
+            return value;
+    }
+    return undefined;
+}
+
+/* Updates the text telling the user what his current setting is.*/
+function update_setting_text() {
+    var setting = document.getElementById("setting");
+    var prefix = "<p>Your current setting is: ";
+    var value = read_cookie();
+
+    if (value === undefined) {
+        setting.innerHTML = prefix + "unspecified. Your browser may or may not " +
+                                     "run as a proxy, depending on how the website " +
+                                     "administrator has configured the badge. Click " +
+                                     "the buttons below to change your setting.";
+    } else if (value === "1") {
+        setting.innerHTML = prefix + "use my browser as a proxy. " +
+                                     "Click no below to change your setting.</p>";
+    } else {
+        setting.innerHTML = prefix + "do not use my browser as a proxy. " +
+                                     "Click yes below to change your setting.</p>";
+    }
+}
+
+window.onload = function () {
+    if (navigator.cookieEnabled) {
+        var buttons = document.getElementById("buttons");
+        buttons.style.display = "block";
+        update_setting_text();
+    } else {
+        document.getElementById("cookies_disabled").style.display = "block";
+        /* Manually set the text here as otherwise it will refer to
+           the buttons, which don't show if cookies are disabled. */
+        document.getElementById("setting").innerHTML = "<p>Your current setting is: " +
+                                                       "unspecified. Your browser may or may not " +
+                                                       "run as a proxy, depending on how the website " +
+                                                       "administrator has configured the badge.</p>";
+    }
+};
+</script>
 </body>
 </html>
