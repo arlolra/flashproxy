@@ -322,11 +322,17 @@ def addr_af(addr_str):
 def get_reg_for_proxy(proxy_addr):
     """Get a client registration appropriate for the given proxy (one of a
     matching address family)."""
-    return REGS_IPV4.fetch()
+    addr_str = proxy_addr[0]
+    af = addr_af(addr_str)
+    REGS = regs_for_af(af)
+    return REGS.fetch()
 
 def put_reg(reg):
     """Add a registration."""
-    REGS_IPV4.add(reg)
+    addr_str = reg.host
+    af = addr_af(addr_str)
+    REGS = regs_for_af(af)
+    REGS.add(reg)
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
