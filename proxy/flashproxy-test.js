@@ -11,6 +11,7 @@ var num_tests = 0;
 var num_failed = 0;
 
 var window = {location: {search: "?"}};
+var document = {cookie: ""};
 
 load("flashproxy.js");
 
@@ -159,7 +160,7 @@ function test_parse_query_string()
     }
 }
 
-function test_get_query_param_boolean()
+function test_get_param_boolean()
 {
     var TESTS = [
         { qs: "param=true",
@@ -187,7 +188,7 @@ function test_get_query_param_boolean()
         var query;
 
         query = parse_query_string(test.qs);
-        actual = get_query_param_boolean(query, "param", false);
+        actual = get_param_boolean(query, "param", false);
         if (objects_equal(actual, test.expected))
             pass(test.qs);
         else
@@ -266,7 +267,7 @@ function test_get_query_param_addr()
 
 test_build_url();
 test_parse_query_string();
-test_get_query_param_boolean();
+test_get_param_boolean();
 test_parse_addr_spec();
 test_get_query_param_addr();
 

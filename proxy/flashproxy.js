@@ -12,6 +12,12 @@
  * "1", "true", and the empty string "" all enable debug mode. Any other value
  * uses the normal badge display.
  *
+ * cookierequired=0|1
+ * If present with value "1", "true", or "", the proxy will disable
+ * itself if the user has not explicitly opted in by setting a cookie
+ * through the options page. If absent, set to "0" or "false", the proxy
+ * will run unless the user has explicitly opted out.
+ *
  * facilitator=https://host:port/
  * The URL of the facilitator CGI script. By default it is
  * DEFAULT_FACILITATOR_URL.
@@ -62,13 +68,16 @@ var DEFAULT_RATE_LIMIT = undefined;
 var MIN_RATE_LIMIT = 10 * 1024;
 var RATE_LIMIT_HISTORY = 5.0;
 
+/* Name of cookie that controls opt-in/opt-out. */
+var OPT_IN_COOKIE = "flashproxy-allow";
 /* Firefox before version 11.0 uses the name MozWebSocket. Whether the global
    variable WebSocket is defined indicates whether WebSocket is supported at
    all. */
 var WebSocket = window.WebSocket || window.MozWebSocket;
 
 var query = parse_query_string(window.location.search.substr(1));
-var DEBUG = get_query_param_boolean(query, "debug", false);
+var cookies = parse_cookie_string(document.cookie);
+var DEBUG = get_param_boolean(query, "debug", false);
 var debug_div;
 
 if (DEBUG) {
@@ -86,6 +95,30 @@ function puts(s) {
         if (at_bottom)
             debug_div.scrollTop = debug_div.scrollHeight;
     }
+}
+
+/* Parse a cookie data string (usually document.cookie). The return type
+   is an object mapping cookies names to values. For a description of the cookie
+   string format see http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-8747038 */
+function parse_cookie_string(cookies) {
+    var strings = [];
+    var result = {};
+
+    if (cookies)
+        strings = cookies.split(";");
+
+    for (var i = 0; i < strings.length; i++) {
+        var j;
+        var string = strings[i];
+
+        while (string[0] === " ")
+            string = string.substr(1);
+
+        j = string.indexOf("=");
+        result[string.substr(0, j)] = string.substr(j + 1);
+    }
+
+    return result;
 }
 
 /* Parse a URL query string or application/x-www-form-urlencoded body. The
@@ -180,14 +213,14 @@ function build_url(scheme, host, port, path, params) {
     return parts.join("");
 }
 
-/* Get a query string parameter and return it as a boolean, or return
-   default_val if param is not present in the query string. True values are "1",
+/* Get a query or cookie string parameter and return it as a boolean, or return
+   default_val if param is not present in the string. True values are "1",
    "true", and "". False values are "0" and "false". Any other value causes the
    function to return null (effectively false).
    
    The empty string is true so that URLs like http://example.com/?debug will
    enable debug mode. */
-function get_query_param_boolean(query, param, default_val) {
+function get_param_boolean(query, param, default_val) {
     var val;
 
     val = query[param];
@@ -898,6 +931,14 @@ function flashproxy_should_disable() {
     if (!WebSocket) {
         /* No WebSocket support. */
         puts("Disable because of no WebSocket support.");
+        return true;
+    }
+
+    var setting = get_param_boolean(cookies, OPT_IN_COOKIE, undefined);
+    var opt_in = get_param_boolean(query, "cookierequired", false);
+    if (setting === undefined && opt_in || setting === false) {
+        /* User has opted-out, or opt-in is required and cookie is missing. */
+        puts("Disable because of opt-out or required opt-in.");
         return true;
     }
 
