@@ -385,17 +385,6 @@ function FlashProxy() {
         this.badge_elem = debug_div;
     } else {
         this.badge = new Badge();
-        this.badge.elem.onmouseover = function(event) {
-            this.badge.disable_button.style.display = "block";
-        }.bind(this);
-        this.badge.elem.onmouseout = function(event) {
-            this.badge.disable_button.style.display = "none";
-        }.bind(this);
-        /* Click a button to disable the badge. */
-        this.badge.disable_button.onclick = function(event) {
-            this.disable();
-            this.badge.disable_button.parentNode.removeChild(this.badge.disable_button);
-        }.bind(this);
         this.badge_elem = this.badge.elem;
     }
     this.badge_elem.setAttribute("id", "flashproxy-badge");
@@ -786,7 +775,7 @@ function Badge() {
     /* Number of proxy pairs currently connected. */
     this.num_proxy_pairs = 0;
 
-    var table, tr, td, div, a, img;
+    var table, tr, td, a, img;
 
     table = document.createElement("table");
     tr = document.createElement("tr");
@@ -805,15 +794,6 @@ function Badge() {
     this.elem = table;
     this.elem.className = "idle";
 
-    a = document.createElement("a");
-    a.setAttribute("href", "#");
-    this.disable_button = document.createElement("div");
-    /* HEAVY MULTIPLICATION X */
-    this.disable_button.innerHTML = "&#x2716;";
-    this.disable_button.className = "disable-button";
-    a.appendChild(this.disable_button);
-    td.appendChild(a);
-
     this.proxy_begin = function() {
         this.num_proxy_pairs++;
         this.elem.className = "active";
@@ -828,12 +808,10 @@ function Badge() {
 
     this.disable = function() {
         this.elem.className = "disabled";
-        this.disable_button.style.display = "none";
     }
 
     this.die = function() {
         this.elem.className = "dead";
-        this.disable_button.style.display = "none";
     }
 }
 
