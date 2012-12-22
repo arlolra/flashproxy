@@ -2,12 +2,12 @@
 .\"     Title: flashproxy-client
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 11/12/2012
+.\"      Date: 12/21/2012
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "FLASHPROXY\-CLIENT" "1" "11/12/2012" "\ \&" "\ \&"
+.TH "FLASHPROXY\-CLIENT" "1" "12/21/2012" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -42,6 +42,16 @@ By default, runs as a managed proxy: informs a parent Tor project of support for
 .sp
 If any of the \fB\-\-register\fR, \fB\-\-register\-addr\fR, or \fB\-\-register\-methods\fR options are used, then your IP address will be sent to the facilitator so that proxies can connect to you\&. You need to register in some way in order to get any service\&. The \fB\-\-facilitator\fR option allows controlling which facilitator is used; if omitted, it uses a public default\&.
 .SH "OPTIONS"
+.PP
+\fB\-4\fR
+.RS 4
+Registration helpers use IPv4\&.
+.RE
+.PP
+\fB\-6\fR
+.RS 4
+Registration helpers use IPv6\&.
+.RE
 .PP
 \fB\-\-daemon\fR
 .RS 4
