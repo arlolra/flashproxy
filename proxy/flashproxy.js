@@ -13,9 +13,8 @@
  * uses the normal badge display.
  *
  * cookierequired=0|1
- * If present with value "1", "true", or "", the proxy will disable
- * itself if the user has not explicitly opted in by setting a cookie
- * through the options page. If absent, set to "0" or "false", the proxy
+ * If true, the proxy will disable itself if the user has not explicitly opted
+ * in by setting a cookie through the options page. If absent or false, the proxy
  * will run unless the user has explicitly opted out.
  *
  * facilitator=https://host:port/
@@ -70,6 +69,7 @@ var RATE_LIMIT_HISTORY = 5.0;
 
 /* Name of cookie that controls opt-in/opt-out. */
 var OPT_IN_COOKIE = "flashproxy-allow";
+
 /* Firefox before version 11.0 uses the name MozWebSocket. Whether the global
    variable WebSocket is defined indicates whether WebSocket is supported at
    all. */
