@@ -1,6 +1,8 @@
 Changes in version 0.11
-  o Added -4 and -6 options to flashproxy-reg-http. Partial fix for bug
-    7622. Patch by Jorge Couchet.
+  o Added -4 and -6 options to flashproxy-client and
+    flashproxy-reg-http. (The options already existed in
+    flashproxy-reg-email.) These options cause registrations helpers to
+    use IPv4 or IPv6 only. Fixes bug 7622. Patch by Jorge Couchet.
 
 Changes in version 0.10
   o Fixed a bug in flashproxy-client that made it susceptible to a
