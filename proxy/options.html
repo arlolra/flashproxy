@@ -84,18 +84,18 @@ function set_cookie_disallowed() {
 /* Returns the value of the cookie, or undefined
    if the cookie is not present. */
 function read_cookie() {
-    var split, name, value;
+    var str, j;
     var cookies = document.cookie.split(";");
 
     for (i in cookies) {
-        split = cookies[i].split("=");
-        name = split[0];
-        value = split[1];
+        str = cookies[i];
 
-        while (name[0] === " ")
-            name = name.substr(1);
-        if (COOKIE_NAME === name)
-            return value;
+        while (str[0] === " ")
+            str = str.substr(1);
+
+        j = str.indexOf("=");
+        if (COOKIE_NAME === str.substr(0, j))
+            return str.substr(j + 1);
     }
     return undefined;
 }
