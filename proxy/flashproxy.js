@@ -118,11 +118,8 @@ function parse_cookie_string(cookies) {
         if (j === -1) {
             return null;
         }
-        name = string.substr(0, j);
-        value = string.substr(j + 1);
-
-        while (name[0] === " ")
-            name = name.substr(1);
+        name = string.substr(0, j).trim();
+        value = string.substr(j + 1).trim();
 
         result[name] = value;
     }
