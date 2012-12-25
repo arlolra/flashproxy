@@ -942,11 +942,15 @@ function flashproxy_should_disable() {
         return true;
     }
 
-    var setting = get_param_boolean(cookies, OPT_IN_COOKIE, undefined);
-    var opt_in = get_param_boolean(query, "cookierequired", false);
-    if (setting === undefined && opt_in || setting === false) {
-        /* User has opted-out, or opt-in is required and cookie is missing. */
-        puts("Disable because of opt-out or required opt-in.");
+    var flashproxy_allow = get_param_boolean(cookies, OPT_IN_COOKIE);
+    var cookierequired = get_param_boolean(query, "cookierequired", false);
+    /* flashproxy_allow may be true, false, or undefined. If undefined, only
+       disable if the cookierequired param is also set. */
+    if (flashproxy_allow === false) {
+        puts("Disable because of cookie opt-out.");
+        return true;
+    } else if (cookierequired && !flashproxy_allow) {
+        puts("Disable because of cookie required and no opt-in.");
         return true;
     }
 
