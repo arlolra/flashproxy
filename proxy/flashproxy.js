@@ -98,8 +98,9 @@ function puts(s) {
 }
 
 /* Parse a cookie data string (usually document.cookie). The return type
-   is an object mapping cookies names to values. For a description of the cookie
-   string format see http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-8747038 */
+   is an object mapping cookies names to values. Returns null on error.
+
+   http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-8747038 */
 function parse_cookie_string(cookies) {
     var strings;
     var result;
@@ -114,6 +115,9 @@ function parse_cookie_string(cookies) {
         var j, name, value;
 
         j = string.indexOf("=");
+        if (j === -1) {
+            return null;
+        }
         name = string.substr(0, j);
         value = string.substr(j + 1);
 
