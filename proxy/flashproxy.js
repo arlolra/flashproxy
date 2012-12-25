@@ -101,21 +101,26 @@ function puts(s) {
    is an object mapping cookies names to values. For a description of the cookie
    string format see http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-8747038 */
 function parse_cookie_string(cookies) {
-    var strings = [];
-    var result = {};
+    var strings;
+    var result;
 
+    result = {};
     if (cookies)
         strings = cookies.split(";");
-
+    else
+        strings = [];
     for (var i = 0; i < strings.length; i++) {
-        var j;
         var string = strings[i];
-
-        while (string[0] === " ")
-            string = string.substr(1);
+        var j, name, value;
 
         j = string.indexOf("=");
-        result[string.substr(0, j)] = string.substr(j + 1);
+        name = string.substr(0, j);
+        value = string.substr(j + 1);
+
+        while (name[0] === " ")
+            name = name.substr(1);
+
+        result[name] = value;
     }
 
     return result;
