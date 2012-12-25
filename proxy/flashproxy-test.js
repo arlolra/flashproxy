@@ -181,7 +181,7 @@ function test_get_param_boolean()
           expected: false },
     ];
 
-    announce("test_get_query_param_boolean");
+    announce("test_get_param_boolean");
     for (var i = 0; i < TESTS.length; i++) {
         var test = TESTS[i];
         var actual;
@@ -238,7 +238,7 @@ function test_parse_addr_spec()
     }
 }
 
-function test_get_query_param_addr()
+function test_get_param_addr()
 {
     var DEFAULT = { host: "1.1.1.1", port: 2222 };
     var TESTS = [
@@ -252,12 +252,12 @@ function test_get_query_param_addr()
           expected: null },
     ];
 
-    announce("test_get_query_param_addr");
+    announce("test_get_param_addr");
     for (var i = 0; i < TESTS.length; i++) {
         var test = TESTS[i];
         var actual;
 
-        actual = get_query_param_addr(test.query, "addr", DEFAULT);
+        actual = get_param_addr(test.query, "addr", DEFAULT);
         if (objects_equal(actual, test.expected))
             pass(test.query);
         else
@@ -269,7 +269,7 @@ test_build_url();
 test_parse_query_string();
 test_get_param_boolean();
 test_parse_addr_spec();
-test_get_query_param_addr();
+test_get_param_addr();
 
 if (num_failed == 0)
     quit(0);

@@ -220,11 +220,11 @@ function build_url(scheme, host, port, path, params) {
     return parts.join("");
 }
 
-/* Get a query or cookie string parameter and return it as a boolean, or return
-   default_val if param is not present in the string. True values are "1",
-   "true", and "". False values are "0" and "false". Any other value causes the
-   function to return null (effectively false).
-   
+/* Get an object value and return it as a boolean. True values are "1", "true",
+   and "". False values are "0" and "false". Any other value causes the function
+   to return null (effectively false). Returns default_val if param is not a
+   key.
+
    The empty string is true so that URLs like http://example.com/?debug will
    enable debug mode. */
 function get_param_boolean(query, param, default_val) {
@@ -241,9 +241,9 @@ function get_param_boolean(query, param, default_val) {
         return null;
 }
 
-/* Get a query string parameter and return it as a string. Returns default_val
-   if param is not defined in the query string. */
-function get_query_param_string(query, param, default_val) {
+/* Get an object value and return it as a string. Returns default_val if param
+   is not a key. */
+function get_param_string(query, param, default_val) {
     var val;
 
     val = query[param];
@@ -253,9 +253,9 @@ function get_query_param_string(query, param, default_val) {
         return val;
 }
 
-/* Get a query string parameter, or the given default, and parse it as an
-   address spec. Returns null on a parsing error. */
-function get_query_param_addr(query, param, default_val) {
+/* Get an object value and parse it as an address spec. Returns default_val if
+   param is not a key. Returns null on a parsing error. */
+function get_param_addr(query, param, default_val) {
     var val;
 
     val = query[param];
@@ -265,9 +265,9 @@ function get_query_param_addr(query, param, default_val) {
         return parse_addr_spec(val);
 }
 
-/* Get an integer from the given movie parameter, or the given default. Returns
-   null on error. */
-function get_query_param_integer(query, param, default_val) {
+/* Get an object value and parse it as an integer. Returns default_val if param
+   is not a key. Return null on a parsing error. */
+function get_param_integer(query, param, default_val) {
     var spec;
     var val;
 
@@ -285,9 +285,9 @@ function get_query_param_integer(query, param, default_val) {
     }
 }
 
-/* Get a number from the given movie parameter, or the given default. Returns
-   null on error. */
-function get_query_param_number(query, param, default_val) {
+/* Get an object value and parse it as a real number. Returns default_val if
+   param is not a key. Return null on a parsing error. */
+function get_param_number(query, param, default_val) {
     var spec;
     var val;
 
@@ -306,8 +306,8 @@ function get_query_param_number(query, param, default_val) {
 /* Get a floating-point number of seconds from a time specification. The only
    time specification format is a decimal number of seconds. Returns null on
    error. */
-function get_query_param_timespec(query, param, default_val) {
-    return get_query_param_number(query, param, default_val);
+function get_param_timespec(query, param, default_val) {
+    return get_param_number(query, param, default_val);
 }
 
 /* Parse a count of bytes. A suffix of "k", "m", or "g" (or uppercase)
@@ -339,9 +339,10 @@ function parse_byte_count(spec) {
     return count * Number(units);
 }
 
-/* Get a count of bytes from a string specification like "100" or "1.3m".
-   Returns null on error. */
-function get_query_param_byte_count(query, param, default_val) {
+/* Get an object value and parse it as a byte count. Example byte counts are
+   "100" and "1.3m". Returns default_val if param is not a key. Return null on a
+   parsing error. */
+function get_param_byte_count(query, param, default_val) {
     var spec;
 
     spec = query[param];
@@ -436,16 +437,16 @@ function FlashProxy() {
         var relay_addr;
         var rate_limit_bytes;
 
-        this.fac_url = get_query_param_string(query, "facilitator", DEFAULT_FACILITATOR_URL);
+        this.fac_url = get_param_string(query, "facilitator", DEFAULT_FACILITATOR_URL);
 
-        this.max_num_proxy_pairs = get_query_param_integer(query, "max_clients", DEFAULT_MAX_NUM_PROXY_PAIRS);
+        this.max_num_proxy_pairs = get_param_integer(query, "max_clients", DEFAULT_MAX_NUM_PROXY_PAIRS);
         if (this.max_num_proxy_pairs === null || this.max_num_proxy_pairs < 0) {
             puts("Error: max_clients must be a nonnegative integer.");
             this.die();
             return;
         }
 
-        this.facilitator_poll_interval = get_query_param_timespec(query, "facilitator_poll_interval", DEFAULT_FACILITATOR_POLL_INTERVAL);
+        this.facilitator_poll_interval = get_param_timespec(query, "facilitator_poll_interval", DEFAULT_FACILITATOR_POLL_INTERVAL);
         if (this.facilitator_poll_interval === null || this.facilitator_poll_interval < MIN_FACILITATOR_POLL_INTERVAL) {
             puts("Error: facilitator_poll_interval must be a nonnegative number at least " + MIN_FACILITATOR_POLL_INTERVAL + ".");
             this.die();
@@ -455,7 +456,7 @@ function FlashProxy() {
         if (query["ratelimit"] === "off")
             rate_limit_bytes = undefined;
         else
-            rate_limit_bytes = get_query_param_byte_count(query, "ratelimit", DEFAULT_RATE_LIMIT);
+            rate_limit_bytes = get_param_byte_count(query, "ratelimit", DEFAULT_RATE_LIMIT);
         if (rate_limit_bytes === undefined) {
             this.rate_limit = new DummyRateLimit();
         } else if (rate_limit_bytes === null || rate_limit_bytes < MIN_FACILITATOR_POLL_INTERVAL) {
@@ -466,13 +467,13 @@ function FlashProxy() {
             this.rate_limit = new BucketRateLimit(rate_limit_bytes * RATE_LIMIT_HISTORY, RATE_LIMIT_HISTORY);
         }
 
-        client_addr = get_query_param_addr(query, "client");
+        client_addr = get_param_addr(query, "client");
         if (client_addr === null) {
             puts("Error: can't parse \"client\" parameter.");
             this.die();
             return;
         }
-        relay_addr = get_query_param_addr(query, "relay");
+        relay_addr = get_param_addr(query, "relay");
         if (relay_addr === null) {
             puts("Error: can't parse \"relay\" parameter.");
             this.die();
