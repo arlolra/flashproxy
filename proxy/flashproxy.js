@@ -121,7 +121,8 @@ function parse_cookie_string(cookies) {
         name = string.substr(0, j).trim();
         value = string.substr(j + 1).trim();
 
-        result[name] = value;
+        if (!(name in result))
+             result[name] = value;
     }
 
     return result;
