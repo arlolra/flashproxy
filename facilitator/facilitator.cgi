@@ -17,10 +17,10 @@ Status: %d\r
     sys.exit()
 
 method = os.environ.get("REQUEST_METHOD")
-proxy_addr = (os.environ.get("REMOTE_ADDR"), None)
+remote_addr = (os.environ.get("REMOTE_ADDR"), None)
 path_info = os.environ.get("PATH_INFO") or "/"
 
-if not method or not proxy_addr[0]:
+if not method or not remote_addr[0]:
     exit_error(400)
 
 fs = cgi.FieldStorage()
@@ -29,7 +29,7 @@ def do_get():
     if path_info != "/":
         exit_error(400)
     try:
-        reg = fac.get_reg(FACILITATOR_ADDR, proxy_addr) or ""
+        reg = fac.get_reg(FACILITATOR_ADDR, remote_addr) or ""
     except:
         exit_error(500)
     # Allow XMLHttpRequest from any domain. http://www.w3.org/TR/cors/.
@@ -49,10 +49,10 @@ def do_post():
         exit_error(400)
     client_spec = client_specs[0].strip()
     try:
-        client_addr = fac.parse_addr_spec(client_spec, defhost=proxy_addr[0])
+        client_addr = fac.parse_addr_spec(client_spec, defhost=remote_addr[0])
     except ValueError:
         exit_error(400)
-    if not fac.put_reg(FACILITATOR_ADDR, client_addr, proxy_addr):
+    if not fac.put_reg(FACILITATOR_ADDR, client_addr, remote_addr):
         exit_error(500)
     print """\
 Status: 200\r

@@ -38,6 +38,10 @@ DEFAULT_LOCAL_PORT_EXTERNAL = 9001
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_REGISTER_METHODS = ["email", "http"]
 
+# We will re-register if we have fewer than this many waiting proxies. The
+# facilitator may choose to ignore our requests.
+DESIRED_NUMBER_OF_PROXIES = 3
+
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class options(object):
@@ -55,6 +59,7 @@ class options(object):
     register_commands = []
     pid_filename = None
     safe_logging = True
+    address_family = socket.AF_UNSPEC
 
 # We accept up to this many bytes from a socket not yet matched with a partner
 # before disconnecting it.
@@ -86,6 +91,8 @@ connect to you. You need to register in some way in order to get any service.
 The --facilitator option allows controlling which facilitator is used; if
 omitted, it uses a public default.
 
+  -4                        registration helpers use IPv4.
+  -6                        registration helpers use IPv6.
       --daemon              daemonize (Unix only).
       --external            be an external proxy (don't interact with Tor using
                               environment variables and stdout).
@@ -361,6 +368,8 @@ class WebSocketDecoder(object):
             else:
                 if frame.opcode != 0:
                     raise ValueError("Non-first frame has nonzero opcode %d" % frame.opcode)
+            if len(self.message_buf) + len(frame.payload) > self.MAX_MESSAGE_LENGTH:
+                raise ValueError("Refusing to buffer payload of %d bytes" % (len(self.message_buf) + len(frame.payload)))
             self.message_buf += frame.payload
 
             if frame.fin:
@@ -718,7 +727,8 @@ def registration_thread_func():
         register_condvar.acquire()
         register_condvar.wait()
         register_condvar.release()
-        register_one()
+        if len(unlinked_remotes) < DESIRED_NUMBER_OF_PROXIES:
+            register_one()
 
 def proxy_chunk_local_to_remote(local, remote, data = None):
     if data is None:
@@ -936,10 +946,16 @@ def build_register_command(method):
     if not script_dir:
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         raise ValueError("Can't find executable directory for registration helpers")
+    af = []
+    if options.address_family == socket.AF_INET:
+        af = ["-4"]
+    elif options.address_family == socket.AF_INET6:
+        af = ["-6"]
     if method == "email":
-        return [os.path.join(script_dir, "flashproxy-reg-email")]
+        command = [os.path.join(script_dir, "flashproxy-reg-email")] + af
+        return command
     elif method == "http":
-        command = [os.path.join(script_dir, "flashproxy-reg-http")]
+        command = [os.path.join(script_dir, "flashproxy-reg-http")] + af
         if options.facilitator_url is not None:
             command += ["-f", options.facilitator_url]
         return command
@@ -1022,9 +1038,13 @@ def main():
     register_addr_spec = None
     register_methods = []
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "f:hl:r", ["daemon", "external", "facilitator=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "unsafe-logging"])
     for o, a in opts:
-        if o == "--daemon":
+        if o == "-4":
+            options.address_family = socket.AF_INET
+        elif o == "-6":
+            options.address_family = socket.AF_INET6
+        elif o == "--daemon":
             options.daemonize = True
         elif o == "--external":
             options.managed = False

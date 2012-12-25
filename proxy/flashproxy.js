@@ -480,7 +480,7 @@ function FlashProxy() {
             return;
         }
         if (client_addr !== undefined && relay_addr !== undefined) {
-            this.make_proxy_pair(client_addr, relay_addr);
+            this.begin_proxy(client_addr, relay_addr);
         } else if (client_addr !== undefined) {
             puts("Error: the \"client\" parameter requires \"relay\" also.")
             this.die();
@@ -558,6 +558,14 @@ function FlashProxy() {
         puts("Facilitator: got client:" + repr(client_addr) + " "
             + "relay:" + repr(relay_addr) + ".");
 
+        this.begin_proxy(client_addr, relay_addr);
+    };
+
+    this.begin_proxy = function(client_addr, relay_addr) {
+        /* Start two proxy connections because of some versions of Tor making
+           two pt connections:
+           https://lists.torproject.org/pipermail/tor-dev/2012-December/004221.html */
+        this.make_proxy_pair(client_addr, relay_addr);
         this.make_proxy_pair(client_addr, relay_addr);
     };
 

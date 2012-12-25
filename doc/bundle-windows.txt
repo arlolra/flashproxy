@@ -1,0 +1,66 @@
+== Dependencies
+
+=== 7-Zip
+
+This is used to build a self-extracting bundle executable. The p7zip
+package from Cywin doesn't work because the self-extracting executables
+it produces requrie cygwin1.dll.
+
+http://7-zip.org/download.html
+http://downloads.sourceforge.net/project/sevenzip/7-Zip/9.20/7z920.msi
+
+The sha256sum of the package I used was
+
+fe4807b4698ec89f82de7d85d32deaa4c772fc871537e31fb0fccf4473455cb8 7z920.msi
+
+== Browser bundle
+
+Run "make dist-exe" in the flashproxy source directory.
+
+Download the obfsproxy bundle from
+https://www.torproject.org/projects/obfsproxy.
+
+https://www.torproject.org/dist/torbrowser/tor-obfsproxy-browser-2.4.6-alpha-2_en-US.exe
+https://www.torproject.org/dist/torbrowser/tor-obfsproxy-browser-2.4.6-alpha-2_en-US.exe.asc
+
+Extract the bundle.
+
+	$ gpg --verify tor-obfsproxy-browser-2.4.6-alpha-2_en-US.exe.asc
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" x tor-obfsproxy-browser-2.4.6-alpha-2_en-US.exe
+	$ cd "Tor Browser"
+
+Copy files into the bundle. We could remove obfsproxy here but don't.
+The -n option to cp prevents the existing LIBEAY32.dll and SSLEAY32.dll
+from being overwritten.
+
+	$ cp -n ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
+	$ mkdir -p Docs/FlashProxy
+	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
+
+Make the second half of Data/Tor/torrc look like this (i.e., keep
+the generic configuration, but change the obfsproxy-specific stuff).
+Basically you are concatenating the normal flashproxy-client torrc, but
+changing "./flashproxy-client" to "flashproxy-client".
+
+UseBridges 1
+# The address and port are ignored by the client transport plugin.
+Bridge websocket 0.0.1.0:1
+LearnCircuitBuildTimeout 0
+CircuitBuildTimeout 60
+# Change the second number here (9000) to the number of a port that can
+# receive connections from the Internet (the port for which you
+# configured port forwarding).
+ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
+
+Re-zip the bundle. The "alpha" number should be independent of the
+obfsproxy bundle's alpha. The 7zg program (as opposed to 7z) causes the
+self-extractor to show a GUI.
+
+	$ cd ..
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-flashproxy-browser-2.4.6-alpha-1_en-US.exe "Tor Browser"
+
+Test running the bundle. Extract into a separate directory, double-click
+the icon and "Start Tor Browser.exe".
+
+	$ mkdir tmp
+	$ cp tor-flashproxy-browser-2.4.6-alpha-1_en-US.exe tmp

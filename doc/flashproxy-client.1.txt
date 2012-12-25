@@ -41,6 +41,12 @@ omitted, it uses a public default.
 OPTIONS
 -------
 
+**-4**::
+    Registration helpers use IPv4.
+
+**-6**::
+    Registration helpers use IPv6.
+
 **--daemon**::
     Daemonize (Unix only).
 

@@ -2,12 +2,12 @@
 .\"     Title: flashproxy-reg-email
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 11/12/2012
+.\"      Date: 12/13/2012
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "FLASHPROXY\-REG\-EMAIL" "1" "11/12/2012" "\ \&" "\ \&"
+.TH "FLASHPROXY\-REG\-EMAIL" "1" "12/13/2012" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -34,9 +34,11 @@ flashproxy-reg-email \- Register with a facilitator using the email method
 \fBflashproxy\-reg\-email\fR [\fIOPTIONS\fR] [\fIREMOTE\fR][:\fIPORT\fR]
 .SH "DESCRIPTION"
 .sp
-Register with a flash proxy facilitator through email\&. Makes a STARTTLS connection to an SMTP server and sends mail with a client IP address to a designated address\&. By default the remote address registered is ":9000" (the external IP address is guessed)\&.
+Register with a flash proxy facilitator through email\&. Makes a STARTTLS connection to an SMTP server and sends mail with a client IP address to a designated address\&. By default the remote address registered is ":9000" (the external IP address is guessed based on the SMTP server\(cqs response)\&.
 .sp
 Using an SMTP server or email address other than the defaults will not work unless you have made special arrangements to connect them to a facilitator\&.
+.sp
+The email address is not polled continually\&. After running the program, it may take up to a minute for the registration to be recognized\&.
 .sp
 This program requires the M2Crypto library for Python\&.
 .SH "OPTIONS"

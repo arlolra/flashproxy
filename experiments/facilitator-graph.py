@@ -51,73 +51,30 @@ def format_date(d, pos=None):
 def timedelta_to_seconds(delta):
     return delta.days * (24 * 60 * 60) + delta.seconds + delta.microseconds / 1000000.0
 
-class Block(object):
-    def __init__(self, ip, date):
-        self.ip = ip
-        self.begin_date = date
-        self.end_date = date
-
-prev_date = None
-seen = {}
-current = []
-blocks = []
-for line in input_file:
-    m = re.match(r'(\d+-\d+-\d+ \d+:\d+:\d+) proxy ([\d.]+):\d+ connects', line)
-    if not m:
-        continue
-    date_str, ip = m.groups()
-    date = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-
-    if prev_date is None or prev_date != date.date():
-        print date.date()
-        prev_date = date.date()
-
-    block = seen.get(ip)
-    if block is None:
-        block = Block(ip, date)
-        seen[ip] = block
-        current.append(block)
-        # Poor man's priority queue: keep the first to expire (oldest) at the
-        # tail of the list.
-        current.sort(key = lambda x: x.end_date, reverse = True)
-    else:
-        block.end_date = date
-
-    # Delete all those that are now expired.
-    while current:
-        block = current[-1]
-        delta = timedelta_to_seconds(date - block.end_date)
-        if delta > POLL_INTERVAL * 1.5:
-            blocks.append(block)
-            current.pop()
-            del seen[block.ip]
-        else:
-            break
-
-events = []
-for block in blocks:
-    events.append(("begin", block.begin_date))
-    events.append(("end", block.end_date + datetime.timedelta(seconds = POLL_INTERVAL / 2)))
-# Handle any still alive at the end.
-while current:
-    block = current[-1]
-    events.append(("begin", block.begin_date))
-    events.append(("end", date))
-    current.pop()
-    del seen[block.ip]
-
-events.sort(key = lambda x: x[1])
+prev_output = None
+count = 0
 
 data = []
-num = 0
-for i, event in enumerate(events):
-    t = event[1]
-    data.append((t, num))
-    if event[0] == "begin":
-        num += 1
-    elif event[0] == "end":
-        num -= 1
-    data.append((t, num))
+
+for line in input_file:
+    m = re.match(r'^(\d+-\d+-\d+ \d+:\d+:\d+) proxy gets', line)
+    if not m:
+        continue
+    date_str, = m.groups()
+    date = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+
+    count += 1
+
+    rounded_date = date.replace(minute=0, second=0, microsecond=0)
+    prev_output = prev_output or rounded_date
+    if prev_output is None or rounded_date != prev_output:
+        delta = timedelta_to_seconds(date - prev_output)
+        avg = float(count) / delta * POLL_INTERVAL
+        data.append((date, avg))
+        print date, avg
+        prev_output = rounded_date
+        count = 0
+
 data = np.array(data)
 
 fig = plt.figure()

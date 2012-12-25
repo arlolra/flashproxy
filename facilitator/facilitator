@@ -21,6 +21,8 @@ CLIENT_TIMEOUT = 1.0
 # Buffer no more than this many bytes when trying to read a line.
 READLINE_MAX_LENGTH = 10240
 
+MAX_PROXIES_PER_CLIENT = 5
+
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class options(object):
@@ -97,34 +99,41 @@ class Reg(object):
 
 class RegSet(object):
     def __init__(self):
-        self.set = []
+        self.tiers = [[] for i in range(MAX_PROXIES_PER_CLIENT)]
         self.cv = threading.Condition()
 
     def add(self, reg):
         self.cv.acquire()
         try:
-            if reg not in list(self.set):
-                self.set.append(reg)
+            for tier in self.tiers:
+                if reg in tier:
+                    break
+            else:
+                self.tiers[0].append(reg)
                 self.cv.notify()
                 return True
-            else:
-                return False
+            return False
         finally:
             self.cv.release()
 
     def fetch(self):
         self.cv.acquire()
         try:
-            if not self.set:
-                return None
-            return self.set.pop(0)
+            for i in range(len(self.tiers)):
+                tier = self.tiers[i]
+                if tier:
+                    reg = tier.pop(0)
+                    if i + 1 < len(self.tiers):
+                        self.tiers[i+1].append(reg)
+                    return reg
+            return None
         finally:
             self.cv.release()
 
     def __len__(self):
         self.cv.acquire()
         try:
-            return len(self.set)
+            return sum(len(tier) for tier in self.tiers)
         finally:
             self.cv.release()
 
@@ -225,10 +234,27 @@ class Handler(SocketServer.StreamRequestHandler):
         print >> self.wfile, "ERROR"
 
     def do_GET(self, params):
-        reg = REGS.fetch()
+        proxy_spec = fac.param_first("FROM", params)
+        if proxy_spec is None:
+            log(u"GET missing FROM param")
+            self.send_error()
+            return False
+        try:
+            proxy_addr = fac.parse_addr_spec(proxy_spec, defport=0)
+        except ValueError, e:
+            log(u"syntax error in proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
+            self.send_error()
+            return False
+
+        try:
+            reg = get_reg_for_proxy(proxy_addr)
+        except Exception, e:
+            log(u"error getting reg for proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
+            self.send_error()
+            return False
         if reg:
             log(u"proxy gets %s, relay %s (now %d)" %
-                (safe_str(unicode(reg)), options.relay_spec, len(REGS)))
+                (safe_str(unicode(reg)), options.relay_spec, num_regs()))
             print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", options.relay_spec))
         else:
             log(u"proxy gets none")
@@ -245,16 +271,22 @@ class Handler(SocketServer.StreamRequestHandler):
         # FROM
 
         try:
-            reg = Reg.parse(client_spec, self.client_address[0])
+            reg = Reg.parse(client_spec)
         except ValueError, e:
             log(u"syntax error in %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
             self.send_error()
             return False
 
-        if REGS.add(reg):
-            log(u"client %s (now %d)" % (safe_str(unicode(reg)), len(REGS)))
+        try:
+            ok = put_reg(reg)
+        except Exception, e:
+            log(u"error putting reg %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
+            self.send_error()
+            return False
+        if ok:
+            log(u"client %s (now %d)" % (safe_str(unicode(reg)), num_regs()))
         else:
-            log(u"client %s (already present, now %d)" % (safe_str(unicode(reg)), len(REGS)))
+            log(u"client %s (already present, now %d)" % (safe_str(unicode(reg)), num_regs()))
 
         self.send_ok()
         return True
@@ -264,7 +296,43 @@ class Handler(SocketServer.StreamRequestHandler):
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
-REGS = RegSet()
+# Separate pools for IPv4 and IPv6 clients.
+REGS_IPV4 = RegSet()
+REGS_IPV6 = RegSet()
+
+def num_regs():
+    """Return the total number of registrations."""
+    return len(REGS_IPV4) + len(REGS_IPV6)
+
+def regs_for_af(af):
+    """Return the correct regs pool for the given address family."""
+    if af == socket.AF_INET:
+        return REGS_IPV4
+    elif af == socket.AF_INET6:
+        return REGS_IPV6
+    else:
+        raise ValueError("unknown address family %d" % af)
+
+def addr_af(addr_str):
+    """Return the address family for an address string. This is a plain string,
+    not a tuple, and IPv6 addresses are not bracketed."""
+    addrs = socket.getaddrinfo(addr_str, 0, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+    return addrs[0][0]
+
+def get_reg_for_proxy(proxy_addr):
+    """Get a client registration appropriate for the given proxy (one of a
+    matching address family)."""
+    addr_str = proxy_addr[0]
+    af = addr_af(addr_str)
+    REGS = regs_for_af(af)
+    return REGS.fetch()
+
+def put_reg(reg):
+    """Add a registration."""
+    addr_str = reg.host
+    af = addr_af(addr_str)
+    REGS = regs_for_af(af)
+    REGS.add(reg)
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",

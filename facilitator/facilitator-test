@@ -9,6 +9,7 @@ import fac
 
 FACILITATOR_HOST = "127.0.0.1"
 FACILITATOR_PORT = 9002
+FACILITATOR_ADDR = (FACILITATOR_HOST, FACILITATOR_PORT)
 
 def gimme_socket(host, port):
     addrinfo = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
@@ -18,6 +19,11 @@ def gimme_socket(host, port):
     return s
 
 class FacilitatorTest(unittest.TestCase):
+    IPV4_CLIENT_ADDR = ("1.1.1.1", 9000)
+    IPV6_CLIENT_ADDR = ("[11::11]", 9000)
+    IPV4_PROXY_ADDR = ("2.2.2.2", 13000)
+    IPV6_PROXY_ADDR = ("[22::22]", 13000)
+
     def gimme_socket(self):
         return gimme_socket(FACILITATOR_HOST, FACILITATOR_PORT)
 
@@ -54,6 +60,32 @@ class FacilitatorTest(unittest.TestCase):
             self.fail("should have raised a socket error")
         except socket.error:
             pass
+
+    def test_af_v4_v4(self):
+        """Test that IPv4 proxies can get IPv4 clients."""
+        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR)
+        self.assertEqual(reg["client"], fac.format_addr(self.IPV4_CLIENT_ADDR))
+
+    def test_af_v4_v6(self):
+        """Test that IPv4 proxies do not get IPv6 clients."""
+        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR)
+        self.assertEqual(reg["client"], "")
+
+    def test_af_v6_v4(self):
+        """Test that IPv6 proxies do not get IPv4 clients."""
+        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR)
+        self.assertEqual(reg["client"], "")
+
+    def test_af_v6_v6(self):
+        """Test that IPv6 proxies can get IPv6 clients."""
+        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR)
+        self.assertEqual(reg["client"], fac.format_addr(self.IPV6_CLIENT_ADDR))
 
 #     def test_same_proxy(self):
 #         """Test that the same proxy doesn't get the same client when asking

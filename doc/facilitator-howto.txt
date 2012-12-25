@@ -126,6 +126,7 @@ these contents:
 		ServerName tor-facilitator.bamsoftware.com
 		DocumentRoot /dev/null
 		ScriptAliasMatch ^(.*) /usr/local/bin/facilitator.cgi$1
+		CustomLog /dev/null common
 		ErrorLog ${APACHE_LOG_DIR}/error.log
 		LogLevel warn
 		SSLEngine on
@@ -135,9 +136,6 @@ these contents:
 intermediate.pem is a possible intermediate certificate file provided by
 the CA; if you did not get one, then leave off the
 SSLCertificateChainFile line.
-
-We purposely do not include a CustomLog directive so as to not to log
-client and proxy IP addresses.
 
 === HTTPS setup
 

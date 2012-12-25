@@ -15,6 +15,7 @@ DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/"
 class options(object):
     remote_addr = None
     facilitator_url = None
+    address_family = socket.AF_UNSPEC
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -22,6 +23,8 @@ Usage: %(progname)s [REMOTE][:PORT]
 Register with a flash proxy facilitator using an HTTP POST. By default the
 remote address registered is "%(remote_addr)s".
 
+  -4                     name lookups use only IPv4.
+  -6                     name lookups use only IPv6.
   -f, --facilitator=URL  register with the given facilitator
                            (by default "%(fac_url)s").
   -h, --help             show this help. \
@@ -84,9 +87,13 @@ def format_addr(addr):
 options.facilitator_url = DEFAULT_FACILITATOR_URL
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "help"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:h", ["facilitator=", "help"])
 for o, a in opts:
-    if o == "-f" or o == "--facilitator":
+    if o == "-4":
+        options.address_family = socket.AF_INET
+    elif o == "-6":
+        options.address_family = socket.AF_INET6
+    elif o == "-f" or o == "--facilitator":
         options.facilitator_url = a
     elif o == "-h" or o == "--help":
         usage()
@@ -99,6 +106,12 @@ elif len(args) == 1:
 else:
     usage(sys.stderr)
     sys.exit(1)
+
+if options.address_family != socket.AF_UNSPEC:
+    getaddrinfo = socket.getaddrinfo
+    def getaddrinfo_replacement(host, port, family, *args, **kwargs):
+        return getaddrinfo(host, port, options.address_family, *args, **kwargs)
+    socket.getaddrinfo = getaddrinfo_replacement
 
 spec = format_addr(options.remote_addr)
 try:

@@ -1,3 +1,23 @@
+Changes in version 0.11
+  o Added -4 and -6 options to flashproxy-client and
+    flashproxy-reg-http. (The options already existed in
+    flashproxy-reg-email.) These options cause registrations helpers to
+    use IPv4 or IPv6 only. Fixes bug 7622. Patch by Jorge Couchet.
+
+  o The facilitator now gives only IPv4 clients to proxies requesting
+    over IPv4, and IPv6 clients to proxies requesting over IPv6. This is
+    to avoid the situation where an IPv4-only proxy is given an IPv6
+    address it cannot connect to. Fixes bug 6124. Patch by Jorge Couchet
+    and David Fifield.
+
+Changes in version 0.10
+  o Fixed a bug in flashproxy-client that made it susceptible to a
+    denial of service (program crash) when receiving large WebSocket
+    messages made up of many small fragmented frames.
+
+  o Made the facilitator hand out more proxies by default, reducing a
+    client's need to re-register.
+
 Changes in version 0.9
   o There are executable Windows packages of the client programs, so
     that the programs can be run without Python being installed. Fixes
