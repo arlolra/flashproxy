@@ -118,8 +118,8 @@ function parse_cookie_string(cookies) {
         if (j === -1) {
             return null;
         }
-        name = string.substr(0, j).trim();
-        value = string.substr(j + 1).trim();
+        name = decodeURIComponent(string.substr(0, j).trim());
+        value = decodeURIComponent(string.substr(j + 1).trim());
 
         if (!(name in result))
              result[name] = value;
