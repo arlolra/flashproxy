@@ -129,6 +129,10 @@ function test_parse_cookie_string()
           expected: {a: "b" } },
         { cs: "a=",
           expected: { a: "" } },
+        { cs: "key",
+          expected: null },
+        { cs: "key=%26%20",
+          expected: { key: "& " } },
         { cs: "a=\"\"",
           expected: { a: "\"\"" } },
     ];
