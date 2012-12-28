@@ -107,6 +107,46 @@ function test_build_url()
     }
 }
 
+/* This test only checks that things work for strings
+   formatted like document.cookie. Browsers maintain
+   several properties about this string, for example
+   cookie names are unique with no trailing whitespace.
+   See http://www.ietf.org/rfc/rfc2965.txt for the grammar. */
+function test_parse_cookie_string()
+{
+    var TESTS = [
+        { cs: "",
+          expected: { } },
+        { cs: "a=b",
+          expected: { a: "b"} },
+        { cs: "a=b=c",
+          expected: { a: "b=c"} },
+        { cs: "a=b; c=d",
+          expected: { a: "b", c: "d" } },
+        { cs: "a=b ; c=d",
+          expected: { a: "b ", c: "d" } },
+        { cs: "a= b",
+          expected: {a: " b" } },
+        /* The '=' character is always present. */
+        { cs: "a=",
+          expected: { a: "" } },
+        { cs: "a=\"\"",
+          expected: { a: "\"\"" } },
+    ];
+
+    announce("test_parse_cookie_string");
+    for (var i = 0; i < TESTS.length; i++) {
+        var test = TESTS[i];
+        var actual;
+
+        actual = parse_cookie_string(test.cs);
+        if (objects_equal(actual, test.expected))
+            pass(test.cs);
+        else
+            fail(test.cs, test.expected, actual);
+    }
+}
+
 function test_parse_query_string()
 {
     var TESTS = [
@@ -266,6 +306,7 @@ function test_get_param_addr()
 }
 
 test_build_url();
+test_parse_cookie_string();
 test_parse_query_string();
 test_get_param_boolean();
 test_parse_addr_spec();
