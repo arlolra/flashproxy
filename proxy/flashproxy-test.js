@@ -124,10 +124,9 @@ function test_parse_cookie_string()
         { cs: "a=b; c=d",
           expected: { a: "b", c: "d" } },
         { cs: "a=b ; c=d",
-          expected: { a: "b ", c: "d" } },
+          expected: { a: "b", c: "d" } },
         { cs: "a= b",
-          expected: {a: " b" } },
-        /* The '=' character is always present. */
+          expected: {a: "b" } },
         { cs: "a=",
           expected: { a: "" } },
         { cs: "a=\"\"",
