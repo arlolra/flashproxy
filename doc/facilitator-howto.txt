@@ -122,6 +122,7 @@ Edit /etc/apache2/ports.conf and comment out the port 80 configuration.
 
 Create a new file /etc/apache2/sites-available/tor-facilitator with
 these contents:
+	MaxClients 256
 	<VirtualHost *:443>
 		ServerName tor-facilitator.bamsoftware.com
 		DocumentRoot /dev/null
