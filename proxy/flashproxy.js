@@ -489,9 +489,9 @@ function FlashProxy() {
             puts("Error: the \"relay\" parameter requires \"client\" also.")
             this.die();
             return;
-        } else {
-            setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval * 1000);
         }
+
+        setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval * 1000);
     };
 
     this.proxy_main = function() {
