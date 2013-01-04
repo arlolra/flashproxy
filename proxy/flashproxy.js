@@ -490,7 +490,7 @@ function FlashProxy() {
             this.die();
             return;
         } else {
-            this.proxy_main();
+            setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval * 1000);
         }
     };
 
