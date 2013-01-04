@@ -498,7 +498,7 @@ function FlashProxy() {
         var xhr;
 
         if (this.proxy_pairs.length >= this.max_num_proxy_pairs) {
-            setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval);
+            setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval * 1000);
             return;
         }
 
