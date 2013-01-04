@@ -124,7 +124,7 @@ function update_setting_text() {
     if (value === undefined) {
         setting.innerHTML = prefix + "unspecified. Your browser may or may not " +
                                      "run as a proxy, depending on how the website " +
-                                     "administrator has configured the badge. Click " +
+                                     "administrator has configured the badge. (See <a href=\"https://lists.torproject.org/pipermail/tor-dev/2012-December/004318.html\">this mailing list post</a> for more information about opt-in versus opt-out.) Click " +
                                      "the buttons below to change your setting.";
     } else if (value === "1") {
         setting.innerHTML = prefix + "use my browser as a proxy. " +
