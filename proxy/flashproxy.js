@@ -491,6 +491,7 @@ function FlashProxy() {
             return;
         }
 
+        puts("Starting; will contact facilitator in " + this.facilitator_poll_interval + " seconds.");
         setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval * 1000);
     };
 
