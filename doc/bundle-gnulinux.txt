@@ -87,7 +87,7 @@ https://www.torproject.org/dist/torbrowser/linux/tor-obfsproxy-browser-gnu-linux
 Extract the bundle.
 
 	$ gpg --verify tor-obfsproxy-browser-gnu-linux-i686-2.4.6-alpha-2-dev-en-US.tar.gz.asc
-	$ tar xzvf tor-obfsproxy-browser-gnu-linux-i686-2.4.6-alpha-2-dev-en-US.tar.gz.asc
+	$ tar xzvf tor-obfsproxy-browser-gnu-linux-i686-2.4.6-alpha-2-dev-en-US.tar.gz
 	$ cd tor-browser_en-US
 
 Copy files into the bundle.
