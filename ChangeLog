@@ -10,6 +10,17 @@ Changes in version 0.11
     address it cannot connect to. Fixes bug 6124. Patch by Jorge Couchet
     and David Fifield.
 
+  o The proxy now accepts a cookierequired parameter that controls
+    whether users have to explicitly state their desire to be a proxy.
+    The page at http://crypto.stanford.edu/flashproxy/options.html
+    allows changing user preference.
+
+  o Proxies now poll for clients every 60 seconds rather than 10
+    seconds, and do not begin to poll immediately upon beginning to run.
+
+  o There are new alpha Tor Browser Bundles for download at
+    https://people.torproject.org/~dcf/flashproxy/.
+
 Changes in version 0.10
   o Fixed a bug in flashproxy-client that made it susceptible to a
     denial of service (program crash) when receiving large WebSocket
