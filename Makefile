@@ -1,4 +1,4 @@
-VERSION = 0.10
+VERSION = 0.11
 
 PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
