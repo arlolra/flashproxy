@@ -13,6 +13,38 @@ The sha256sum of the package I used was
 
 fe4807b4698ec89f82de7d85d32deaa4c772fc871537e31fb0fccf4473455cb8 7z920.msi
 
+=== PyCrypto
+
+http://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz
+http://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz.asc
+
+To install run:
+
+	$ python setup.py install
+
+=== zope.interface
+
+Required by Twisted. Visit https://pypi.python.org/pypi/zope.interface/4.0.3#downloads
+and download the appropriate egg for your version of Windows. Extract the egg and
+copy the EGG-INFO and zope directories to /cygdrive/c/Python27/Lib/site-packages.
+
+=== Twisted
+
+Download and run the appropriate installer from https://twistedmatrix.com/trac/wiki/Downloads.
+
+=== pyptlib
+
+Run:
+
+	$ git clone https://git.torproject.org/user/asn/pyptlib.git
+	$ cd pyptlib && python setup.py install
+
+== Bundle pyobfsproxy
+
+Use PyInstaller to bundle pyobfsproxy.
+
+	$ ../pyinstaller-2.0/pyinstaller.py obfsproxy.py
+
 == Browser bundle
 
 Run "make dist-exe" in the flashproxy source directory.
@@ -36,21 +68,30 @@ from being overwritten.
 	$ cp -n ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
 	$ mkdir -p Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
+	$ cp -r ~/pyobfsproxy/dist/obfsproxy/{*.pyd,*.dll,*.exe,*.manifest,eggs} App
+	$ mkdir -p Docs/PyObfsproxy
+	$ cp ~/pyobfsproxy/{LICENSE,README} Docs/PyObfsproxy
 
 Make the second half of Data/Tor/torrc look like this (i.e., keep
 the generic configuration, but change the obfsproxy-specific stuff).
 Basically you are concatenating the normal flashproxy-client torrc, but
-changing "./flashproxy-client" to "flashproxy-client".
+changing "./flashproxy-client" to "flashproxy-client". You are also
+changing "--managed" to "managed" in the obfsproxy ClientTransportPlugin line.
 
 UseBridges 1
 # The address and port are ignored by the client transport plugin.
 Bridge websocket 0.0.1.0:1
+
+# Keep the list of obfs2 bridges
+...
+
 LearnCircuitBuildTimeout 0
 CircuitBuildTimeout 60
 # Change the second number here (9000) to the number of a port that can
 # receive connections from the Internet (the port for which you
 # configured port forwarding).
 ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
+ClientTransportPlugin obfs2 exec obfsproxy managed
 
 Re-zip the bundle. The "alpha" number should be independent of the
 obfsproxy bundle's alpha. The 7zg program (as opposed to 7z) causes the

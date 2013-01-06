@@ -1,8 +1,8 @@
 This document describes how to build a Tor Browser bundle for Mac OS X
-that is preconfigured to use the flash proxy transport. Because Mac have
-Python preinstalled, we include the Python source of the programs. An
-exception to this is the M2Crypto library, which has some compiled
-components.
+that is preconfigured to use the pyobfsproxy and flashproxy transports.
+Because Macs have Python preinstalled, we include the Python source of
+the programs. Exceptions to this are the M2Crypto and PyCrypto libraries,
+which have some compiled components.
 
 == Dependencies
 
@@ -41,6 +41,20 @@ http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-0.21.1.tar.gz.asc
 	$ mkdir -p ~/usr/lib/python2.7/site-packages/
 	$ python setup.py install --root=~/bundle --prefix=/usr
 
+=== PyCrypto
+
+http://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz
+http://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz.asc
+
+Extract and verify the tarball. Then run
+
+	$ python setup.py install --root=~/bundle --prefix=/usr
+
+=== pyptlib
+
+	$ git clone https://git.torproject.org/user/asn/pyptlib.git
+	$ cd pyptlib && python setup.py install --root=~/bundle --prefix=/usr
+
 == Browser bundle
 
 Run "make dist" in the flashproxy source directory.
@@ -64,20 +78,33 @@ Copy files into the bundle.
 	$ mkdir -p Contents/Resources/Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE,ChangeLog} Contents/Resources/Docs/FlashProxy
 
+	$ rm Contents/MacOs/obfsproxy
+	$ cp -r ~/pyobfsproxy/{obfsproxy,obfsproxy.py} Contents/MacOs
+	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/{Crypto,pyptlib} Contents/MacOS
+	$ mkdir -p Contents/Resources/Docs/PyObfsproxy
+	$ cp ~/pyobfsproxy/{LICENSE,README} Contents/Resources/Docs/PyObfsproxy
+
 Make the second half of Library/Vidalia/torrc look like this (i.e., keep
 the generic configuration, but change the obfsproxy-specific stuff).
 Basically you are concatenating the normal flashproxy-client torrc, but
-changing "./flashproxy-client" to "flashproxy-client".
+changing "./flashproxy-client" to "flashproxy-client". You are also
+changing "--managed" to "managed" and "obfsproxy" to "obfsproxy.py" in
+the obfsproxy ClientTransportPlugin line.
 
 UseBridges 1
 # The address and port are ignored by the client transport plugin.
 Bridge websocket 0.0.1.0:1
+
+# Keep the obfs2 bridges.
+...
+
 LearnCircuitBuildTimeout 0
 CircuitBuildTimeout 60
 # Change the second number here (9000) to the number of a port that can
 # receive connections from the Internet (the port for which you
 # configured port forwarding).
 ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
+ClientTransportPlugin obfs2 exec obfsproxy.py managed
 
 Re-zip the bundle. The "alpha" number should be independent of the
 obfsproxy bundle's alpha.
