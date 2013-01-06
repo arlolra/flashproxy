@@ -37,9 +37,9 @@ http://chandlerproject.org/Projects/MeTooCrypto#Downloads
 http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-0.21.1.tar.gz
 http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-0.21.1.tar.gz.asc
 
-$ python setup.py build_ext --swig ~/bundle/usr/bin/swig
-$ mkdir -p ~/usr/lib/python2.7/site-packages/
-$ python setup.py install --root ~/bundle --prefix=/usr
+	$ python setup.py build_ext --swig ~/bundle/usr/bin/swig
+	$ mkdir -p ~/usr/lib/python2.7/site-packages/
+	$ python setup.py install --root=~/bundle --prefix=/usr
 
 == Browser bundle
 
