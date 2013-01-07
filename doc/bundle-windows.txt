@@ -64,7 +64,7 @@ http://twistedmatrix.com/Releases/twisted-12.3.0-md5sums.txt
 	$ cd pyptlib
 	$ /cygdrive/c/Python27/python.exe setup.py install
 
-== pyobfsproxy
+=== pyobfsproxy
 
 Just download this; it will be packaged with PyInstaller in the next
 step.
