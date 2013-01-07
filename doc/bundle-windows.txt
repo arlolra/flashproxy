@@ -15,60 +15,90 @@ fe4807b4698ec89f82de7d85d32deaa4c772fc871537e31fb0fccf4473455cb8 7z920.msi
 
 === PyCrypto
 
-http://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz
-http://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz.asc
+This is a dependency of pyobfsproxy and Twisted.
+
+https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz
+https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz.asc
 
 To install run:
 
-	$ python setup.py install
+	$ /cygdrive/c/Python27/python.exe setup.py install
+
+=== setuptools
+
+This is needed solely to install the zopeinterface egg in the next step.
+
+http://pypi.python.org/pypi/setuptools
+http://pypi.python.org/packages/2.7/s/setuptools/setuptools-0.6c11.win32-py2.7.exe
+
+The sha256sum of the package I used was
+
+676d0add7ece45aaee7dddb6ecb883cb531c68f064f56376f529b47228c467eb setuptools-0.6c11.win32-py2.7.exe
 
 === zope.interface
 
-Required by Twisted. Visit https://pypi.python.org/pypi/zope.interface/4.0.3#downloads
-and download the appropriate egg for your version of Windows. Extract the egg and
-copy the EGG-INFO and zope directories to /cygdrive/c/Python27/Lib/site-packages.
+This is a dependency of Twisted.
+
+http://pypi.python.org/pypi/zope.interface#download
+http://pypi.python.org/packages/2.7/z/zope.interface/zope.interface-4.0.3-py2.7-win32.egg
+
+The sha256sum of the package I used was
+
+3898e9ff89121aae1e8387bf2da75535911d8422dad3a194176d78766573b5d2 zope.interface-4.0.3-py2.7-win32.egg
+
+	$ /cygdrive/c/Python27/Scripts/easy_install zope.interface-4.0.3-py2.7-win32.egg
 
 === Twisted
 
-Download and run the appropriate installer from https://twistedmatrix.com/trac/wiki/Downloads.
+http://twistedmatrix.com/trac/wiki/Downloads
+http://twistedmatrix.com/Releases/Twisted/12.3/Twisted-12.3.0.win32-py2.7.msi
+http://twistedmatrix.com/Releases/twisted-12.3.0-md5sums.txt
+
+	$ gpg --verify twisted-12.3.0-md5sums.txt
+	$ grep win32-py2\\.7\\.msi twisted-12.3.0-md5sums.txt
+	$ md5sum Twisted-12.3.0.win32-py2.7.msi
 
 === pyptlib
 
-Run:
-
 	$ git clone https://git.torproject.org/user/asn/pyptlib.git
-	$ cd pyptlib && python setup.py install
+	$ cd pyptlib
+	$ /cygdrive/c/Python27/python.exe setup.py install
 
-== Bundle pyobfsproxy
+== pyobfsproxy
 
-Use PyInstaller to bundle pyobfsproxy.
+Just download this; it will be packaged with PyInstaller in the next
+step.
 
-	$ ../pyinstaller-2.0/pyinstaller.py obfsproxy.py
+	$ git clone https://git.torproject.org/user/asn/pyobfsproxy.git -b obfs3_take2
 
 == Browser bundle
 
-Run "make dist-exe" in the flashproxy source directory.
+Run in the flashproxy source directory:
+	$ make dist-exe
+Run in the pyobfsproxy source directory:
+	$ /cygdrive/c/Python27/python.exe ../pyinstaller-2.0/pyinstaller.py obfsproxy.py
 
 Download the obfsproxy bundle from
 https://www.torproject.org/projects/obfsproxy.
 
-https://www.torproject.org/dist/torbrowser/tor-obfsproxy-browser-2.4.6-alpha-2_en-US.exe
-https://www.torproject.org/dist/torbrowser/tor-obfsproxy-browser-2.4.6-alpha-2_en-US.exe.asc
+https://www.torproject.org/dist/torbrowser/tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe
+https://www.torproject.org/dist/torbrowser/tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe.asc
 
 Extract the bundle.
 
-	$ gpg --verify tor-obfsproxy-browser-2.4.6-alpha-2_en-US.exe.asc
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" x tor-obfsproxy-browser-2.4.6-alpha-2_en-US.exe
+	$ gpg --verify tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe.asc
+	$ rm -r "Tor Browser"
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" x tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe
+
+Copy files into the bundle. The -n option to cp prevents the existing
+LIBEAY32.dll and SSLEAY32.dll from being overwritten.
+
 	$ cd "Tor Browser"
-
-Copy files into the bundle. We could remove obfsproxy here but don't.
-The -n option to cp prevents the existing LIBEAY32.dll and SSLEAY32.dll
-from being overwritten.
-
+	$ rm -f App/obfsproxy.exe
 	$ cp -n ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
 	$ mkdir -p Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
-	$ cp -r ~/pyobfsproxy/dist/obfsproxy/{*.pyd,*.dll,*.exe,*.manifest,eggs} App
+	$ cp -nr ~/pyobfsproxy/dist/obfsproxy/{*.pyd,*.dll,*.exe,*.manifest,eggs} App
 	$ mkdir -p Docs/PyObfsproxy
 	$ cp ~/pyobfsproxy/{LICENSE,README} Docs/PyObfsproxy
 
@@ -91,17 +121,17 @@ CircuitBuildTimeout 60
 # receive connections from the Internet (the port for which you
 # configured port forwarding).
 ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
-ClientTransportPlugin obfs2 exec obfsproxy managed
+ClientTransportPlugin obfs2,obfs3 exec obfsproxy managed
 
 Re-zip the bundle. The "alpha" number should be independent of the
 obfsproxy bundle's alpha. The 7zg program (as opposed to 7z) causes the
 self-extractor to show a GUI.
 
 	$ cd ..
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-flashproxy-browser-2.4.6-alpha-1_en-US.exe "Tor Browser"
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-flashproxy-pyobfsproxy-browser-2.4.7-alpha-1_en-US.exe "Tor Browser"
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon and "Start Tor Browser.exe".
 
 	$ mkdir tmp
-	$ cp tor-flashproxy-browser-2.4.6-alpha-1_en-US.exe tmp
+	$ cp tor-flashproxy-pyobfsproxy-browser-2.4.7-alpha-1_en-US.exe tmp
