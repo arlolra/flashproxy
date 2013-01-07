@@ -43,8 +43,8 @@ http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-0.21.1.tar.gz.asc
 
 === PyCrypto
 
-http://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz
-http://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz.asc
+https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz
+https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz.asc
 
 Extract and verify the tarball. Then run
 
@@ -53,36 +53,47 @@ Extract and verify the tarball. Then run
 === pyptlib
 
 	$ git clone https://git.torproject.org/user/asn/pyptlib.git
-	$ cd pyptlib && python setup.py install --root=~/bundle --prefix=/usr
+	$ cd pyptlib
+	$ python setup.py install --root=~/bundle --prefix=/usr
 
 == Browser bundle
 
-Run "make dist" in the flashproxy source directory.
+Clone and build the flashproxy source.
+
+	$ git clone https://git.torproject.org/flashproxy.git
+	$ cd flashproxy
+	$ make dist
+
+Clone pyobfsproxy.
+
+	$ git clone https://git.torproject.org/user/asn/pyobfsproxy.git -b obfs3_take2
 
 Download the 32-bit obfsproxy bundle from
 https://www.torproject.org/projects/obfsproxy.
 
-https://www.torproject.org/dist/torbrowser/osx/TorBrowser-Obfsproxy-2.4.6-alpha-2-osx-i386-en-US.zip
-https://www.torproject.org/dist/torbrowser/osx/TorBrowser-Obfsproxy-2.4.6-alpha-2-osx-i386-en-US.zip.asc
+https://www.torproject.org/dist/torbrowser/osx/TorBrowser-Obfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip
+https://www.torproject.org/dist/torbrowser/osx/TorBrowser-Obfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip.asc
 
 Extract the bundle.
 
-	$ gpg --verify TorBrowser-Obfsproxy-2.4.6-alpha-2-osx-i386-en-US.zip.asc
-	$ unzip TorBrowser-Obfsproxy-2.4.6-alpha-2-osx-i386-en-US.zip
-	$ cd TorBrowser_en-US.app
+	$ gpg --verify TorBrowser-Obfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip.asc
+	$ rm -r TorBrowser_en-US.app
+	$ unzip TorBrowser-Obfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip
 
 Copy files into the bundle.
 
+	$ cd TorBrowser_en-US.app
+	$ rm -f Contents/MacOS/obfsproxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} Contents/MacOS
 	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/M2Crypto Contents/MacOS
 	$ mkdir -p Contents/Resources/Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE,ChangeLog} Contents/Resources/Docs/FlashProxy
-
-	$ rm Contents/MacOs/obfsproxy
 	$ cp -r ~/pyobfsproxy/{obfsproxy,obfsproxy.py} Contents/MacOs
 	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/{Crypto,pyptlib} Contents/MacOS
 	$ mkdir -p Contents/Resources/Docs/PyObfsproxy
 	$ cp ~/pyobfsproxy/{LICENSE,README} Contents/Resources/Docs/PyObfsproxy
+	$ find App -name '*.pyc' | xargs rm -f
+	$ find Contents/MacOS -name '*.pyc' | xargs rm -f
 
 Make the second half of Library/Vidalia/torrc look like this (i.e., keep
 the generic configuration, but change the obfsproxy-specific stuff).
@@ -104,17 +115,17 @@ CircuitBuildTimeout 60
 # receive connections from the Internet (the port for which you
 # configured port forwarding).
 ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
-ClientTransportPlugin obfs2 exec obfsproxy.py managed
+ClientTransportPlugin obfs2,obfs3 exec obfsproxy.py managed
 
 Re-zip the bundle. The "alpha" number should be independent of the
 obfsproxy bundle's alpha.
 
 	$ cd ..
-	$ rm -f TorBrowser-FlashProxy-2.4.6-alpha-1-osx-i386-en-US.zip
-	$ zip -r -9 TorBrowser-FlashProxy-2.4.6-alpha-1-osx-i386-en-US.zip TorBrowser_en-US.app/
+	$ rm -f TorBrowser-FlashProxy-PyObfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip
+	$ zip -r -9 TorBrowser-FlashProxy-PyObfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip TorBrowser_en-US.app/
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon to unzip, and run TorBrowser_en-US.app.
 
 	$ mkdir tmp
-	$ cp TorBrowser-FlashProxy-2.4.6-alpha-1-osx-i386-en-US.zip tmp
+	$ cp TorBrowser-FlashProxy-PyObfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip tmp
