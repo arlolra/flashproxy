@@ -97,6 +97,7 @@ function puts(s) {
         /* http://www.w3.org/TR/cssom-view/#element-scrolling-members */
         at_bottom = (debug_div.scrollTop + debug_div.clientHeight === debug_div.scrollHeight);
         debug_div.appendChild(document.createTextNode(s + "\n"));
+        console.debug(s);
         if (at_bottom)
             debug_div.scrollTop = debug_div.scrollHeight;
     }
