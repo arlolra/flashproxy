@@ -1,3 +1,9 @@
+Changes in version 0.12
+  o Added a line of JavaScript that you can use to put a proxy badge on
+    MediaWiki sites that allow custom JavaScript. Follow the
+    instructions in modules/mediawiki/custom.js. Contributed by
+    Sathyanarayanan Gunasekaran.
+
 Changes in version 0.11
   o Added -4 and -6 options to flashproxy-client and
     flashproxy-reg-http. (The options already existed in
