@@ -64,7 +64,7 @@ var DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/";
 var DEFAULT_MAX_NUM_PROXY_PAIRS = 10;
 
 var DEFAULT_INITIAL_FACILITATOR_POLL_INTERVAL = 60.0;
-var DEFAULT_FACILITATOR_POLL_INTERVAL = 60.0;
+var DEFAULT_FACILITATOR_POLL_INTERVAL = 600.0;
 var MIN_FACILITATOR_POLL_INTERVAL = 1.0;
 
 /* Bytes per second. Set to undefined to disable limit. */
