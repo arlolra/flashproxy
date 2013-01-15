@@ -25,6 +25,10 @@
  * How often to poll the facilitator, in seconds. The default is
  * DEFAULT_FACILITATOR_POLL_INTERVAL. There is a sanity-check minimum of 1.0 s.
  *
+ * initial_facilitator_poll_interval=<FLOAT>
+ * How long to wait before polling the facilitator the first time, in seconds.
+ * DEFAULT_INITIAL_FACILITATOR_POLL_INTERVAL.
+ *
  * max_clients=<NUM>
  * How many clients to serve concurrently. The default is
  * DEFAULT_MAX_NUM_PROXY_PAIRS.
@@ -59,6 +63,7 @@ var DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/";
 
 var DEFAULT_MAX_NUM_PROXY_PAIRS = 10;
 
+var DEFAULT_INITIAL_FACILITATOR_POLL_INTERVAL = 60.0;
 var DEFAULT_FACILITATOR_POLL_INTERVAL = 60.0;
 var MIN_FACILITATOR_POLL_INTERVAL = 1.0;
 
@@ -446,6 +451,13 @@ function FlashProxy() {
             return;
         }
 
+        this.initial_facilitator_poll_interval = get_param_timespec(query, "initial_facilitator_poll_interval", DEFAULT_INITIAL_FACILITATOR_POLL_INTERVAL);
+        if (this.initial_facilitator_poll_interval === null || this.initial_facilitator_poll_interval < 0) {
+            puts("Error: initial_facilitator_poll_interval must be a nonnegative number.");
+            this.die();
+            return;
+        }
+
         this.facilitator_poll_interval = get_param_timespec(query, "facilitator_poll_interval", DEFAULT_FACILITATOR_POLL_INTERVAL);
         if (this.facilitator_poll_interval === null || this.facilitator_poll_interval < MIN_FACILITATOR_POLL_INTERVAL) {
             puts("Error: facilitator_poll_interval must be a nonnegative number at least " + MIN_FACILITATOR_POLL_INTERVAL + ".");
@@ -491,8 +503,8 @@ function FlashProxy() {
             return;
         }
 
-        puts("Starting; will contact facilitator in " + this.facilitator_poll_interval + " seconds.");
-        setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval * 1000);
+        puts("Starting; will contact facilitator in " + this.initial_facilitator_poll_interval + " seconds.");
+        setTimeout(this.proxy_main.bind(this), this.initial_facilitator_poll_interval * 1000);
     };
 
     this.proxy_main = function() {
