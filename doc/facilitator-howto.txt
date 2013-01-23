@@ -6,8 +6,8 @@ We will use the domain name tor-facilitator.example.com.
 The facilitator consists of a backend server that is essentially a
 dynamic database of client addresses, as well as helper programs that
 receive client registrations from the Internet over various means and
-pass them to the backend. There are two supported helper rendezvous
-methods: HTTP and email.
+pass them to the backend. There are three supported helper rendezvous
+methods: HTTP, URL and email.
 
 The HTTP rendezvous uses an HTTP server and a CGI program. The HTTP
 server is responsible for speaking TLS and invoking the CGI program. The
@@ -21,6 +21,12 @@ Clients use the flashproxy-reg-email program to send an encrypted
 message to a Gmail address. The poller constantly checks for new
 messages, decrypts and deletes them, and forwards the registrations to
 the facilitator.
+
+The URL method uses the facilitator-reg-url daemon and the
+flashproxy-reg-url helper program. flashproxy-reg-url prints
+out URLs that can be used to register a client with a facilitator.
+These URLs can then be pasted into a unblocked third-party URL retreival
+serice, like the W3C Markup Validation Service.
 
 fac.py is a Python module containing code common to the various
 facilitator programs.
@@ -94,19 +100,21 @@ Restart servers.
 
 == Facilitator program installation
 
-	# apt-get install git
+	# apt-get install git python-m2crypto
 	# git clone https://git.torproject.org/flashproxy.git
 	# cd flashproxy/facilitator
 	# make install
 
 This installs facilitator.cgi, facilitator, facilitator-email-poller,
-and fac.py to /usr/local/bin. It also installs System V init files to
-/etc/init.d/.
+facilitator-reg-url, and fac.py to /usr/local/bin. It also installs
+System V init files to /etc/init.d/.
 
 	# update-rc.d facilitator defaults
 	# /etc/init.d/facilitator start
 	# update-rc.d facilitator-email-poller defaults
 	# /etc/init.d/facilitator-email-poller start
+    # update-rc.d facilitator-reg-url defaults
+    # /etc/init.d/facilitator-reg-url start
 
 == HTTP server setup
 
@@ -186,3 +194,20 @@ reg-email.pub into the appropriate place.
 Install reg-email.key and reg-email.pass to /etc/flashproxy to match
 what the init script expects, or else use the --key and --pass options
 if you have them stored in another place.
+
+=== URL registration daemon setup
+
+The facilitator-reg-url program handles the decryption of registrations
+by URL. Like facilitator-email-poller, it requires an RSA keypair.
+
+# openssl genrsa -out /etc/flashproxy/reg-url.key 2048
+# chmod 600 /etc/flashproxy/reg-url.key
+# openssl rsa -pubout < /etc/flashproxy/reg-url.key > reg-url.pub
+
+
+You will have to edit flashproxy-reg-url and copy the contents of
+reg-url.pub into the appropriate place.
+
+Install the private key to /etc/flashproxy to match what the init
+script expects or use the --key option to specify a different
+location.
