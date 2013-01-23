@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+import base64
+import socket
+import sys
+import re
+import getopt
+
+from M2Crypto import RSA, BIO
+
+FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/"
+DEFAULT_REMOTE_PORT = 9000
+
+def usage(f=sys.stdout):
+    print >> f, """\
+Usage: %(progname)s REMOTE[:PORT]
+
+Print a URL suitable for registering your client with the facilitator
+at %(fac)s. This URL can be copy-pasted into an unblocked URL retrieval
+service. The argument is the external address and port you wish to register.
+If you omit the port, it will default to %(port)s.
+
+    -h, --help              show this message and exit.
+
+""" % {
+    "progname": sys.argv[0],
+    "fac": FACILITATOR_URL,
+    "port": DEFAULT_REMOTE_PORT,
+}
+
+FACILITATOR_PUBKEY_PEM = """\
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzntbuj1olKgr1rTHiZqm
+a/D7xauVqkpdkEF24eONpYfe1ziatBPft5X9D9flHnsa6mZlE671MT6CmjPo5Be/
+urk5gEiXvLiYlrWLAdYd/VzUow5JYLc24rLGHZxKrbXRNf2rdkH7fBlyOekmLj2G
+k4Bi/t3OQvXP+7D+4ZVVrYemSWxSCSonjMSQg62TrQalyaTAjZNl9SLdALchR8Kk
+rJS9VgCCjY5vG29WhWattEtlH5lKdkPcobhR/12MYh12AsdgDh7r2Zv9pSkDPuRb
+mSvIn0b5R700sroS4BwwMpJOJFBnsFzE+Zz2MxGWwAf+9tXQW2Xfmarea0BaKOx/
+awIDAQAB
+-----END PUBLIC KEY-----\
+"""
+
+def parse_addr_spec(spec, defhost = None, defport = None):
+    host = None
+    port = None
+    af = 0
+    m = None
+    # IPv6 syntax.
+    if not m:
+        m = re.match(ur'^\[(.+)\]:(\d*)$', spec)
+        if m:
+            host, port = m.groups()
+            af = socket.AF_INET6
+    if not m:
+        m = re.match(ur'^\[(.+)\]$', spec)
+        if m:
+            host, = m.groups()
+            af = socket.AF_INET6
+    # IPv4/hostname/port-only syntax.
+    if not m:
+        try:
+            host, port = spec.split(":", 1)
+        except ValueError:
+            host = spec
+        if re.match(ur'^[\d.]+$', host):
+            af = socket.AF_INET
+        else:
+            af = 0
+    host = host or defhost
+    port = port or defport
+    if port is not None:
+        port = int(port)
+    return host, port
+
+def format_addr(addr):
+    host, port = addr
+    if not host:
+        return u":%d" % port
+    # Numeric IPv6 address?
+    try:
+        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM,
+socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+        af = addrs[0][0]
+    except socket.gaierror, e:
+        af = 0
+    if af == socket.AF_INET6:
+        result = u"[%s]" % host
+    else:
+        result = "%s" % host
+    if port is not None:
+        result += u":%d" % port
+    return result
+
+
+opt, args = getopt.gnu_getopt(sys.argv[1:], "h", ["help"])
+for o, a in opt:
+    if o == "-h" or o == "--help":
+        usage()
+        sys.exit(0)
+
+if len(args) != 1:
+    usage(f=sys.stderr)
+    sys.exit(1)
+
+addr = parse_addr_spec(args[0], defport=DEFAULT_REMOTE_PORT)
+spec = format_addr(addr)
+
+rsa = RSA.load_pub_key_bio(BIO.MemoryBuffer(FACILITATOR_PUBKEY_PEM))
+ciphertext = rsa.public_encrypt(spec, RSA.pkcs1_oaep_padding)
+reg = base64.urlsafe_b64encode(ciphertext)
+
+print "/".join([FACILITATOR_URL.strip("/"), "reg", reg])
