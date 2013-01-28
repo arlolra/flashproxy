@@ -4,6 +4,20 @@
 // to partially read a frame. WebsocketConfig.MaxMessageSize affords control of
 // the maximum buffering of messages.
 //
+// The reason for using this custom implementation instead of
+// code.google.com/p/go.net/websocket is that the latter has problems with long
+// messages and does not support server subprotocols.
+//   "Denial of Service Protection in Go HTTP Servers"
+//   https://code.google.com/p/go/issues/detail?id=2093
+//   "go.websocket: Read/Copy fail with long frames"
+//   https://code.google.com/p/go/issues/detail?id=2134
+//   http://golang.org/pkg/net/textproto/#pkg-bugs
+//   "To let callers manage exposure to denial of service attacks, Reader should
+//   allow them to set and reset a limit on the number of bytes read from the
+//   connection."
+//   "websocket.Dial doesn't limit response header length as http.Get does"
+//   https://groups.google.com/forum/?fromgroups=#!topic/golang-nuts/2Tge6U8-QYI
+//
 // Example usage:
 //
 // func doSomething(ws *Websocket) {
