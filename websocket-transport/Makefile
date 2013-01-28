@@ -1,7 +1,7 @@
 PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 
-PROGRAMS = websocket-client websocket-server
+PROGRAMS = websocket-server
 
 GOBUILDFLAGS =
 # Alternate flags to use gccgo, allowing cross-compiling for x86 from
@@ -11,7 +11,6 @@ GOBUILDFLAGS =
 
 all: websocket-server
 
-websocket-client: websocket-client.go socks.go pt.go
 websocket-server: websocket-server.go pt.go websocket.go
 
 %: %.go

@@ -1,5 +1,4 @@
 /facilitator.log
 *.pyc
 /dist
-/websocket-transport/websocket-client
 /websocket-transport/websocket-server
