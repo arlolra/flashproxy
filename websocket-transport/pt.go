@@ -32,6 +32,10 @@ import (
 	"strings"
 )
 
+func getenv(key string) string {
+	return os.Getenv(key)
+}
+
 // Abort with an ENV-ERROR if the environment variable isn't set.
 func getenvRequired(key string) string {
 	value := os.Getenv(key)
