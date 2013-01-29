@@ -231,6 +231,9 @@ func (ws *Websocket) WriteFrame(opcode byte, payload []byte) (err error) {
 	var maskKey [4]byte
 	if ws.IsClient {
 		_, err = io.ReadFull(rand.Reader, maskKey[:])
+		if err != nil {
+			return
+		}
 		applyMask(payload, maskKey)
 		maskBit = 0x80
 	} else {
