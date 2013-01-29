@@ -259,12 +259,21 @@ func getServerBindAddrs(methodNames []string) []PtBindAddr {
 	return result
 }
 
+// Reads and validates the contents of an auth cookie file. Returns the 32-byte
+// cookie. See section 4.2.1.2 of pt-spec.txt.
+func readAuthCookieFile(filename string) ([]byte, error) {
+	cookie := make([]byte, 32)
+
+	return cookie, nil
+}
+
 // This structure is returned by PtServerSetup. It consists of a list of
 // PtBindAddrs, along with a single address for the ORPort.
 type PtServerInfo struct {
 	BindAddrs      []PtBindAddr
 	OrAddr         *net.TCPAddr
 	ExtendedOrAddr *net.TCPAddr
+	AuthCookie     []byte
 }
 
 // Check the server pluggable transports environments, emitting an error message
@@ -299,6 +308,14 @@ func PtServerSetup(methodNames []string) PtServerInfo {
 		info.ExtendedOrAddr, err = net.ResolveTCPAddr("tcp", extendedOrPort)
 		if err != nil {
 			PtEnvError(fmt.Sprintf("cannot resolve TOR_PT_EXTENDED_SERVER_PORT %q: %s", extendedOrPort, err.Error()))
+		}
+	}
+
+	var authCookieFilename = getenv("TOR_PT_AUTH_COOKIE_FILE")
+	if authCookieFilename != "" {
+		info.AuthCookie, err = readAuthCookieFile(authCookieFilename)
+		if err != nil {
+			PtEnvError(fmt.Sprintf("error reading TOR_PT_AUTH_COOKIE_FILE %q: %s", authCookieFilename, err.Error()))
 		}
 	}
 
