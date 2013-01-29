@@ -25,7 +25,12 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"io"
@@ -352,10 +357,121 @@ func PtServerSetup(methodNames []string) PtServerInfo {
 	return info
 }
 
+// See 217-ext-orport-auth.txt section 4.2.1.3.
+func computeServerHash(info *PtServerInfo, clientNonce, serverNonce []byte) []byte {
+	h := hmac.New(sha256.New, info.AuthCookie)
+	io.WriteString(h, "ExtORPort authentication server-to-client hash")
+	h.Write(clientNonce)
+	h.Write(serverNonce)
+	return h.Sum([]byte{})
+}
+
+// See 217-ext-orport-auth.txt section 4.2.1.3.
+func computeClientHash(info *PtServerInfo, clientNonce, serverNonce []byte) []byte {
+	h := hmac.New(sha256.New, info.AuthCookie)
+	io.WriteString(h, "ExtORPort authentication client-to-server hash")
+	h.Write(clientNonce)
+	h.Write(serverNonce)
+	return h.Sum([]byte{})
+}
+
+func extOrPortAuthenticate(s *net.TCPConn, info *PtServerInfo) error {
+	r := bufio.NewReader(s)
+
+	// Read auth types. 217-ext-orport-auth.txt section 4.1.
+	var authTypes [256]bool
+	var count int
+	for count = 0; count < 256; count++ {
+		b, err := r.ReadByte()
+		if err != nil {
+			return err
+		}
+		if b == 0 {
+			break
+		}
+		authTypes[b] = true
+	}
+	if count >= 256 {
+		return errors.New(fmt.Sprintf("read 256 auth types without seeing \\x00"))
+	}
+
+	// We support only type 1, SAFE_COOKIE.
+	if !authTypes[1] {
+		return errors.New(fmt.Sprintf("server didn't offer auth type 1"))
+	}
+	_, err := s.Write([]byte{1})
+	if err != nil {
+		return err
+	}
+
+	clientNonce := make([]byte, 32)
+	clientHash := make([]byte, 32)
+	serverNonce := make([]byte, 32)
+	serverHash := make([]byte, 32)
+
+	_, err = io.ReadFull(rand.Reader, clientNonce)
+	if err != nil {
+		return err
+	}
+	_, err = s.Write(clientNonce)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.ReadFull(r, serverHash)
+	if err != nil {
+		return err
+	}
+	_, err = io.ReadFull(r, serverNonce)
+	if err != nil {
+		return err
+	}
+
+	expectedServerHash := computeServerHash(info, clientNonce, serverNonce)
+	if subtle.ConstantTimeCompare(serverHash, expectedServerHash) != 1 {
+		return errors.New(fmt.Sprintf("mismatch in server hash"))
+	}
+
+	clientHash = computeClientHash(info, clientNonce, serverNonce)
+	_, err = s.Write(clientHash)
+	if err != nil {
+		return err
+	}
+
+	status := make([]byte, 1)
+	_, err = io.ReadFull(r, status)
+	if err != nil {
+		return err
+	}
+	if status[0] != 1 {
+		return errors.New(fmt.Sprintf("server rejected authentication"))
+	}
+
+	if r.Buffered() != 0 {
+		return errors.New(fmt.Sprintf("%d bytes left after extended OR port authentication", r.Buffered()))
+	}
+
+	return nil
+}
+
 // Connect to info.ExtendedOrAddr if defined, or else info.OrAddr, and return an
 // open *net.TCPConn. If connecting to the extended OR port, extended OR port
 // authentication à la 217-ext-orport-auth.txt is done before returning; an
 // error is returned if authentication fails.
 func PtConnectOr(info *PtServerInfo, conn net.Conn) (*net.TCPConn, error) {
-	return net.DialTCP("tcp", nil, ptInfo.OrAddr)
+	if info.ExtendedOrAddr == nil {
+		return net.DialTCP("tcp", nil, info.OrAddr)
+	}
+
+	s, err := net.DialTCP("tcp", nil, info.ExtendedOrAddr)
+	if err != nil {
+		return nil, err
+	}
+	err = extOrPortAuthenticate(s, info)
+	if err != nil {
+		s.Close()
+		return nil, err
+	}
+
+	return s, nil
 }
