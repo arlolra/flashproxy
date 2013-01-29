@@ -26,7 +26,9 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -262,7 +264,35 @@ func getServerBindAddrs(methodNames []string) []PtBindAddr {
 // Reads and validates the contents of an auth cookie file. Returns the 32-byte
 // cookie. See section 4.2.1.2 of pt-spec.txt.
 func readAuthCookieFile(filename string) ([]byte, error) {
+	authCookieHeader := []byte("! Extended ORPort Auth Cookie !\x0a")
+	header := make([]byte, 32)
 	cookie := make([]byte, 32)
+
+	f, err := os.Open(filename)
+	if err != nil {
+		return cookie, err
+	}
+	defer f.Close()
+
+	n, err := io.ReadFull(f, header)
+	if err != nil {
+		return cookie, err
+	}
+	n, err = io.ReadFull(f, cookie)
+	if err != nil {
+		return cookie, err
+	}
+	// Check that the file ends here.
+	n, err = f.Read(make([]byte, 1))
+	if n != 0 {
+		return cookie, errors.New(fmt.Sprintf("file is longer than 64 bytes"))
+	} else if err != io.EOF {
+		return cookie, errors.New(fmt.Sprintf("did not find EOF at end of file"))
+	}
+
+	if !bytes.Equal(header, authCookieHeader) {
+		return cookie, errors.New(fmt.Sprintf("missing auth cookie header"))
+	}
 
 	return cookie, nil
 }
