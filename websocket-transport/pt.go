@@ -120,7 +120,7 @@ func PtSmethodsDone() {
 // Get a pluggable transports version offered by Tor and understood by us, if
 // any. The only version we understand is "1". This function reads the
 // environment variable TOR_PT_MANAGED_TRANSPORT_VER.
-func PtGetManagedTransportVer() string {
+func getManagedTransportVer() string {
 	const transportVersion = "1"
 	for _, offered := range strings.Split(getenvRequired("TOR_PT_MANAGED_TRANSPORT_VER"), ",") {
 		if offered == transportVersion {
@@ -133,7 +133,7 @@ func PtGetManagedTransportVer() string {
 // Get the intersection of the method names offered by Tor and those in
 // methodNames. This function reads the environment variable
 // TOR_PT_CLIENT_TRANSPORTS.
-func PtGetClientTransports(methodNames []string) []string {
+func getClientTransports(methodNames []string) []string {
 	clientTransports := getenvRequired("TOR_PT_CLIENT_TRANSPORTS")
 	if clientTransports == "*" {
 		return methodNames
@@ -162,14 +162,14 @@ type PtClientInfo struct {
 func PtClientSetup(methodNames []string) PtClientInfo {
 	var info PtClientInfo
 
-	ver := PtGetManagedTransportVer()
+	ver := getManagedTransportVer()
 	if ver == "" {
 		PtVersionError("no-version")
 	} else {
 		PtLine("VERSION", ver)
 	}
 
-	info.MethodNames = PtGetClientTransports(methodNames)
+	info.MethodNames = getClientTransports(methodNames)
 	if len(info.MethodNames) == 0 {
 		PtCmethodsDone()
 		os.Exit(1)
@@ -222,7 +222,7 @@ func filterBindAddrs(addrs []PtBindAddr, methodNames []string) []PtBindAddr {
 // Return a map from method names to bind addresses. The map is the contents of
 // TOR_PT_SERVER_BINDADDR, with keys filtered by TOR_PT_SERVER_TRANSPORTS, and
 // further filtered by the methods in methodNames.
-func PtGetServerBindAddrs(methodNames []string) []PtBindAddr {
+func getServerBindAddrs(methodNames []string) []PtBindAddr {
 	var result []PtBindAddr
 
 	// Get the list of all requested bindaddrs.
@@ -270,7 +270,7 @@ func PtServerSetup(methodNames []string) PtServerInfo {
 	var info PtServerInfo
 	var err error
 
-	ver := PtGetManagedTransportVer()
+	ver := getManagedTransportVer()
 	if ver == "" {
 		PtVersionError("no-version")
 	} else {
@@ -283,7 +283,7 @@ func PtServerSetup(methodNames []string) PtServerInfo {
 		PtEnvError(fmt.Sprintf("cannot resolve TOR_PT_ORPORT %q: %s", orPort, err.Error()))
 	}
 
-	info.BindAddrs = PtGetServerBindAddrs(methodNames)
+	info.BindAddrs = getServerBindAddrs(methodNames)
 	if len(info.BindAddrs) == 0 {
 		PtSmethodsDone()
 		os.Exit(1)
