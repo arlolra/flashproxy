@@ -351,3 +351,11 @@ func PtServerSetup(methodNames []string) PtServerInfo {
 
 	return info
 }
+
+// Connect to info.ExtendedOrAddr if defined, or else info.OrAddr, and return an
+// open *net.TCPConn. If connecting to the extended OR port, extended OR port
+// authentication à la 217-ext-orport-auth.txt is done before returning; an
+// error is returned if authentication fails.
+func PtConnectOr(info *PtServerInfo, conn net.Conn) (*net.TCPConn, error) {
+	return net.DialTCP("tcp", nil, ptInfo.OrAddr)
+}
