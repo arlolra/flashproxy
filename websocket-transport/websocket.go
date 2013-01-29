@@ -79,14 +79,14 @@ type Websocket struct {
 	Conn  net.Conn
 	Bufrw *bufio.ReadWriter
 	// Whether we are a client or a server has implications for masking.
-	IsClient       bool
+	IsClient bool
 	// Set from a parent WebsocketConfig.
 	MaxMessageSize int
 	// The single selected subprotocol after negotiation, or "".
-	Subprotocol    string
+	Subprotocol string
 	// Buffer for message payloads, which may be interrupted by control
 	// messages.
-	messageBuf     bytes.Buffer
+	messageBuf bytes.Buffer
 }
 
 func applyMask(payload []byte, maskKey [4]byte) {
@@ -201,9 +201,9 @@ func (ws *Websocket) ReadMessage() (message WebsocketMessage, err error) {
 				return
 			}
 		}
-		if ws.messageBuf.Len() + len(frame.Payload) > ws.MaxMessageSize {
+		if ws.messageBuf.Len()+len(frame.Payload) > ws.MaxMessageSize {
 			err = errors.New(fmt.Sprintf("message payload length of %d exceeds maximum of %d",
-				ws.messageBuf.Len() + len(frame.Payload), ws.MaxMessageSize))
+				ws.messageBuf.Len()+len(frame.Payload), ws.MaxMessageSize))
 			return
 		}
 		ws.messageBuf.Write(frame.Payload)
