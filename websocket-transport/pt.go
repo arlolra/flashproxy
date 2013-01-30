@@ -37,6 +37,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 )
 
 func getenv(key string) string {
@@ -467,11 +468,13 @@ func PtConnectOr(info *PtServerInfo, conn net.Conn) (*net.TCPConn, error) {
 	if err != nil {
 		return nil, err
 	}
+	s.SetDeadline(time.Now().Add(5 * time.Second))
 	err = extOrPortAuthenticate(s, info)
 	if err != nil {
 		s.Close()
 		return nil, err
 	}
+	s.SetDeadline(time.Time{})
 
 	return s, nil
 }
