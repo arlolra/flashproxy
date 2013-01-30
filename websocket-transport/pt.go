@@ -31,6 +31,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -455,6 +456,103 @@ func extOrPortAuthenticate(s *net.TCPConn, info *PtServerInfo) error {
 	return nil
 }
 
+// See section 3.1 of 196-transport-control-ports.txt.
+const (
+	extOrCmdDone     = 0x0000
+	extOrCmdUserAddr = 0x0001
+	extOrCmdOkay     = 0x1000
+	extOrCmdDeny     = 0x1001
+)
+
+func extOrPortWriteCommand(s *net.TCPConn, cmd uint16, body []byte) error {
+	var buf bytes.Buffer
+	if len(body) > 65535 {
+		return errors.New("command exceeds maximum length of 65535")
+	}
+	err := binary.Write(&buf, binary.BigEndian, cmd)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(&buf, binary.BigEndian, uint16(len(body)))
+	if err != nil {
+		return err
+	}
+	err = binary.Write(&buf, binary.BigEndian, body)
+	if err != nil {
+		return err
+	}
+	_, err = s.Write(buf.Bytes())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Send a USERADDR command on s. See section 3.1 of
+// 196-transport-control-ports.txt.
+func extOrPortSendUserAddr(s *net.TCPConn, conn net.Conn) error {
+	return extOrPortWriteCommand(s, extOrCmdUserAddr, []byte(conn.RemoteAddr().String()))
+}
+
+// Send a DONE command on s. See section 3.1 of 196-transport-control-ports.txt.
+func extOrPortSendDone(s *net.TCPConn) error {
+	return extOrPortWriteCommand(s, extOrCmdDone, []byte{})
+}
+
+func extOrPortRecvCommand(s *net.TCPConn) (cmd uint16, body []byte, err error) {
+	var bodyLen uint16
+	data := make([]byte, 4)
+
+	_, err = io.ReadFull(s, data)
+	if err != nil {
+		return
+	}
+	buf := bytes.NewBuffer(data)
+	err = binary.Read(buf, binary.BigEndian, &cmd)
+	if err != nil {
+		return
+	}
+	err = binary.Read(buf, binary.BigEndian, &bodyLen)
+	if err != nil {
+		return
+	}
+	body = make([]byte, bodyLen)
+	_, err = io.ReadFull(s, body)
+	if err != nil {
+		return
+	}
+
+	return cmd, body, err
+}
+
+// Send a USERADDR command followed by a DONE command. Wait for an OKAY or DENY
+// response command from the server. Returns nil if and only if OKAY is
+// received.
+func extOrPortDoUserAddr(s *net.TCPConn, conn net.Conn) error {
+	var err error
+
+	err = extOrPortSendUserAddr(s, conn)
+	if err != nil {
+		return err
+	}
+	err = extOrPortSendDone(s)
+	if err != nil {
+		return err
+	}
+	cmd, _, err := extOrPortRecvCommand(s)
+	if err != nil {
+		return err
+	}
+	if cmd == extOrCmdDeny {
+		return errors.New("server returned DENY after our USERADDR and DONE")
+	} else if cmd != extOrCmdOkay {
+		return errors.New(fmt.Sprintf("server returned unknown command 0x%04x after our USERADDR and DONE", cmd))
+	}
+
+	return nil
+}
+
 // Connect to info.ExtendedOrAddr if defined, or else info.OrAddr, and return an
 // open *net.TCPConn. If connecting to the extended OR port, extended OR port
 // authentication à la 217-ext-orport-auth.txt is done before returning; an
@@ -470,6 +568,11 @@ func PtConnectOr(info *PtServerInfo, conn net.Conn) (*net.TCPConn, error) {
 	}
 	s.SetDeadline(time.Now().Add(5 * time.Second))
 	err = extOrPortAuthenticate(s, info)
+	if err != nil {
+		s.Close()
+		return nil, err
+	}
+	err = extOrPortDoUserAddr(s, conn)
 	if err != nil {
 		s.Close()
 		return nil, err
