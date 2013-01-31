@@ -18,6 +18,8 @@ import (
 	"sync"
 )
 
+var logFile = os.Stderr
+
 var ptInfo PtServerInfo
 
 // When a connection handler starts, +1 is written to this channel; when it
@@ -25,7 +27,7 @@ var ptInfo PtServerInfo
 var handlerChan = make(chan int)
 
 func logDebug(format string, v ...interface{}) {
-	fmt.Fprintf(os.Stderr, format+"\n", v...)
+	fmt.Fprintf(logFile, format+"\n", v...)
 }
 
 // An abstraction that makes an underlying WebSocket connection look like an
@@ -179,9 +181,20 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 func main() {
 	const ptMethodName = "websocket"
 	var defaultPort int
+	var logFilename string
 
 	flag.IntVar(&defaultPort, "port", 0, "port to listen on if unspecified by Tor")
+	flag.StringVar(&logFilename, "log", "", "log file to write to")
 	flag.Parse()
+
+	if logFilename != "" {
+		f, err := os.OpenFile(logFilename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Can't open log file %q: %s.\n", logFilename, err.Error())
+			os.Exit(1)
+		}
+		logFile = f
+	}
 
 	ptInfo = PtServerSetup([]string{ptMethodName})
 
