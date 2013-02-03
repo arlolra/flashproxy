@@ -103,14 +103,10 @@ func (conn *websocketConn) Write(b []byte) (n int, err error) {
 }
 
 // Implements io.Closer.
-func (conn *websocketConn) Close() (err error) {
-	err = conn.Ws.WriteFrame(8, nil)
-	if err != nil {
-		conn.Ws.Conn.Close()
-		return
-	}
-	err = conn.Ws.Conn.Close()
-	return
+func (conn *websocketConn) Close() error {
+	// Ignore any error in trying to write a Close frame.
+	_ = conn.Ws.WriteFrame(8, nil)
+	return conn.Ws.Conn.Close()
 }
 
 // Create a new websocketConn.
