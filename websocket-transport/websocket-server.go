@@ -201,6 +201,7 @@ func main() {
 		logFile = f
 	}
 
+	Log("starting")
 	ptInfo = PtServerSetup([]string{ptMethodName})
 
 	listeners := make([]*net.TCPListener, 0)
@@ -217,6 +218,7 @@ func main() {
 			PtSmethodError(bindAddr.MethodName, err.Error())
 		}
 		PtSmethod(bindAddr.MethodName, ln.Addr())
+		Log("listening on %s", ln.Addr().String())
 		listeners = append(listeners, ln)
 	}
 	PtSmethodsDone()
