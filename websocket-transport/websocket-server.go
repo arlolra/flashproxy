@@ -26,7 +26,11 @@ var ptInfo PtServerInfo
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
+var logMutex sync.Mutex
+
 func Log(format string, v ...interface{}) {
+	logMutex.Lock()
+	defer logMutex.Unlock()
 	fmt.Fprintf(logFile, format+"\n", v...)
 }
 
