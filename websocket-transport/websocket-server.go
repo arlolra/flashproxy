@@ -26,7 +26,7 @@ var ptInfo PtServerInfo
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
-func logDebug(format string, v ...interface{}) {
+func Log(format string, v ...interface{}) {
 	fmt.Fprintf(logFile, format+"\n", v...)
 }
 
@@ -123,7 +123,7 @@ func proxy(local *net.TCPConn, conn *websocketConn) {
 	go func() {
 		_, err := io.Copy(conn, local)
 		if err != nil {
-			logDebug("error copying ORPort to WebSocket: " + err.Error())
+			Log("error copying ORPort to WebSocket: " + err.Error())
 		}
 		local.CloseRead()
 		conn.Close()
@@ -133,7 +133,7 @@ func proxy(local *net.TCPConn, conn *websocketConn) {
 	go func() {
 		_, err := io.Copy(local, conn)
 		if err != nil {
-			logDebug("error copying WebSocket to ORPort: " + err.Error())
+			Log("error copying WebSocket to ORPort: " + err.Error())
 		}
 		local.CloseWrite()
 		conn.Close()
@@ -153,7 +153,7 @@ func websocketHandler(ws *Websocket) {
 
 	s, err := PtConnectOr(&ptInfo, ws.Conn)
 	if err != nil {
-		logDebug("Failed to connect to ORPort: " + err.Error())
+		Log("Failed to connect to ORPort: " + err.Error())
 		return
 	}
 
@@ -173,7 +173,7 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 		http.Handle("/", config.Handler(websocketHandler))
 		err = http.Serve(ln, nil)
 		if err != nil {
-			logDebug("http.Serve: " + err.Error())
+			Log("http.Serve: " + err.Error())
 		}
 	}()
 	return ln, nil
@@ -227,7 +227,7 @@ func main() {
 		case n := <-handlerChan:
 			numHandlers += n
 		case <-signalChan:
-			logDebug("SIGINT")
+			Log("SIGINT")
 			sigint = true
 		}
 	}
@@ -242,7 +242,7 @@ func main() {
 		case n := <-handlerChan:
 			numHandlers += n
 		case <-signalChan:
-			logDebug("SIGINT")
+			Log("SIGINT")
 			sigint = true
 		}
 	}
