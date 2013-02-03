@@ -8,23 +8,25 @@ import getopt
 
 from M2Crypto import RSA, BIO
 
-FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/"
 DEFAULT_REMOTE_PORT = 9000
+DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/"
+
+class options(object):
+    facilitator_url = None
 
 def usage(f=sys.stdout):
     print >> f, """\
 Usage: %(progname)s REMOTE[:PORT]
+Print a URL, which, when retrieved, will cause the client address
+REMOTE[:PORT] to be registered with the flash proxy facilitator. The default
+PORT is %(port)d.
 
-Print a URL suitable for registering your client with the facilitator
-at %(fac)s. This URL can be copy-pasted into an unblocked URL retrieval
-service. The argument is the external address and port you wish to register.
-If you omit the port, it will default to %(port)s.
-
-    -h, --help              show this message and exit.
-
+  -f, --facilitator=URL  register with the given facilitator
+                           (by default "%(fac_url)s").
+  -h, --help             show this help.\
 """ % {
     "progname": sys.argv[0],
-    "fac": FACILITATOR_URL,
+    "fac_url": DEFAULT_FACILITATOR_URL,
     "port": DEFAULT_REMOTE_PORT,
 }
 
@@ -91,10 +93,13 @@ socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
         result += u":%d" % port
     return result
 
+options.facilitator_url = DEFAULT_FACILITATOR_URL
 
-opt, args = getopt.gnu_getopt(sys.argv[1:], "h", ["help"])
+opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "help"])
 for o, a in opt:
-    if o == "-h" or o == "--help":
+    if o == "-f" or o == "--facilitator":
+        options.facilitator_url = a
+    elif o == "-h" or o == "--help":
         usage()
         sys.exit(0)
 
@@ -110,4 +115,4 @@ rsa = RSA.load_pub_key_bio(BIO.MemoryBuffer(FACILITATOR_PUBKEY_PEM))
 ciphertext = rsa.public_encrypt(spec, RSA.pkcs1_oaep_padding)
 reg = base64.urlsafe_b64encode(ciphertext)
 
-print "/".join([FACILITATOR_URL.strip("/"), "reg", reg])
+print "/".join([options.facilitator_url.strip("/"), "reg", reg])
