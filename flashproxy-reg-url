@@ -14,7 +14,7 @@ DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/"
 class options(object):
     facilitator_url = None
 
-def usage(f=sys.stdout):
+def usage(f = sys.stdout):
     print >> f, """\
 Usage: %(progname)s REMOTE[:PORT]
 Print a URL, which, when retrieved, will cause the client address
@@ -80,8 +80,7 @@ def format_addr(addr):
         return u":%d" % port
     # Numeric IPv6 address?
     try:
-        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM,
-socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
         af = addrs[0][0]
     except socket.gaierror, e:
         af = 0
@@ -101,7 +100,7 @@ for o, a in opt:
         options.facilitator_url = a
     elif o == "-h" or o == "--help":
         usage()
-        sys.exit(0)
+        sys.exit()
 
 if len(args) != 1:
     usage(f=sys.stderr)
