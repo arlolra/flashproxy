@@ -12,15 +12,23 @@
 //
 // Sample server usage:
 //
-// info := PtServerSetup([]string{"foo", "bar"})
+// var ptInfo PtServerInfo
+// info = PtServerSetup([]string{"foo", "bar"})
 // for _, bindAddr := range info.BindAddrs {
 // 	ln, err := startListener(bindAddr.Addr)
 // 	if err != nil {
-// 		panic(err.Error())
+// 		PtSmethodError(bindAddr.MethodName, err.Error())
 // 	}
 // 	PtSmethod(bindAddr.MethodName, ln.Addr())
 // }
 // PtSmethodsDone()
+// func handler(conn net.Conn) {
+// 	or, err := PtConnectOr(&ptInfo, ws.Conn)
+// 	if err != nil {
+// 		return
+// 	}
+// 	// Do something with or and conn.
+// }
 
 package main
 
