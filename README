@@ -105,8 +105,11 @@ for the Go programming language ("apt-get install golang" on Debian).
 	$ cd websocket-transport
 	$ make
 	# make install
+You will need a version of Tor supporting the extended OR port protocol.
+	$ git clone https://git.torproject.org/user/asn/tor.git -b bug4773_rebase
 Add a line like the following to the relay's torrc. You can change the
 --port option; make sure that port is open in the firewall.
+	ExtORPort 5555
 	ServerTransportPlugin websocket exec /usr/local/bin/websocket-server --port 9901
 
 == How to put a flash proxy badge on a web page

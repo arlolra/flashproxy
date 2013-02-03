@@ -25,12 +25,25 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/binary"
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strings"
+	"time"
 )
+
+func getenv(key string) string {
+	return os.Getenv(key)
+}
 
 // Abort with an ENV-ERROR if the environment variable isn't set.
 func getenvRequired(key string) string {
@@ -255,11 +268,49 @@ func getServerBindAddrs(methodNames []string) []PtBindAddr {
 	return result
 }
 
+// Reads and validates the contents of an auth cookie file. Returns the 32-byte
+// cookie. See section 4.2.1.2 of pt-spec.txt.
+func readAuthCookieFile(filename string) ([]byte, error) {
+	authCookieHeader := []byte("! Extended ORPort Auth Cookie !\x0a")
+	header := make([]byte, 32)
+	cookie := make([]byte, 32)
+
+	f, err := os.Open(filename)
+	if err != nil {
+		return cookie, err
+	}
+	defer f.Close()
+
+	n, err := io.ReadFull(f, header)
+	if err != nil {
+		return cookie, err
+	}
+	n, err = io.ReadFull(f, cookie)
+	if err != nil {
+		return cookie, err
+	}
+	// Check that the file ends here.
+	n, err = f.Read(make([]byte, 1))
+	if n != 0 {
+		return cookie, errors.New(fmt.Sprintf("file is longer than 64 bytes"))
+	} else if err != io.EOF {
+		return cookie, errors.New(fmt.Sprintf("did not find EOF at end of file"))
+	}
+
+	if !bytes.Equal(header, authCookieHeader) {
+		return cookie, errors.New(fmt.Sprintf("missing auth cookie header"))
+	}
+
+	return cookie, nil
+}
+
 // This structure is returned by PtServerSetup. It consists of a list of
 // PtBindAddrs, along with a single address for the ORPort.
 type PtServerInfo struct {
-	BindAddrs []PtBindAddr
-	OrAddr    *net.TCPAddr
+	BindAddrs      []PtBindAddr
+	OrAddr         *net.TCPAddr
+	ExtendedOrAddr *net.TCPAddr
+	AuthCookie     []byte
 }
 
 // Check the server pluggable transports environments, emitting an error message
@@ -289,5 +340,244 @@ func PtServerSetup(methodNames []string) PtServerInfo {
 		os.Exit(1)
 	}
 
+	var extendedOrPort = getenv("TOR_PT_EXTENDED_SERVER_PORT")
+	if extendedOrPort != "" {
+		info.ExtendedOrAddr, err = net.ResolveTCPAddr("tcp", extendedOrPort)
+		if err != nil {
+			PtEnvError(fmt.Sprintf("cannot resolve TOR_PT_EXTENDED_SERVER_PORT %q: %s", extendedOrPort, err.Error()))
+		}
+	}
+
+	var authCookieFilename = getenv("TOR_PT_AUTH_COOKIE_FILE")
+	if authCookieFilename != "" {
+		info.AuthCookie, err = readAuthCookieFile(authCookieFilename)
+		if err != nil {
+			PtEnvError(fmt.Sprintf("error reading TOR_PT_AUTH_COOKIE_FILE %q: %s", authCookieFilename, err.Error()))
+		}
+	}
+
 	return info
+}
+
+// See 217-ext-orport-auth.txt section 4.2.1.3.
+func computeServerHash(info *PtServerInfo, clientNonce, serverNonce []byte) []byte {
+	h := hmac.New(sha256.New, info.AuthCookie)
+	io.WriteString(h, "ExtORPort authentication server-to-client hash")
+	h.Write(clientNonce)
+	h.Write(serverNonce)
+	return h.Sum([]byte{})
+}
+
+// See 217-ext-orport-auth.txt section 4.2.1.3.
+func computeClientHash(info *PtServerInfo, clientNonce, serverNonce []byte) []byte {
+	h := hmac.New(sha256.New, info.AuthCookie)
+	io.WriteString(h, "ExtORPort authentication client-to-server hash")
+	h.Write(clientNonce)
+	h.Write(serverNonce)
+	return h.Sum([]byte{})
+}
+
+func extOrPortAuthenticate(s *net.TCPConn, info *PtServerInfo) error {
+	r := bufio.NewReader(s)
+
+	// Read auth types. 217-ext-orport-auth.txt section 4.1.
+	var authTypes [256]bool
+	var count int
+	for count = 0; count < 256; count++ {
+		b, err := r.ReadByte()
+		if err != nil {
+			return err
+		}
+		if b == 0 {
+			break
+		}
+		authTypes[b] = true
+	}
+	if count >= 256 {
+		return errors.New(fmt.Sprintf("read 256 auth types without seeing \\x00"))
+	}
+
+	// We support only type 1, SAFE_COOKIE.
+	if !authTypes[1] {
+		return errors.New(fmt.Sprintf("server didn't offer auth type 1"))
+	}
+	_, err := s.Write([]byte{1})
+	if err != nil {
+		return err
+	}
+
+	clientNonce := make([]byte, 32)
+	clientHash := make([]byte, 32)
+	serverNonce := make([]byte, 32)
+	serverHash := make([]byte, 32)
+
+	_, err = io.ReadFull(rand.Reader, clientNonce)
+	if err != nil {
+		return err
+	}
+	_, err = s.Write(clientNonce)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.ReadFull(r, serverHash)
+	if err != nil {
+		return err
+	}
+	_, err = io.ReadFull(r, serverNonce)
+	if err != nil {
+		return err
+	}
+
+	expectedServerHash := computeServerHash(info, clientNonce, serverNonce)
+	if subtle.ConstantTimeCompare(serverHash, expectedServerHash) != 1 {
+		return errors.New(fmt.Sprintf("mismatch in server hash"))
+	}
+
+	clientHash = computeClientHash(info, clientNonce, serverNonce)
+	_, err = s.Write(clientHash)
+	if err != nil {
+		return err
+	}
+
+	status := make([]byte, 1)
+	_, err = io.ReadFull(r, status)
+	if err != nil {
+		return err
+	}
+	if status[0] != 1 {
+		return errors.New(fmt.Sprintf("server rejected authentication"))
+	}
+
+	if r.Buffered() != 0 {
+		return errors.New(fmt.Sprintf("%d bytes left after extended OR port authentication", r.Buffered()))
+	}
+
+	return nil
+}
+
+// See section 3.1 of 196-transport-control-ports.txt.
+const (
+	extOrCmdDone     = 0x0000
+	extOrCmdUserAddr = 0x0001
+	extOrCmdOkay     = 0x1000
+	extOrCmdDeny     = 0x1001
+)
+
+func extOrPortWriteCommand(s *net.TCPConn, cmd uint16, body []byte) error {
+	var buf bytes.Buffer
+	if len(body) > 65535 {
+		return errors.New("command exceeds maximum length of 65535")
+	}
+	err := binary.Write(&buf, binary.BigEndian, cmd)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(&buf, binary.BigEndian, uint16(len(body)))
+	if err != nil {
+		return err
+	}
+	err = binary.Write(&buf, binary.BigEndian, body)
+	if err != nil {
+		return err
+	}
+	_, err = s.Write(buf.Bytes())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Send a USERADDR command on s. See section 3.1 of
+// 196-transport-control-ports.txt.
+func extOrPortSendUserAddr(s *net.TCPConn, conn net.Conn) error {
+	return extOrPortWriteCommand(s, extOrCmdUserAddr, []byte(conn.RemoteAddr().String()))
+}
+
+// Send a DONE command on s. See section 3.1 of 196-transport-control-ports.txt.
+func extOrPortSendDone(s *net.TCPConn) error {
+	return extOrPortWriteCommand(s, extOrCmdDone, []byte{})
+}
+
+func extOrPortRecvCommand(s *net.TCPConn) (cmd uint16, body []byte, err error) {
+	var bodyLen uint16
+	data := make([]byte, 4)
+
+	_, err = io.ReadFull(s, data)
+	if err != nil {
+		return
+	}
+	buf := bytes.NewBuffer(data)
+	err = binary.Read(buf, binary.BigEndian, &cmd)
+	if err != nil {
+		return
+	}
+	err = binary.Read(buf, binary.BigEndian, &bodyLen)
+	if err != nil {
+		return
+	}
+	body = make([]byte, bodyLen)
+	_, err = io.ReadFull(s, body)
+	if err != nil {
+		return
+	}
+
+	return cmd, body, err
+}
+
+// Send a USERADDR command followed by a DONE command. Wait for an OKAY or DENY
+// response command from the server. Returns nil if and only if OKAY is
+// received.
+func extOrPortDoUserAddr(s *net.TCPConn, conn net.Conn) error {
+	var err error
+
+	err = extOrPortSendUserAddr(s, conn)
+	if err != nil {
+		return err
+	}
+	err = extOrPortSendDone(s)
+	if err != nil {
+		return err
+	}
+	cmd, _, err := extOrPortRecvCommand(s)
+	if err != nil {
+		return err
+	}
+	if cmd == extOrCmdDeny {
+		return errors.New("server returned DENY after our USERADDR and DONE")
+	} else if cmd != extOrCmdOkay {
+		return errors.New(fmt.Sprintf("server returned unknown command 0x%04x after our USERADDR and DONE", cmd))
+	}
+
+	return nil
+}
+
+// Connect to info.ExtendedOrAddr if defined, or else info.OrAddr, and return an
+// open *net.TCPConn. If connecting to the extended OR port, extended OR port
+// authentication à la 217-ext-orport-auth.txt is done before returning; an
+// error is returned if authentication fails.
+func PtConnectOr(info *PtServerInfo, conn net.Conn) (*net.TCPConn, error) {
+	if info.ExtendedOrAddr == nil {
+		return net.DialTCP("tcp", nil, info.OrAddr)
+	}
+
+	s, err := net.DialTCP("tcp", nil, info.ExtendedOrAddr)
+	if err != nil {
+		return nil, err
+	}
+	s.SetDeadline(time.Now().Add(5 * time.Second))
+	err = extOrPortAuthenticate(s, info)
+	if err != nil {
+		s.Close()
+		return nil, err
+	}
+	err = extOrPortDoUserAddr(s, conn)
+	if err != nil {
+		s.Close()
+		return nil, err
+	}
+	s.SetDeadline(time.Time{})
+
+	return s, nil
 }

@@ -151,7 +151,7 @@ func websocketHandler(ws *Websocket) {
 		handlerChan <- -1
 	}()
 
-	s, err := net.DialTCP("tcp", nil, ptInfo.OrAddr)
+	s, err := PtConnectOr(&ptInfo, ws.Conn)
 	if err != nil {
 		logDebug("Failed to connect to ORPort: " + err.Error())
 		return
