@@ -1,3 +1,9 @@
+Changes in version 0.13
+  o The new websocket-server program is the server transport plugin that
+    flash proxies talk to. It replaces the third-party websockify
+    program that was used formerly. It works as a managed proxy and
+    supports the extended ORPort protocol. Fixes bug 7620.
+
 Changes in version 0.12
   o Added a line of JavaScript that you can use to put a proxy badge on
     MediaWiki sites that allow custom JavaScript. Follow the
