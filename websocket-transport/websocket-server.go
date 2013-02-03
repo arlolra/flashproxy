@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"time"
 )
 
 var logFile = os.Stderr
@@ -29,9 +30,11 @@ var handlerChan = make(chan int)
 var logMutex sync.Mutex
 
 func Log(format string, v ...interface{}) {
+	dateStr := time.Now().Format("2006-01-02 15:04:05")
 	logMutex.Lock()
 	defer logMutex.Unlock()
-	fmt.Fprintf(logFile, format+"\n", v...)
+	msg := fmt.Sprintf(format, v...)
+	fmt.Fprintf(logFile, "%s %s\n", dateStr, msg)
 }
 
 // An abstraction that makes an underlying WebSocket connection look like an
