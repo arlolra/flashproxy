@@ -168,7 +168,8 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 	go func() {
 		var config WebsocketConfig
 		config.Subprotocols = []string{"base64"}
-		config.MaxMessageSize = 16 * 1024
+		// 16 kilobytes, possibly base64-encoded.
+		config.MaxMessageSize = 16 * 1024 * 4 / 3 + 1
 		http.Handle("/", config.Handler(websocketHandler))
 		err = http.Serve(ln, nil)
 		if err != nil {
