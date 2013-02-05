@@ -175,6 +175,15 @@ function parse_query_string(qs) {
     return result;
 }
 
+/* params is a list of (key, value) 2-tuples. */
+function build_query_string(params) {
+    var parts = [];
+    for (var i = 0; i < params.length; i++) {
+        parts.push(encodeURIComponent(params[i][0]) + "=" + encodeURIComponent(params[i][1]));
+    }
+    return parts.join("&");
+}
+
 var DEFAULT_PORTS = {
     http: 80,
     https: 443
@@ -218,11 +227,7 @@ function build_url(scheme, host, port, path, params) {
 
     if (params !== undefined) {
         parts.push("?");
-        for (var i = 0; i < params.length; i++) {
-            if (i > 0)
-                parts.push("&");
-            parts.push(encodeURIComponent(params[i][0]) + "=" + encodeURIComponent(params[i][1]));
-        }
+        parts.push(build_query_string(params));
     }
 
     return parts.join("");
