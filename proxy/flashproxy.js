@@ -549,9 +549,16 @@ function FlashProxy() {
         var client_addr;
         var relay_addr;
 
-        setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval * 1000);
-
         response = parse_query_string(text);
+
+        poll_interval = get_param_timespec(response, "check-back-in", this.facilitator_poll_interval);
+        if (poll_interval === null || poll_interval < MIN_FACILITATOR_POLL_INTERVAL)
+            puts("Error: polling interval from facilitator is not a nonnegative number at least " + repr(MIN_FACILITATOR_POLL_INTERVAL) + ".");
+        else
+            this.facilitator_poll_interval = poll_interval;
+        puts("Polling interval: " + repr(this.facilitator_poll_interval));
+
+        setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval * 1000);
 
         if (!response.client) {
             puts("No clients.");
