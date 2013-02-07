@@ -217,9 +217,17 @@ def get_reg(facilitator_addr, proxy_addr):
         command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)))
     finally:
         f.close()
+    check_back_in = param_first("CHECK-BACK-IN", params)
+    if not check_back_in:
+        raise ValueError("Facilitator did not return polling interval.")
+    try:
+        float(check_back_in)
+    except ValueError:
+        raise ValueError("Facilitator returned non-numeric polling interval.")
     if command == "NONE":
         return {
-            "client": ""
+            "client": "",
+            "check-back-in": check_back_in,
         }
     elif command == "OK":
         client_spec = param_first("CLIENT", params)
@@ -234,6 +242,7 @@ def get_reg(facilitator_addr, proxy_addr):
         return {
             "client": format_addr(client),
             "relay": format_addr(relay),
+            "check-back-in": check_back_in,
         }
     else:
         raise ValueError("Facilitator response was not \"OK\"")
