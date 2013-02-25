@@ -69,7 +69,7 @@ def log(msg):
 def register(reg):
     try:
         ciphertext = base64.urlsafe_b64decode(reg)
-        client_spec = rsa.private_decrypt(ciphertext, RSA.pkcs1_oaep_padding)
+        client_spec = str(rsa.private_decrypt(ciphertext, RSA.pkcs1_oaep_padding).decode('UTF-8'))
     except:
         log(u"Error occurred while decoding and decrypting registration:")
         traceback.print_exc(file=options.log_file)
