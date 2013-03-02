@@ -14,6 +14,10 @@ Changes in version 0.12
     reported a problem with listening on IPv6, while being able to
     listen on IPv4. Fixes bug 8319.
 
+  o The facilitator now returns a check-back-in parameter in its
+    response, telling proxies how often to poll. Fixes bug 8171. Patch
+    by Alexandre Allaire.
+
 Changes in version 0.11
   o Added -4 and -6 options to flashproxy-client and
     flashproxy-reg-http. (The options already existed in
