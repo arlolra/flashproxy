@@ -64,8 +64,8 @@ var DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/";
 var DEFAULT_MAX_NUM_PROXY_PAIRS = 10;
 
 var DEFAULT_INITIAL_FACILITATOR_POLL_INTERVAL = 60.0;
-var DEFAULT_FACILITATOR_POLL_INTERVAL = 600.0;
-var MIN_FACILITATOR_POLL_INTERVAL = 1.0;
+var DEFAULT_FACILITATOR_POLL_INTERVAL = 3600.0;
+var MIN_FACILITATOR_POLL_INTERVAL = 10.0;
 
 /* Bytes per second. Set to undefined to disable limit. */
 var DEFAULT_RATE_LIMIT = undefined;
@@ -466,8 +466,8 @@ function FlashProxy() {
             return;
         }
 
-        this.facilitator_poll_interval = get_param_timespec(query, "facilitator_poll_interval", DEFAULT_FACILITATOR_POLL_INTERVAL);
-        if (this.facilitator_poll_interval === null || this.facilitator_poll_interval < MIN_FACILITATOR_POLL_INTERVAL) {
+        this.facilitator_poll_interval = get_param_timespec(query, "facilitator_poll_interval");
+        if (this.facilitator_poll_interval !== undefined && (this.facilitator_poll_interval === null || this.facilitator_poll_interval < MIN_FACILITATOR_POLL_INTERVAL)) {
             puts("Error: facilitator_poll_interval must be a nonnegative number at least " + MIN_FACILITATOR_POLL_INTERVAL + ".");
             this.die();
             return;
@@ -553,10 +553,24 @@ function FlashProxy() {
         var response;
         var client_addr;
         var relay_addr;
-
-        setTimeout(this.proxy_main.bind(this), this.facilitator_poll_interval * 1000);
+        var poll_interval;
 
         response = parse_query_string(text);
+
+        if (this.facilitator_poll_interval) {
+            poll_interval = this.facilitator_poll_interval;
+        } else {
+            poll_interval = get_param_integer(response, "check-back-in", DEFAULT_FACILITATOR_POLL_INTERVAL);
+            if (poll_interval === null) {
+                puts("Error: can't parse polling interval from facilitator, " + repr(poll_interval) + ".");
+                poll_interval = DEFAULT_FACILITATOR_POLL_INTERVAL;
+            }
+            if (poll_interval < MIN_FACILITATOR_POLL_INTERVAL)
+                poll_interval = MIN_FACILITATOR_POLL_INTERVAL;
+        }
+
+        puts("Next check in " + repr(poll_interval) + " seconds.");
+        setTimeout(this.proxy_main.bind(this), poll_interval * 1000);
 
         if (!response.client) {
             puts("No clients.");

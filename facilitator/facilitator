@@ -16,6 +16,9 @@ DEFAULT_LISTEN_PORT = 9002
 DEFAULT_RELAY_PORT = 9001
 DEFAULT_LOG_FILENAME = "facilitator.log"
 
+# Tell proxies to poll for clients every POLL_INTERVAL seconds.
+POLL_INTERVAL = 600
+
 # Don't indulge clients for more than this many seconds.
 CLIENT_TIMEOUT = 1.0
 # Buffer no more than this many bytes when trying to read a line.
@@ -252,13 +255,14 @@ class Handler(SocketServer.StreamRequestHandler):
             log(u"error getting reg for proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
             self.send_error()
             return False
+        check_back_in = get_check_back_in_for_proxy(proxy_addr)
         if reg:
             log(u"proxy gets %s, relay %s (now %d)" %
                 (safe_str(unicode(reg)), options.relay_spec, num_regs()))
-            print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", options.relay_spec))
+            print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", options.relay_spec), ("CHECK-BACK-IN", str(check_back_in)))
         else:
             log(u"proxy gets none")
-            print >> self.wfile, fac.render_transaction("NONE")
+            print >> self.wfile, fac.render_transaction("NONE", ("CHECK-BACK-IN", str(check_back_in)))
         return True
 
     def do_PUT(self, params):
@@ -326,6 +330,10 @@ def get_reg_for_proxy(proxy_addr):
     af = addr_af(addr_str)
     REGS = regs_for_af(af)
     return REGS.fetch()
+
+def get_check_back_in_for_proxy(proxy_addr):
+    """Get a CHECK-BACK-IN interval suitable for this proxy."""
+    return POLL_INTERVAL
 
 def put_reg(reg):
     """Add a registration."""
