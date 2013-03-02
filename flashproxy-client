@@ -984,8 +984,8 @@ def pt_line(keyword, *args):
     print keyword, " ".join(pt_escape(x) for x in args)
     sys.stdout.flush()
 
-def pt_smethoderror(msg):
-    pt_line("SMETHOD-ERROR", msg)
+def pt_cmethoderror(msg):
+    pt_line("CMETHOD-ERROR", msg)
     sys.exit(1)
 
 def pt_get_client_transports(known):
