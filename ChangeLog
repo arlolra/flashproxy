@@ -9,6 +9,11 @@ Changes in version 0.12
     instructions in modules/mediawiki/custom.js. Contributed by
     Sathyanarayanan Gunasekaran.
 
+  o Make flashproxy-client ignore errors in opening listeners, as long
+    as at least one local and one remote listener can be opened. A user
+    reported a problem with listening on IPv6, while being able to
+    listen on IPv4. Fixes bug 8319.
+
 Changes in version 0.11
   o Added -4 and -6 options to flashproxy-client and
     flashproxy-reg-http. (The options already existed in
