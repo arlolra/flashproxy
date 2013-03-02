@@ -984,10 +984,6 @@ def pt_line(keyword, *args):
     print keyword, " ".join(pt_escape(x) for x in args)
     sys.stdout.flush()
 
-def pt_enverror(msg):
-    pt_line("ENV-ERROR", msg)
-    sys.exit(1)
-
 def pt_smethoderror(msg):
     pt_line("SMETHOD-ERROR", msg)
     sys.exit(1)
