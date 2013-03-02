@@ -559,9 +559,9 @@ function FlashProxy() {
             if (poll_interval === null) {
                 puts("Error: can't parse polling interval from facilitator, " + repr(poll_interval) + ".");
                 poll_interval = DEFAULT_FACILITATOR_POLL_INTERVAL;
-            } else {
-                poll_interval = Math.max(poll_interval, MIN_FACILITATOR_POLL_INTERVAL);
             }
+            if (poll_interval < MIN_FACILITATOR_POLL_INTERVAL)
+                poll_interval = MIN_FACILITATOR_POLL_INTERVAL;
         }
 
         puts("Next check in " + repr(poll_interval) + " seconds.");
