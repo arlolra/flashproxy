@@ -1124,17 +1124,31 @@ def main():
     # Remote sockets, accepting remote WebSocket connections from proxies.
     remote_listen = []
     for addr in options.remote_addrs:
-        listen = listen_socket(addr)
+        try:
+            listen = listen_socket(addr)
+        except socket.error, e:
+            log(u"Failed to listen remote on %s: %s." % (addr, str(e)))
+            continue
         remote_listen.append(listen)
         log(u"Listening remote on %s." % format_sockaddr(listen.getsockname()))
+    if not remote_listen:
+        log(u"Failed to open any remote listeners, quitting.")
+        pt_cmethoderror("Failed to open any remote listeners.")
     # Local sockets, accepting SOCKS requests from localhost
     local_listen = []
     for addr in options.local_addrs:
-        listen = listen_socket(addr)
+        try:
+            listen = listen_socket(addr)
+        except socket.error, e:
+            log(u"Failed to listen local on %s: %s." % (addr, str(e)))
+            continue
         local_listen.append(listen)
         log(u"Listening local on %s." % format_sockaddr(listen.getsockname()))
         if options.managed:
             pt_cmethod("websocket", listen.getsockname())
+    if not local_listen:
+        log(u"Failed to open any local listeners, quitting.")
+        pt_cmethoderror("Failed to open any local listeners.")
     if options.managed:
         pt_cmethods_done()
 
