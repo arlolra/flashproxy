@@ -15,7 +15,8 @@
 # Based on /etc/init.d/skeleton from Debian 6.
 
 # The relay must support the websocket pluggable transport.
-RELAY=tor1.bamsoftware.com:9901
+# This is the IPv4 address of tor1.bamsoftware.com.
+RELAY=173.255.221.44:9901
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="Flash proxy facilitator"
