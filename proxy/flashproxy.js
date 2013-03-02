@@ -94,8 +94,9 @@ function puts(s) {
     if (debug_div) {
         var at_bottom;
 
-        /* This shows up in the Web Console in Firefox. */
-        console.debug(s);
+        /* This shows up in the Web Console in Firefox and F12 developer tools
+           in Internet Explorer. */
+        (console.debug || console.log).call(console, s);
 
         /* http://www.w3.org/TR/cssom-view/#element-scrolling-members */
         at_bottom = (debug_div.scrollTop + debug_div.clientHeight === debug_div.scrollHeight);
