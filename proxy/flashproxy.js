@@ -461,7 +461,7 @@ function FlashProxy() {
             return;
         }
 
-        this.facilitator_poll_interval = get_param_timespec(query, "facilitator_poll_interval", undefined);
+        this.facilitator_poll_interval = get_param_timespec(query, "facilitator_poll_interval");
         if (this.facilitator_poll_interval !== undefined && (this.facilitator_poll_interval === null || this.facilitator_poll_interval < MIN_FACILITATOR_POLL_INTERVAL)) {
             puts("Error: facilitator_poll_interval must be a nonnegative number at least " + MIN_FACILITATOR_POLL_INTERVAL + ".");
             this.die();
