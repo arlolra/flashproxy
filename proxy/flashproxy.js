@@ -564,7 +564,7 @@ function FlashProxy() {
             }
         }
 
-        puts("Polling interval: " + repr(poll_interval) + ".");
+        puts("Next check in " + repr(poll_interval) + " seconds.");
         setTimeout(this.proxy_main.bind(this), poll_interval * 1000);
 
         if (!response.client) {
