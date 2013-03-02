@@ -492,6 +492,10 @@ def listen_socket(addr):
             # http://bugs.python.org/issue6926. IPV6_V6ONLY is the default
             # behavior on Windows anyway, so we can skip the setsockopt.
             pass
+        except socket.error:
+            # Seen on Windows XP:
+            # socket.error: [Errno 109] Protocol not available
+            pass
     s.bind(addr)
     s.listen(10)
     return s
