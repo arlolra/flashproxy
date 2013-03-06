@@ -108,8 +108,18 @@ UseBridges 1
 # The address and port are ignored by the client transport plugin.
 Bridge websocket 0.0.1.0:1
 
-# Keep the list of obfs2 bridges
-...
+Bridge obfs2 109.163.233.198:1051
+Bridge obfs2 83.212.100.216:47870
+Bridge obfs2 83.212.96.182:46602
+Bridge obfs2 109.105.109.163:46924
+Bridge obfs2 70.182.182.109:54542
+Bridge obfs2 169.229.59.74:32779
+Bridge obfs2 169.229.59.75:47809
+Bridge obfs2 209.141.36.236:60783
+Bridge obfs2 208.79.90.242:55564
+Bridge obfs2 128.31.0.34:1051
+
+Bridge obfs3 83.212.101.2:42782
 
 LearnCircuitBuildTimeout 0
 CircuitBuildTimeout 60
