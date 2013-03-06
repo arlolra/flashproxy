@@ -70,7 +70,7 @@ Clone and build the flashproxy source.
 
 	$ git clone https://git.torproject.org/flashproxy.git
 	$ cd flashproxy
-	$ make dist-exe
+	$ make dist-exe PYTHON=/cygdrive/c/Python27/python
 
 Clone pyobfsproxy and run PyInstaller on it.
 
