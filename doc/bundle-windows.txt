@@ -77,7 +77,7 @@ Clone pyobfsproxy and run PyInstaller on it.
 	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
 	$ cd pyobfsproxy
 	$ git checkout pyobfsproxy-0.0.2
-	$ /cygdrive/c/Python27/python.exe ../pyinstaller-2.0/pyinstaller.py obfsproxy.py
+	$ /cygdrive/c/Python27/python.exe ../pyinstaller-2.0/pyinstaller.py bin/pyobfsproxy
 
 Download the browser bundle from
 https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
@@ -98,7 +98,7 @@ LIBEAY32.dll and SSLEAY32.dll from being overwritten.
 	$ cp -nr ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
 	$ mkdir -p Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
-	$ cp -nr ~/pyobfsproxy/dist/obfsproxy/{*.pyd,*.dll,*.exe,*.manifest,eggs} App
+	$ cp -nr ~/pyobfsproxy/dist/pyobfsproxy/{*.pyd,*.dll,*.exe,*.manifest,eggs} App
 	$ mkdir -p Docs/PyObfsproxy
 	$ cp ~/pyobfsproxy/{LICENSE,README} Docs/PyObfsproxy
 
@@ -127,7 +127,7 @@ CircuitBuildTimeout 60
 # receive connections from the Internet (the port for which you
 # configured port forwarding).
 ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
-ClientTransportPlugin obfs2,obfs3 exec obfsproxy managed
+ClientTransportPlugin obfs2,obfs3 exec pyobfsproxy managed
 
 Re-zip the bundle. The "alpha" number should be independent of the
 browser bundle's alpha. The 7zg program (as opposed to 7z) causes the
