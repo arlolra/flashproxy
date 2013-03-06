@@ -66,7 +66,9 @@ Clone and build the flashproxy source.
 
 Clone pyobfsproxy.
 
-	$ git clone https://git.torproject.org/user/asn/pyobfsproxy.git -b obfs3_take2
+	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
+	$ cd pyobfsproxy
+	$ git checkout pyobfsproxy-0.0.2
 
 Download the 32-bit browser bundle from
 https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.

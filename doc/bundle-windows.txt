@@ -74,7 +74,9 @@ Clone and build the flashproxy source.
 
 Clone pyobfsproxy and run PyInstaller on it.
 
-	$ git clone https://git.torproject.org/user/asn/pyobfsproxy.git -b obfs3_take2
+	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
+	$ cd pyobfsproxy
+	$ git checkout pyobfsproxy-0.0.2
 	$ /cygdrive/c/Python27/python.exe ../pyinstaller-2.0/pyinstaller.py obfsproxy.py
 
 Download the browser bundle from
