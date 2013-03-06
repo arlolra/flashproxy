@@ -29,6 +29,16 @@ var handlerChan = make(chan int)
 
 var logMutex sync.Mutex
 
+func usage() {
+	fmt.Printf("Usage: %s [OPTIONS]\n", os.Args[0])
+	fmt.Printf("WebSocket server pluggable transport for Tor.\n")
+	fmt.Printf("Works only as a managed proxy.\n")
+	fmt.Printf("\n")
+	fmt.Printf("  -h, --help   show this help.\n")
+	fmt.Printf("  --log FILE   log messages to FILE (default stderr).\n")
+	fmt.Printf("  --port PORT  listen on PORT (overrides Tor's requested port).\n")
+}
+
 func Log(format string, v ...interface{}) {
 	dateStr := time.Now().Format("2006-01-02 15:04:05")
 	logMutex.Lock()
@@ -187,6 +197,7 @@ func main() {
 	var defaultPort int
 	var logFilename string
 
+	flag.Usage = usage
 	flag.IntVar(&defaultPort, "port", 0, "port to listen on if unspecified by Tor")
 	flag.StringVar(&logFilename, "log", "", "log file to write to")
 	flag.Parse()
