@@ -112,7 +112,7 @@ Copy files into the bundle.
 	$ cp -rL /usr/lib/pymodules/python2.6/M2Crypto App
 	$ mkdir -p Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
-	$ cp -rL ~/pyobfsproxy/{obfsproxy,obfsproxy.py} App
+	$ cp -rL ~/pyobfsproxy/{obfsproxy,bin/pyobfsproxy} App
 	$ cp -rL /usr/lib/python2.6/dist-packages/{Crypto,twisted,zope} App
 	$ cp -rL /usr/lib/pymodules/python2.6/argparse.py App
 	$ cp -rL /usr/local/lib/python2.6/dist-packages/pyptlib App
@@ -145,7 +145,7 @@ CircuitBuildTimeout 60
 # receive connections from the Internet (the port for which you
 # configured port forwarding).
 ClientTransportPlugin websocket exec ./App/flashproxy-client --register :0 :9000
-ClientTransportPlugin obfs2,obfs3 exec ./App/obfsproxy.py managed
+ClientTransportPlugin obfs2,obfs3 exec ./App/pyobfsproxy managed
 
 Re-zip the bundle. The "alpha" number should be independent of the
 browser bundle's alpha.
