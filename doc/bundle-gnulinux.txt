@@ -87,26 +87,25 @@ Clone pyobfsproxy.
 
 	$ git clone https://git.torproject.org/user/asn/pyobfsproxy.git -b obfs3_take2
 
-Within the VM, download the 32-bit or 64-bit obfsproxy bundle from
-https://www.torproject.org/projects/obfsproxy. The instructions below
-are for the 32-bit (i686) version.
+Within the VM, download the 32-bit or 64-bit browser bundle from
+https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
+The instructions below are for the 32-bit (i686) version.
 
-https://www.torproject.org/dist/torbrowser/linux/tor-obfsproxy-browser-gnu-linux-i686-2.4.7-alpha-1-dev-en-US.tar.gz
-https://www.torproject.org/dist/torbrowser/linux/tor-obfsproxy-browser-gnu-linux-i686-2.4.7-alpha-1-dev-en-US.tar.gz.asc
+https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz
+https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz.asc
 
-https://www.torproject.org/dist/torbrowser/linux/tor-obfsproxy-browser-gnu-linux-x86_64-2.4.7-alpha-1-dev-en-US.tar.gz
-https://www.torproject.org/dist/torbrowser/linux/tor-obfsproxy-browser-gnu-linux-x86_64-2.4.7-alpha-1-dev-en-US.tar.gz.asc
+https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-x86_64-2.4.10-alpha-2-dev-en-US.tar.gz
+https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-x86_64-2.4.10-alpha-2-dev-en-US.tar.gz.asc
 
 Extract the bundle.
 
-	$ gpg --verify tor-obfsproxy-browser-gnu-linux-i686-2.4.7-alpha-1-dev-en-US.tar.gz.asc
+	$ gpg --verify tor-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz.asc
 	$ rm -r tor-browser_en-US
-	$ tar xzvf tor-obfsproxy-browser-gnu-linux-i686-2.4.7-alpha-1-dev-en-US.tar.gz
+	$ tar xzvf tor-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz
 
 Copy files into the bundle.
 
 	$ cd tor-browser_en-US
-	$ rm -f App/obfsproxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} App
 	$ cp -rL /usr/lib/pymodules/python2.6/M2Crypto App
 	$ mkdir -p Docs/FlashProxy
@@ -119,12 +118,7 @@ Copy files into the bundle.
 	$ cp ~/pyobfsproxy/{LICENSE,README} Docs/PyObfsproxy
 	$ find App -name '*.pyc' | xargs rm -f
 
-Make the second half of Data/Tor/torrc look like this (i.e., keep the
-generic configuration, but change the obfsproxy-specific stuff).
-Basically you are concatenating the normal flashproxy-client torrc, but
-changing "./flashproxy-client" to "./App/flashproxy-client". You are
-also changing "--managed" to "managed" in the obfsproxy
-ClientTransportPlugin line.
+Make the second half of Data/Tor/torrc look like this.
 
 UseBridges 1
 # The address and port are ignored by the client transport plugin.
@@ -142,7 +136,7 @@ ClientTransportPlugin websocket exec ./App/flashproxy-client --register :0 :9000
 ClientTransportPlugin obfs2,obfs3 exec ./App/obfsproxy.py managed
 
 Re-zip the bundle. The "alpha" number should be independent of the
-obfsproxy bundle's alpha.
+browser bundle's alpha.
 
 	$ cd ..
 	$ tar czvf tor-flashproxy-pyobfsproxy-browser-gnu-linux-i686-2.4.6-alpha-1-dev-en-US.tar.gz tor-browser_en-US

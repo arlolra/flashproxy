@@ -68,22 +68,21 @@ Clone pyobfsproxy.
 
 	$ git clone https://git.torproject.org/user/asn/pyobfsproxy.git -b obfs3_take2
 
-Download the 32-bit obfsproxy bundle from
-https://www.torproject.org/projects/obfsproxy.
+Download the 32-bit browser bundle from
+https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
 
-https://www.torproject.org/dist/torbrowser/osx/TorBrowser-Obfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip
-https://www.torproject.org/dist/torbrowser/osx/TorBrowser-Obfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip.asc
+https://www.torproject.org/dist/torbrowser/osx/TorBrowser-2.4.10-alpha-2-osx-i386-en-US.zip
+https://www.torproject.org/dist/torbrowser/osx/TorBrowser-2.4.10-alpha-2-osx-i386-en-US.zip.asc
 
 Extract the bundle.
 
-	$ gpg --verify TorBrowser-Obfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip.asc
+	$ gpg --verify TorBrowser-2.4.10-alpha-2-osx-i386-en-US.zip.asc
 	$ rm -r TorBrowser_en-US.app
-	$ unzip TorBrowser-Obfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip
+	$ unzip TorBrowser-2.4.10-alpha-2-osx-i386-en-US.zip
 
 Copy files into the bundle.
 
 	$ cd TorBrowser_en-US.app
-	$ rm -f Contents/MacOS/obfsproxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} Contents/MacOS
 	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/M2Crypto Contents/MacOS
 	$ mkdir -p Contents/Resources/Docs/FlashProxy
@@ -95,12 +94,7 @@ Copy files into the bundle.
 	$ find App -name '*.pyc' | xargs rm -f
 	$ find Contents/MacOS -name '*.pyc' | xargs rm -f
 
-Make the second half of Library/Vidalia/torrc look like this (i.e., keep
-the generic configuration, but change the obfsproxy-specific stuff).
-Basically you are concatenating the normal flashproxy-client torrc, but
-changing "./flashproxy-client" to "flashproxy-client". You are also
-changing "--managed" to "managed" and "obfsproxy" to "obfsproxy.py" in
-the obfsproxy ClientTransportPlugin line.
+Make the second half of Library/Vidalia/torrc look like this.
 
 UseBridges 1
 # The address and port are ignored by the client transport plugin.
@@ -118,7 +112,7 @@ ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
 ClientTransportPlugin obfs2,obfs3 exec obfsproxy.py managed
 
 Re-zip the bundle. The "alpha" number should be independent of the
-obfsproxy bundle's alpha.
+browser bundle's alpha.
 
 	$ cd ..
 	$ rm -f TorBrowser-FlashProxy-PyObfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip

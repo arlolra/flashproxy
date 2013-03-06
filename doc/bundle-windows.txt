@@ -77,23 +77,22 @@ Clone pyobfsproxy and run PyInstaller on it.
 	$ git clone https://git.torproject.org/user/asn/pyobfsproxy.git -b obfs3_take2
 	$ /cygdrive/c/Python27/python.exe ../pyinstaller-2.0/pyinstaller.py obfsproxy.py
 
-Download the obfsproxy bundle from
-https://www.torproject.org/projects/obfsproxy.
+Download the browser bundle from
+https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
 
-https://www.torproject.org/dist/torbrowser/tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe
-https://www.torproject.org/dist/torbrowser/tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe.asc
+https://www.torproject.org/dist/torbrowser/tor-browser-2.4.10-alpha-2_en-US.exe
+https://www.torproject.org/dist/torbrowser/tor-browser-2.4.10-alpha-2_en-US.exe.asc
 
 Extract the bundle.
 
-	$ gpg --verify tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe.asc
+	$ gpg --verify tor-browser-2.4.10-alpha-2_en-US.exe.asc
 	$ rm -r "Tor Browser"
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" x tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" x tor-browser-2.4.10-alpha-2_en-US.exe
 
 Copy files into the bundle. The -n option to cp prevents the existing
 LIBEAY32.dll and SSLEAY32.dll from being overwritten.
 
 	$ cd "Tor Browser"
-	$ rm -f App/obfsproxy.exe
 	$ cp -n ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
 	$ mkdir -p Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
@@ -101,12 +100,7 @@ LIBEAY32.dll and SSLEAY32.dll from being overwritten.
 	$ mkdir -p Docs/PyObfsproxy
 	$ cp ~/pyobfsproxy/{LICENSE,README} Docs/PyObfsproxy
 
-Make the second half of Data/Tor/torrc look like this (i.e., keep the
-generic configuration, but change the obfsproxy-specific stuff).
-Basically you are concatenating the normal flashproxy-client torrc, but
-changing "./flashproxy-client" to "flashproxy-client". You are also
-changing "--managed" to "managed" in the obfsproxy ClientTransportPlugin
-line.
+Make the second half of Data/Tor/torrc look like this.
 
 UseBridges 1
 # The address and port are ignored by the client transport plugin.
@@ -124,7 +118,7 @@ ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
 ClientTransportPlugin obfs2,obfs3 exec obfsproxy managed
 
 Re-zip the bundle. The "alpha" number should be independent of the
-obfsproxy bundle's alpha. The 7zg program (as opposed to 7z) causes the
+browser bundle's alpha. The 7zg program (as opposed to 7z) causes the
 self-extractor to show a GUI.
 
 	$ cd ..
