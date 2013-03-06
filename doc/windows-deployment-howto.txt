@@ -82,7 +82,7 @@ You don't install this package; just unzip it at the same directory
 level as the flashproxy source code. (The flashproxy makefile expects to
 find PyInstaller at ../pyinstaller-2.0.)
 
-=== OpenSSL  http://www.openssl.org/source/
+=== OpenSSL
 
 https://openssl.org/source/
 https://openssl.org/source/openssl-1.0.1c.tar.gz
