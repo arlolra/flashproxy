@@ -115,11 +115,11 @@ Re-zip the bundle. The "alpha" number should be independent of the
 browser bundle's alpha.
 
 	$ cd ..
-	$ rm -f TorBrowser-FlashProxy-PyObfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip
-	$ zip -r -9 TorBrowser-FlashProxy-PyObfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip TorBrowser_en-US.app/
+	$ rm -f TorBrowser-FlashProxy-PyObfsproxy-2.4.10-alpha-2-osx-i386-en-US.zip
+	$ zip -r -9 TorBrowser-FlashProxy-PyObfsproxy-2.4.10-alpha-2-osx-i386-en-US.zip TorBrowser_en-US.app/
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon to unzip, and run TorBrowser_en-US.app.
 
 	$ mkdir tmp
-	$ cp TorBrowser-FlashProxy-PyObfsproxy-2.4.7-alpha-1-osx-i386-en-US.zip tmp
+	$ cp TorBrowser-FlashProxy-PyObfsproxy-2.4.10-alpha-2-osx-i386-en-US.zip tmp
