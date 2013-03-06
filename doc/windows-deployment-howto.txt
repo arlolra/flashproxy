@@ -71,14 +71,12 @@ dd665cca88cb059fec960516ed5f29474b33fce50fcb2633d397d4a3aa705c16  pywin32-218.wi
 
 === PyInstaller
 
-http://www.pyinstaller.org/#Downloads
-https://github.com/downloads/pyinstaller/pyinstaller/pyinstaller-2.0.zip
+http://www.pyinstaller.org/#GitRepository
+	$ git clone https://github.com/pyinstaller/pyinstaller.git pyinstaller-2.0
+	$ cd pyinstaller-2.0
+	$ git checkout 555e9f7f6fbaccaeb024c658fcb96e199f4a3b0d
 
-The sha256sum of the package I used was
-
-7f944ff131f6488ebad68e8db4a6f53f2d8054c618b6095d7cbba3ca0f733bab  pyinstaller-2.0.zip
-
-You don't install this package; just unzip it at the same directory
+You don't install this package; just leave it at the same directory
 level as the flashproxy source code. (The flashproxy makefile expects to
 find PyInstaller at ../pyinstaller-2.0.)
 
