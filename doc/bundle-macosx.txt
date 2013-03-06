@@ -52,7 +52,7 @@ Extract and verify the tarball. Then run
 
 === pyptlib
 
-	$ git clone https://git.torproject.org/user/asn/pyptlib.git
+	$ git clone https://git.torproject.org/pluggable-transports/pyptlib.git
 	$ cd pyptlib
 	$ python setup.py install --root=~/bundle --prefix=/usr
 

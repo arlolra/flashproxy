@@ -71,7 +71,7 @@ Packages to install:
 
 === pyptlib
 
-	$ git clone https://git.torproject.org/user/asn/pyptlib.git
+	$ git clone https://git.torproject.org/pluggable-transports/pyptlib.git
 	$ cd pyptlib
 	$ sudo python setup.py install --single-version-externally-managed --root=/
 
