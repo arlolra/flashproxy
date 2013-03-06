@@ -93,7 +93,7 @@ Copy files into the bundle. The -n option to cp prevents the existing
 LIBEAY32.dll and SSLEAY32.dll from being overwritten.
 
 	$ cd "Tor Browser"
-	$ cp -n ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
+	$ cp -nr ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
 	$ mkdir -p Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
 	$ cp -nr ~/pyobfsproxy/dist/obfsproxy/{*.pyd,*.dll,*.exe,*.manifest,eggs} App
