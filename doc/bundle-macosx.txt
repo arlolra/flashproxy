@@ -93,7 +93,6 @@ Copy files into the bundle.
 	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/{Crypto,pyptlib} Contents/MacOS
 	$ mkdir -p Contents/Resources/Docs/PyObfsproxy
 	$ cp ~/pyobfsproxy/{LICENSE,README} Contents/Resources/Docs/PyObfsproxy
-	$ find App -name '*.pyc' | xargs rm -f
 	$ find Contents/MacOS -name '*.pyc' | xargs rm -f
 
 Make the second half of Library/Vidalia/torrc look like this.
