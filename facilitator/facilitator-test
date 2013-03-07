@@ -32,6 +32,9 @@ class FacilitatorTest(unittest.TestCase):
         time.sleep(0.1)
 
     def tearDown(self):
+        ret = self.process.poll()
+        if ret is not None:
+            raise Exception("facilitator subprocess exited unexpectedly with status %d" % ret)
         self.process.terminate()
 
     def test_timeout(self):
@@ -86,6 +89,12 @@ class FacilitatorTest(unittest.TestCase):
         fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR)
         reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR)
         self.assertEqual(reg["client"], fac.format_addr(self.IPV6_CLIENT_ADDR))
+
+    def test_check_back_in(self):
+        """Test that facilitator responses contain a CHECK-BACK-IN key with a
+        numeric value."""
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR)
+        self.assertGreater(int(reg["check-back-in"]), 0)
 
 #     def test_same_proxy(self):
 #         """Test that the same proxy doesn't get the same client when asking

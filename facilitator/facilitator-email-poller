@@ -16,7 +16,7 @@ import time
 import fac
 
 from hashlib import sha1
-from M2Crypto import BIO, RSA, X509
+from M2Crypto import X509
 
 DEFAULT_IMAP_HOST = "imap.gmail.com"
 DEFAULT_IMAP_PORT = 993
@@ -60,16 +60,11 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 # hashing the public key, not the entire certificate.
 PUBKEY_SHA1 = "fc54c0b2fcfcdfe4abf2f1755dfd3376f6481703".decode("hex")
 
-# Generating an RSA keypair for use by this program:
-# openssl genrsa reg-email 2048
-# chmod 600 reg-email
-
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class options(object):
     email_addr = None
     imap_addr = None
-    key_filename = None
     password_filename = None
     log_filename = DEFAULT_LOG_FILENAME
     log_file = sys.stdout
@@ -91,7 +86,7 @@ class IMAP4_SSL_REQUIRED(imaplib.IMAP4_SSL):
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %(progname)s --key=KEYFILE --pass=PASSFILE
+Usage: %(progname)s --pass=PASSFILE
 Facilitator-side helper for the facilitator-reg-email rendezvous. Polls
 an IMAP server for email messages with client registrations, deletes
 them, and forwards the registrations to the facilitator.
@@ -101,7 +96,6 @@ them, and forwards the registrations to the facilitator.
   -h, --help              show this help.
   -i, --imap=HOST[:PORT]  use the given IMAP server (default "%(imap_addr)s").
       --imaplib-debug     show raw IMAP messages (will include email password).
-  -k, --key=KEYFILE       read a facilitator private key from KEYFILE.
   -l, --log FILENAME      write log to FILENAME (default \"%(log)s\").
   -p, --pass=PASSFILE     use the email password contained in PASSFILE.
       --pidfile FILENAME  write PID to FILENAME after daemonizing.
@@ -127,7 +121,7 @@ def log(msg):
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.imap_addr = (DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:k:l:p:", ["debug", "email=", "help", "imap=", "imaplib-debug", "key=", "log=", "pass=", "pidfile=", "unsafe-logging"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:", ["debug", "email=", "help", "imap=", "imaplib-debug", "log=", "pass=", "pidfile=", "unsafe-logging"])
 for o, a in opts:
     if o == "-d" or o == "--debug":
         options.daemonize = False
@@ -141,8 +135,6 @@ for o, a in opts:
         options.imap_addr = fac.parse_addr_spec(a, DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
     if o == "--imaplib-debug":
         options.imaplib_debug = True
-    elif o == "-k" or o == "--key":
-        options.key_filename = a
     elif o == "-l" or o == "--log":
         options.log_filename = a
     elif o == "-p" or o == "--pass":
@@ -156,12 +148,6 @@ if len(args) != 0:
     usage(sys.stderr)
     sys.exit(1)
 
-# Return true iff the given fd is readable, writable, and executable only by its
-# owner.
-def check_perms(fd):
-    mode = os.fstat(fd)[0]
-    return (mode & (stat.S_IRWXG | stat.S_IRWXO)) == 0
-
 # Load the email password.
 if options.password_filename is None:
     print >> sys.stderr, "The --pass option is required."
@@ -174,33 +160,13 @@ Failed to open password file "%s": %s.\
 """ % (options.password_filename, str(e))
     sys.exit(1)
 try:
-    if not check_perms(password_file.fileno()):
+    if not fac.check_perms(password_file.fileno()):
         print >> sys.stderr, "Refusing to run with group- or world-readable password file. Try"
         print >> sys.stderr, "\tchmod 600 %s" % options.password_filename
         sys.exit(1)
     email_password = password_file.read().strip()
 finally:
     password_file.close()
-
-# Load the private key specific to this registration method.
-if options.key_filename is None:
-    print >> sys.stderr, "The --key option is required."
-    sys.exit(1)
-try:
-    key_file = open(options.key_filename)
-except Exception, e:
-    print >> sys.stderr, """\
-Failed to open private key file "%s": %s.\
-""" % (options.key_filename, str(e))
-    sys.exit(1)
-try:
-    if not check_perms(key_file.fileno()):
-        print >> sys.stderr, "Refusing to run with group- or world-readable private key file. Try"
-        print >> sys.stderr, "\tchmod 600 %s" % options.key_filename
-        sys.exit(1)
-    rsa = RSA.load_key_string(key_file.read())
-finally:
-    key_file.close()
 
 if options.log_filename:
     options.log_file = open(options.log_filename, "a")
@@ -234,11 +200,14 @@ def find_client_addr(body):
     return None
 
 def handle_message(msg):
-    ciphertext = msg.get_payload().decode("base64")
-    plaintext = rsa.private_decrypt(ciphertext, RSA.pkcs1_oaep_padding)
-    client_addr = find_client_addr(plaintext)
-    log(u"registering %s" % safe_str(fac.format_addr(client_addr)))
-    fac.put_reg(FACILITATOR_ADDR, client_addr)
+    try:
+        if fac.put_reg_base64(msg.get_payload()):
+            log(u"registered client")
+        else:
+            log(u"failed to register client")
+    except Exception, e:
+        log(u"error registering client")
+        raise
 
 def truncate_repr(s, n):
     if not isinstance(s, basestring):

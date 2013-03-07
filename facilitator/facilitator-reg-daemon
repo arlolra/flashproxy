@@ -1,0 +1,207 @@
+#!/usr/bin/env python
+
+import SocketServer
+import getopt
+import os
+import socket
+import sys
+import threading
+import time
+
+import fac
+
+from M2Crypto import RSA
+
+# Generating an RSA keypair for use by this program:
+# openssl genrsa reg-daemon 2048
+# chmod 600 reg-daemon
+
+LISTEN_ADDRESS = "127.0.0.1"
+DEFAULT_LISTEN_PORT = 9003
+FACILITATOR_ADDR = ("127.0.0.1", 9002)
+DEFAULT_LOG_FILENAME = "facilitator-reg-daemon.log"
+
+# Don't indulge clients for more than this many seconds.
+CLIENT_TIMEOUT = 1.0
+# Buffer no more than this many bytes per connection.
+MAX_LENGTH = 40 * 1024
+
+LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+class options(object):
+    key_filename = None
+    listen_port = DEFAULT_LISTEN_PORT
+    log_filename = DEFAULT_LOG_FILENAME
+    log_file = sys.stdout
+    daemonize = True
+    pid_filename = None
+    safe_logging = True
+
+def usage(f = sys.stdout):
+    print >> f, """\
+Usage: %(progname)s --key=KEYFILE
+Facilitator-side daemon that reads base64-encoded encrypted client
+registrations and registers them with a local facilitator. This program
+exists on its own in order to isolate the reading of key material in a
+single process.
+
+  -d, --debug             don't daemonize, log to stdout.
+  -h, --help              show this help.
+  -k, --key=KEYFILE       read the private key from KEYFILE (required).
+  -l, --log FILENAME      write log to FILENAME (default \"%(log)s\").
+  -p, --port PORT         listen on PORT (by default %(port)d).
+      --pidfile FILENAME  write PID to FILENAME after daemonizing.
+      --unsafe-logging    don't scrub email password and IP addresses from logs.\
+""" % {
+    "progname": sys.argv[0],
+    "log": DEFAULT_LOG_FILENAME,
+    "port": DEFAULT_LISTEN_PORT,
+}
+
+def safe_str(s):
+    """Return s if options.safe_logging is true, and "[scrubbed]" otherwise."""
+    if options.safe_logging:
+        return "[scrubbed]"
+    else:
+        return s
+
+log_lock = threading.Lock()
+def log(msg):
+    log_lock.acquire()
+    try:
+        print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
+        options.log_file.flush()
+    finally:
+        log_lock.release()
+
+def find_client_addr(body):
+    """Find and parse the first client line of the form
+        client=...
+    Returns None if no client line was found."""
+    for line in body.splitlines():
+        if line.startswith("client="):
+            _, client_spec = line.split("=", 1)
+            return fac.parse_addr_spec(client_spec)
+    return None
+
+class Handler(SocketServer.StreamRequestHandler):
+    def __init__(self, *args, **kwargs):
+        self.deadline = time.time() + CLIENT_TIMEOUT
+        self.buffer = ""
+        SocketServer.StreamRequestHandler.__init__(self, *args, **kwargs)
+
+    def recv(self):
+        timeout = self.deadline - time.time()
+        self.connection.settimeout(timeout)
+        return self.connection.recv(1024)
+
+    def read_input(self):
+        while True:
+            data = self.recv()
+            if not data:
+                break
+            self.buffer += data
+            if len(self.buffer) > MAX_LENGTH:
+                raise socket.error("refusing to buffer %d bytes (last read was %d bytes)" % (buflen, len(data)))
+        return self.buffer
+
+    @fac.catch_epipe
+    def handle(self):
+        try:
+            b64_ciphertext = self.read_input()
+        except socket.error, e:
+            log("socket error reading input: %s" % str(e))
+            return
+        try:
+            ciphertext = b64_ciphertext.decode("base64")
+            plaintext = rsa.private_decrypt(ciphertext, RSA.pkcs1_oaep_padding)
+            client_addr = find_client_addr(plaintext)
+            log(u"registering %s" % safe_str(fac.format_addr(client_addr)))
+            if fac.put_reg(FACILITATOR_ADDR, client_addr):
+                print >> self.wfile, "OK"
+            else:
+                print >> self.wfile, "FAIL"
+        except Exception, e:
+            log("error registering: %s" % str(e))
+            print >> self.wfile, "FAIL"
+            raise
+
+    finish = fac.catch_epipe(SocketServer.StreamRequestHandler.finish)
+
+class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+    allow_reuse_address = True
+
+def main():
+    global rsa
+
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "dhk:l:p:", ["debug", "help", "key=", "log=", "port=", "pidfile=", "unsafe-logging"])
+    for o, a in opts:
+        if o == "-d" or o == "--debug":
+            options.daemonize = False
+            options.log_filename = None
+        elif o == "-h" or o == "--help":
+            usage()
+            sys.exit()
+        elif o == "-k" or o == "--key":
+            options.key_filename = a
+        elif o == "-l" or o == "--log":
+            options.log_filename = a
+        elif o == "-p" or o == "--pass":
+            options.listen_port = int(a)
+        elif o == "--pidfile":
+            options.pid_filename = a
+        elif o == "--unsafe-logging":
+            options.safe_logging = False
+
+    if len(args) != 0:
+        usage(sys.stderr)
+        sys.exit(1)
+
+    # Load the private key.
+    if options.key_filename is None:
+        print >> sys.stderr, "The --key option is required."
+        sys.exit(1)
+    try:
+        key_file = open(options.key_filename)
+    except Exception, e:
+        print >> sys.stderr, "Failed to open private key file \"%s\": %s." % (options.key_filename, str(e))
+        sys.exit(1)
+    try:
+        if not fac.check_perms(key_file.fileno()):
+            print >> sys.stderr, "Refusing to run with group- or world-readable private key file. Try"
+            print >> sys.stderr, "\tchmod 600 %s" % options.key_filename
+            sys.exit(1)
+        rsa = RSA.load_key_string(key_file.read())
+    finally:
+        key_file.close()
+
+    if options.log_filename:
+        options.log_file = open(options.log_filename, "a")
+        # Send error tracebacks to the log.
+        sys.stderr = options.log_file
+    else:
+        options.log_file = sys.stdout
+
+    addrinfo = socket.getaddrinfo(LISTEN_ADDRESS, options.listen_port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
+
+    server = Server(addrinfo[4], Handler)
+
+    log(u"start on %s" % fac.format_addr(addrinfo[4]))
+
+    if options.daemonize:
+        log(u"daemonizing")
+        pid = os.fork()
+        if pid != 0:
+            if options.pid_filename:
+                f = open(options.pid_filename, "w")
+                print >> f, pid
+                f.close()
+            sys.exit(0)
+
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        sys.exit(0)
+
+if __name__ == "__main__":
+    main()

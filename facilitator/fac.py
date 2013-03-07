@@ -1,5 +1,32 @@
+import errno
+import os
 import re
 import socket
+import stat
+import subprocess
+
+# Return true iff the given fd is readable, writable, and executable only by its
+# owner.
+def check_perms(fd):
+    mode = os.fstat(fd)[0]
+    return (mode & (stat.S_IRWXG | stat.S_IRWXO)) == 0
+
+# A decorator to ignore "broken pipe" errors.
+def catch_epipe(fn):
+    def ret(self, *args):
+        try:
+            return fn(self, *args)
+        except socket.error, e:
+            try:
+                err_num = e.errno
+            except AttributeError:
+                # Before Python 2.6, exception can be a pair.
+                err_num, errstr = e
+            except:
+                raise
+            if err_num != errno.EPIPE:
+                raise
+    return ret
 
 def parse_addr_spec(spec, defhost = None, defport = None, resolve = False):
     """Parse a host:port specification and return a 2-tuple ("host", port) as
@@ -217,10 +244,17 @@ def get_reg(facilitator_addr, proxy_addr):
         command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)))
     finally:
         f.close()
+    response = {}
+    check_back_in = param_first("CHECK-BACK-IN", params)
+    if check_back_in is not None:
+        try:
+            float(check_back_in)
+        except ValueError:
+            raise ValueError("Facilitator returned non-numeric polling interval.")
+        response["check-back-in"] = check_back_in
     if command == "NONE":
-        return {
-            "client": ""
-        }
+        response["client"] = ""
+        return response
     elif command == "OK":
         client_spec = param_first("CLIENT", params)
         relay_spec = param_first("RELAY", params)
@@ -231,9 +265,15 @@ def get_reg(facilitator_addr, proxy_addr):
         # Check the syntax returned by the facilitator.
         client = parse_addr_spec(client_spec)
         relay = parse_addr_spec(relay_spec)
-        return {
-            "client": format_addr(client),
-            "relay": format_addr(relay),
-        }
+        response["client"] = format_addr(client)
+        response["relay"] = format_addr(relay)
+        return response
     else:
         raise ValueError("Facilitator response was not \"OK\"")
+
+def put_reg_base64(b64):
+    """Attempt to add a registration by running a facilitator-reg program
+    locally."""
+    p = subprocess.Popen(["facilitator-reg"], stdin=subprocess.PIPE)
+    stdout, stderr = p.communicate(b64)
+    return p.returncode == 0

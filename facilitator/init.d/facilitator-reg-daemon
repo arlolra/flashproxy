@@ -1,12 +1,12 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          facilitator-email-poller
+# Provides:          facilitator-reg-daemon
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Flash proxy email rendezvous poller
-# Description:       Debian init script for the flash proxy email rendezvous poller.
+# Short-Description: Flash proxy local registration daemon.
+# Description:       Debian init script for the flash proxy local registration daemon.
 ### END INIT INFO
 #
 # Author:	David Fifield <david@bamsoftware.com>
@@ -15,13 +15,13 @@
 # Based on /etc/init.d/skeleton from Debian 6.
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
-DESC="Flash proxy email rendezvous poller"
-NAME=facilitator-email-poller
+DESC="Flash proxy local registration daemon"
+NAME=facilitator-reg-daemon
 PIDFILE=/var/run/$NAME.pid
 LOGFILE=/var/log/$NAME.log
 CONFDIR=/etc/flashproxy
 DAEMON=/usr/local/bin/$NAME
-DAEMON_ARGS="--pass $CONFDIR/reg-email.pass --log $LOGFILE --pidfile $PIDFILE"
+DAEMON_ARGS="--key $CONFDIR/reg-daemon.key --log $LOGFILE --pidfile $PIDFILE"
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed

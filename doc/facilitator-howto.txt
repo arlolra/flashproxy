@@ -19,8 +19,15 @@ facilitator.
 The email rendezvous uses the helper program facilitator-email-poller.
 Clients use the flashproxy-reg-email program to send an encrypted
 message to a Gmail address. The poller constantly checks for new
-messages, decrypts and deletes them, and forwards the registrations to
-the facilitator.
+messages and forwards them to facilitator-reg.
+
+facilitator-reg is a simple program that forwards its standard input to
+a locally running facilitator-reg-daemon process.
+
+facilitator-reg-daemon accepts connections containing encrypted client
+registrations and forwards them to the facilitator. It exists as a
+process of its own so that only one program requires access to the
+facilitator's private key.
 
 The URL rendezvous uses the helper program flashproxy-reg-email. The
 helper program doesn't actually make a registration; rather, it prints
@@ -104,15 +111,15 @@ Restart servers.
 	# make install
 
 This installs facilitator.cgi, facilitator, facilitator-email-poller,
-facilitator-reg-url, and fac.py to /usr/local/bin. It also installs
-System V init files to /etc/init.d/.
+facilitator-reg-daemon, facilitator-reg, and fac.py to /usr/local/bin.
+It also installs System V init files to /etc/init.d/.
 
 	# update-rc.d facilitator defaults
 	# /etc/init.d/facilitator start
 	# update-rc.d facilitator-email-poller defaults
 	# /etc/init.d/facilitator-email-poller start
-	# update-rc.d facilitator-reg-url defaults
-	# /etc/init.d/facilitator-reg-url start
+	# update-rc.d facilitator-reg-daemon defaults
+	# /etc/init.d/facilitator-reg-daemon start
 
 == HTTP server setup
 
@@ -168,10 +175,24 @@ Copy the new tor-facilitator.pem to the facilitator server as
 
 	# /etc/init.d/apache2 restart
 
+=== Registration daemon setup
+
+The facilitator-reg-daemon program requires a private RSA key (used to
+decrypt encrypted client registrations).
+
+	# openssl genrsa -out /etc/flashproxy/reg-daemon.key 2048
+	# chmod 600 /etc/flashproxy/reg-daemon.key
+	# openssl rsa -pubout < /etc/flashproxy/reg-daemon.key > reg-daemon.pub
+
+You will have to edit flashproxy-reg-email and copy the contents of
+reg-email.pub into the appropriate place.
+
+Install reg-daemon.key /etc/flashproxy to match what the init script
+expects.
+
 === Email poller setup
 
-The facilitator-email-poller program requires a private RSA key (used to
-decrypt encrypted client registrations), and a password that is used to
+The facilitator-email-poller program requires a password that is used to
 log in to the designated Gmail account. See the file gmail-setup.txt for
 instructions on setting up a Gmail account. After you've set up the
 account and have the password, save it to a file reg-email.pass and make
@@ -179,32 +200,5 @@ it not readable or writable by anyone but its owner.
 
 	# chmod 600 /etc/flashproxy/reg-email.pass
 
-You need an RSA keypair because all client registrations over email are
-encrypted.
-
-	# openssl genrsa -out /etc/flashproxy/reg-email.key 2048
-	# chmod 600 /etc/flashproxy/reg-email.key
-	# openssl rsa -pubout < /etc/flashproxy/reg-email.key > reg-email.pub
-
-You will have to edit flashproxy-reg-email and copy the contents of
-reg-email.pub into the appropriate place.
-
-Install reg-email.key and reg-email.pass to /etc/flashproxy to match
-what the init script expects, or else use the --key and --pass options
-if you have them stored in another place.
-
-=== URL registration daemon setup
-
-The facilitator-reg-url program handles the decryption of registrations
-by URL. Like facilitator-email-poller, it requires an RSA keypair.
-
-# openssl genrsa -out /etc/flashproxy/reg-url.key 2048
-# chmod 600 /etc/flashproxy/reg-url.key
-# openssl rsa -pubout < /etc/flashproxy/reg-url.key > reg-url.pub
-
-You will have to edit flashproxy-reg-url and copy the contents of
-reg-url.pub into the appropriate place.
-
-Install the private key to /etc/flashproxy to match what the init
-script expects or use the --key option to specify a different
-location.
+Install reg-email.pass to /etc/flashproxy to match what the init script
+expects.

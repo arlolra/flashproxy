@@ -180,8 +180,8 @@ Considerations specific to pluggable transports
   length of the next frame exceeds the limit, the endpoint MUST close
   the connection and SHOULD do so with a status code of 1009 (see RFC
   6455 section 7.4.1). Endpoints MUST be capable of receiving messages
-  containing up to 1500 octets of binary data; this may require
-  buffering up to 2026 bytes of UTF-8–encoded base64 text.
+  containing up to 16384 bytes of binary data; this may require
+  buffering up to 21848 bytes of UTF-8–encoded base64 text.
 
 Questions/extensions
 

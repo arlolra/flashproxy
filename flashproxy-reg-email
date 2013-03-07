@@ -104,7 +104,7 @@ This program requires the M2Crypto library for Python.
   -e, --email=ADDRESS     send mail to ADDRESS (default "%(email_addr)s").
   -h, --help              show this help.
   -s, --smtp=HOST[:PORT]  use the given SMTP server
-                            (default "%(smtp_addr)s"). \
+                            (default "%(smtp_addr)s").\
 """ % {
     "progname": sys.argv[0],
     "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),

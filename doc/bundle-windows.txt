@@ -60,7 +60,7 @@ http://twistedmatrix.com/Releases/twisted-12.3.0-md5sums.txt
 
 === pyptlib
 
-	$ git clone https://git.torproject.org/user/asn/pyptlib.git
+	$ git clone https://git.torproject.org/pluggable-transports/pyptlib.git
 	$ cd pyptlib
 	$ /cygdrive/c/Python27/python.exe setup.py install
 
@@ -70,50 +70,56 @@ Clone and build the flashproxy source.
 
 	$ git clone https://git.torproject.org/flashproxy.git
 	$ cd flashproxy
-	$ make dist-exe
+	$ make dist-exe PYTHON=/cygdrive/c/Python27/python
 
 Clone pyobfsproxy and run PyInstaller on it.
 
-	$ git clone https://git.torproject.org/user/asn/pyobfsproxy.git -b obfs3_take2
-	$ /cygdrive/c/Python27/python.exe ../pyinstaller-2.0/pyinstaller.py obfsproxy.py
+	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
+	$ cd pyobfsproxy
+	$ git checkout pyobfsproxy-0.0.2
+	$ /cygdrive/c/Python27/python.exe ../pyinstaller-2.0/pyinstaller.py bin/pyobfsproxy
 
-Download the obfsproxy bundle from
-https://www.torproject.org/projects/obfsproxy.
+Download the browser bundle from
+https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
 
-https://www.torproject.org/dist/torbrowser/tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe
-https://www.torproject.org/dist/torbrowser/tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe.asc
+https://www.torproject.org/dist/torbrowser/tor-browser-2.4.10-alpha-2_en-US.exe
+https://www.torproject.org/dist/torbrowser/tor-browser-2.4.10-alpha-2_en-US.exe.asc
 
 Extract the bundle.
 
-	$ gpg --verify tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe.asc
+	$ gpg --verify tor-browser-2.4.10-alpha-2_en-US.exe.asc
 	$ rm -r "Tor Browser"
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" x tor-obfsproxy-browser-2.4.7-alpha-1_en-US.exe
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" x tor-browser-2.4.10-alpha-2_en-US.exe
 
 Copy files into the bundle. The -n option to cp prevents the existing
 LIBEAY32.dll and SSLEAY32.dll from being overwritten.
 
 	$ cd "Tor Browser"
-	$ rm -f App/obfsproxy.exe
-	$ cp -n ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
+	$ cp -nr ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
 	$ mkdir -p Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
-	$ cp -nr ~/pyobfsproxy/dist/obfsproxy/{*.pyd,*.dll,*.exe,*.manifest,eggs} App
+	$ cp -nr ~/pyobfsproxy/dist/pyobfsproxy/{*.pyd,*.dll,*.exe,*.manifest,eggs} App
 	$ mkdir -p Docs/PyObfsproxy
 	$ cp ~/pyobfsproxy/{LICENSE,README} Docs/PyObfsproxy
 
-Make the second half of Data/Tor/torrc look like this (i.e., keep the
-generic configuration, but change the obfsproxy-specific stuff).
-Basically you are concatenating the normal flashproxy-client torrc, but
-changing "./flashproxy-client" to "flashproxy-client". You are also
-changing "--managed" to "managed" in the obfsproxy ClientTransportPlugin
-line.
+Make the second half of Data/Tor/torrc look like this.
 
 UseBridges 1
 # The address and port are ignored by the client transport plugin.
 Bridge websocket 0.0.1.0:1
 
-# Keep the list of obfs2 bridges
-...
+Bridge obfs2 109.163.233.198:1051
+Bridge obfs2 83.212.100.216:47870
+Bridge obfs2 83.212.96.182:46602
+Bridge obfs2 109.105.109.163:46924
+Bridge obfs2 70.182.182.109:54542
+Bridge obfs2 169.229.59.74:32779
+Bridge obfs2 169.229.59.75:47809
+Bridge obfs2 209.141.36.236:60783
+Bridge obfs2 208.79.90.242:55564
+Bridge obfs2 128.31.0.34:1051
+
+Bridge obfs3 83.212.101.2:42782
 
 LearnCircuitBuildTimeout 0
 CircuitBuildTimeout 60
@@ -121,17 +127,17 @@ CircuitBuildTimeout 60
 # receive connections from the Internet (the port for which you
 # configured port forwarding).
 ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
-ClientTransportPlugin obfs2,obfs3 exec obfsproxy managed
+ClientTransportPlugin obfs2,obfs3 exec pyobfsproxy managed
 
 Re-zip the bundle. The "alpha" number should be independent of the
-obfsproxy bundle's alpha. The 7zg program (as opposed to 7z) causes the
+browser bundle's alpha. The 7zg program (as opposed to 7z) causes the
 self-extractor to show a GUI.
 
 	$ cd ..
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-flashproxy-pyobfsproxy-browser-2.4.7-alpha-1_en-US.exe "Tor Browser"
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-flashproxy-pyobfsproxy-browser-2.4.10-alpha-2_en-US.exe "Tor Browser"
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon and "Start Tor Browser.exe".
 
 	$ mkdir tmp
-	$ cp tor-flashproxy-pyobfsproxy-browser-2.4.7-alpha-1_en-US.exe tmp
+	$ cp tor-flashproxy-pyobfsproxy-browser-2.4.10-alpha-2_en-US.exe tmp

@@ -99,24 +99,18 @@ re-register:
 
 == How to run a relay
 
-The relay runs with a WebSocket proxy in external proxy mode.
-	$ git clone git://github.com/kanaka/websockify.git
-	$ git apply ~/flashproxy/patches/websockify-binary-default.patch
-Install websockify as a daemon that will restart at boot. These
-instructions are for CentOS 5.
-	$ cd websockify
-	$ git apply ~/flashproxy/patches/websockify-binary-default.patch
-	$ su
-	# cp websockify websocket.py /usr/local/bin
-	# useradd -d /dev/null -s /bin/false websockify
-	# mkdir /var/websockify
-	# chown -R websockify.websockify /var/websockify
-	# cp ~/flashproxy/init.d/websockify /etc/init.d/websockify
-	# chkconfig --add websockify
-	# service websockify start
-
-Add this line to torrc to make the relay use the external proxy:
-	ServerTransportPlugin websocket proxy 127.0.0.1:9901
+A server transport plugin for the WebSocket protocol is in the
+websocket-transport directory. To build it, you need development tools
+for the Go programming language ("apt-get install golang" on Debian).
+	$ cd websocket-transport
+	$ make
+	# make install
+You will need a version of Tor supporting the extended OR port protocol.
+	$ git clone https://git.torproject.org/user/asn/tor.git -b bug4773_rebase
+Add a line like the following to the relay's torrc. You can change the
+--port option; make sure that port is open in the firewall.
+	ExtORPort 5555
+	ServerTransportPlugin websocket exec /usr/local/bin/websocket-server --port 9901
 
 == How to put a flash proxy badge on a web page
 
