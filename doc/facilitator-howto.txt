@@ -111,8 +111,8 @@ System V init files to /etc/init.d/.
 	# /etc/init.d/facilitator start
 	# update-rc.d facilitator-email-poller defaults
 	# /etc/init.d/facilitator-email-poller start
-    # update-rc.d facilitator-reg-url defaults
-    # /etc/init.d/facilitator-reg-url start
+	# update-rc.d facilitator-reg-url defaults
+	# /etc/init.d/facilitator-reg-url start
 
 == HTTP server setup
 
@@ -201,7 +201,6 @@ by URL. Like facilitator-email-poller, it requires an RSA keypair.
 # openssl genrsa -out /etc/flashproxy/reg-url.key 2048
 # chmod 600 /etc/flashproxy/reg-url.key
 # openssl rsa -pubout < /etc/flashproxy/reg-url.key > reg-url.pub
-
 
 You will have to edit flashproxy-reg-url and copy the contents of
 reg-url.pub into the appropriate place.
