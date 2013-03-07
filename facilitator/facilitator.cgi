@@ -12,10 +12,13 @@ import fac
 FACILITATOR_ADDR = ("127.0.0.1", 9002)
 FACILITATOR_REG_URL_ADDR = ("127.0.0.1", 9003)
 
-def exit_error(status):
+def output_status(status):
     print """\
 Status: %d\r
 \r""" % status
+
+def exit_error(status):
+    output_status(status)
     sys.exit()
 
 # Send a client registration to the helper daemon,
