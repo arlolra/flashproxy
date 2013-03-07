@@ -18,7 +18,7 @@
 # This is the IPv4 address of tor1.bamsoftware.com.
 RELAY=173.255.221.44:9901
 
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 DESC="Flash proxy facilitator"
 NAME=facilitator
 PIDFILE=/var/run/$NAME.pid

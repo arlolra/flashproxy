@@ -14,7 +14,7 @@
 
 # Based on /etc/init.d/skeleton from Debian 6.
 
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 DESC="Flash proxy email rendezvous poller"
 NAME=facilitator-email-poller
 PIDFILE=/var/run/$NAME.pid
