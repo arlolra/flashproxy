@@ -19,8 +19,15 @@ facilitator.
 The email rendezvous uses the helper program facilitator-email-poller.
 Clients use the flashproxy-reg-email program to send an encrypted
 message to a Gmail address. The poller constantly checks for new
-messages, decrypts and deletes them, and forwards the registrations to
-the facilitator.
+messages and forwards them to facilitator-reg.
+
+facilitator-reg is a simple program that forwards its standard input to
+a locally running facilitator-reg-daemon process.
+
+facilitator-reg-daemon accepts connections containing encrypted client
+registrations and forwards them to the facilitator. It exists as a
+process of its own so that only one program requires access to the
+facilitator's private key.
 
 fac.py is a Python module containing code common to the various
 facilitator programs.
@@ -100,8 +107,8 @@ Restart servers.
 	# make install
 
 This installs facilitator.cgi, facilitator, facilitator-email-poller,
-and fac.py to /usr/local/bin. It also installs System V init files to
-/etc/init.d/.
+facilitator-reg-daemon, facilitator-reg, and fac.py to /usr/local/bin.
+It also installs System V init files to /etc/init.d/.
 
 	# update-rc.d facilitator defaults
 	# /etc/init.d/facilitator start
