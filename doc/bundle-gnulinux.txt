@@ -62,8 +62,6 @@ Choose "Install" when it boots. Here are settings:
 
 Packages to install:
 
-	$ sudo apt-get update
-	$ sudo apt-get upgrade
 	$ sudo apt-get install --no-install-recommends git make python-m2crypto zip
 	$ sudo apt-get install --no-install-recommends python-setuptools python-crypto python-twisted python-argparse
 
@@ -88,6 +86,11 @@ Clone pyobfsproxy.
 	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
 	$ cd pyobfsproxy
 	$ git checkout pyobfsproxy-0.0.2
+
+Update your Debian.
+
+	$ sudo apt-get update
+	$ sudo apt-get upgrade
 
 Within the VM, download the 32-bit or 64-bit browser bundle from
 https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
