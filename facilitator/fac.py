@@ -1,5 +1,23 @@
+import errno
 import re
 import socket
+
+# A decorator to ignore "broken pipe" errors.
+def catch_epipe(fn):
+    def ret(self, *args):
+        try:
+            return fn(self, *args)
+        except socket.error, e:
+            try:
+                err_num = e.errno
+            except AttributeError:
+                # Before Python 2.6, exception can be a pair.
+                err_num, errstr = e
+            except:
+                raise
+            if err_num != errno.EPIPE:
+                raise
+    return ret
 
 def parse_addr_spec(spec, defhost = None, defport = None, resolve = False):
     """Parse a host:port specification and return a 2-tuple ("host", port) as

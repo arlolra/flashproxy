@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import SocketServer
-import errno
 import getopt
 import os
 import socket
@@ -140,23 +139,6 @@ class RegSet(object):
         finally:
             self.cv.release()
 
-# A decorator to ignore "broken pipe" errors.
-def catch_epipe(fn):
-    def ret(self, *args):
-        try:
-            return fn(self, *args)
-        except socket.error, e:
-            try:
-                err_num = e.errno
-            except AttributeError:
-                # Before Python 2.6, exception can be a pair.
-                err_num, errstr = e
-            except:
-                raise
-            if err_num != errno.EPIPE:
-                raise
-    return ret
-
 class Handler(SocketServer.StreamRequestHandler):
     def __init__(self, *args, **kwargs):
         self.deadline = time.time() + CLIENT_TIMEOUT
@@ -197,7 +179,7 @@ class Handler(SocketServer.StreamRequestHandler):
                 if buflen >= READLINE_MAX_LENGTH:
                     raise socket.error("readline: refusing to buffer %d bytes (last read was %d bytes)" % (buflen, len(data)))
 
-    @catch_epipe
+    @fac.catch_epipe
     def handle(self):
         num_lines = 0
         while True:
@@ -295,7 +277,7 @@ class Handler(SocketServer.StreamRequestHandler):
         self.send_ok()
         return True
 
-    finish = catch_epipe(SocketServer.StreamRequestHandler.finish)
+    finish = fac.catch_epipe(SocketServer.StreamRequestHandler.finish)
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
