@@ -49,7 +49,7 @@ def do_get():
         # This is a URL-based registration.
         if not url_reg(path_parts[1]):
             exit_error(500)
-        output_status(200)
+        output_status(204)
     elif len(path_parts) == 0:
         try:
             reg = fac.get_reg(FACILITATOR_ADDR, remote_addr) or ""
