@@ -164,10 +164,24 @@ Copy the new tor-facilitator.pem to the facilitator server as
 
 	# /etc/init.d/apache2 restart
 
+=== Registration daemon setup
+
+The facilitator-reg-daemon program requires a private RSA key (used to
+decrypt encrypted client registrations).
+
+	# openssl genrsa -out /etc/flashproxy/reg-daemon.key 2048
+	# chmod 600 /etc/flashproxy/reg-daemon.key
+	# openssl rsa -pubout < /etc/flashproxy/reg-daemon.key > reg-daemon.pub
+
+You will have to edit flashproxy-reg-email and copy the contents of
+reg-email.pub into the appropriate place.
+
+Install reg-daemon.key /etc/flashproxy to match what the init script
+expects.
+
 === Email poller setup
 
-The facilitator-email-poller program requires a private RSA key (used to
-decrypt encrypted client registrations), and a password that is used to
+The facilitator-email-poller program requires a password that is used to
 log in to the designated Gmail account. See the file gmail-setup.txt for
 instructions on setting up a Gmail account. After you've set up the
 account and have the password, save it to a file reg-email.pass and make
@@ -175,16 +189,5 @@ it not readable or writable by anyone but its owner.
 
 	# chmod 600 /etc/flashproxy/reg-email.pass
 
-You need an RSA keypair because all client registrations over email are
-encrypted.
-
-	# openssl genrsa -out /etc/flashproxy/reg-email.key 2048
-	# chmod 600 /etc/flashproxy/reg-email.key
-	# openssl rsa -pubout < /etc/flashproxy/reg-email.key > reg-email.pub
-
-You will have to edit flashproxy-reg-email and copy the contents of
-reg-email.pub into the appropriate place.
-
-Install reg-email.key and reg-email.pass to /etc/flashproxy to match
-what the init script expects, or else use the --key and --pass options
-if you have them stored in another place.
+Install reg-email.pass to /etc/flashproxy to match what the init script
+expects.
