@@ -21,7 +21,7 @@ PIDFILE=/var/run/$NAME.pid
 LOGFILE=/var/log/$NAME.log
 CONFDIR=/etc/flashproxy
 DAEMON=/usr/local/bin/$NAME
-DAEMON_ARGS="--pass $CONFDIR/reg-email.pass --key $CONFDIR/reg-email.key --log $LOGFILE --pidfile $PIDFILE"
+DAEMON_ARGS="--pass $CONFDIR/reg-email.pass --log $LOGFILE --pidfile $PIDFILE"
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
