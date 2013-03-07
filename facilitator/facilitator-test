@@ -32,6 +32,9 @@ class FacilitatorTest(unittest.TestCase):
         time.sleep(0.1)
 
     def tearDown(self):
+        ret = self.process.poll()
+        if ret is not None:
+            raise Exception("facilitator subprocess exited unexpectedly with status %d" % ret)
         self.process.terminate()
 
     def test_timeout(self):
