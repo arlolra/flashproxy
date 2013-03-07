@@ -1,6 +1,7 @@
 import errno
 import re
 import socket
+import subprocess
 
 # A decorator to ignore "broken pipe" errors.
 def catch_epipe(fn):
@@ -261,3 +262,10 @@ def get_reg(facilitator_addr, proxy_addr):
         return response
     else:
         raise ValueError("Facilitator response was not \"OK\"")
+
+def put_reg_base64(b64):
+    """Attempt to add a registration by running a facilitator-reg program
+    locally."""
+    p = subprocess.Popen(["facilitator-reg"], stdin=subprocess.PIPE)
+    stdout, stderr = p.communicate(b64)
+    return p.returncode == 0
