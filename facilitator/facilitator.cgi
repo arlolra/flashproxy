@@ -44,18 +44,13 @@ if not method or not remote_addr[0]:
 fs = cgi.FieldStorage()
 
 def do_get():
-    args = [arg for arg in path_info.split("/") if arg]
-    # Check if we have a URL registration or a request for a client.
-    if len(args) == 2:
-        if args[0] != "reg":
-            exit_error(400)
-        reg = args[1]
-        if not url_reg(reg):
+    path_parts = [x for x in path_info.split("/") if x]
+    if len(path_parts) == 2 and path_parts[0] == "reg":
+        # This is a URL-based registration.
+        if not url_reg(path_parts[1]):
             exit_error(500)
-        print """\
-Status: 200\r
-\r"""
-    elif len(args) == 0:
+        output_status(200)
+    elif len(path_parts) == 0:
         try:
             reg = fac.get_reg(FACILITATOR_ADDR, remote_addr) or ""
         except:
