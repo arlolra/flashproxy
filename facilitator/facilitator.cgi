@@ -47,9 +47,13 @@ def do_get():
     path_parts = [x for x in path_info.split("/") if x]
     if len(path_parts) == 2 and path_parts[0] == "reg":
         # This is a URL-based registration.
-        if not url_reg(path_parts[1]):
+        try:
+            if url_reg(path_parts[1]):
+                output_status(204)
+            else:
+                exit_error(400)
+        except:
             exit_error(500)
-        output_status(204)
     elif len(path_parts) == 0:
         try:
             reg = fac.get_reg(FACILITATOR_ADDR, remote_addr) or ""
