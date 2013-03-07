@@ -6,8 +6,8 @@ all:
 
 install:
 	mkdir -p $(BINDIR)
-	cp -f facilitator facilitator-email-poller facilitator.cgi fac.py $(BINDIR)
-	cp -f init.d/facilitator init.d/facilitator-email-poller /etc/init.d/
+	cp -f facilitator facilitator-email-poller facilitator-reg-daemon facilitator.cgi fac.py $(BINDIR)
+	cp -f init.d/facilitator init.d/facilitator-email-poller init.d/facilitator-reg-daemon /etc/init.d/
 
 clean:
 	rm -f *.pyc

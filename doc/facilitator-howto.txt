@@ -107,6 +107,8 @@ and fac.py to /usr/local/bin. It also installs System V init files to
 	# /etc/init.d/facilitator start
 	# update-rc.d facilitator-email-poller defaults
 	# /etc/init.d/facilitator-email-poller start
+	# update-rc.d facilitator-reg-daemon defaults
+	# /etc/init.d/facilitator-reg-daemon start
 
 == HTTP server setup
 
