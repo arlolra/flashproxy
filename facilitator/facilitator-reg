@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import getopt
+import socket
+import sys
+
+CONNECT_ADDRESS = "127.0.0.1"
+DEFAULT_CONNECT_PORT = 9003
+
+class options(object):
+    connect_port = DEFAULT_CONNECT_PORT
+
+def usage(f = sys.stdout):
+    print >> f, """\
+Usage: %(progname)s
+Reads a base64-encoded encrypted client registration from stdin and
+feeds it to a local facilitator-reg-daemon process. Returns 0 if the
+registration was successful, 1 otherwise.
+
+  -h, --help              show this help.
+  -p, --port PORT         connect to PORT (by default %(port)d).\
+""" % {
+    "progname": sys.argv[0],
+    "port": DEFAULT_CONNECT_PORT,
+}
+
+def main():
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "hp:", ["help", "port="])
+    for o, a in opts:
+        if o == "-h" or o == "--help":
+            usage()
+            sys.exit()
+        elif o == "-p" or o == "--pass":
+            options.connect_port = int(a)
+
+    if len(args) != 0:
+        usage(sys.stderr)
+        sys.exit(1)
+
+    addrinfo = socket.getaddrinfo(CONNECT_ADDRESS, options.connect_port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
+
+    s = socket.socket(addrinfo[0], addrinfo[1], addrinfo[2])
+    s.connect(addrinfo[4])
+
+    while True:
+        data = sys.stdin.read(1024)
+        if data == "":
+            break
+        s.send(data)
+    s.shutdown(socket.SHUT_WR)
+    data = s.recv(1024)
+
+    if data.strip() == "OK":
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
