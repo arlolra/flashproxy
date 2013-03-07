@@ -22,11 +22,9 @@ message to a Gmail address. The poller constantly checks for new
 messages, decrypts and deletes them, and forwards the registrations to
 the facilitator.
 
-The URL method uses the facilitator-reg-url daemon and the
-flashproxy-reg-url helper program. flashproxy-reg-url prints
-out URLs that can be used to register a client with a facilitator.
-These URLs can then be pasted into a unblocked third-party URL retreival
-serice, like the W3C Markup Validation Service.
+The URL rendezvous uses the helper program flashproxy-reg-email. The
+helper program doesn't actually make a registration; rather, it prints
+out a URL which, when retrieved, makes the registration.
 
 fac.py is a Python module containing code common to the various
 facilitator programs.
