@@ -47,9 +47,6 @@ def do_get():
         if args[0] != "reg":
             exit_error(400)
         reg = args[1]
-        # 256 byte RSA encryption, base64-encoded, should be no longer than 344 bytes.
-        if len(reg) > 350:
-            exit_error(400)
         if not url_reg(reg):
             exit_error(500)
         print """\
