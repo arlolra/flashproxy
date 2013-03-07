@@ -148,12 +148,6 @@ if len(args) != 0:
     usage(sys.stderr)
     sys.exit(1)
 
-# Return true iff the given fd is readable, writable, and executable only by its
-# owner.
-def check_perms(fd):
-    mode = os.fstat(fd)[0]
-    return (mode & (stat.S_IRWXG | stat.S_IRWXO)) == 0
-
 # Load the email password.
 if options.password_filename is None:
     print >> sys.stderr, "The --pass option is required."
@@ -166,7 +160,7 @@ Failed to open password file "%s": %s.\
 """ % (options.password_filename, str(e))
     sys.exit(1)
 try:
-    if not check_perms(password_file.fileno()):
+    if not fac.check_perms(password_file.fileno()):
         print >> sys.stderr, "Refusing to run with group- or world-readable password file. Try"
         print >> sys.stderr, "\tchmod 600 %s" % options.password_filename
         sys.exit(1)

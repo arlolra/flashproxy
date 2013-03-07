@@ -1,7 +1,15 @@
 import errno
+import os
 import re
 import socket
+import stat
 import subprocess
+
+# Return true iff the given fd is readable, writable, and executable only by its
+# owner.
+def check_perms(fd):
+    mode = os.fstat(fd)[0]
+    return (mode & (stat.S_IRWXG | stat.S_IRWXO)) == 0
 
 # A decorator to ignore "broken pipe" errors.
 def catch_epipe(fn):

@@ -4,7 +4,6 @@ import SocketServer
 import getopt
 import os
 import socket
-import stat
 import sys
 import threading
 import time
@@ -84,12 +83,6 @@ def find_client_addr(body):
             _, client_spec = line.split("=", 1)
             return fac.parse_addr_spec(client_spec)
     return None
-
-# Return true iff the given fd is readable, writable, and executable only by its
-# owner.
-def check_perms(fd):
-    mode = os.fstat(fd)[0]
-    return (mode & (stat.S_IRWXG | stat.S_IRWXO)) == 0
 
 class Handler(SocketServer.StreamRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -174,7 +167,7 @@ def main():
         print >> sys.stderr, "Failed to open private key file \"%s\": %s." % (options.key_filename, str(e))
         sys.exit(1)
     try:
-        if not check_perms(key_file.fileno()):
+        if not fac.check_perms(key_file.fileno()):
             print >> sys.stderr, "Refusing to run with group- or world-readable private key file. Try"
             print >> sys.stderr, "\tchmod 600 %s" % options.key_filename
             sys.exit(1)
