@@ -930,9 +930,13 @@ function repr(x) {
 
 /* Do we seem to be running in Tor Browser? Check the user-agent string, lack of
    DOM storage, and no listing of supported MIME types. */
-var TBB_UA = "Mozilla/5.0 (Windows NT 6.1; rv:10.0) Gecko/20100101 Firefox/10.0";
+var TBB_UA = [
+    "Mozilla/5.0 (Windows NT 6.1; rv:10.0) Gecko/20100101 Firefox/10.0",
+    "Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0"
+];
+
 function is_likely_tor_browser() {
-    return window.navigator.userAgent === TBB_UA
+    return TBB_UA.indexOf(window.navigator.userAgent) > 0
         && window.sessionStorage === null
         && (window.navigator.mimeTypes && window.navigator.mimeTypes.length === 0);
 }
