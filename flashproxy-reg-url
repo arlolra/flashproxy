@@ -107,7 +107,7 @@ if len(args) != 1:
     sys.exit(1)
 
 addr = parse_addr_spec(args[0], defport=DEFAULT_REMOTE_PORT)
-spec = format_addr(addr)
+spec = u"client=" + format_addr(addr)
 spec = spec.encode('UTF-8')
 
 rsa = RSA.load_pub_key_bio(BIO.MemoryBuffer(FACILITATOR_PUBKEY_PEM))
