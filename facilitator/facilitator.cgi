@@ -21,18 +21,11 @@ def exit_error(status):
     output_status(status)
     sys.exit()
 
-# Send a client registration to the helper daemon,
-# which handles decryption and registration.
+# Send a base64-encoded client address to the registration daemon.
 def url_reg(reg):
-    sock = socket.create_connection(FACILITATOR_REG_URL_ADDR)
-    sock.sendall(reg)
-    sock.shutdown(socket.SHUT_WR)
-    response = sock.recv(4096)
-    sock.close()
-    if response == "\x00":
-        return True
-    else:
-        return False
+    # Translate from url-safe base64 alphabet to the standard alphabet.
+    reg = reg.replace('-', '+').replace('_', '/')
+    return fac.put_reg_base64(reg)
 
 method = os.environ.get("REQUEST_METHOD")
 remote_addr = (os.environ.get("REMOTE_ADDR"), None)
