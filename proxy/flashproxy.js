@@ -937,7 +937,6 @@ var TBB_UA = [
 
 function is_likely_tor_browser() {
     return TBB_UA.indexOf(window.navigator.userAgent) > 0
-        && window.sessionStorage === null
         && (window.navigator.mimeTypes && window.navigator.mimeTypes.length === 0);
 }
 
