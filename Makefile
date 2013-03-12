@@ -5,8 +5,7 @@ BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
 
 PYTHON = python
-PYINSTALLER_PY = ../pyinstaller-2.0/pyinstaller.py
-export PYINSTALLER_TMPDIR = pyinstaller-tmp
+export PY2EXE_TMPDIR = py2exe-tmp
 
 CLIENT_BIN = flashproxy-client flashproxy-reg-email flashproxy-reg-http
 CLIENT_MAN = doc/flashproxy-client.1 doc/flashproxy-reg-email.1 doc/flashproxy-reg-http.1
@@ -44,25 +43,20 @@ sign: dist/$(DISTNAME).zip
 	cd dist && gpg --sign --detach-sign --armor $(DISTNAME).zip
 	cd dist && gpg --verify $(DISTNAME).zip.asc $(DISTNAME).zip
 
-$(PYINSTALLER_TMPDIR)/dist: $(CLIENT_BIN)
-	rm -rf $(PYINSTALLER_TMPDIR)
-# PyInstaller writes "ERROR" to stderr (along with its other messages) when it
-# fails to find a hidden import like M2Crypto, but continues anyway and doesn't
-# change its error code. Grep for "ERROR" and stop if found.
-	$(PYTHON) $(PYINSTALLER_PY) --buildpath=$(PYINSTALLER_TMPDIR)/build --log-level=WARN flashproxy-client.spec 2>&1 | tee /dev/tty | grep -q "ERROR"; test $$? == 1
-	mv $(PYINSTALLER_TMPDIR)/dist/M2Crypto.__m2crypto.pyd $(PYINSTALLER_TMPDIR)/dist/__m2crypto.pyd
-	rm -rf logdict*.log
+$(PY2EXE_TMPDIR)/dist: $(CLIENT_BIN)
+	rm -rf $(PY2EXE_TMPDIR)
+	$(PYTHON) setup.py py2exe -q
 
 # See doc/windows-deployment-howto.txt.
 dist-exe: DISTNAME := $(DISTNAME)-win32
-dist-exe: CLIENT_BIN := $(PYINSTALLER_TMPDIR)/dist/*
+dist-exe: CLIENT_BIN := $(PY2EXE_TMPDIR)/dist/*
 dist-exe: CLIENT_MAN := $(addsuffix .txt,$(CLIENT_MAN))
 # Delegate to the "dist" target using the substitutions above.
-dist-exe: $(PYINSTALLER_TMPDIR)/dist flashproxy-client.spec dist
+dist-exe: $(PY2EXE_TMPDIR)/dist setup.py dist
 
 clean:
 	rm -f *.pyc
-	rm -rf dist $(PYINSTALLER_TMPDIR)
+	rm -rf dist $(PY2EXE_TMPDIR)
 
 test:
 	./flashproxy-client-test
