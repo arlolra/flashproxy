@@ -21,7 +21,7 @@ def exit_error(status):
     sys.exit()
 
 # Send a base64-encoded client address to the registration daemon.
-def url_reg(reg):
+def send_url_reg(reg):
     # Translate from url-safe base64 alphabet to the standard alphabet.
     reg = reg.replace('-', '+').replace('_', '/')
     return fac.put_reg_base64(reg)
@@ -35,17 +35,28 @@ if not method or not remote_addr[0]:
 
 fs = cgi.FieldStorage()
 
+# Print the HEAD part of a URL-based registration response, or exit with an
+# error if appropriate.
+def url_reg(reg):
+    try:
+        if send_url_reg(reg):
+            output_status(204)
+        else:
+            exit_error(400)
+    except:
+        exit_error(500)
+
+def do_head():
+    path_parts = [x for x in path_info.split("/") if x]
+    if len(path_parts) == 2 and path_parts[0] == "reg":
+        url_reg(path_parts[1])
+    else:
+        exit_error(400)
+
 def do_get():
     path_parts = [x for x in path_info.split("/") if x]
     if len(path_parts) == 2 and path_parts[0] == "reg":
-        # This is a URL-based registration.
-        try:
-            if url_reg(path_parts[1]):
-                output_status(204)
-            else:
-                exit_error(400)
-        except:
-            exit_error(500)
+        url_reg(path_parts[1])
     elif len(path_parts) == 0:
         try:
             reg = fac.get_reg(FACILITATOR_ADDR, remote_addr) or ""
@@ -79,7 +90,9 @@ def do_post():
 Status: 200\r
 \r"""
 
-if method == "GET":
+if method == "HEAD":
+    do_head()
+elif method == "GET":
     do_get()
 elif method == "POST":
     do_post()
