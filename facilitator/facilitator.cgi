@@ -5,7 +5,6 @@ import os
 import socket
 import sys
 import urllib
-import subprocess
 
 import fac
 
