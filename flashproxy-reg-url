@@ -108,6 +108,10 @@ if len(args) != 1:
     sys.exit(1)
 
 remote_addr = parse_addr_spec(args[0], defport=DEFAULT_REMOTE_PORT)
+if remote_addr[0] is None:
+    print >> sys.stderr, "An IP address (not just a port) is required."
+    sys.exit(1)
+
 reg_plain = (u"client=%s" % format_addr(remote_addr)).encode("utf-8")
 rsa = RSA.load_pub_key_bio(BIO.MemoryBuffer(FACILITATOR_PUBKEY_PEM))
 reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
