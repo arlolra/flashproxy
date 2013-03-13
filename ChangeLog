@@ -1,4 +1,10 @@
 Changes in version 0.12
+  o The new flashproxy-reg-url program prints a URL which, when
+    requested, causes an address to be registered with the facilitator.
+    You can use this program if the other registration methods are
+    blocked: pass the URL to a third party and ask them to request it.
+    Patch by Alexandre Allaire. Fixes bug 7559.
+
   o The new websocket-server program is the server transport plugin that
     flash proxies talk to. It replaces the third-party websockify
     program that was used formerly. It works as a managed proxy and
