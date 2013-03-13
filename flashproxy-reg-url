@@ -106,12 +106,10 @@ if len(args) != 1:
     usage(f=sys.stderr)
     sys.exit(1)
 
-addr = parse_addr_spec(args[0], defport=DEFAULT_REMOTE_PORT)
-spec = u"client=" + format_addr(addr)
-spec = spec.encode('UTF-8')
-
+remote_addr = parse_addr_spec(args[0], defport=DEFAULT_REMOTE_PORT)
+reg_plain = (u"client=%s" % format_addr(remote_addr)).encode("utf-8")
 rsa = RSA.load_pub_key_bio(BIO.MemoryBuffer(FACILITATOR_PUBKEY_PEM))
-ciphertext = rsa.public_encrypt(spec, RSA.pkcs1_oaep_padding)
-reg = base64.urlsafe_b64encode(ciphertext)
+reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
+reg = base64.urlsafe_b64encode(reg_crypt)
 
 print "/".join([options.facilitator_url.strip("/"), "reg", reg])
