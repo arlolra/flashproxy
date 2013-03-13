@@ -25,7 +25,7 @@ Changes in version 0.12
     by Alexandre Allaire.
 
   o Updated the Tor Browser check to match the behavior of new Tor
-    Browsers. Patch by Alexandre Allaire and Arlo Breault. Fixed bug
+    Browsers. Patch by Alexandre Allaire and Arlo Breault. Fixes bug
     8434.
 
 Changes in version 0.11
