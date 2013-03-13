@@ -5,6 +5,7 @@ import socket
 import sys
 import re
 import getopt
+import urlparse
 
 from M2Crypto import RSA, BIO
 
@@ -112,4 +113,4 @@ rsa = RSA.load_pub_key_bio(BIO.MemoryBuffer(FACILITATOR_PUBKEY_PEM))
 reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
 reg = base64.urlsafe_b64encode(reg_crypt)
 
-print "/".join([options.facilitator_url.strip("/"), "reg", reg])
+print urlparse.urljoin(options.facilitator_url, "reg/" + reg)
