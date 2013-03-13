@@ -5,16 +5,27 @@ import os
 import socket
 import sys
 import urllib
+import subprocess
 
 import fac
 
 FACILITATOR_ADDR = ("127.0.0.1", 9002)
+FACILITATOR_REG_URL_ADDR = ("127.0.0.1", 9003)
 
-def exit_error(status):
+def output_status(status):
     print """\
 Status: %d\r
 \r""" % status
+
+def exit_error(status):
+    output_status(status)
     sys.exit()
+
+# Send a base64-encoded client address to the registration daemon.
+def url_reg(reg):
+    # Translate from url-safe base64 alphabet to the standard alphabet.
+    reg = reg.replace('-', '+').replace('_', '/')
+    return fac.put_reg_base64(reg)
 
 method = os.environ.get("REQUEST_METHOD")
 remote_addr = (os.environ.get("REMOTE_ADDR"), None)
@@ -26,20 +37,31 @@ if not method or not remote_addr[0]:
 fs = cgi.FieldStorage()
 
 def do_get():
-    if path_info != "/":
-        exit_error(400)
-    try:
-        reg = fac.get_reg(FACILITATOR_ADDR, remote_addr) or ""
-    except:
-        exit_error(500)
-    # Allow XMLHttpRequest from any domain. http://www.w3.org/TR/cors/.
-    print """\
+    path_parts = [x for x in path_info.split("/") if x]
+    if len(path_parts) == 2 and path_parts[0] == "reg":
+        # This is a URL-based registration.
+        try:
+            if url_reg(path_parts[1]):
+                output_status(204)
+            else:
+                exit_error(400)
+        except:
+            exit_error(500)
+    elif len(path_parts) == 0:
+        try:
+            reg = fac.get_reg(FACILITATOR_ADDR, remote_addr) or ""
+        except:
+            exit_error(500)
+        # Allow XMLHttpRequest from any domain. http://www.w3.org/TR/cors/.
+        print """\
 Status: 200\r
 Content-Type: application/x-www-form-urlencoded\r
 Cache-Control: no-cache\r
 Access-Control-Allow-Origin: *\r
 \r"""
-    sys.stdout.write(urllib.urlencode(reg))
+        sys.stdout.write(urllib.urlencode(reg))
+    else:
+        exit_error(400)
 
 def do_post():
     if path_info != "/":
