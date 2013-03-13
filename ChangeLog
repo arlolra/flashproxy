@@ -18,6 +18,10 @@ Changes in version 0.12
     response, telling proxies how often to poll. Fixes bug 8171. Patch
     by Alexandre Allaire.
 
+  o Updated the Tor Browser check to match the behavior of new Tor
+    Browsers. Patch by Alexandre Allaire and Arlo Breault. Fixed bug
+    8434.
+
 Changes in version 0.11
   o Added -4 and -6 options to flashproxy-client and
     flashproxy-reg-http. (The options already existed in
