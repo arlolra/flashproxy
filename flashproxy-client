@@ -945,8 +945,12 @@ def proxy_loop():
             report_pending()
 
 def build_register_command(method):
-    # sys.path[0] is initialized to the directory containing the Python script file.
-    script_dir = sys.path[0]
+    # sys.path[0] usually contains the directory the script is located in.
+    # py2exe overwrites this for bundled executables.
+    if getattr(sys, "frozen", False):
+        script_dir = os.path.dirname(sys.executable)
+    else:
+        script_dir = sys.path[0]
     if not script_dir:
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         raise ValueError("Can't find executable directory for registration helpers")
