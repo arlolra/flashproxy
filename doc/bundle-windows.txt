@@ -118,6 +118,7 @@ Bridge obfs2 169.229.59.75:47809
 Bridge obfs2 209.141.36.236:60783
 Bridge obfs2 208.79.90.242:55564
 Bridge obfs2 128.31.0.34:1051
+Bridge obfs2 83.212.101.2:45235
 
 Bridge obfs3 83.212.101.2:42782
 
