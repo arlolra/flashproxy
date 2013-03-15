@@ -85,7 +85,6 @@ Clone pyobfsproxy.
 
 	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
 	$ cd pyobfsproxy
-	$ git checkout pyobfsproxy-0.0.2
 
 Update your Debian.
 
