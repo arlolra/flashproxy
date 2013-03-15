@@ -62,9 +62,7 @@ http://twistedmatrix.com/Releases/twisted-12.3.0-md5sums.txt
 
 	$ git clone https://git.torproject.org/pluggable-transports/pyptlib.git
 	$ cd pyptlib
-	$ /cygdrive/c/Python27/python.exe setup.py install
-
-After installing make sure the pyptlib .egg file in your site-packages folder is unzipped.
+	$ /cygdrive/c/Python27/python.exe setup.py install --single-version-externally-managed --root=/
 
 == Browser bundle
 
