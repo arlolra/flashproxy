@@ -48,10 +48,6 @@ The sha256sum of the package I used was
 
 	$ /cygdrive/c/Python27/Scripts/easy_install zope.interface-4.0.3-py2.7-win32.egg
 
-After installing, add an empty file named "__init__.py" to the root folder of the zope
-installation directory. On most systems this is C:\Python27\Lib\site-packages\zope. This
-helps py2exe bundle the zope module.
-
 === Twisted
 
 http://twistedmatrix.com/trac/wiki/Downloads
