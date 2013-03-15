@@ -109,7 +109,7 @@ Extract the bundle.
 Copy files into the bundle.
 
 	$ cd tor-browser_en-US
-	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http} App
+	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} App
 	$ cp -rL /usr/lib/pymodules/python2.6/M2Crypto App
 	$ mkdir -p Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
