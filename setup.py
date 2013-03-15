@@ -7,7 +7,7 @@ dist_path = os.path.join(os.environ["PY2EXE_TMPDIR"], "dist")
 
 setup(
     console=["flashproxy-client", "flashproxy-reg-email", "flashproxy-reg-http"],
-    zipfile="flashproxy.zip",
+    zipfile="py2exe-flashproxy.zip",
     options={
         "build": { "build_base": build_path },
         "py2exe": {
