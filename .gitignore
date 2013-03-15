@@ -1,4 +1,4 @@
 *.pyc
 /dist
-/pyinstaller-tmp
+/py2exe-tmp
 /websocket-transport/websocket-server
