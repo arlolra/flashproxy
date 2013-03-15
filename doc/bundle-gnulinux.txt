@@ -96,17 +96,17 @@ Within the VM, download the 32-bit or 64-bit browser bundle from
 https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
 The instructions below are for the 32-bit (i686) version.
 
-https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz
-https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz.asc
+https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz
+https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz.asc
 
-https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-x86_64-2.4.10-alpha-2-dev-en-US.tar.gz
-https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-x86_64-2.4.10-alpha-2-dev-en-US.tar.gz.asc
+https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-x86_64-2.4.11-alpha-1-dev-en-US.tar.gz
+https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-x86_64-2.4.11-alpha-1-dev-en-US.tar.gz.asc
 
 Extract the bundle.
 
-	$ gpg --verify tor-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz.asc
+	$ gpg --verify tor-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz.asc
 	$ rm -r tor-browser_en-US
-	$ tar xzvf tor-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz
+	$ tar xzvf tor-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz
 
 Copy files into the bundle.
 
@@ -155,14 +155,14 @@ Re-zip the bundle. The "alpha" number should be independent of the
 browser bundle's alpha.
 
 	$ cd ..
-	$ tar czvf tor-flashproxy-pyobfsproxy-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz tor-browser_en-US
+	$ tar czvf tor-flashproxy-pyobfsproxy-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz tor-browser_en-US
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon to unzip, and run TorBrowser_en-US.app.
 
 	$ mkdir tmp
-	$ cp tor-flashproxy-pyobfsproxy-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz tmp
+	$ cp tor-flashproxy-pyobfsproxy-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz tmp
 	$ cd tmp
-	$ tar xzvf tor-flashproxy-pyobfsproxy-browser-gnu-linux-i686-2.4.10-alpha-2-dev-en-US.tar.gz
+	$ tar xzvf tor-flashproxy-pyobfsproxy-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz
 	$ cd tor-browser_en-US
 	$ ./start-tor-browser

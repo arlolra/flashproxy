@@ -73,14 +73,14 @@ Clone pyobfsproxy.
 Download the 32-bit browser bundle from
 https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
 
-https://www.torproject.org/dist/torbrowser/osx/TorBrowser-2.4.10-alpha-2-osx-i386-en-US.zip
-https://www.torproject.org/dist/torbrowser/osx/TorBrowser-2.4.10-alpha-2-osx-i386-en-US.zip.asc
+https://www.torproject.org/dist/torbrowser/osx/TorBrowser-2.4.11-alpha-1-osx-i386-en-US.zip
+https://www.torproject.org/dist/torbrowser/osx/TorBrowser-2.4.11-alpha-1-osx-i386-en-US.zip.asc
 
 Extract the bundle.
 
-	$ gpg --verify TorBrowser-2.4.10-alpha-2-osx-i386-en-US.zip.asc
+	$ gpg --verify TorBrowser-2.4.11-alpha-1-osx-i386-en-US.zip.asc
 	$ rm -r TorBrowser_en-US.app
-	$ unzip TorBrowser-2.4.10-alpha-2-osx-i386-en-US.zip
+	$ unzip TorBrowser-2.4.11-alpha-1-osx-i386-en-US.zip
 
 Copy files into the bundle.
 
@@ -127,11 +127,11 @@ Re-zip the bundle. The "alpha" number should be independent of the
 browser bundle's alpha.
 
 	$ cd ..
-	$ rm -f TorBrowser-FlashProxy-PyObfsproxy-2.4.10-alpha-2-osx-i386-en-US.zip
-	$ zip -r -9 TorBrowser-FlashProxy-PyObfsproxy-2.4.10-alpha-2-osx-i386-en-US.zip TorBrowser_en-US.app/
+	$ rm -f TorBrowser-FlashProxy-PyObfsproxy-2.4.11-alpha-1-osx-i386-en-US.zip
+	$ zip -r -9 TorBrowser-FlashProxy-PyObfsproxy-2.4.11-alpha-1-osx-i386-en-US.zip TorBrowser_en-US.app/
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon to unzip, and run TorBrowser_en-US.app.
 
 	$ mkdir tmp
-	$ cp TorBrowser-FlashProxy-PyObfsproxy-2.4.10-alpha-2-osx-i386-en-US.zip tmp
+	$ cp TorBrowser-FlashProxy-PyObfsproxy-2.4.11-alpha-1-osx-i386-en-US.zip tmp

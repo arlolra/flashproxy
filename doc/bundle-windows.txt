@@ -81,14 +81,14 @@ Clone pyobfsproxy and run py2exe on it.
 Download the browser bundle from
 https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
 
-https://www.torproject.org/dist/torbrowser/tor-browser-2.4.10-alpha-2_en-US.exe
-https://www.torproject.org/dist/torbrowser/tor-browser-2.4.10-alpha-2_en-US.exe.asc
+https://www.torproject.org/dist/torbrowser/tor-browser-2.4.11-alpha-1_en-US.exe
+https://www.torproject.org/dist/torbrowser/tor-browser-2.4.11-alpha-1_en-US.exe.asc
 
 Extract the bundle.
 
-	$ gpg --verify tor-browser-2.4.10-alpha-2_en-US.exe.asc
+	$ gpg --verify tor-browser-2.4.11-alpha-1_en-US.exe.asc
 	$ rm -r "Tor Browser"
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" x tor-browser-2.4.10-alpha-2_en-US.exe
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" x tor-browser-2.4.11-alpha-1_en-US.exe
 
 Copy files into the bundle. The -n option to cp prevents the existing
 LIBEAY32.dll and SSLEAY32.dll from being overwritten.
@@ -134,10 +134,10 @@ browser bundle's alpha. The 7zg program (as opposed to 7z) causes the
 self-extractor to show a GUI.
 
 	$ cd ..
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-flashproxy-pyobfsproxy-browser-2.4.10-alpha-2_en-US.exe "Tor Browser"
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-flashproxy-pyobfsproxy-browser-2.4.11-alpha-1_en-US.exe "Tor Browser"
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon and "Start Tor Browser.exe".
 
 	$ mkdir tmp
-	$ cp tor-flashproxy-pyobfsproxy-browser-2.4.10-alpha-2_en-US.exe tmp
+	$ cp tor-flashproxy-pyobfsproxy-browser-2.4.11-alpha-1_en-US.exe tmp
