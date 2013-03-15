@@ -10,7 +10,7 @@ setup(
     zipfile="flashproxy.zip",
     options={
         "build": { "build_base": build_path },
-        "py2exe": { 
+        "py2exe": {
             "includes": ["M2Crypto"],
             "dist_dir": dist_path
         }
