@@ -48,6 +48,10 @@ The sha256sum of the package I used was
 
 	$ /cygdrive/c/Python27/Scripts/easy_install zope.interface-4.0.3-py2.7-win32.egg
 
+After installing, add an empty file named "__init__.py" to the root folder of the zope
+installation directory. On most systems this is C:\Python27\Lib\site-packages\zope. This
+helps py2exe bundle the zope module.
+
 === Twisted
 
 http://twistedmatrix.com/trac/wiki/Downloads
@@ -64,6 +68,8 @@ http://twistedmatrix.com/Releases/twisted-12.3.0-md5sums.txt
 	$ cd pyptlib
 	$ /cygdrive/c/Python27/python.exe setup.py install
 
+After installing make sure the pyptlib .egg file in your site-packages folder is unzipped.
+
 == Browser bundle
 
 Clone and build the flashproxy source.
@@ -72,12 +78,12 @@ Clone and build the flashproxy source.
 	$ cd flashproxy
 	$ make dist-exe PYTHON=/cygdrive/c/Python27/python
 
-Clone pyobfsproxy and run PyInstaller on it.
+Clone pyobfsproxy and run py2exe on it.
 
 	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
 	$ cd pyobfsproxy
 	$ git checkout pyobfsproxy-0.0.2
-	$ /cygdrive/c/Python27/python.exe ../pyinstaller-2.0/pyinstaller.py bin/pyobfsproxy
+	$ /cygdrive/c/Python27/python.exe setup_py2exe.py py2exe
 
 Download the browser bundle from
 https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
@@ -95,10 +101,10 @@ Copy files into the bundle. The -n option to cp prevents the existing
 LIBEAY32.dll and SSLEAY32.dll from being overwritten.
 
 	$ cd "Tor Browser"
-	$ cp -nr ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.manifest} App
+	$ cp -nr ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.zip} App
 	$ mkdir -p Docs/FlashProxy
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
-	$ cp -nr ~/pyobfsproxy/dist/pyobfsproxy/{*.pyd,*.dll,*.exe,*.manifest,eggs} App
+	$ cp -nr ~/pyobfsproxy/py2exe_bundle/dist/{*.pyd,*.dll,*.exe,*.zip} App
 	$ mkdir -p Docs/PyObfsproxy
 	$ cp ~/pyobfsproxy/{LICENSE,README} Docs/PyObfsproxy
 
