@@ -322,7 +322,7 @@ def put_reg(reg):
     addr_str = reg.host
     af = addr_af(addr_str)
     REGS = regs_for_af(af)
-    REGS.add(reg)
+    return REGS.add(reg)
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
