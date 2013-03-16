@@ -749,11 +749,11 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
     }.bind(this);
 
     function is_open(ws) {
-        return ws !== undefined && ws.readyState === ws.OPEN;
+        return ws !== undefined && ws.readyState === WebSocket.OPEN;
     }
 
     function is_closed(ws) {
-        return ws === undefined || ws.readyState === ws.CLOSED;
+        return ws === undefined || ws.readyState === WebSocket.CLOSED;
     }
 
     this.close = function() {
