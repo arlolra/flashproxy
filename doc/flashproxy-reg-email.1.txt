@@ -59,7 +59,3 @@ SEE ALSO
 BUGS
 ----
 Please report using **https://trac.torproject.org/projects/tor**.
-
-AUTHORS
--------
-David Fifield [dcf at torproject.org].
