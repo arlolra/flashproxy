@@ -1,6 +1,6 @@
 /* Query string parameters. These change how the program runs from the outside.
  * For example:
- *   http://www.example.com/embed.html?facilitator=127.0.0.1:9002&debug=1
+ *   http://www.example.com/embed.html?facilitator=http://127.0.0.1:9002&debug=1
  *
  * client=<HOST>:<PORT>
  * The address of the client to connect to. The proxy normally receives this
