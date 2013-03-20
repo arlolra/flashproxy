@@ -1,3 +1,7 @@
+Changes in version 1.0
+  o Fixed badge rendering for a certain combination of Chrome and
+    AdBlock Plus. Patch by Arlo Breault. Fixes bug 8300.
+
 Changes in version 0.12
   o The new flashproxy-reg-url program prints a URL which, when
     requested, causes an address to be registered with the facilitator.
