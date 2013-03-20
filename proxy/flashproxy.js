@@ -1014,7 +1014,7 @@ function flashproxy_badge_insert() {
 
     /* http://intertwingly.net/blog/2006/11/10/Thats-Not-Write for this trick to
        insert right after the <script> element in the DOM. */
-    e = document;
+    e = document.body;
     while (e.lastChild && e.lastChild.nodeType === 1) {
         e = e.lastChild;
     }
