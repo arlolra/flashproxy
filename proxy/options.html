@@ -39,7 +39,7 @@ button {
 	margin: 0;
 	color: white;
 }
-#badge-state p { display: none; }
+#badge-state { display: none; }
 </style>
 </head>
 <body>
@@ -63,11 +63,13 @@ While JavaScript is disabled, your computer will not be a proxy. Enable
 JavaScript to change your options.
 </p>
 </noscript>
-<button onclick="set_allowed()">Yes</button>
-<button onclick="set_disallowed()">No</button>
+<div id="buttons" style="display: none;">
+  <button onclick="set_allowed()">Yes</button>
+  <button onclick="set_disallowed()">No</button>
+</div>
 <div id="badge-state">
-<p id="inactive">Proxy disabled</p>
-<p id="active">Proxy enabled</p>
+  <p id="inactive">Proxy disabled</p>
+  <p id="active">Proxy enabled</p>
 </div>
 <div id="cookies_disabled" style="display: none;">
 <p>
@@ -150,7 +152,13 @@ function refresh() {
 }
 
 window.onload = function() {
-    refresh();
+    if (navigator.cookieEnabled) {
+        document.getElementById("buttons").style.display = "block";
+        document.getElementById("badge-state").style.display = "block";
+        refresh();
+    } else {
+        document.getElementById("cookies_disabled").style.display = "block";
+    }
 }
 </script>
 </body>
