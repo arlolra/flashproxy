@@ -56,6 +56,19 @@ Extract and verify the tarball. Then run
 	$ cd pyptlib
 	$ python setup.py install --root=~/bundle --prefix=/usr
 
+=== argparse
+
+This is included for compatibility with older versions of python.
+See https://trac.torproject.org/projects/tor/ticket/8549.
+
+https://argparse.googlecode.com/files/argparse-1.2.1.tar.gz
+
+The sha256 sum should be
+
+ddaf4b0a618335a32b6664d4ae038a1de8fbada3b25033f9021510ed2b3941a4  argparse-1.2.1.tar.gz
+
+Extract the tarball into your bundle directory.
+
 == Browser bundle
 
 Clone and build the flashproxy source.
@@ -89,6 +102,7 @@ Copy files into the bundle.
 	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE,ChangeLog} Contents/Resources/Docs/FlashProxy
 	$ cp -r ~/pyobfsproxy/{obfsproxy,bin/pyobfsproxy} Contents/MacOs
 	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/{Crypto,pyptlib} Contents/MacOS
+	$ cp ~/bundle/argparse-1.2.1/argparse.py Contents/MacOS
 	$ mkdir -p Contents/Resources/Docs/PyObfsproxy
 	$ cp ~/pyobfsproxy/{LICENSE,README} Contents/Resources/Docs/PyObfsproxy
 	$ find Contents/MacOS -name '*.pyc' | xargs rm -f
