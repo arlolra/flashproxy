@@ -105,6 +105,12 @@ Restart servers.
 
 == Facilitator program installation
 
+Create the user the daemons will run as.
+
+	# useradd --shell /usr/sbin/nologin --system --home /nonexistent -M facilitator-nobody
+
+Install the programs.
+
 	# apt-get install git python-m2crypto make
 	# git clone https://git.torproject.org/flashproxy.git
 	# cd flashproxy/facilitator
