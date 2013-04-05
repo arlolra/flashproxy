@@ -32,7 +32,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Python
 
 The flash proxy programs are written in Python and the binary packages
-incldue a Python interpreter. A copy of the Python license (which itself
+include a Python interpreter. A copy of the Python license (which itself
 includes the licenses of some of Python's components) is included as
 doc/LICENSE.PYTHON.
 
