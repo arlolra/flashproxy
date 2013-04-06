@@ -1,0 +1,26 @@
+
+UseBridges 1
+# The address and port are ignored by the client transport plugin.
+Bridge websocket 0.0.1.0:1
+
+Bridge obfs2 109.163.233.198:1051
+Bridge obfs2 83.212.100.216:47870
+Bridge obfs2 83.212.96.182:46602
+Bridge obfs2 109.105.109.163:46924
+Bridge obfs2 70.182.182.109:54542
+Bridge obfs2 169.229.59.74:32779
+Bridge obfs2 169.229.59.75:47809
+Bridge obfs2 209.141.36.236:60783
+Bridge obfs2 208.79.90.242:55564
+Bridge obfs2 128.31.0.34:1051
+Bridge obfs2 83.212.101.2:45235
+
+Bridge obfs3 83.212.101.2:42782
+
+LearnCircuitBuildTimeout 0
+CircuitBuildTimeout 60
+# Change the second number here (9000) to the number of a port that can
+# receive connections from the Internet (the port for which you
+# configured port forwarding).
+ClientTransportPlugin websocket exec flashproxy-client --register :0 :9000
+ClientTransportPlugin obfs2,obfs3 exec pyobfsproxy managed
