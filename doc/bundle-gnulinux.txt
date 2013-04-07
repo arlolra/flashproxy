@@ -90,53 +90,19 @@ Update your Debian.
 	$ sudo apt-get update
 	$ sudo apt-get upgrade
 
-Within the VM, download the 32-bit or 64-bit browser bundle from
+Enter the doc directory and edit the top of Makefile to set the version
+numbers you want to use.
+	BUNDLE_VERSION = ...
+	BUNDLE_RELEASE = ...
+	PT_BUNDLE_RELEASE = pt1
+The latest Tor Browser Bundle version number can be found at
 https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
-The instructions below are for the 32-bit (i686) version.
+PT_BUNDLE_RELEASE release should increment each time you build a new
+bundle with the same BUNDLE_VERSION and BUNDLE_RELEASE, and be reset to
+"pt1" when either of those change.
 
-https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz
-https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz.asc
+Run one of these two commands, depending on the platform:
+	$ make gnulinux-i686
+	$ make gnulinux-x86_64
 
-https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-x86_64-2.4.11-alpha-1-dev-en-US.tar.gz
-https://www.torproject.org/dist/torbrowser/linux/tor-browser-gnu-linux-x86_64-2.4.11-alpha-1-dev-en-US.tar.gz.asc
-
-Extract the bundle.
-
-	$ gpg --verify tor-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz.asc
-	$ rm -r tor-browser_en-US
-	$ tar xzvf tor-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz
-
-Copy files into the bundle.
-
-	$ cd tor-browser_en-US
-	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} App
-	$ cp -rL /usr/lib/pymodules/python2.6/M2Crypto App
-	$ mkdir -p Docs/FlashProxy
-	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
-	$ cp -rL ~/pyobfsproxy/{obfsproxy,bin/pyobfsproxy} App
-	$ cp -rL /usr/lib/python2.6/dist-packages/{Crypto,twisted,zope} App
-	$ cp -rL /usr/lib/pymodules/python2.6/argparse.py App
-	$ cp -rL /usr/local/lib/python2.6/dist-packages/pyptlib App
-	$ mkdir -p Docs/PyObfsproxy
-	$ cp ~/pyobfsproxy/{LICENSE,README} Docs/PyObfsproxy
-	$ find App -name '*.pyc' | xargs rm -f
-
-Append bundle-torrc-gnulinux to the end of Data/Tor/torrc.
-
-	$ cat ~/flashproxy/doc/bundle-torrc-gnulinux >> Data/Tor/torrc
-
-Re-zip the bundle. The "alpha" number should be independent of the
-browser bundle's alpha.
-
-	$ cd ..
-	$ tar czvf tor-pluggable-transports-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz tor-browser_en-US
-
-Test running the bundle. Extract into a separate directory, double-click
-the icon to unzip, and run TorBrowser_en-US.app.
-
-	$ mkdir tmp
-	$ cp tor-pluggable-transports-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz tmp
-	$ cd tmp
-	$ tar xzvf tor-pluggable-transports-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz
-	$ cd tor-browser_en-US
-	$ ./start-tor-browser
+Test running the bundle.
