@@ -61,7 +61,7 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 	cp "$(PYOBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/PyObfsproxy
 	find "$(TBBDIR)"/App -name '*.pyc' | xargs rm -f
 
-	cat "$(FLASHPROXY_HOME)"/doc/bundle-torrc-gnulinux >> "$(TBBDIR)"/Data/Tor/torrc
+	cat bundle-torrc-gnulinux >> "$(TBBDIR)"/Data/Tor/torrc
 
 	tar czf "$@" -C "$(WORKDIR)" tor-browser_en-US
 
