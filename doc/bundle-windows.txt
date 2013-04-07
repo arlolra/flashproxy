@@ -212,10 +212,10 @@ browser bundle's alpha. The 7zg program (as opposed to 7z) causes the
 self-extractor to show a GUI.
 
 	$ cd ..
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-flashproxy-pyobfsproxy-browser-2.4.11-alpha-1_en-US.exe "Tor Browser"
+	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-pluggable-transports-browser-2.4.11-alpha-1_en-US.exe "Tor Browser"
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon and "Start Tor Browser.exe".
 
 	$ mkdir tmp
-	$ cp tor-flashproxy-pyobfsproxy-browser-2.4.11-alpha-1_en-US.exe tmp
+	$ cp tor-pluggable-transports-browser-2.4.11-alpha-1_en-US.exe tmp

@@ -129,14 +129,14 @@ Re-zip the bundle. The "alpha" number should be independent of the
 browser bundle's alpha.
 
 	$ cd ..
-	$ tar czvf tor-flashproxy-pyobfsproxy-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz tor-browser_en-US
+	$ tar czvf tor-pluggable-transports-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz tor-browser_en-US
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon to unzip, and run TorBrowser_en-US.app.
 
 	$ mkdir tmp
-	$ cp tor-flashproxy-pyobfsproxy-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz tmp
+	$ cp tor-pluggable-transports-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz tmp
 	$ cd tmp
-	$ tar xzvf tor-flashproxy-pyobfsproxy-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz
+	$ tar xzvf tor-pluggable-transports-browser-gnu-linux-i686-2.4.11-alpha-1-dev-en-US.tar.gz
 	$ cd tor-browser_en-US
 	$ ./start-tor-browser
