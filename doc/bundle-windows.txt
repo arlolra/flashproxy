@@ -180,42 +180,18 @@ Clone pyobfsproxy and run py2exe on it.
 	$ cd pyobfsproxy
 	$ /cygdrive/c/Python27/python.exe setup_py2exe.py py2exe
 
-Download the browser bundle from
+Enter the doc directory and edit the top of Makefile to set the version
+numbers you want to use.
+	BUNDLE_VERSION = ...
+	BUNDLE_RELEASE = ...
+	PT_BUNDLE_RELEASE = pt1
+The latest Tor Browser Bundle version number can be found at
 https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
+PT_BUNDLE_RELEASE release should increment each time you build a new
+bundle with the same BUNDLE_VERSION and BUNDLE_RELEASE, and be reset to
+"pt1" when either of those change.
 
-https://www.torproject.org/dist/torbrowser/tor-browser-2.4.11-alpha-1_en-US.exe
-https://www.torproject.org/dist/torbrowser/tor-browser-2.4.11-alpha-1_en-US.exe.asc
-
-Extract the bundle.
-
-	$ gpg --verify tor-browser-2.4.11-alpha-1_en-US.exe.asc
-	$ rm -r "Tor Browser"
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7z" x tor-browser-2.4.11-alpha-1_en-US.exe
-
-Copy files into the bundle. The -n option to cp prevents the existing
-LIBEAY32.dll and SSLEAY32.dll from being overwritten.
-
-	$ cd "Tor Browser"
-	$ cp -nr ~/flashproxy/dist/flashproxy-client-VERSION-win32/{*.pyd,*.dll,*.exe,*.zip} App
-	$ mkdir -p Docs/FlashProxy
-	$ cp ~/flashproxy/dist/flashproxy-client-VERSION-win32/{doc/*,README,LICENSE,ChangeLog} Docs/FlashProxy
-	$ cp -nr ~/pyobfsproxy/py2exe_bundle/dist/{*.pyd,*.dll,*.exe,*.zip} App
-	$ mkdir -p Docs/PyObfsproxy
-	$ cp ~/pyobfsproxy/{LICENSE,README} Docs/PyObfsproxy
-
-Append bundle-torrc-windows to the end of Data/Tor/torrc.
-
-	$ cat ~/flashproxy/doc/bundle-torrc-windows >> Data/Tor/torrc
-
-Re-zip the bundle. The "alpha" number should be independent of the
-browser bundle's alpha. The 7zg program (as opposed to 7z) causes the
-self-extractor to show a GUI.
-
-	$ cd ..
-	$ "/cygdrive/c/Program Files (x86)/7-Zip/7zg" a -sfx tor-pluggable-transports-browser-2.4.11-alpha-1_en-US.exe "Tor Browser"
+	$ make windows
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon and "Start Tor Browser.exe".
-
-	$ mkdir tmp
-	$ cp tor-pluggable-transports-browser-2.4.11-alpha-1_en-US.exe tmp
