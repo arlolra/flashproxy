@@ -81,45 +81,17 @@ Clone pyobfsproxy.
 
 	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
 
-Download the 32-bit browser bundle from
+Enter the doc directory and edit the top of Makefile to set the version
+numbers you want to use.
+	BUNDLE_VERSION = ...
+	BUNDLE_RELEASE = ...
+	PT_BUNDLE_RELEASE = pt1
+The latest Tor Browser Bundle version number can be found at
 https://www.torproject.org/projects/torbrowser.html.en#Download-torbrowserbundlealpha.
+PT_BUNDLE_RELEASE release should increment each time you build a new
+bundle with the same BUNDLE_VERSION and BUNDLE_RELEASE, and be reset to
+"pt1" when either of those change.
 
-https://www.torproject.org/dist/torbrowser/osx/TorBrowser-2.4.11-alpha-1-osx-i386-en-US.zip
-https://www.torproject.org/dist/torbrowser/osx/TorBrowser-2.4.11-alpha-1-osx-i386-en-US.zip.asc
+	$ make macosx-i686
 
-Extract the bundle.
-
-	$ gpg --verify TorBrowser-2.4.11-alpha-1-osx-i386-en-US.zip.asc
-	$ rm -r TorBrowser_en-US.app
-	$ unzip TorBrowser-2.4.11-alpha-1-osx-i386-en-US.zip
-
-Copy files into the bundle.
-
-	$ cd TorBrowser_en-US.app
-	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} Contents/MacOS
-	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/M2Crypto Contents/MacOS
-	$ mkdir -p Contents/Resources/Docs/FlashProxy
-	$ cp ~/flashproxy/dist/flashproxy-client-VERSION/{doc/*,README,LICENSE,ChangeLog} Contents/Resources/Docs/FlashProxy
-	$ cp -r ~/pyobfsproxy/{obfsproxy,bin/pyobfsproxy} Contents/MacOs
-	$ cp -r ~/bundle/usr/lib/python2.7/site-packages/{Crypto,pyptlib} Contents/MacOS
-	$ cp ~/bundle/argparse-1.2.1/argparse.py Contents/MacOS
-	$ mkdir -p Contents/Resources/Docs/PyObfsproxy
-	$ cp ~/pyobfsproxy/{LICENSE,README} Contents/Resources/Docs/PyObfsproxy
-	$ find Contents/MacOS -name '*.pyc' | xargs rm -f
-
-Append bundle-torrc-macosx to the end of Library/Vidalia/torrc.
-
-	$ cat ~/flashproxy/doc/bundle-torrc-macosx >> Library/Vidalia/torrc
-
-Re-zip the bundle. The "alpha" number should be independent of the
-browser bundle's alpha.
-
-	$ cd ..
-	$ rm -f TorBrowser-Pluggable-Transports-2.4.11-alpha-1-osx-i386-en-US.zip
-	$ zip -r -9 TorBrowser-Pluggable-Transports-2.4.11-alpha-1-osx-i386-en-US.zip TorBrowser_en-US.app/
-
-Test running the bundle. Extract into a separate directory, double-click
-the icon to unzip, and run TorBrowser_en-US.app.
-
-	$ mkdir tmp
-	$ cp TorBrowser-Pluggable-Transports-2.4.11-alpha-1-osx-i386-en-US.zip tmp
+Test running the bundle.
