@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+const requestTimeout = 10 * time.Second
+
 var logFile = os.Stderr
 
 var ptInfo PtServerInfo
@@ -157,6 +159,8 @@ func proxy(local *net.TCPConn, conn *websocketConn) {
 }
 
 func websocketHandler(ws *Websocket) {
+	// Undo timeouts on HTTP request handling.
+	ws.Conn.SetDeadline(time.Time{})
 	conn := NewWebsocketConn(ws)
 
 	handlerChan <- 1
@@ -183,8 +187,11 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 		config.Subprotocols = []string{"base64"}
 		// 16 kilobytes, possibly base64-encoded.
 		config.MaxMessageSize = 16*1024*4/3 + 1
-		http.Handle("/", config.Handler(websocketHandler))
-		err = http.Serve(ln, nil)
+		s := &http.Server{
+			Handler:     config.Handler(websocketHandler),
+			ReadTimeout: requestTimeout,
+		}
+		err = s.Serve(ln)
 		if err != nil {
 			Log("http.Serve: " + err.Error())
 		}
