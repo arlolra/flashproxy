@@ -163,15 +163,11 @@ authority. An article on making a certificate signing request and
 getting it signed is here:
 	http://www.debian-administration.org/articles/284
 The instructions below assume you have an offline private key
-in fp-facilitator.key and a certificate in fp-facilitator.crt.
-
-Remove any passphrase from the private key.
-
-	$ openssl rsa -in fp-facilitator.key -out fp-facilitator.pem
+in fp-facilitator.key.pem and a certificate in fp-facilitator.crt.pem.
 
 Make a file containing both the private key and a certificate.
 
-	$ cat fp-facilitator.crt >> fp-facilitator.pem
+	$ cat fp-facilitator.key.pem fp-facilitator.crt.pem > fp-facilitator.pem
 	$ chmod 400 fp-facilitator.pem
 
 Copy the new fp-facilitator.pem to the facilitator server as
