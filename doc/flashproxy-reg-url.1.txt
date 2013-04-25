@@ -23,7 +23,7 @@ default __PORT__ is 9000.
 OPTIONS
 -------
 **-f**, **--facilitator**=__URL__::
-    Register with the given facilitator (by default "https://tor-facilitator.bamsoftware.com/").
+    Register with the given facilitator (by default "https://fp-facilitator.org/").
 
 **-h**, **--help**::
     Display help message and exit.
@@ -38,7 +38,7 @@ Say you wish to register 192.0.2.1:9000. Run
 
 The program should output a long string looking something like
 
-https://tor-facilitator.bamsoftware.com/reg/0labtDob545HeKpLZ8LqGeOi-OK7HXoQvfQzj0P2pjh1NrCKNDaPe91zo\...
+https://fp-facilitator.org/reg/0labtDob545HeKpLZ8LqGeOi-OK7HXoQvfQzj0P2pjh1NrCKNDaPe91zo\...
 
 Copy this string and paste it into any URL fetching website or program.
 Once the URL is retrieved your address will be registered with the facilitator.

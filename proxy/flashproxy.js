@@ -59,7 +59,7 @@
  * http://autobahn.ws/testsuite/reports/clients/index.html
  */
 
-var DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/";
+var DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/";
 
 var DEFAULT_MAX_NUM_PROXY_PAIRS = 10;
 

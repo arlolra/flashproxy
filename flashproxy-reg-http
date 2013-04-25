@@ -10,7 +10,7 @@ import urllib2
 
 DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
-DEFAULT_FACILITATOR_URL = "https://tor-facilitator.bamsoftware.com/"
+DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
 
 class options(object):
     remote_addr = None

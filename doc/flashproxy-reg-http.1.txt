@@ -28,7 +28,7 @@ OPTIONS
     Name lookups use only IPv6.
 
 **-f**, **--facilitator**::
-    Register with the given facilitator (by default "https://tor-facilitator.bamsoftware.com/").
+    Register with the given facilitator (by default "https://fp-facilitator.org/").
 
 **-h**, **--help**::
     Display help message and exit.
