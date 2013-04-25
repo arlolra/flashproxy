@@ -1,5 +1,5 @@
 This document describes how to run a flash proxy facilitator on Debian 6.
-We will use the domain name tor-facilitator.example.com.
+We will use the domain name fp-facilitator.example.com.
 
 == Overview
 
@@ -51,8 +51,8 @@ EOF
 
 Away from the facilitator, generate an SSH key for authentication:
 
-	$ ssh-keygen -f ~/.ssh/tor-facilitator
-	$ ssh-copy-id -i ~/.ssh/tor-facilitator.pub root@tor-facilitator.example.com
+	$ ssh-keygen -f ~/.ssh/fp-facilitator
+	$ ssh-copy-id -i ~/.ssh/fp-facilitator.pub root@fp-facilitator.example.com
 
 Then log in and edit /etc/ssh/sshd_config to disable password
 authentication:
@@ -133,18 +133,18 @@ Edit /etc/apache2/ports.conf and comment out the port 80 configuration.
 	# NameVirtualHost *:80
 	# Listen 80
 
-Create a new file /etc/apache2/sites-available/tor-facilitator with
+Create a new file /etc/apache2/sites-available/fp-facilitator with
 these contents:
 	MaxClients 256
 	<VirtualHost *:443>
-		ServerName tor-facilitator.example.com
+		ServerName fp-facilitator.example.com
 		DocumentRoot /dev/null
 		ScriptAliasMatch ^(.*) /usr/local/bin/facilitator.cgi$1
 		CustomLog /dev/null common
 		ErrorLog ${APACHE_LOG_DIR}/error.log
 		LogLevel warn
 		SSLEngine on
-		SSLCertificateFile /etc/apache2/tor-facilitator.pem
+		SSLCertificateFile /etc/apache2/fp-facilitator.pem
 		SSLCertificateChainFile /etc/apache2/intermediate.pem
 	</VirtualHost>
 intermediate.pem is a possible intermediate certificate file provided by
@@ -153,7 +153,7 @@ SSLCertificateChainFile line.
 
 Link the configured site into sites-enabled.
 	# cd /etc/apache2/sites-enabled
-	# ln -s ../sites-available/tor-facilitator
+	# ln -s ../sites-available/fp-facilitator
 
 === HTTPS setup
 
@@ -163,19 +163,19 @@ authority. An article on making a certificate signing request and
 getting it signed is here:
 	http://www.debian-administration.org/articles/284
 The instructions below assume you have an offline private key
-in tor-facilitator.key and a certificate in tor-facilitator.crt.
+in fp-facilitator.key and a certificate in fp-facilitator.crt.
 
 Remove any passphrase from the private key.
 
-	$ openssl rsa -in tor-facilitator.key -out tor-facilitator.pem
+	$ openssl rsa -in fp-facilitator.key -out fp-facilitator.pem
 
 Make a file containing both the private key and a certificate.
 
-	$ cat tor-facilitator.crt >> tor-facilitator.pem
-	$ chmod 400 tor-facilitator.pem
+	$ cat fp-facilitator.crt >> fp-facilitator.pem
+	$ chmod 400 fp-facilitator.pem
 
-Copy the new tor-facilitator.pem to the facilitator server as
-/etc/apache2/tor-facilitator.pem.
+Copy the new fp-facilitator.pem to the facilitator server as
+/etc/apache2/fp-facilitator.pem.
 
 	# /etc/init.d/apache2 restart
 
