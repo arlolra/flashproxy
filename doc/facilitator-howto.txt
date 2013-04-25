@@ -151,6 +151,10 @@ intermediate.pem is a possible intermediate certificate file provided by
 the CA; if you did not get one, then leave off the
 SSLCertificateChainFile line.
 
+Link the configured site into sites-enabled.
+	# cd /etc/apache2/sites-enabled
+	# ln -s ../sites-available/tor-facilitator
+
 === HTTPS setup
 
 The HTTP server should serve only over HTTPS and not unencrypted HTTP.
