@@ -162,6 +162,8 @@ You will need a certificate and private key from a certificate
 authority. An article on making a certificate signing request and
 getting it signed is here:
 	http://www.debian-administration.org/articles/284
+This is the basic command to generate a CSR.
+	$ openssl req -new -nodes -out fp-facilitator.csr.pem
 The instructions below assume you have an offline private key
 in fp-facilitator.key.pem and a certificate in fp-facilitator.crt.pem.
 
