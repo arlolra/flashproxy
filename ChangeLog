@@ -1,4 +1,7 @@
 Changes in version 1.0
+  o The facilitator runs on a new domain name fp-facilitator.org. Fixes
+    bug 7160.
+
   o Fixed badge rendering for a certain combination of Chrome and
     AdBlock Plus. Patch by Arlo Breault. Fixes bug 8300.
 
