@@ -137,7 +137,7 @@ Create a new file /etc/apache2/sites-available/tor-facilitator with
 these contents:
 	MaxClients 256
 	<VirtualHost *:443>
-		ServerName tor-facilitator.bamsoftware.com
+		ServerName tor-facilitator.example.com
 		DocumentRoot /dev/null
 		ScriptAliasMatch ^(.*) /usr/local/bin/facilitator.cgi$1
 		CustomLog /dev/null common
