@@ -125,7 +125,7 @@ It also installs System V init files to /etc/init.d/.
 
 Apache is the web server that runs the CGI program.
 
-	# apt-get install apache2
+	# apt-get install apache2 libapache2-mod-evasive
 	# a2enmod ssl
 
 Edit /etc/apache2/ports.conf and comment out the port 80 configuration.
