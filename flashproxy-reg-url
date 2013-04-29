@@ -11,6 +11,24 @@ from M2Crypto import RSA, BIO
 
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
+DEFAULT_FACILITATOR_PUBKEY_PEM = """\
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA44Mt8c599/4N2fgu6ppN
+oatPW1GOgZxxObljFtEy0OWM1eHB35OOn+Kn9MxNHTRxVWwCEi0HYxWNVs2qrXxV
+84LmWBz6A65d2qBlgltgLXusiXLrpwxVmJeO+GfmbF8ur0U9JSYxA20cGW/kujNg
+XYDGQxO1Gvxq2lHK2LQmBpkfKEE1DMFASmIvlHDQgDj3XBb5lYeOsHZmg16UrGAq
+1UH238hgJITPGLXBtwLtJkYbrATJvrEcmvI7QSm57SgYGpaB5ZdCbJL5bag5Pgt6
+M5SDDYYY4xxEPzokjFJfCQv+kcyAnzERNMQ9kR41ePTXG62bpngK5iWGeJ5XdkxG
+gwIDAQAB
+-----END PUBLIC KEY-----
+"""
+
+def get_facilitator_pubkey(filename):
+    if filename is not None:
+        return RSA.load_pub_key(filename)
+    else:
+        return RSA.load_pub_key_bio(
+            BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
 
 class options(object):
     facilitator_url = None
@@ -22,26 +40,15 @@ Print a URL, which, when retrieved, will cause the client address
 REMOTE[:PORT] to be registered with the flash proxy facilitator. The
 default PORT is %(port)d.
 
-  -f, --facilitator=URL  register with the given facilitator
-                           (by default "%(fac_url)s").
-  -h, --help             show this help.\
+  -f, --facilitator=URL         register with the given facilitator
+                                  (by default "%(fac_url)s").
+  -k, --facilitator-pubkey=FILE corresponds to the reg-daemon private key
+  -h, --help                    show this help.\
 """ % {
     "progname": sys.argv[0],
     "fac_url": DEFAULT_FACILITATOR_URL,
     "port": DEFAULT_REMOTE_PORT,
 }
-
-FACILITATOR_PUBKEY_PEM = """\
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA44Mt8c599/4N2fgu6ppN
-oatPW1GOgZxxObljFtEy0OWM1eHB35OOn+Kn9MxNHTRxVWwCEi0HYxWNVs2qrXxV
-84LmWBz6A65d2qBlgltgLXusiXLrpwxVmJeO+GfmbF8ur0U9JSYxA20cGW/kujNg
-XYDGQxO1Gvxq2lHK2LQmBpkfKEE1DMFASmIvlHDQgDj3XBb5lYeOsHZmg16UrGAq
-1UH238hgJITPGLXBtwLtJkYbrATJvrEcmvI7QSm57SgYGpaB5ZdCbJL5bag5Pgt6
-M5SDDYYY4xxEPzokjFJfCQv+kcyAnzERNMQ9kR41ePTXG62bpngK5iWGeJ5XdkxG
-gwIDAQAB
------END PUBLIC KEY-----
-"""
 
 def parse_addr_spec(spec, defhost = None, defport = None):
     host = None
@@ -94,11 +101,15 @@ def format_addr(addr):
     return result
 
 options.facilitator_url = DEFAULT_FACILITATOR_URL
+options.facilitator_publickey_filename = None
 
-opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "help"])
+opt, args = getopt.gnu_getopt(sys.argv[1:], "f:k:h",
+    ["facilitator=", "facilitator-pubkey=", "help"])
 for o, a in opt:
     if o == "-f" or o == "--facilitator":
         options.facilitator_url = a
+    elif o == "-k" or o == "--facilitator-pubkey":
+        options.facilitator_publickey_filename = a
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
@@ -113,7 +124,7 @@ if remote_addr[0] is None:
     sys.exit(1)
 
 reg_plain = (u"client=%s" % format_addr(remote_addr)).encode("utf-8")
-rsa = RSA.load_pub_key_bio(BIO.MemoryBuffer(FACILITATOR_PUBKEY_PEM))
+rsa = get_facilitator_pubkey(options.facilitator_publickey_filename)
 reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
 reg = base64.urlsafe_b64encode(reg_crypt)
 
