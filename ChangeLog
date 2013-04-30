@@ -9,6 +9,7 @@ Changes in version 1.0
     port protocol to identify incoming connections as websocket.
 
   o There is now a 10-second HTTP request timeout in websocket-server.
+    Fixes bug 8626.
 
 Changes in version 0.12
   o The new flashproxy-reg-url program prints a URL which, when
