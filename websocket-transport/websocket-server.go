@@ -19,6 +19,7 @@ import (
 	"time"
 )
 
+const ptMethodName = "websocket"
 const requestTimeout = 10 * time.Second
 
 var logFile = os.Stderr
@@ -168,7 +169,7 @@ func websocketHandler(ws *Websocket) {
 		handlerChan <- -1
 	}()
 
-	s, err := PtConnectOr(&ptInfo, ws.Conn)
+	s, err := PtConnectOr(&ptInfo, ws.Conn, ptMethodName)
 	if err != nil {
 		Log("Failed to connect to ORPort: " + err.Error())
 		return
@@ -200,7 +201,6 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 }
 
 func main() {
-	const ptMethodName = "websocket"
 	var defaultPort int
 	var logFilename string
 

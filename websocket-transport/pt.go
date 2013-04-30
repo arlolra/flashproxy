@@ -466,10 +466,11 @@ func extOrPortAuthenticate(s *net.TCPConn, info *PtServerInfo) error {
 
 // See section 3.1 of 196-transport-control-ports.txt.
 const (
-	extOrCmdDone     = 0x0000
-	extOrCmdUserAddr = 0x0001
-	extOrCmdOkay     = 0x1000
-	extOrCmdDeny     = 0x1001
+	extOrCmdDone      = 0x0000
+	extOrCmdUserAddr  = 0x0001
+	extOrCmdTransport = 0x0002
+	extOrCmdOkay      = 0x1000
+	extOrCmdDeny      = 0x1001
 )
 
 func extOrPortWriteCommand(s *net.TCPConn, cmd uint16, body []byte) error {
@@ -497,10 +498,16 @@ func extOrPortWriteCommand(s *net.TCPConn, cmd uint16, body []byte) error {
 	return nil
 }
 
-// Send a USERADDR command on s. See section 3.1 of
+// Send a USERADDR command on s. See section 3.1.2.1 of
 // 196-transport-control-ports.txt.
 func extOrPortSendUserAddr(s *net.TCPConn, conn net.Conn) error {
 	return extOrPortWriteCommand(s, extOrCmdUserAddr, []byte(conn.RemoteAddr().String()))
+}
+
+// Send a TRANSPORT command on s. See section 3.1.2.2 of
+// 196-transport-control-ports.txt.
+func extOrPortSendTransport(s *net.TCPConn, methodName string) error {
+	return extOrPortWriteCommand(s, extOrCmdTransport, []byte(methodName))
 }
 
 // Send a DONE command on s. See section 3.1 of 196-transport-control-ports.txt.
@@ -534,13 +541,17 @@ func extOrPortRecvCommand(s *net.TCPConn) (cmd uint16, body []byte, err error) {
 	return cmd, body, err
 }
 
-// Send a USERADDR command followed by a DONE command. Wait for an OKAY or DENY
-// response command from the server. Returns nil if and only if OKAY is
-// received.
-func extOrPortDoUserAddr(s *net.TCPConn, conn net.Conn) error {
+// Send USERADDR and TRANSPORT commands followed by a DONE command. Wait for an
+// OKAY or DENY response command from the server. Returns nil if and only if
+// OKAY is received.
+func extOrPortSetup(s *net.TCPConn, conn net.Conn, methodName string) error {
 	var err error
 
 	err = extOrPortSendUserAddr(s, conn)
+	if err != nil {
+		return err
+	}
+	err = extOrPortSendTransport(s, methodName)
 	if err != nil {
 		return err
 	}
@@ -565,7 +576,7 @@ func extOrPortDoUserAddr(s *net.TCPConn, conn net.Conn) error {
 // open *net.TCPConn. If connecting to the extended OR port, extended OR port
 // authentication à la 217-ext-orport-auth.txt is done before returning; an
 // error is returned if authentication fails.
-func PtConnectOr(info *PtServerInfo, conn net.Conn) (*net.TCPConn, error) {
+func PtConnectOr(info *PtServerInfo, conn net.Conn, methodName string) (*net.TCPConn, error) {
 	if info.ExtendedOrAddr == nil {
 		return net.DialTCP("tcp", nil, info.OrAddr)
 	}
@@ -580,7 +591,7 @@ func PtConnectOr(info *PtServerInfo, conn net.Conn) (*net.TCPConn, error) {
 		s.Close()
 		return nil, err
 	}
-	err = extOrPortDoUserAddr(s, conn)
+	err = extOrPortSetup(s, conn, methodName)
 	if err != nil {
 		s.Close()
 		return nil, err
