@@ -91,6 +91,7 @@ class options(object):
     smtp_addr = None
     debug = False
     address_family = socket.AF_UNSPEC
+    facilitator_publickey_filename = None
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -186,7 +187,6 @@ def get_state_dir():
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.smtp_addr = (DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
-options.facilitator_publickey_filename = None
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:k:hs:",
     ["debug", "email=", "facilitator-pubkey=", "help", "smtp="])

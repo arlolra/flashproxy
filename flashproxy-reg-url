@@ -32,6 +32,7 @@ def get_facilitator_pubkey(filename):
 
 class options(object):
     facilitator_url = None
+    facilitator_publickey_filename = None
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -101,7 +102,6 @@ def format_addr(addr):
     return result
 
 options.facilitator_url = DEFAULT_FACILITATOR_URL
-options.facilitator_publickey_filename = None
 
 opt, args = getopt.gnu_getopt(sys.argv[1:], "f:k:h",
     ["facilitator=", "facilitator-pubkey=", "help"])
