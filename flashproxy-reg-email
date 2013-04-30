@@ -78,9 +78,9 @@ gwIDAQAB
 -----END PUBLIC KEY-----
 """
 
-def get_facilitator_pubkey(filename):
-    if filename is not None:
-        return RSA.load_pub_key(filename)
+def get_facilitator_pubkey():
+    if options.facilitator_pubkey_filename is not None:
+        return RSA.load_pub_key(options.facilitator_pubkey_filename)
     else:
         return RSA.load_pub_key_bio(
             BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
@@ -281,7 +281,7 @@ try:
         options.remote_addr = parse_addr_spec(spec, *options.remote_addr)
 
     body_plain = (u"client=%s" % format_addr(options.remote_addr)).encode("utf-8")
-    rsa = get_facilitator_pubkey(options.facilitator_publickey_filename)
+    rsa = get_facilitator_pubkey()
     body_crypt = rsa.public_encrypt(body_plain, RSA.pkcs1_oaep_padding)
     body = body_crypt.encode("base64")
 
