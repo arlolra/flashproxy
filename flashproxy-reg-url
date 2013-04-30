@@ -32,7 +32,7 @@ def get_facilitator_pubkey(filename):
 
 class options(object):
     facilitator_url = None
-    facilitator_publickey_filename = None
+    facilitator_pubkey_filename = None
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -109,7 +109,7 @@ for o, a in opt:
     if o == "-f" or o == "--facilitator":
         options.facilitator_url = a
     elif o == "-k" or o == "--facilitator-pubkey":
-        options.facilitator_publickey_filename = a
+        options.facilitator_pubkey_filename = a
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
