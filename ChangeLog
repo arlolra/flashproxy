@@ -5,6 +5,9 @@ Changes in version 1.0
   o Fixed badge rendering for a certain combination of Chrome and
     AdBlock Plus. Patch by Arlo Breault. Fixes bug 8300.
 
+  o websocket-server sends the new TRANSPORT command of the extended OR
+    port protocol to identify incoming connections as websocket.
+
   o There is now a 10-second HTTP request timeout in websocket-server.
 
 Changes in version 0.12
