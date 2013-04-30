@@ -2,12 +2,12 @@
 .\"     Title: flashproxy-client
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 03/15/2013
+.\"      Date: 04/30/2013
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "FLASHPROXY\-CLIENT" "1" "03/15/2013" "\ \&" "\ \&"
+.TH "FLASHPROXY\-CLIENT" "1" "04/30/2013" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -66,6 +66,11 @@ Be an external proxy (don\(cqt interact with Tor using environment variables and
 \fB\-f\fR, \fB\-\-facilitator\fR=\fIURL\fR
 .RS 4
 Advertise willingness to receive connections to URL\&.
+.RE
+.PP
+\fB\-\-facilitator\-pubkey\fR=\fIFILENAME\fR
+.RS 4
+Encrypt registrations to the given PEM\-formatted public key (default built\-in)\&.
 .RE
 .PP
 \fB\-h\fR, \fB\-\-help\fR
