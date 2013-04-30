@@ -41,10 +41,12 @@ Print a URL, which, when retrieved, will cause the client address
 REMOTE[:PORT] to be registered with the flash proxy facilitator. The
 default PORT is %(port)d.
 
-  -f, --facilitator=URL         register with the given facilitator
-                                  (by default "%(fac_url)s").
-  -k, --facilitator-pubkey=FILE corresponds to the reg-daemon private key
-  -h, --help                    show this help.\
+  -f, --facilitator=URL  register with the given facilitator
+                           (by default "%(fac_url)s").
+      --facilitator-pubkey=FILENAME
+                         encrypt registrations to the given PEM-formatted
+                           public key (default built-in).
+  -h, --help             show this help.\
 """ % {
     "progname": sys.argv[0],
     "fac_url": DEFAULT_FACILITATOR_URL,
@@ -103,12 +105,12 @@ def format_addr(addr):
 
 options.facilitator_url = DEFAULT_FACILITATOR_URL
 
-opt, args = getopt.gnu_getopt(sys.argv[1:], "f:k:h",
+opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h",
     ["facilitator=", "facilitator-pubkey=", "help"])
 for o, a in opt:
     if o == "-f" or o == "--facilitator":
         options.facilitator_url = a
-    elif o == "-k" or o == "--facilitator-pubkey":
+    elif o == "--facilitator-pubkey":
         options.facilitator_pubkey_filename = a
     elif o == "-h" or o == "--help":
         usage()

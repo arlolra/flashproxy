@@ -110,7 +110,9 @@ This program requires the M2Crypto library for Python.
   -6                      name lookups use only IPv6.
   -d, --debug             enable debugging output (Python smtplib messages).
   -e, --email=ADDRESS     send mail to ADDRESS (default "%(email_addr)s").
-  -k, --facilitator-pubkey=FILE     corresponds to the reg-daemon private key
+      --facilitator-pubkey=FILENAME
+                          encrypt registrations to the given PEM-formatted
+                            public key (default built-in).
   -h, --help              show this help.
   -s, --smtp=HOST[:PORT]  use the given SMTP server
                             (default "%(smtp_addr)s").\
@@ -188,7 +190,7 @@ options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.smtp_addr = (DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:k:hs:",
+opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:hs:",
     ["debug", "email=", "facilitator-pubkey=", "help", "smtp="])
 for o, a in opts:
     if o == "-4":
@@ -199,7 +201,7 @@ for o, a in opts:
         options.debug = True
     elif o == "-e" or o == "--email":
         options.email_addr = a
-    elif o == "-k" or o == "--facilitator-pubkey":
+    elif o == "--facilitator-pubkey":
         options.facilitator_pubkey_filename = a
     elif o == "-h" or o == "--help":
         usage()
