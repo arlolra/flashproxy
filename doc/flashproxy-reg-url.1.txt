@@ -25,6 +25,9 @@ OPTIONS
 **-f**, **--facilitator**=__URL__::
     Register with the given facilitator (by default "https://fp-facilitator.org/").
 
+**--facilitator-pubkey**=__FILENAME__::
+    Encrypt registrations to the given PEM-formatted public key (default built-in).
+
 **-h**, **--help**::
     Display help message and exit.
 

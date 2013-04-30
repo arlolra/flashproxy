@@ -49,6 +49,7 @@ class options(object):
     remote_addrs = []
     register_addr = None
     facilitator_url = None
+    facilitator_pubkey_filename = None
 
     managed = True
 
@@ -97,6 +98,9 @@ omitted, it uses a public default.
       --external            be an external proxy (don't interact with Tor using
                               environment variables and stdout).
   -f, --facilitator=URL     advertise willingness to receive connections to URL.
+      --facilitator-pubkey=FILENAME
+                            encrypt registrations to the given PEM-formatted
+                              public key (default built-in).
   -h, --help                show this help.
   -l, --log FILENAME        write log to FILENAME (default stdout).
       --pidfile FILENAME    write PID to FILENAME after daemonizing.
@@ -961,6 +965,8 @@ def build_register_command(method):
         af = ["-6"]
     if method == "email":
         command = [os.path.join(script_dir, "flashproxy-reg-email")] + af
+        if options.facilitator_pubkey_filename is not None:
+            command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
         return command
     elif method == "http":
         command = [os.path.join(script_dir, "flashproxy-reg-http")] + af
@@ -1042,7 +1048,7 @@ def main():
     register_addr_spec = None
     register_methods = []
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "unsafe-logging"])
     for o, a in opts:
         if o == "-4":
             options.address_family = socket.AF_INET
@@ -1054,6 +1060,8 @@ def main():
             options.managed = False
         elif o == "-f" or o == "--facilitator":
             options.facilitator_url = a
+        elif o == "--facilitator-pubkey":
+            options.facilitator_pubkey_filename = a
         elif o == "-h" or o == "--help":
             usage()
             sys.exit()

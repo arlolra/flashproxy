@@ -44,6 +44,9 @@ OPTIONS
 **-e**, **--email**=__ADDRESS__::
     Send mail to __ADDRESS__ (default is "flashproxyreg.a@gmail.com").
 
+**--facilitator-pubkey**=__FILENAME__::
+    Encrypt registrations to the given PEM-formatted public key (default built-in).
+
 **-h**, **--help**::
     Display help message and exit.
 

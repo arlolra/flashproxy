@@ -57,6 +57,9 @@ OPTIONS
 **-f**, **--facilitator**=__URL__::
     Advertise willingness to receive connections to URL.
 
+**--facilitator-pubkey**=__FILENAME__::
+    Encrypt registrations to the given PEM-formatted public key (default built-in).
+
 **-h**, **--help**::
     Display a help message and exit.
 
