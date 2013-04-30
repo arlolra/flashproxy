@@ -11,6 +11,11 @@ Changes in version 1.0
   o There is now a 10-second HTTP request timeout in websocket-server.
     Fixes bug 8626.
 
+  o The new --facilitator-pubkey option of flashproxy-client lets you
+    configure a different facilitator public key, if you're using one
+    other than the one at fp-facilitator.org. Patch by Arlo Breault.
+    Fixes bug 8800.
+
 Changes in version 0.12
   o The new flashproxy-reg-url program prints a URL which, when
     requested, causes an address to be registered with the facilitator.
