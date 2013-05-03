@@ -186,7 +186,7 @@ decrypt encrypted client registrations).
 	# openssl rsa -pubout < /etc/flashproxy/reg-daemon.key > reg-daemon.pub
 
 You will have to edit flashproxy-reg-email and copy the contents of
-reg-email.pub into the appropriate place.
+reg-daemon.pub into the appropriate place.
 
 Install reg-daemon.key /etc/flashproxy to match what the init script
 expects.
