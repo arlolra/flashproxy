@@ -152,8 +152,7 @@ the CA; if you did not get one, then leave off the
 SSLCertificateChainFile line.
 
 Link the configured site into sites-enabled.
-	# cd /etc/apache2/sites-enabled
-	# ln -s ../sites-available/fp-facilitator
+	# a2ensite fp-facilitator
 
 === HTTPS setup
 
