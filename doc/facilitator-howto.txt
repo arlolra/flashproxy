@@ -105,7 +105,7 @@ Restart servers.
 
 == Facilitator program installation
 
-	# apt-get install git python-m2crypto
+	# apt-get install git python-m2crypto make
 	# git clone https://git.torproject.org/flashproxy.git
 	# cd flashproxy/facilitator
 	# make install
