@@ -79,17 +79,17 @@ net	ipv4
 
 	# cd /etc/shorewall6
 	# cp /usr/share/doc/shorewall6/default-config/{interfaces,policy,rules,zones} .
-	Edit /etc/shorewall/interfaces:
+	Edit /etc/shorewall6/interfaces:
 net	eth0		-	tcpflags
-	Edit /etc/shorewall/policy:
+	Edit /etc/shorewall6/policy:
 $FW		all		ACCEPT
 net		$FW		DROP
 all		all		DROP
-	Edit /etc/shorewall/rules:
+	Edit /etc/shorewall6/rules:
 SECTION NEW
 SSH/ACCEPT	all	$FW
 HTTPS/ACCEPT	all	$FW
-	Edit /etc/shorewall/zones:
+	Edit /etc/shorewall6/zones:
 fw	firewall
 net	ipv6
 
