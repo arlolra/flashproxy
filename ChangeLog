@@ -16,6 +16,9 @@ Changes in version 1.0
     other than the one at fp-facilitator.org. Patch by Arlo Breault.
     Fixes bug 8800.
 
+  o The badge now has a "lang" parameter for localization. Translations
+    exist for en, de, and ru. Patch by Peter Bourgelais.
+
 Changes in version 0.12
   o The new flashproxy-reg-url program prints a URL which, when
     requested, causes an address to be registered with the facilitator.
