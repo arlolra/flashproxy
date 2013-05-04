@@ -18,6 +18,10 @@
   o Language tags for badge localization are now case-insensitive.
     Patch by Eduardo Stalinho. Fixes bug 8829.
 
+  o The badge localization is taken from the JavaScript property
+    window.navigator.language when possible. Patch by Arlo Breault.
+    Fixes bug 8827.
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.

@@ -379,6 +379,11 @@ function get_langs() {
     if (param !== undefined)
         result.push(param);
 
+    // https://developer.mozilla.org/en/docs/DOM/window.navigator.language
+    if (typeof navigator !== undefined && navigator.language) {
+      result.push(navigator.language)
+    }
+
     return result;
 }
 
