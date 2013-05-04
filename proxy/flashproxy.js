@@ -369,10 +369,17 @@ function get_param_byte_count(query, param, default_val) {
         return parse_byte_count(spec);
 }
 
-/* Return the user's preferred IETF language tag, or undefined if there is no
-   language preference. */
-function get_lang() {
-    return get_param_string(query, "lang");
+/* Return an array of the user's preferred IETF language tags, in descending order
+   of priority. Return an empty array in case of no preference. */
+function get_langs() {
+    var param, result;
+
+    result = [];
+    param = get_param_string(query, "lang");
+    if (param !== undefined)
+        result.push(param);
+
+    return result;
 }
 
 /* Parse an address in the form "host:port". Returns an Object with
@@ -871,10 +878,15 @@ var LOCALIZATIONS = {
 };
 var DEFAULT_LOCALIZATION = { filename: "badge.png", text: "Internet Freedom" };
 /* Return an object with "filename" and "text" keys appropriate for the given
-   language code. Returns a default value if there is no localization for the
-   code. */
-function get_badge_localization(code) {
-    return LOCALIZATIONS[code] || DEFAULT_LOCALIZATION;
+   array of language codes. Returns a default value if there is no localization
+   for any of the codes. */
+function get_badge_localization(langs) {
+    for (var i = 0; i < langs.length; i++) {
+        var localization = LOCALIZATIONS[langs[i]];
+        if (localization !== undefined)
+            return localization;
+    }
+    return DEFAULT_LOCALIZATION;
 }
 
 /* The usual embedded HTML badge. The "elem" member is a DOM element that can be
@@ -895,7 +907,7 @@ function Badge() {
     a.setAttribute("target", "_blank");
     td.appendChild(a);
     img = document.createElement("img");
-    var localization = get_badge_localization(get_lang());
+    var localization = get_badge_localization(get_langs());
     img.setAttribute("src", localization.filename);
     img.setAttribute("alt", localization.text);
     a.appendChild(img);
