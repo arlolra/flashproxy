@@ -43,14 +43,8 @@
  * disables the limit. The default is DEFAULT_RATE_LIMIT. There is a
  * sanity-check minimum of "10K".
  *
- * lang=<LANGUAGE>
- * What language in which to display the Flashproxy badge.  
- * We use the IETF BCP 47 standard for language tags.
- * See http://www.w3.org/International/articles/language-tags/ for a
- * description of the standard and 
- * http://www.iana.org/assignments/language-subtag-registry
- * for the full list of possible values.
- *
+ * lang=<CODE>
+ * Display language of the badge, as an IETF language tag.
  */
 
 /* WebSocket links.
@@ -80,18 +74,6 @@ var MIN_FACILITATOR_POLL_INTERVAL = 10.0;
 var DEFAULT_RATE_LIMIT = undefined;
 var MIN_RATE_LIMIT = 10 * 1024;
 var RATE_LIMIT_HISTORY = 5.0;
-
-/* Set default language for flashproxy badge, and define alt strings for the 
-   different languages
- */
-var DEFAULT_LANGUAGE = "en";
-
-/* List of supported languages for the flashproxy badge with alt text. */
-var LANGUAGES = {
-	"en": { filename: "badge-en.png", alt: "Internet Freedom"},
-	"de": { filename: "badge-de.png", alt: "Internetfreiheit"},
-	"ru": { filename: "badge-ru.png", alt: "Свобода Интернета"}
-};
 
 /* Name of cookie that controls opt-in/opt-out. */
 var OPT_IN_COOKIE = "flashproxy-allow";
@@ -876,14 +858,26 @@ function escape_html(s) {
     return s.replace(/&<>'"/, function(x) { return HTML_ESCAPES[x] });
 }
 
-function get_badge_filename_and_alt() {
-    //Check to see that a language argument was provided
-    var lang_code=get_param_string(query,"lang",DEFAULT_LANGUAGE);
-    
-    //If there's no localization for that language, default to English.
-    if(LANGUAGES[lang_code] === undefined) 
-    	return { filename: "badge.png", alt: "Internet Freedom" };
-    else return LANGUAGES[lang_code];
+var LOCALIZATIONS = {
+    "en": { filename: "badge-en.png", text: "Internet Freedom" },
+    "de": { filename: "badge-de.png", text: "Internetfreiheit" },
+    "ru": { filename: "badge-ru.png", text: "Свобода Интернета" }
+};
+var DEFAULT_LOCALIZATION = { filename: "badge.png", text: "Internet Freedom" };
+/* Return an object with "filename" and "text" keys appropriate for the language
+   code in the "lang" query string parameter. Returns a default value if no
+   language is specified. */
+function get_badge_localization() {
+    var code, result;
+
+    code = get_param_string(query, "lang");
+    if (code === undefined)
+        return DEFAULT_LOCALIZATION;
+    result = LOCALIZATIONS[code];
+    if (result === undefined)
+        return DEFAULT_LOCALIZATION;
+
+    return result;
 }
 
 /* The usual embedded HTML badge. The "elem" member is a DOM element that can be
@@ -892,7 +886,7 @@ function Badge() {
     /* Number of proxy pairs currently connected. */
     this.num_proxy_pairs = 0;
 
-    var table, tr, td, a, img, img_info;
+    var table, tr, td, a, img;
 
     table = document.createElement("table");
     tr = document.createElement("tr");
@@ -904,11 +898,9 @@ function Badge() {
     a.setAttribute("target", "_blank");
     td.appendChild(a);
     img = document.createElement("img");
-
-    img_info=get_badge_filename_and_alt();
-    img.setAttribute("src", img_info.filename);
-    img.setAttribute("alt", img_info.alt);
-
+    var localization = get_badge_localization();
+    img.setAttribute("src", localization.filename);
+    img.setAttribute("alt", localization.text);
     a.appendChild(img);
 
     this.elem = table;
