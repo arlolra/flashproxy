@@ -1,19 +1,11 @@
-all:
-	:
+LANGS = de en pt ru
+
+all: $(addprefix badge-, $(addsuffix .png, $(LANGS)))
 
 test:
 	./flashproxy-test.js
 
-LANGS = de en ru
-badges: $(addprefix badge-, $(addsuffix .png, $(LANGS))) link
-
-link:
-	ln -s badge-en.png badge.png
-
 badge-%.png: badge.xcf
-	gimp -i -b '$(shell cat export_badges.scm) (eb "$*") (exit)'
+	(cat badge-export-lang.scm; echo '(export "$*") (gimp-quit 0)') | gimp -i -b -
 
-clean:
-	rm badge*.png
-
-.PHONY: all test badges link clean
+.PHONY: all test
