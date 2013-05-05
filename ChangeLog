@@ -19,6 +19,9 @@ Changes in version 1.0
   o The badge now has a "lang" parameter for localization. Translations
     exist for en, de, and ru. Patch by Peter Bourgelais.
 
+  o Made facilitator-email-poller reconnect after some SSL and socket
+    errors. Patch by Alexandre Allaire and David Fifield Fixes bug 8284.
+
 Changes in version 0.12
   o The new flashproxy-reg-url program prints a URL which, when
     requested, causes an address to be registered with the facilitator.
