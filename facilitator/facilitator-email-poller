@@ -330,6 +330,8 @@ while True:
     except imaplib.IMAP4.abort, e:
         # Try again after a disconnection.
         log(u"lost server connection: %s" % str(e))
+    except KeyboardInterrupt:
+        break
 
     # Don't reconnect too fast.
     t = login_limit.time_to_wait()
