@@ -126,7 +126,7 @@ It also installs System V init files to /etc/init.d/.
 Apache is the web server that runs the CGI program.
 
 	# apt-get install apache2 libapache2-mod-evasive
-	# a2enmod ssl
+	# a2enmod ssl headers
 
 Edit /etc/apache2/ports.conf and comment out the port 80 configuration.
 
@@ -146,6 +146,7 @@ these contents:
 		SSLEngine on
 		SSLCertificateFile /etc/apache2/fp-facilitator.pem
 		SSLCertificateChainFile /etc/apache2/intermediate.pem
+		Header add Strict-Transport-Security "max-age=15768000"
 	</VirtualHost>
 intermediate.pem is a possible intermediate certificate file provided by
 the CA; if you did not get one, then leave off the
