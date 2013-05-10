@@ -32,7 +32,7 @@ def get_facilitator_pubkey():
 
 def get_external_ip():
     try:
-        f = urllib2.urlopen("https://agentgatech.appspot.com/")
+        f = urllib2.urlopen("https://flashproxy-reg.appspot.com/ip")
     except:
         return None
     ip = f.read()
@@ -140,5 +140,5 @@ rsa = get_facilitator_pubkey()
 reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
 reg = base64.urlsafe_b64encode(reg_crypt)
 
-url = urlparse.urljoin(options.facilitator_url, "reg/" + reg)
-urllib2.urlopen("https://g-proxy.appspot.com/" + urllib2.quote(url))
+url = urlparse.urljoin("http://flashproxy-reg.appspot.com/reg/", reg)
+urllib2.urlopen(url)
