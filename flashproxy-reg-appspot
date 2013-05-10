@@ -1,0 +1,144 @@
+#!/usr/bin/env python
+
+import base64
+import getopt
+import re
+import socket
+import sys
+import urlparse
+import urllib2
+
+from M2Crypto import RSA, BIO
+
+DEFAULT_REMOTE_PORT = 9000
+DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
+DEFAULT_FACILITATOR_PUBKEY_PEM = """\
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA44Mt8c599/4N2fgu6ppN
+oatPW1GOgZxxObljFtEy0OWM1eHB35OOn+Kn9MxNHTRxVWwCEi0HYxWNVs2qrXxV
+84LmWBz6A65d2qBlgltgLXusiXLrpwxVmJeO+GfmbF8ur0U9JSYxA20cGW/kujNg
+XYDGQxO1Gvxq2lHK2LQmBpkfKEE1DMFASmIvlHDQgDj3XBb5lYeOsHZmg16UrGAq
+1UH238hgJITPGLXBtwLtJkYbrATJvrEcmvI7QSm57SgYGpaB5ZdCbJL5bag5Pgt6
+M5SDDYYY4xxEPzokjFJfCQv+kcyAnzERNMQ9kR41ePTXG62bpngK5iWGeJ5XdkxG
+gwIDAQAB
+-----END PUBLIC KEY-----
+"""
+
+def get_facilitator_pubkey():
+    if options.facilitator_pubkey_filename is not None:
+        return RSA.load_pub_key(options.facilitator_pubkey_filename)
+    else:
+        return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
+
+def get_external_ip():
+    try:
+        f = urllib2.urlopen("https://agentgatech.appspot.com/")
+    except:
+        return None
+    ip = f.read()
+    f.close()
+    return ip
+
+class options(object):
+    facilitator_url = None
+    facilitator_pubkey_filename = None
+
+def usage(f = sys.stdout):
+    print >> f, """\
+Usage: %(progname)s REMOTE[:PORT]
+Print a URL, which, when retrieved, will cause the client address
+REMOTE[:PORT] to be registered with the flash proxy facilitator. The
+default PORT is %(port)d.
+
+  -f, --facilitator=URL  register with the given facilitator
+                           (by default "%(fac_url)s").
+      --facilitator-pubkey=FILENAME
+                         encrypt registrations to the given PEM-formatted
+                           public key (default built-in).
+  -h, --help             show this help.\
+""" % {
+    "progname": sys.argv[0],
+    "fac_url": DEFAULT_FACILITATOR_URL,
+    "port": DEFAULT_REMOTE_PORT,
+}
+
+def parse_addr_spec(spec, defhost = None, defport = None):
+    host = None
+    port = None
+    af = 0
+    m = None
+    # IPv6 syntax.
+    if not m:
+        m = re.match(ur'^\[(.+)\]:(\d*)$', spec)
+        if m:
+            host, port = m.groups()
+            af = socket.AF_INET6
+    if not m:
+        m = re.match(ur'^\[(.+)\]$', spec)
+        if m:
+            host, = m.groups()
+            af = socket.AF_INET6
+    # IPv4/hostname/port-only syntax.
+    if not m:
+        try:
+            host, port = spec.split(":", 1)
+        except ValueError:
+            host = spec
+        if re.match(ur'^[\d.]+$', host):
+            af = socket.AF_INET
+        else:
+            af = 0
+    host = host or defhost
+    port = port or defport
+    if port is not None:
+        port = int(port)
+    return host, port
+
+def format_addr(addr):
+    host, port = addr
+    if not host:
+        return u":%d" % port
+    # Numeric IPv6 address?
+    try:
+        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+        af = addrs[0][0]
+    except socket.gaierror, e:
+        af = 0
+    if af == socket.AF_INET6:
+        result = u"[%s]" % host
+    else:
+        result = "%s" % host
+    if port is not None:
+        result += u":%d" % port
+    return result
+
+options.facilitator_url = DEFAULT_FACILITATOR_URL
+
+opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "facilitator-pubkey=", "help"])
+for o, a in opt:
+    if o == "-f" or o == "--facilitator":
+        options.facilitator_url = a
+    elif o == "--facilitator-pubkey":
+        options.facilitator_pubkey_filename = a
+    elif o == "-h" or o == "--help":
+        usage()
+        sys.exit()
+
+if len(args) != 1:
+    usage(f=sys.stderr)
+    sys.exit(1)
+
+remote_addr = parse_addr_spec(args[0], defport=DEFAULT_REMOTE_PORT)
+if remote_addr[0] is None:
+    remote_addr = parse_addr_spec(get_external_ip(), defport=remote_addr[1])
+if remote_addr[0] is None:
+    print >> sys.stderr, "Could not determine external ip address."
+    sys.exit(1)
+
+reg_plain = (u"client=%s" % format_addr(remote_addr)).encode("utf-8")
+rsa = get_facilitator_pubkey()
+reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
+reg = base64.urlsafe_b64encode(reg_crypt)
+
+url = urlparse.urljoin(options.facilitator_url, "reg/" + reg)
+urllib2.urlopen("https://g-proxy.appspot.com/" + urllib2.quote(url))
