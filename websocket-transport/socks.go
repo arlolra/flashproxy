@@ -94,7 +94,7 @@ func SendSocks4aResponse(w io.Writer, code byte, addr *net.TCPAddr) error {
 	return err
 }
 
-var emptyAddr = net.TCPAddr{IP = net.IPv4(0, 0, 0, 0), Port = 0}
+var emptyAddr = net.TCPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 0}
 
 // Send a SOCKS4a response code 0x5a.
 func SendSocks4aResponseGranted(w io.Writer, addr *net.TCPAddr) error {
