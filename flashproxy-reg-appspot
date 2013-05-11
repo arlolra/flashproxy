@@ -31,8 +31,10 @@ def get_facilitator_pubkey():
         return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
 
 def get_external_ip():
+    req = urllib2.Request("https://www.google.com/ip")
+    req.add_header("Host", "flashproxy-reg.appspot.com")
     try:
-        f = urllib2.urlopen("https://flashproxy-reg.appspot.com/ip")
+        f = urllib2.urlopen(req)
     except:
         return None
     ip = f.read()
@@ -140,5 +142,7 @@ rsa = get_facilitator_pubkey()
 reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
 reg = base64.urlsafe_b64encode(reg_crypt)
 
-url = urlparse.urljoin("http://flashproxy-reg.appspot.com/reg/", reg)
-urllib2.urlopen(url)
+url = urlparse.urljoin("https://www.google.com/reg/", reg)
+req = urllib2.Request(url)
+req.add_header("Host", "flashproxy-reg.appspot.com")
+urllib2.urlopen(req)
