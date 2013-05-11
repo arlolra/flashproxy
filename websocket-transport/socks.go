@@ -55,7 +55,7 @@ func ReadSocks4aConnect(s io.Reader) (string, error) {
 
 	_, err = r.ReadBytes('\x00')
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("reading SOCKS userid: %s", n, err))
+		return "", errors.New(fmt.Sprintf("reading SOCKS userid: %s", err))
 	}
 
 	var port int
