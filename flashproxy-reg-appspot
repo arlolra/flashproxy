@@ -36,7 +36,7 @@ def get_external_ip():
     try:
         f = urllib2.urlopen(req)
     except:
-        return None
+        return ""
     ip = f.read()
     f.close()
     return ip
