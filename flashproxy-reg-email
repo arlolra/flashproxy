@@ -60,7 +60,7 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 # SHA-1 digest of expected public key. See
 # http://www.imperialviolet.org/2011/05/04/pinning.html for the reason behind
 # hashing the public key, not the entire certificate.
-PUBKEY_SHA1 = "1926a5cb3fd7e48328188946e73ade84f55787dc".decode("hex")
+PUBKEY_SHA1 = "69ba4a72fc198b2203ecdf0c75493e4d5300dac9".decode("hex")
 
 # Registrations are encrypted with this public key before being emailed. Only
 # the facilitator operators should have the corresponding private key. Given a
