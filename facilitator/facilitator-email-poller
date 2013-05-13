@@ -333,8 +333,12 @@ while True:
     except KeyboardInterrupt:
         break
 
-    imap.close()
-    imap.logout()
+    try:
+        imap.close()
+        imap.logout()
+    except imaplib.IMAP4.abort:
+        pass
+
     # Don't reconnect too fast.
     t = login_limit.time_to_wait()
     if t > 0:
