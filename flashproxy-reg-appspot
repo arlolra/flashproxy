@@ -10,6 +10,7 @@ import urllib2
 
 from M2Crypto import RSA, BIO
 
+DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
 DEFAULT_FACILITATOR_PUBKEY_PEM = """\
@@ -127,13 +128,13 @@ for o, a in opt:
         sys.exit()
 
 if len(args) != 1:
-    usage(f=sys.stderr)
+    usage(sys.stderr)
     sys.exit(1)
 
-remote_addr = parse_addr_spec(args[0], defport=DEFAULT_REMOTE_PORT)
-if remote_addr[0] is None:
+remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+if not remote_addr[0]:
     remote_addr = parse_addr_spec(get_external_ip(), defport=remote_addr[1])
-if remote_addr[0] is None:
+if not remote_addr[0]:
     print >> sys.stderr, "Could not determine external ip address."
     sys.exit(1)
 
