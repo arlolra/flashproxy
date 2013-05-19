@@ -16,7 +16,7 @@ func ipHandler(w http.ResponseWriter, r *http.Request) {
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
-  blob := r.URL.String()[5:]
+  blob := r.URL.Path[5:]
   client := urlfetch.Client(c)
   _, err := client.Get(BASE + blob)
   if err != nil {
