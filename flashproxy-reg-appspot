@@ -12,16 +12,17 @@ import urllib2
 DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
 
+# The domain to which requests appear to go.
+FRONT_DOMAIN = "www.google.com"
+# The value of the Host header within requests.
+TARGET_DOMAIN = "flashproxy-reg.appspot.com"
+
 def get_external_ip():
-    req = urllib2.Request("https://www.google.com/ip")
-    req.add_header("Host", "flashproxy-reg.appspot.com")
+    f = urlopen(urlparse.urlunparse(("https", FRONT_DOMAIN, "/ip", "", "", "")))
     try:
-        f = urllib2.urlopen(req)
-    except:
-        return ""
-    ip = f.read()
-    f.close()
-    return ip
+        return f.read()
+    finally:
+        f.close()
 
 class options(object):
     address_family = socket.AF_UNSPEC
@@ -103,13 +104,19 @@ def generate_url(addr):
     if not script_dir:
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         raise ValueError("Can't find executable directory for registration helpers")
-    command = [os.path.join(script_dir, "flashproxy-reg-url"), "-f", "https://www.google.com/"]
+    command = [os.path.join(script_dir, "flashproxy-reg-url")]
+    command += ["-f", urlparse.urlunparse(("https", "www.google.com", "/", "", "", ""))]
     if options.facilitator_pubkey_filename is not None:
         command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
     command.append(format_addr(addr))
     p = subprocess.Popen(command, stdout=subprocess.PIPE)
     stdout, stderr = p.communicate()
     return stdout.strip()
+
+def urlopen(url):
+    req = urllib2.Request(url)
+    req.add_header("Host", TARGET_DOMAIN)
+    return urllib2.urlopen(req)
 
 opt, args = getopt.gnu_getopt(sys.argv[1:], "46h", ["facilitator-pubkey=", "help"])
 for o, a in opt:
@@ -150,10 +157,8 @@ except Exception, e:
     print >> sys.stderr, "Error running flashproxy-reg-url: %s" % str(e)
     sys.exit(1)
 
-req = urllib2.Request(url)
-req.add_header("Host", "flashproxy-reg.appspot.com")
 try:
-    http = urllib2.urlopen(req)
+    http = urlopen(url)
 except urllib2.HTTPError, e:
     print >> sys.stderr, "Status code was %d, not 200" % e.code
     sys.exit(1)
@@ -165,4 +170,4 @@ except Exception, e:
     sys.exit(1)
 http.close()
 
-print "Registered \"%s\" with %s." % (format_addr(remote_addr), "flashproxy-reg.appspot.com")
+print "Registered \"%s\" with %s." % (format_addr(remote_addr), TARGET_DOMAIN)
