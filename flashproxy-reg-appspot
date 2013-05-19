@@ -252,10 +252,21 @@ if options.address_family != socket.AF_UNSPEC:
     socket.getaddrinfo = getaddrinfo_replacement
 
 if not remote_addr[0]:
-    spec = get_external_ip()
-    remote_addr = parse_addr_spec(spec, *remote_addr)
-    if not remote_addr[0]:
-        print >> sys.stderr, "Could not guess external IP address."
+    try:
+        ip = get_external_ip()
+    except urllib2.HTTPError, e:
+        print >> sys.stderr, "Status code was %d, not 200" % e.code
+        sys.exit(1)
+    except urllib2.URLError, e:
+        print >> sys.stderr, "Failed to get external IP address: %s" % str(e.reason)
+        sys.exit(1)
+    except Exception, e:
+        print >> sys.stderr, "Failed to get external IP address: %s" % str(e)
+        sys.exit(1)
+    try:
+        remote_addr = parse_addr_spec(ip, *remote_addr)
+    except ValueError, e:
+        print >> sys.stderr, "Error parsing external IP address %s: %s" % (repr(ip), str(e))
         sys.exit(1)
 
 try:
