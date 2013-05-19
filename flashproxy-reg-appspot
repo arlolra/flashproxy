@@ -1,34 +1,16 @@
 #!/usr/bin/env python
 
-import base64
 import getopt
 import re
+import os
 import socket
+import subprocess
 import sys
 import urlparse
 import urllib2
 
-from M2Crypto import RSA, BIO
-
 DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
-DEFAULT_FACILITATOR_PUBKEY_PEM = """\
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA44Mt8c599/4N2fgu6ppN
-oatPW1GOgZxxObljFtEy0OWM1eHB35OOn+Kn9MxNHTRxVWwCEi0HYxWNVs2qrXxV
-84LmWBz6A65d2qBlgltgLXusiXLrpwxVmJeO+GfmbF8ur0U9JSYxA20cGW/kujNg
-XYDGQxO1Gvxq2lHK2LQmBpkfKEE1DMFASmIvlHDQgDj3XBb5lYeOsHZmg16UrGAq
-1UH238hgJITPGLXBtwLtJkYbrATJvrEcmvI7QSm57SgYGpaB5ZdCbJL5bag5Pgt6
-M5SDDYYY4xxEPzokjFJfCQv+kcyAnzERNMQ9kR41ePTXG62bpngK5iWGeJ5XdkxG
-gwIDAQAB
------END PUBLIC KEY-----
-"""
-
-def get_facilitator_pubkey():
-    if options.facilitator_pubkey_filename is not None:
-        return RSA.load_pub_key(options.facilitator_pubkey_filename)
-    else:
-        return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
 
 def get_external_ip():
     req = urllib2.Request("https://www.google.com/ip")
@@ -113,6 +95,22 @@ def format_addr(addr):
         result += u":%d" % port
     return result
 
+def generate_url(addr):
+    if getattr(sys, "frozen", False):
+        script_dir = os.path.dirname(sys.executable)
+    else:
+        script_dir = sys.path[0]
+    if not script_dir:
+        # Maybe the script was read from stdin; in any case don't guess at the directory.
+        raise ValueError("Can't find executable directory for registration helpers")
+    command = [os.path.join(script_dir, "flashproxy-reg-url"), "-f", "https://www.google.com/"]
+    if options.facilitator_pubkey_filename is not None:
+        command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
+    command.append(format_addr(addr))
+    p = subprocess.Popen(command, stdout=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    return stdout.strip()
+
 opt, args = getopt.gnu_getopt(sys.argv[1:], "46h", ["facilitator-pubkey=", "help"])
 for o, a in opt:
     if o == "-4":
@@ -146,13 +144,12 @@ if not remote_addr[0]:
         print >> sys.stderr, "Could not determine external ip address."
         sys.exit(1)
 
-spec = format_addr(remote_addr)
-reg_plain = (u"client=%s" % spec).encode("utf-8")
-rsa = get_facilitator_pubkey()
-reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
-reg = base64.urlsafe_b64encode(reg_crypt)
+try:
+    url = generate_url(remote_addr)
+except Exception, e:
+    print >> sys.stderr, "Error running flashproxy-reg-url: %s" % str(e)
+    sys.exit(1)
 
-url = urlparse.urljoin("https://www.google.com/reg/", reg)
 req = urllib2.Request(url)
 req.add_header("Host", "flashproxy-reg.appspot.com")
 try:
@@ -168,4 +165,4 @@ except Exception, e:
     sys.exit(1)
 http.close()
 
-print "Registered \"%s\" with %s." % (spec, "flashproxy-reg.appspot.com")
+print "Registered \"%s\" with %s." % (format_addr(remote_addr), "flashproxy-reg.appspot.com")
