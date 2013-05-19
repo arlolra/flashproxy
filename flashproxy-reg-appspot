@@ -137,7 +137,8 @@ if remote_addr[0] is None:
     print >> sys.stderr, "Could not determine external ip address."
     sys.exit(1)
 
-reg_plain = (u"client=%s" % format_addr(remote_addr)).encode("utf-8")
+spec = format_addr(remote_addr)
+reg_plain = (u"client=%s" % spec).encode("utf-8")
 rsa = get_facilitator_pubkey()
 reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
 reg = base64.urlsafe_b64encode(reg_crypt)
@@ -145,4 +146,17 @@ reg = base64.urlsafe_b64encode(reg_crypt)
 url = urlparse.urljoin("https://www.google.com/reg/", reg)
 req = urllib2.Request(url)
 req.add_header("Host", "flashproxy-reg.appspot.com")
-urllib2.urlopen(req)
+try:
+    http = urllib2.urlopen(req)
+except urllib2.HTTPError, e:
+    print >> sys.stderr, "Status code was %d, not 200" % e.code
+    sys.exit(1)
+except urllib2.URLError, e:
+    print >> sys.stderr, "Failed to register: %s" % str(e.reason)
+    sys.exit(1)
+except Exception, e:
+    print >> sys.stderr, "Failed to register: %s" % str(e)
+    sys.exit(1)
+http.close()
+
+print "Registered \"%s\" with %s." % (spec, "flashproxy-reg.appspot.com")
