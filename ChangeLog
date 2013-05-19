@@ -27,6 +27,9 @@ Changes in version 1.0
     this lack meant that flashproxy-reg-url was missing from Windows
     bundles. Patch by Arlo Breault. Fixes bug 8840.
 
+  o Enabled HTTP Strict Transport Security (HSTS) on the facilitator.
+    Patch by Eduardo Stalinho. Fixes bug 8772.
+
 Changes in version 0.12
   o The new flashproxy-reg-url program prints a URL which, when
     requested, causes an address to be registered with the facilitator.
