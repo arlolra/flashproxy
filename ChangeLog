@@ -20,7 +20,8 @@ Changes in version 1.0
     exist for en, de, and ru. Patch by Peter Bourgelais.
 
   o Made facilitator-email-poller reconnect after some SSL and socket
-    errors. Patch by Alexandre Allaire and David Fifield Fixes bug 8284.
+    errors. Patch by Alexandre Allaire and David Fifield. Fixes bug
+    8284.
 
   o Added flashproxy-reg-url to the py2exe instructions in setup.py;
     this lack meant that flashproxy-reg-url was missing from Windows
