@@ -48,10 +48,10 @@ class options(object):
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %(progname)s REMOTE[:PORT]
-Print a URL, which, when retrieved, will cause the client address
-REMOTE[:PORT] to be registered with the flash proxy facilitator. The
-default PORT is %(port)d.
+Usage: %(progname)s [REMOTE][:PORT]
+Register with a flash proxy facilitator through a Google App Engine app.
+By default the remote address registered is "%(remote_addr)s" (the
+external IP address is guessed).
 
   -f, --facilitator=URL  register with the given facilitator
                            (by default "%(fac_url)s").
@@ -61,8 +61,8 @@ default PORT is %(port)d.
   -h, --help             show this help.\
 """ % {
     "progname": sys.argv[0],
+    "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
     "fac_url": DEFAULT_FACILITATOR_URL,
-    "port": DEFAULT_REMOTE_PORT,
 }
 
 def parse_addr_spec(spec, defhost = None, defport = None):
@@ -127,16 +127,20 @@ for o, a in opt:
         usage()
         sys.exit()
 
-if len(args) != 1:
+if len(args) == 0:
+    remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+elif len(args) == 1:
+    remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
+else:
     usage(sys.stderr)
     sys.exit(1)
 
-remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 if not remote_addr[0]:
-    remote_addr = parse_addr_spec(get_external_ip(), defport=remote_addr[1])
-if not remote_addr[0]:
-    print >> sys.stderr, "Could not determine external ip address."
-    sys.exit(1)
+    spec = get_external_ip()
+    remote_addr = parse_addr_spec(spec, *remote_addr)
+    if not remote_addr[0]:
+        print >> sys.stderr, "Could not determine external ip address."
+        sys.exit(1)
 
 spec = format_addr(remote_addr)
 reg_plain = (u"client=%s" % spec).encode("utf-8")
