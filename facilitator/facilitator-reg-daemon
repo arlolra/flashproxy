@@ -13,8 +13,8 @@ import fac
 from M2Crypto import RSA
 
 # Generating an RSA keypair for use by this program:
-# openssl genrsa reg-daemon 2048
-# chmod 600 reg-daemon
+# openssl genrsa -out /etc/flashproxy/reg-daemon.key 2048
+# chmod 600 /etc/flashproxy/reg-daemon.key
 
 LISTEN_ADDRESS = "127.0.0.1"
 DEFAULT_LISTEN_PORT = 9003
