@@ -61,13 +61,6 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 # hashing the public key, not the entire certificate.
 PUBKEY_SHA1 = "c70ccd442ff4528c603aefef85206fd693990e09".decode("hex")
 
-def get_external_ip():
-    f = urlopen(urlparse.urlunparse(("https", FRONT_DOMAIN, "/ip", "", "", "")))
-    try:
-        return f.read()
-    finally:
-        f.close()
-
 class options(object):
     address_family = socket.AF_UNSPEC
     facilitator_pubkey_filename = None
@@ -209,6 +202,13 @@ def urlopen(url):
     req.add_header("Host", TARGET_DOMAIN)
     opener = urllib2.build_opener(PinHTTPSHandler())
     return opener.open(req)
+
+def get_external_ip():
+    f = urlopen(urlparse.urlunparse(("https", FRONT_DOMAIN, "/ip", "", "", "")))
+    try:
+        return f.read()
+    finally:
+        f.close()
 
 opt, args = getopt.gnu_getopt(sys.argv[1:], "46h", ["facilitator-pubkey=", "help"])
 for o, a in opt:
