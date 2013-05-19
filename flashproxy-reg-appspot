@@ -28,6 +28,8 @@ FRONT_DOMAIN = "www.google.com"
 # The value of the Host header within requests.
 TARGET_DOMAIN = "flashproxy-reg.appspot.com"
 
+FLASHPROXY_REG_URL = "flashproxy-reg-url"
+
 # We trust no other CA certificate than this.
 #
 # To find the certificate to copy here,
@@ -154,7 +156,7 @@ def generate_url(addr):
     if not script_dir:
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         raise ValueError("Can't find executable directory for registration helpers")
-    command = [os.path.join(script_dir, "flashproxy-reg-url")]
+    command = [os.path.join(script_dir, FLASHPROXY_REG_URL)]
     command += ["-f", urlparse.urlunparse(("https", "www.google.com", "/", "", "", ""))]
     if options.facilitator_pubkey_filename is not None:
         command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
@@ -257,7 +259,7 @@ if not remote_addr[0]:
 try:
     url = generate_url(remote_addr)
 except Exception, e:
-    print >> sys.stderr, "Error running flashproxy-reg-url: %s" % str(e)
+    print >> sys.stderr, "Error running %s: %s" % (FLASHPROXY_REG_URL, str(e))
     sys.exit(1)
 
 try:
