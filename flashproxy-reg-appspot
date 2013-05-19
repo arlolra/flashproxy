@@ -42,6 +42,7 @@ def get_external_ip():
     return ip
 
 class options(object):
+    address_family = socket.AF_UNSPEC
     facilitator_pubkey_filename = None
 
 def usage(f = sys.stdout):
@@ -51,6 +52,8 @@ Register with a flash proxy facilitator through a Google App Engine app.
 By default the remote address registered is "%(remote_addr)s" (the
 external IP address is guessed).
 
+  -4                     name lookups use only IPv4.
+  -6                     name lookups use only IPv6.
       --facilitator-pubkey=FILENAME
                          encrypt registrations to the given PEM-formatted
                            public key (default built-in).
@@ -110,9 +113,13 @@ def format_addr(addr):
         result += u":%d" % port
     return result
 
-opt, args = getopt.gnu_getopt(sys.argv[1:], "h", ["facilitator-pubkey=", "help"])
+opt, args = getopt.gnu_getopt(sys.argv[1:], "46h", ["facilitator-pubkey=", "help"])
 for o, a in opt:
-    if o == "--facilitator-pubkey":
+    if o == "-4":
+        options.address_family = socket.AF_INET
+    elif o == "-6":
+        options.address_family = socket.AF_INET6
+    elif o == "--facilitator-pubkey":
         options.facilitator_pubkey_filename = a
     elif o == "-h" or o == "--help":
         usage()
@@ -125,6 +132,12 @@ elif len(args) == 1:
 else:
     usage(sys.stderr)
     sys.exit(1)
+
+if options.address_family != socket.AF_UNSPEC:
+    getaddrinfo = socket.getaddrinfo
+    def getaddrinfo_replacement(host, port, family, *args, **kwargs):
+        return getaddrinfo(host, port, options.address_family, *args, **kwargs)
+    socket.getaddrinfo = getaddrinfo_replacement
 
 if not remote_addr[0]:
     spec = get_external_ip()
