@@ -163,6 +163,8 @@ def generate_url(addr):
     command.append(format_addr(addr))
     p = subprocess.Popen(command, stdout=subprocess.PIPE)
     stdout, stderr = p.communicate()
+    if p.returncode != 0:
+        raise ValueError("%s exited with status %d" % (FLASHPROXY_REG_URL, p.returncode))
     return stdout.strip()
 
 # Certificate validation and pinning for urllib2. Inspired by
