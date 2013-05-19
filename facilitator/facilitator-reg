@@ -30,7 +30,7 @@ def main():
         if o == "-h" or o == "--help":
             usage()
             sys.exit()
-        elif o == "-p" or o == "--pass":
+        elif o == "-p" or o == "--port":
             options.connect_port = int(a)
 
     if len(args) != 0:
