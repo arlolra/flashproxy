@@ -18,7 +18,7 @@ except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
     X509 = None
 
-DEFAULT_REMOTE_ADDRESS = ""
+DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_EMAIL_ADDRESS = "flashproxyreg.a@gmail.com"
 # dig MX gmail.com
@@ -185,7 +185,6 @@ def get_facilitator_pubkey():
     else:
         return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
 
-options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.smtp_addr = (DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
 
@@ -208,7 +207,7 @@ for o, a in opts:
         options.smtp_addr = parse_addr_spec(a, DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
 
 if len(args) == 0:
-    pass
+    options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 elif len(args) == 1:
     options.remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 else:
