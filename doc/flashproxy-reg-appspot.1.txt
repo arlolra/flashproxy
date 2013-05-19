@@ -1,0 +1,39 @@
+// This file is asciidoc source code.
+// To generate manpages, use the a2x command.
+// This one has a long name, if you don't change the
+// default length parameter it will be truncated, use:
+// a2x --no-xmllint --xsltproc-opts "--stringparam man.th.title.max.length 24" -d manpage -f manpage flashproxy-reg-appspot.1.txt
+FLASHPROXY-REG-APPSPOT(1)
+=========================
+
+NAME
+----
+flashproxy-reg-appspot - Register with a facilitator through Google App Engine.
+
+SYNOPSIS
+--------
+**flashproxy-reg-appspot** [__OPTIONS__] [__REMOTE__][:__PORT__]
+
+DESCRIPTION
+-----------
+Register with a flash proxy facilitator through a Google App Engine app.
+By default the remote address registered is ":9000" (the
+external IP address is guessed).
+
+OPTIONS
+-------
+**--facilitator-pubkey**=__FILENAME__::
+    Encrypt registrations to the given PEM-formatted public key (default built-in).
+
+**-h**, **--help**::
+    Display help message and exit.
+
+SEE ALSO
+--------
+**http://crypto.stanford.edu/flashproxy/**
+
+**https://www.torproject.org/docs/pluggable-transports.html.en**
+
+BUGS
+----
+Please report using **https://trac.torproject.org/projects/tor**.
