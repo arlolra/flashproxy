@@ -78,12 +78,6 @@ gwIDAQAB
 -----END PUBLIC KEY-----
 """
 
-def get_facilitator_pubkey():
-    if options.facilitator_pubkey_filename is not None:
-        return RSA.load_pub_key(options.facilitator_pubkey_filename)
-    else:
-        return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
-
 class options(object):
     remote_addr = None
     email_addr = None
@@ -184,6 +178,12 @@ def get_state_dir():
         if e.errno != errno.EEXIST:
             raise
     return pt_dir
+
+def get_facilitator_pubkey():
+    if options.facilitator_pubkey_filename is not None:
+        return RSA.load_pub_key(options.facilitator_pubkey_filename)
+    else:
+        return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
 
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 options.email_addr = DEFAULT_EMAIL_ADDRESS
