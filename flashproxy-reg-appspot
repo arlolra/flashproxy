@@ -251,7 +251,7 @@ if not remote_addr[0]:
     spec = get_external_ip()
     remote_addr = parse_addr_spec(spec, *remote_addr)
     if not remote_addr[0]:
-        print >> sys.stderr, "Could not determine external ip address."
+        print >> sys.stderr, "Could not guess external IP address."
         sys.exit(1)
 
 try:
