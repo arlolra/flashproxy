@@ -158,7 +158,7 @@ def generate_url(addr):
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         raise ValueError("Can't find executable directory for registration helpers")
     command = [os.path.join(script_dir, FLASHPROXY_REG_URL)]
-    command += ["-f", urlparse.urlunparse(("https", "www.google.com", "/", "", "", ""))]
+    command += ["-f", urlparse.urlunparse(("https", FRONT_DOMAIN, "/", "", "", ""))]
     if options.facilitator_pubkey_filename is not None:
         command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
     command.append(format_addr(addr))
