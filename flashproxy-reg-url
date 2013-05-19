@@ -7,7 +7,11 @@ import socket
 import sys
 import urlparse
 
-from M2Crypto import RSA, BIO
+try:
+    from M2Crypto import BIO, RSA
+except ImportError:
+    # Defer the error reporting so that --help works even without M2Crypto.
+    RSA = None
 
 DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
@@ -122,6 +126,17 @@ if len(args) != 1:
 remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 if not remote_addr[0]:
     print >> sys.stderr, "An IP address (not just a port) is required."
+    sys.exit(1)
+
+if RSA is None:
+    print >> sys.stderr, """\
+This program requires the M2Crypto library, which is not installed.
+
+You can install it using one of the packages at
+http://chandlerproject.org/Projects/MeTooCrypto#Downloads.
+
+On Debian-like systems, use the command "apt-get install python-m2crypto".\
+"""
     sys.exit(1)
 
 reg_plain = (u"client=%s" % format_addr(remote_addr)).encode("utf-8")
