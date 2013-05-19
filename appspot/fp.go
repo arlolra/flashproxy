@@ -2,6 +2,7 @@ package fp
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 
 	"appengine"
@@ -11,7 +12,11 @@ import (
 const BASE = "https://fp-facilitator.org/reg/"
 
 func ipHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "%s", r.RemoteAddr)
+	remoteAddr := r.RemoteAddr
+	if net.ParseIP(remoteAddr).To4() == nil {
+		remoteAddr = "[" + remoteAddr + "]"
+	}
+	fmt.Fprintf(w, "%s", remoteAddr)
 }
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
