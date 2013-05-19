@@ -34,7 +34,11 @@ flashproxy-reg-appspot \- Register with a facilitator through Google App Engine\
 \fBflashproxy\-reg\-appspot\fR [\fIOPTIONS\fR] [\fIREMOTE\fR][:\fIPORT\fR]
 .SH "DESCRIPTION"
 .sp
-Register with a flash proxy facilitator through a Google App Engine app\&. By default the remote address registered is ":9000" (the external IP address is guessed)\&.
+Register with a flash proxy facilitator through a Google App Engine app\&. By default the remote address registered is ":9000" (the external IP address is guessed)\&. It requires https://www\&.google\&.com/ not to be blocked\&.
+.sp
+This program uses a trick to talk to App Engine, even though appspot\&.com may be blocked\&. The IP address and Server Name Indication of the request are for www\&.google\&.com, but the Host header inside the request is for an appspot\&.com subdomain\&.
+.sp
+Requires the \fBflashproxy\-reg\-url\fR program\&.
 .SH "OPTIONS"
 .PP
 \fB\-\-facilitator\-pubkey\fR=\fIFILENAME\fR
