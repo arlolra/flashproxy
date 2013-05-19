@@ -92,7 +92,7 @@ $(PT_BUNDLE_MACOSX_I686):
 	mkdir -p "$(WORKDIR)"
 	unzip "$(BUNDLE_MACOSX_I686)" -d "$(WORKDIR)"
 
-	cp "$(FLASHPROXY_DIST)"/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} "$(TBBDIR)"/Contents/MacOS
+	cp "$(FLASHPROXY_DIST)"/{flashproxy-client,flashproxy-reg-appspot,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} "$(TBBDIR)"/Contents/MacOS
 	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/M2Crypto "$(TBBDIR)"/Contents/MacOS
 	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Contents/Resources/Docs/FlashProxy
@@ -118,7 +118,7 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 	mkdir -p "$(WORKDIR)"
 	tar zxf "$(BUNDLE_GNULINUX)" -C "$(WORKDIR)"
 
-	cp "$(FLASHPROXY_DIST)"/{flashproxy-client,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} "$(TBBDIR)"/App
+	cp "$(FLASHPROXY_DIST)"/{flashproxy-client,flashproxy-reg-appspot,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} "$(TBBDIR)"/App
 	cp -rL /usr/lib/pymodules/python2.6/M2Crypto "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Docs/FlashProxy
