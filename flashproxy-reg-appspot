@@ -1,13 +1,24 @@
 #!/usr/bin/env python
 
 import getopt
+import httplib
 import re
 import os
 import socket
+import ssl
 import subprocess
 import sys
+import tempfile
 import urlparse
 import urllib2
+
+from hashlib import sha1
+
+try:
+    from M2Crypto import X509
+except ImportError:
+    # Defer the error reporting so that --help works even without M2Crypto.
+    X509 = None
 
 DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
@@ -16,6 +27,39 @@ DEFAULT_REMOTE_PORT = 9000
 FRONT_DOMAIN = "www.google.com"
 # The value of the Host header within requests.
 TARGET_DOMAIN = "flashproxy-reg.appspot.com"
+
+# We trust no other CA certificate than this.
+#
+# To find the certificate to copy here,
+# $ strace openssl s_client -connect FRONT_DOMAIN:443 -verify 10 -CApath /etc/ssl/certs 2>&1 | grep /etc/ssl/certs
+# stat("/etc/ssl/certs/XXXXXXXX.0", {st_mode=S_IFREG|0644, st_size=YYYY, ...}) = 0
+CA_CERTS = """\
+subject=/C=US/O=Equifax/OU=Equifax Secure Certificate Authority
+issuer=/C=US/O=Equifax/OU=Equifax Secure Certificate Authority
+-----BEGIN CERTIFICATE-----
+MIIDIDCCAomgAwIBAgIENd70zzANBgkqhkiG9w0BAQUFADBOMQswCQYDVQQGEwJV
+UzEQMA4GA1UEChMHRXF1aWZheDEtMCsGA1UECxMkRXF1aWZheCBTZWN1cmUgQ2Vy
+dGlmaWNhdGUgQXV0aG9yaXR5MB4XDTk4MDgyMjE2NDE1MVoXDTE4MDgyMjE2NDE1
+MVowTjELMAkGA1UEBhMCVVMxEDAOBgNVBAoTB0VxdWlmYXgxLTArBgNVBAsTJEVx
+dWlmYXggU2VjdXJlIENlcnRpZmljYXRlIEF1dGhvcml0eTCBnzANBgkqhkiG9w0B
+AQEFAAOBjQAwgYkCgYEAwV2xWGcIYu6gmi0fCG2RFGiYCh7+2gRvE4RiIcPRfM6f
+BeC4AfBONOziipUEZKzxa1NfBbPLZ4C/QgKO/t0BCezhABRP/PvwDN1Dulsr4R+A
+cJkVV5MW8Q+XarfCaCMczE1ZMKxRHjuvK9buY0V7xdlfUNLjUA86iOe/FP3gx7kC
+AwEAAaOCAQkwggEFMHAGA1UdHwRpMGcwZaBjoGGkXzBdMQswCQYDVQQGEwJVUzEQ
+MA4GA1UEChMHRXF1aWZheDEtMCsGA1UECxMkRXF1aWZheCBTZWN1cmUgQ2VydGlm
+aWNhdGUgQXV0aG9yaXR5MQ0wCwYDVQQDEwRDUkwxMBoGA1UdEAQTMBGBDzIwMTgw
+ODIyMTY0MTUxWjALBgNVHQ8EBAMCAQYwHwYDVR0jBBgwFoAUSOZo+SvSspXXR9gj
+IBBPM5iQn9QwHQYDVR0OBBYEFEjmaPkr0rKV10fYIyAQTzOYkJ/UMAwGA1UdEwQF
+MAMBAf8wGgYJKoZIhvZ9B0EABA0wCxsFVjMuMGMDAgbAMA0GCSqGSIb3DQEBBQUA
+A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
+7qj/WsjTVbJmcVfewCHrPSqnI0kBBIZCe/zuf6IWUrVnZ9NA2zsmWLIodz2uFHdh
+1voqZiegDfqnc1zqcPGUIWVEX/r87yloqaKHee9570+sB3c4
+-----END CERTIFICATE-----
+"""
+# SHA-1 digest of expected public key. See
+# http://www.imperialviolet.org/2011/05/04/pinning.html for the reason behind
+# hashing the public key, not the entire certificate.
+PUBKEY_SHA1 = "c70ccd442ff4528c603aefef85206fd693990e09".decode("hex")
 
 def get_external_ip():
     f = urlopen(urlparse.urlunparse(("https", FRONT_DOMAIN, "/ip", "", "", "")))
@@ -96,6 +140,19 @@ def format_addr(addr):
         result += u":%d" % port
     return result
 
+def get_state_dir():
+    """Get a directory where we can put temporary files. Returns None if any
+    suitable temporary directory will do."""
+    pt_dir = os.environ.get("TOR_PT_STATE_LOCATION")
+    if pt_dir is None:
+        return None
+    try:
+        os.makedirs(pt_dir)
+    except OSError, e:
+        if e.errno != errno.EEXIST:
+            raise
+    return pt_dir
+
 def generate_url(addr):
     if getattr(sys, "frozen", False):
         script_dir = os.path.dirname(sys.executable)
@@ -113,10 +170,45 @@ def generate_url(addr):
     stdout, stderr = p.communicate()
     return stdout.strip()
 
+# Certificate validation and pinning for urllib2. Inspired by
+# http://web.archive.org/web/20110125104752/http://www.muchtooscrawled.com/2010/03/https-certificate-verification-in-python-with-urllib2/.
+
+class PinHTTPSConnection(httplib.HTTPSConnection):
+    def connect(self):
+        sock = socket.create_connection((self.host, self.port), self.timeout, self.source_address)
+        if self._tunnel_host:
+            self.sock = sock
+            self._tunnel()
+
+        ca_certs_fd, ca_certs_path = tempfile.mkstemp(prefix="flashproxy-reg-appspot-",
+            dir=get_state_dir(), suffix=".crt")
+        try:
+            os.write(ca_certs_fd, CA_CERTS)
+            os.close(ca_certs_fd)
+            self.sock = ssl.wrap_socket(sock, ssl_version=ssl.PROTOCOL_TLSv1,
+                cert_reqs=ssl.CERT_REQUIRED, ca_certs=ca_certs_path)
+        finally:
+            os.unlink(ca_certs_path)
+
+        # Check that the public key is what we expect.
+        cert_der = self.sock.getpeercert(binary_form=True)
+        cert = X509.load_cert_string(cert_der, format=X509.FORMAT_DER)
+        pubkey_der = cert.get_pubkey().as_der()
+        pubkey_digest = sha1(pubkey_der).digest()
+
+        if pubkey_digest != PUBKEY_SHA1:
+            raise ValueError("Public key does not match pin: got %s but expected %s" %
+                (pubkey_digest.encode("hex"), PUBKEY_SHA1.encode("hex")))
+
+class PinHTTPSHandler(urllib2.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(PinHTTPSConnection, req)
+
 def urlopen(url):
     req = urllib2.Request(url)
     req.add_header("Host", TARGET_DOMAIN)
-    return urllib2.urlopen(req)
+    opener = urllib2.build_opener(PinHTTPSHandler())
+    return opener.open(req)
 
 opt, args = getopt.gnu_getopt(sys.argv[1:], "46h", ["facilitator-pubkey=", "help"])
 for o, a in opt:
@@ -136,6 +228,17 @@ elif len(args) == 1:
     remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 else:
     usage(sys.stderr)
+    sys.exit(1)
+
+if X509 is None:
+    print >> sys.stderr, """\
+This program requires the M2Crypto library, which is not installed.
+
+You can install it using one of the packages at
+http://chandlerproject.org/Projects/MeTooCrypto#Downloads.
+
+On Debian-like systems, use the command "apt-get install python-m2crypto".\
+"""
     sys.exit(1)
 
 if options.address_family != socket.AF_UNSPEC:
