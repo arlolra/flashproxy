@@ -12,7 +12,6 @@ from M2Crypto import RSA, BIO
 
 DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
-DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
 DEFAULT_FACILITATOR_PUBKEY_PEM = """\
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA44Mt8c599/4N2fgu6ppN
@@ -43,7 +42,6 @@ def get_external_ip():
     return ip
 
 class options(object):
-    facilitator_url = None
     facilitator_pubkey_filename = None
 
 def usage(f = sys.stdout):
@@ -53,8 +51,6 @@ Register with a flash proxy facilitator through a Google App Engine app.
 By default the remote address registered is "%(remote_addr)s" (the
 external IP address is guessed).
 
-  -f, --facilitator=URL  register with the given facilitator
-                           (by default "%(fac_url)s").
       --facilitator-pubkey=FILENAME
                          encrypt registrations to the given PEM-formatted
                            public key (default built-in).
@@ -62,7 +58,6 @@ external IP address is guessed).
 """ % {
     "progname": sys.argv[0],
     "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
-    "fac_url": DEFAULT_FACILITATOR_URL,
 }
 
 def parse_addr_spec(spec, defhost = None, defport = None):
@@ -115,13 +110,9 @@ def format_addr(addr):
         result += u":%d" % port
     return result
 
-options.facilitator_url = DEFAULT_FACILITATOR_URL
-
-opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "facilitator-pubkey=", "help"])
+opt, args = getopt.gnu_getopt(sys.argv[1:], "h", ["facilitator-pubkey=", "help"])
 for o, a in opt:
-    if o == "-f" or o == "--facilitator":
-        options.facilitator_url = a
-    elif o == "--facilitator-pubkey":
+    if o == "--facilitator-pubkey":
         options.facilitator_pubkey_filename = a
     elif o == "-h" or o == "--help":
         usage()
