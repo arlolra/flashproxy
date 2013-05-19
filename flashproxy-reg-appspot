@@ -206,7 +206,7 @@ def urlopen(url):
 def get_external_ip():
     f = urlopen(urlparse.urlunparse(("https", FRONT_DOMAIN, "/ip", "", "", "")))
     try:
-        return f.read()
+        return f.read().strip()
     finally:
         f.close()
 
