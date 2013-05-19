@@ -25,7 +25,7 @@ Changes in version 1.0
 
   o Added flashproxy-reg-url to the py2exe instructions in setup.py;
     this lack meant that flashproxy-reg-url was missing from Windows
-    bundles. Patch by Alro Breault. Fixes bug 8840.
+    bundles. Patch by Arlo Breault. Fixes bug 8840.
 
 Changes in version 0.12
   o The new flashproxy-reg-url program prints a URL which, when
