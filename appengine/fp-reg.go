@@ -31,9 +31,8 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	c := appengine.NewContext(r)
-	client := urlfetch.Client(c)
-	_, err := client.Get(BASE + blob)
+	client := urlfetch.Client(appengine.NewContext(r))
+	resp, err := client.Get(BASE + blob)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
