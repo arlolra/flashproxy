@@ -1,6 +1,7 @@
 package fp_reg
 
 import (
+	"io"
 	"net"
 	"net/http"
 	"path"
@@ -37,7 +38,13 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte("Thanks."))
+	for key, values := range resp.Header {
+		for _, value := range values {
+			w.Header().Add(key, value)
+		}
+	}
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, resp.Body)
 }
 
 func init() {
