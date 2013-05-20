@@ -1,7 +1,6 @@
 package fp_reg
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 
@@ -17,7 +16,7 @@ func ipHandler(w http.ResponseWriter, r *http.Request) {
 		remoteAddr = "[" + remoteAddr + "]"
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Fprintf(w, "%s", remoteAddr)
+	w.Write([]byte(remoteAddr))
 }
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +28,7 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprintf(w, "Thanks.")
+	w.Write([]byte("Thanks."))
 }
 
 func init() {
