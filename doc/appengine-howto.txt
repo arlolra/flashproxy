@@ -49,3 +49,8 @@ Password for xxx@gmail.com:
 Uploading the program in this way seems to create the files
 ~/.appcfg_nag and ~/.appcfg_cookies. Running the update command again
 doesn't require you to enter your password again.
+
+Once logged in, you can disable logging for the application. Click
+"Logs" on the left panel. Under "Total Logs Storage", click "Change
+Settings". Enter "0" in the "days of logs" box and click "Save
+Settings".
