@@ -16,6 +16,7 @@ func ipHandler(w http.ResponseWriter, r *http.Request) {
 	if net.ParseIP(remoteAddr).To4() == nil {
 		remoteAddr = "[" + remoteAddr + "]"
 	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	fmt.Fprintf(w, "%s", remoteAddr)
 }
 
