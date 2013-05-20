@@ -30,6 +30,11 @@ Changes in version 1.0
   o Enabled HTTP Strict Transport Security (HSTS) on the facilitator.
     Patch by Eduardo Stalinho. Fixes bug 8772.
 
+  o Added a new "appspot" registration method, which is now the first
+    registration method tried, ahead of "email". "appspot" sends
+    registrations through Google App Engine. Patch by Arlo Breault and
+    David Fifield. Fixes bug 8860.
+
 Changes in version 0.12
   o The new flashproxy-reg-url program prints a URL which, when
     requested, causes an address to be registered with the facilitator.
