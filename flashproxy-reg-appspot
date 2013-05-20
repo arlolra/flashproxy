@@ -26,7 +26,7 @@ DEFAULT_REMOTE_PORT = 9000
 # The domain to which requests appear to go.
 FRONT_DOMAIN = "www.google.com"
 # The value of the Host header within requests.
-TARGET_DOMAIN = "flashproxy-reg.appspot.com"
+TARGET_DOMAIN = "fp-reg-a.appspot.com"
 
 FLASHPROXY_REG_URL = "flashproxy-reg-url"
 
