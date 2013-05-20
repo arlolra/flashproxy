@@ -10,6 +10,11 @@ import (
 
 const BASE = "https://fp-facilitator.org/reg/"
 
+func robotsTxtHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Write([]byte("User-agent: *\nDisallow:\n"))
+}
+
 func ipHandler(w http.ResponseWriter, r *http.Request) {
 	remoteAddr := r.RemoteAddr
 	if net.ParseIP(remoteAddr).To4() == nil {
@@ -32,6 +37,7 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func init() {
+	http.HandleFunc("/robots.txt", robotsTxtHandler)
 	http.HandleFunc("/ip", ipHandler)
 	http.HandleFunc("/reg/", regHandler)
 }
