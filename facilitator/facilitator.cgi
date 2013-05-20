@@ -43,7 +43,7 @@ def url_reg(reg):
             output_status(204)
         else:
             exit_error(400)
-    except:
+    except Exception:
         exit_error(500)
 
 def do_head():
@@ -60,7 +60,7 @@ def do_get():
     elif len(path_parts) == 0:
         try:
             reg = fac.get_reg(FACILITATOR_ADDR, remote_addr) or ""
-        except:
+        except Exception:
             exit_error(500)
         # Allow XMLHttpRequest from any domain. http://www.w3.org/TR/cors/.
         print """\
