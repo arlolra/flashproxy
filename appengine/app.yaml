@@ -4,6 +4,6 @@ runtime: go
 api_version: go1
 
 handlers:
-- url: /(ip|reg/.+)
+- url: /.*
   script: _go_app
   secure: always
