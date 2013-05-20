@@ -3,6 +3,7 @@ package fp_reg
 import (
 	"net"
 	"net/http"
+	"path"
 
 	"appengine"
 	"appengine/urlfetch"
@@ -25,8 +26,12 @@ func ipHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func regHandler(w http.ResponseWriter, r *http.Request) {
+	dir, blob := path.Split(path.Clean(r.URL.Path))
+	if dir != "/reg/" {
+		http.NotFound(w, r)
+		return
+	}
 	c := appengine.NewContext(r)
-	blob := r.URL.Path[5:]
 	client := urlfetch.Client(c)
 	_, err := client.Get(BASE + blob)
 	if err != nil {
