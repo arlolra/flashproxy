@@ -336,7 +336,7 @@ while True:
     try:
         imap.close()
         imap.logout()
-    except imaplib.IMAP4.abort:
+    except (imaplib.IMAP4.abort, imaplib.IMAP4.error):
         pass
 
     # Don't reconnect too fast.
