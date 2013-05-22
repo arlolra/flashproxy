@@ -34,6 +34,11 @@ PT_BUNDLE_GNULINUX_X86_64 = tor-pluggable-transports-browser-gnu-linux-x86_64-$(
 
 all:
 	@echo "Try one of these:"
+	@echo $$'\tmake fetch-windows'
+	@echo $$'\tmake fetch-macosx-i686'
+	@echo $$'\tmake fetch-gnulinux-i686'
+	@echo $$'\tmake fetch-gnulinux-x86_64'
+	@echo
 	@echo $$'\tmake windows'
 	@echo $$'\tmake macosx-i686'
 	@echo $$'\tmake gnulinux-i686'
@@ -45,6 +50,11 @@ all:
 	@echo "Or on Windows:"
 	@echo $$'\t"make dist-exe" in the flashproxy directory'
 	@echo $$'\t"/cygdrive/c/Python27/python setup_py2exe.py py2exe" in the obfsproxy directory'
+
+fetch-windows: checksig-$(BUNDLE_WINDOWS)
+fetch-macosx-i686: checksig-$(BUNDLE_MACOSX_I686)
+fetch-gnulinux-i686: checksig-$(BUNDLE_GNULINUX_I686)
+fetch-gnulinux-x86_64: checksig-$(BUNDLE_GNULINUX_X86_64)
 
 windows: $(PT_BUNDLE_WINDOWS)
 macosx-i686: $(PT_BUNDLE_MACOSX_I686)
@@ -63,9 +73,11 @@ $(PT_BUNDLE_GNULINUX_X86_64): BUNDLE_GNULINUX = $(BUNDLE_GNULINUX_X86_64)
 
 $(PT_BUNDLE_WINDOWS): TBBDIR = $(WORKDIR)/Tor Browser
 $(PT_BUNDLE_WINDOWS):
-	# Download and check signature.
-	$(MAKE) checksig-$(BUNDLE_WINDOWS)
-
+	@if [ ! -f "$(BUNDLE_WINDOWS)" ]; then \
+		echo "$(BUNDLE_WINDOWS) is missing."; \
+		echo "Run \"make fetch-windows\"."; \
+		false; \
+	fi
 	rm -rf "$(WORKDIR)"
 	mkdir -p "$(WORKDIR)"
 	"$(P7Z)" x -o"$(WORKDIR)" "$(BUNDLE_WINDOWS)"
@@ -85,9 +97,11 @@ $(PT_BUNDLE_WINDOWS):
 
 $(PT_BUNDLE_MACOSX_I686): TBBDIR = $(WORKDIR)/TorBrowser_en-US.app
 $(PT_BUNDLE_MACOSX_I686):
-	# Download and check signature.
-	$(MAKE) checksig-$(BUNDLE_MACOSX_I686)
-
+	@if [ ! -f "$(BUNDLE_MACOSX_I686)" ]; then \
+		echo "$(BUNDLE_MACOSX_I686) is missing."; \
+		echo "Run \"make fetch-macosx-i686\"."; \
+		false; \
+	fi
 	rm -rf "$(WORKDIR)"
 	mkdir -p "$(WORKDIR)"
 	unzip "$(BUNDLE_MACOSX_I686)" -d "$(WORKDIR)"
@@ -111,9 +125,11 @@ $(PT_BUNDLE_MACOSX_I686):
 # Shared GNU/Linux 32-bit and 64-bit target.
 $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64): TBBDIR = $(WORKDIR)/tor-browser_en-US
 $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
-	# Download and check signature.
-	$(MAKE) checksig-$(BUNDLE_GNULINUX)
-
+	@if [ ! -f "$(BUNDLE_GNULINUX)" ]; then \
+		echo "$(BUNDLE_GNULINUX) is missing."; \
+		echo "Run \"make fetch-gnulinux-i686\" or \"make fetch gnulinux-i86_64\"."; \
+		false; \
+	fi
 	rm -rf "$(WORKDIR)"
 	mkdir -p "$(WORKDIR)"
 	tar zxf "$(BUNDLE_GNULINUX)" -C "$(WORKDIR)"
