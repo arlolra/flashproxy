@@ -44,7 +44,7 @@ all:
 	@echo $$'\t"make dist" in the flashproxy directory'
 	@echo "Or on Windows:"
 	@echo $$'\t"make dist-exe" in the flashproxy directory'
-	@echo $$'\t"python setup_py2exe.py py2exe" in the obfsproxy directory'
+	@echo $$'\t"/cygdrive/c/Python27/python setup_py2exe.py py2exe" in the obfsproxy directory'
 
 windows: $(PT_BUNDLE_WINDOWS)
 macosx-i686: $(PT_BUNDLE_MACOSX_I686)
