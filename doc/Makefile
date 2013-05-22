@@ -6,9 +6,9 @@ FLASHPROXY_HOME = $(HOME)/flashproxy
 FLASHPROXY_VERSION = 1.0
 FLASHPROXY_DIST = $(FLASHPROXY_HOME)/dist/flashproxy-client-$(FLASHPROXY_VERSION)
 FLASHPROXY_DIST_WIN32 = $(FLASHPROXY_HOME)/dist/flashproxy-client-$(FLASHPROXY_VERSION)-win32
-PYOBFSPROXY_HOME = $(HOME)/pyobfsproxy
-PYOBFSPROXY_DIST = $(PYOBFSPROXY_HOME)
-PYOBFSPROXY_DIST_WIN32 = $(PYOBFSPROXY_HOME)/py2exe_bundle/dist
+OBFSPROXY_HOME = $(HOME)/obfsproxy
+OBFSPROXY_DIST = $(OBFSPROXY_HOME)
+OBFSPROXY_DIST_WIN32 = $(OBFSPROXY_HOME)/py2exe_bundle/dist
 MACOSX_BUNDLE_ROOT = $(HOME)/bundle
 
 P7Z = /cygdrive/c/Program Files (x86)/7-Zip/7z
@@ -44,7 +44,7 @@ all:
 	@echo $$'\t"make dist" in the flashproxy directory'
 	@echo "Or on Windows:"
 	@echo $$'\t"make dist-exe" in the flashproxy directory'
-	@echo $$'\t"python setup_py2exe.py py2exe" in the pyobfsproxy directory'
+	@echo $$'\t"python setup_py2exe.py py2exe" in the obfsproxy directory'
 
 windows: $(PT_BUNDLE_WINDOWS)
 macosx-i686: $(PT_BUNDLE_MACOSX_I686)
@@ -73,9 +73,9 @@ $(PT_BUNDLE_WINDOWS):
 	cp -nr "$(FLASHPROXY_DIST_WIN32)"/{*.pyd,*.dll,*.exe,*.zip} "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST_WIN32)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Docs/FlashProxy
-	cp -nr "$(PYOBFSPROXY_DIST_WIN32)"/{*.pyd,*.dll,*.exe,*.zip} "$(TBBDIR)"/App
+	cp -nr "$(OBFSPROXY_DIST_WIN32)"/{*.pyd,*.dll,*.exe,*.zip} "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/PyObfsproxy
-	cp "$(PYOBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/PyObfsproxy
+	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/PyObfsproxy
 
 	cat bundle-torrc-windows >> "$(TBBDIR)"/Data/Tor/torrc
 
@@ -96,11 +96,11 @@ $(PT_BUNDLE_MACOSX_I686):
 	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/M2Crypto "$(TBBDIR)"/Contents/MacOS
 	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Contents/Resources/Docs/FlashProxy
-	cp -r "$(PYOBFSPROXY_DIST)"/{obfsproxy,bin/pyobfsproxy} "$(TBBDIR)"/Contents/MacOs
+	cp -r "$(OBFSPROXY_DIST)"/{obfsproxy,bin/obfsproxy} "$(TBBDIR)"/Contents/MacOs
 	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/{Crypto,pyptlib} "$(TBBDIR)"/Contents/MacOS
 	cp "$(MACOSX_BUNDLE_ROOT)"/argparse-1.2.1/argparse.py "$(TBBDIR)"/Contents/MacOS
 	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/PyObfsproxy
-	cp "$(PYOBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Contents/Resources/Docs/PyObfsproxy
+	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Contents/Resources/Docs/PyObfsproxy
 	find "$(TBBDIR)"/Contents/MacOS -name '*.pyc' | xargs rm -f
 
 	cat bundle-torrc-macosx >> "$(TBBDIR)"/Library/Vidalia/torrc
@@ -122,12 +122,12 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 	cp -rL /usr/lib/pymodules/python2.6/M2Crypto "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Docs/FlashProxy
-	cp -rL "$(PYOBFSPROXY_DIST)"/{obfsproxy,bin/pyobfsproxy} "$(TBBDIR)"/App
+	cp -rL "$(OBFSPROXY_DIST)"/{obfsproxy,bin/obfsproxy} "$(TBBDIR)"/App
 	cp -rL /usr/lib/python2.6/dist-packages/{Crypto,twisted,zope} "$(TBBDIR)"/App
 	cp -rL /usr/lib/pymodules/python2.6/argparse.py "$(TBBDIR)"/App
 	cp -rL /usr/local/lib/python2.6/dist-packages/pyptlib "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/PyObfsproxy
-	cp "$(PYOBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/PyObfsproxy
+	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/PyObfsproxy
 	find "$(TBBDIR)"/App -name '*.pyc' | xargs rm -f
 
 	cat bundle-torrc-gnulinux >> "$(TBBDIR)"/Data/Tor/torrc
