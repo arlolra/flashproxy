@@ -1,9 +1,3 @@
-This document describes how to build a Tor Browser bundle for Mac OS X
-that is preconfigured to use the pyobfsproxy and flashproxy transports.
-Because Macs have Python preinstalled, we include the Python source of
-the programs. Exceptions to this are the M2Crypto and PyCrypto libraries,
-which have some compiled components.
-
 == Dependencies
 
 === SWIG
