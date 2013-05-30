@@ -19,7 +19,7 @@ import (
 )
 
 const ptMethodName = "websocket"
-const socksTimeout = 2
+const socksTimeout = 2 * time.Second
 const bufSiz = 1500
 
 // When a connection handler starts, +1 is written to this channel; when it
@@ -113,7 +113,7 @@ func handleConnection(conn *net.TCPConn) error {
 
 	var ws *websocket.Conn
 
-	conn.SetDeadline(time.Now().Add(socksTimeout * time.Second))
+	conn.SetDeadline(time.Now().Add(socksTimeout))
 	err := AwaitSocks4aConnect(conn, func(dest string) (*net.TCPAddr, error) {
 		// Disable deadline.
 		conn.SetDeadline(time.Time{})
