@@ -202,11 +202,11 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 
 func main() {
 	var logFilename string
-	var defaultPort int
+	var port int
 
 	flag.Usage = usage
 	flag.StringVar(&logFilename, "log", "", "log file to write to")
-	flag.IntVar(&defaultPort, "port", 0, "port to listen on if unspecified by Tor")
+	flag.IntVar(&port, "port", 0, "port to listen on if unspecified by Tor")
 	flag.Parse()
 
 	if logFilename != "" {
@@ -226,8 +226,8 @@ func main() {
 		// Override tor's requested port (which is 0 if this transport
 		// has not been run before) with the one requested by the --port
 		// option.
-		if defaultPort != 0 {
-			bindAddr.Addr.Port = defaultPort
+		if port != 0 {
+			bindAddr.Addr.Port = port
 		}
 
 		ln, err := startListener(bindAddr.Addr)
