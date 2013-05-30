@@ -273,7 +273,7 @@ func (ws *Websocket) WriteMessage(opcode byte, payload []byte) (err error) {
 	return ws.WriteFrame(opcode, payload)
 }
 
-// Split a strong on commas and trim whitespace.
+// Split a string on commas and trim whitespace.
 func commaSplit(s string) []string {
 	var result []string
 	if strings.TrimSpace(s) == "" {
