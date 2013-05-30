@@ -22,9 +22,13 @@ const ptMethodName = "websocket"
 const socksTimeout = 2 * time.Second
 const bufSiz = 1500
 
+var logFile = os.Stderr
+
 // When a connection handler starts, +1 is written to this channel; when it
 // ends, -1 is written.
 var handlerChan = make(chan int)
+
+var logMutex sync.Mutex
 
 func usage() {
 	fmt.Printf("Usage: %s [OPTIONS]\n", os.Args[0])
@@ -32,11 +36,16 @@ func usage() {
 	fmt.Printf("Works only as a managed proxy.\n")
 	fmt.Printf("\n")
 	fmt.Printf("  -h, --help    show this help.\n")
+	fmt.Printf("  --log FILE    log messages to FILE (default stderr).\n")
 	fmt.Printf("  --socks ADDR  listen for SOCKS on ADDR.\n")
 }
 
-func logDebug(format string, v ...interface{}) {
-	fmt.Fprintf(os.Stderr, format+"\n", v...)
+func Log(format string, v ...interface{}) {
+	dateStr := time.Now().Format("2006-01-02 15:04:05")
+	logMutex.Lock()
+	defer logMutex.Unlock()
+	msg := fmt.Sprintf(format, v...)
+	fmt.Fprintf(logFile, "%s %s\n", dateStr, msg)
 }
 
 func proxy(local *net.TCPConn, ws *websocket.Conn) {
@@ -63,7 +72,7 @@ func proxy(local *net.TCPConn, ws *websocket.Conn) {
 			}
 		}
 		if err != nil && err != io.EOF {
-			logDebug("%s", err)
+			Log("%s", err)
 		}
 		local.CloseRead()
 		ws.Close()
@@ -92,7 +101,7 @@ func proxy(local *net.TCPConn, ws *websocket.Conn) {
 			}
 		}
 		if err != nil && err != io.EOF {
-			logDebug("%s", err)
+			Log("%s", err)
 		}
 		local.CloseWrite()
 		ws.Close()
@@ -117,7 +126,7 @@ func handleConnection(conn *net.TCPConn) error {
 	err := AwaitSocks4aConnect(conn, func(dest string) (*net.TCPAddr, error) {
 		// Disable deadline.
 		conn.SetDeadline(time.Time{})
-		logDebug("SOCKS request for %s", dest)
+		Log("SOCKS request for %s", dest)
 		destAddr, err := net.ResolveTCPAddr("tcp", dest)
 		if err != nil {
 			return nil, err
@@ -127,7 +136,7 @@ func handleConnection(conn *net.TCPConn) error {
 		if err != nil {
 			return nil, err
 		}
-		logDebug("WebSocket connection to %s", ws.Config().Location.String())
+		Log("WebSocket connection to %s", ws.Config().Location.String())
 		return destAddr, nil
 	})
 	if err != nil {
@@ -147,7 +156,7 @@ func socksAcceptLoop(ln *net.TCPListener) error {
 		go func() {
 			err := handleConnection(socks)
 			if err != nil {
-				logDebug("SOCKS from %s: %s", socks.RemoteAddr(), err)
+				Log("SOCKS from %s: %s", socks.RemoteAddr(), err)
 			}
 		}()
 	}
@@ -166,7 +175,7 @@ func startListener(addrStr string) (*net.TCPListener, error) {
 	go func() {
 		err := socksAcceptLoop(ln)
 		if err != nil {
-			logDebug("accept: %s", err)
+			Log("accept: %s", err)
 		}
 	}()
 	return ln, nil
@@ -175,16 +184,29 @@ func startListener(addrStr string) (*net.TCPListener, error) {
 func main() {
 	var defaultSocksAddrStrs = []string{"127.0.0.1:0"}
 	var socksAddrStrs []string
+	var logFilename string
 
 	var socksArg = flag.String("socks", "", "address on which to listen for SOCKS connections")
 	flag.Usage = usage
+	flag.StringVar(&logFilename, "log", "", "log file to write to")
 	flag.Parse()
+
+	if logFilename != "" {
+		f, err := os.OpenFile(logFilename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Can't open log file %q: %s.\n", logFilename, err.Error())
+			os.Exit(1)
+		}
+		logFile = f
+	}
+
 	if *socksArg != "" {
 		socksAddrStrs = []string{*socksArg}
 	} else {
 		socksAddrStrs = defaultSocksAddrStrs
 	}
 
+	Log("starting")
 	PtClientSetup([]string{ptMethodName})
 
 	listeners := make([]*net.TCPListener, 0)
@@ -194,6 +216,7 @@ func main() {
 			PtCmethodError(ptMethodName, err.Error())
 		}
 		PtCmethod(ptMethodName, "socks4", ln.Addr())
+		Log("listening on %s", ln.Addr().String())
 		listeners = append(listeners, ln)
 	}
 	PtCmethodsDone()
@@ -208,7 +231,7 @@ func main() {
 		case n := <-handlerChan:
 			numHandlers += n
 		case <-signalChan:
-			logDebug("SIGINT")
+			Log("SIGINT")
 			sigint = true
 		}
 	}
@@ -223,7 +246,7 @@ func main() {
 		case n := <-handlerChan:
 			numHandlers += n
 		case <-signalChan:
-			logDebug("SIGINT")
+			Log("SIGINT")
 			sigint = true
 		}
 	}
