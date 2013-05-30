@@ -71,9 +71,9 @@ Clone and build the flashproxy source.
 	$ cd flashproxy
 	$ make dist
 
-Clone pyobfsproxy.
+Clone obfsproxy.
 
-	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
+	$ git clone https://git.torproject.org/pluggable-transports/obfsproxy.git
 
 Enter the doc directory and edit the top of Makefile to set the version
 numbers you want to use.

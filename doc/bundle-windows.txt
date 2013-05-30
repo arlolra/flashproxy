@@ -117,7 +117,7 @@ fe4807b4698ec89f82de7d85d32deaa4c772fc871537e31fb0fccf4473455cb8 7z920.msi
 
 === PyCrypto
 
-This is a dependency of pyobfsproxy and Twisted.
+This is a dependency of obfsproxy and Twisted.
 
 https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz
 https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.tar.gz.asc
@@ -174,10 +174,10 @@ Clone and build the flashproxy source.
 	$ cd flashproxy
 	$ make dist-exe PYTHON=/cygdrive/c/Python27/python
 
-Clone pyobfsproxy and run py2exe on it.
+Clone obfsproxy and run py2exe on it.
 
-	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
-	$ cd pyobfsproxy
+	$ git clone https://git.torproject.org/pluggable-transports/obfsproxy.git
+	$ cd obfsproxy
 	$ /cygdrive/c/Python27/python.exe setup_py2exe.py py2exe
 
 Enter the doc directory and edit the top of Makefile to set the version

@@ -86,8 +86,8 @@ $(PT_BUNDLE_WINDOWS):
 	mkdir -p "$(TBBDIR)"/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST_WIN32)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Docs/FlashProxy
 	cp -nr "$(OBFSPROXY_DIST_WIN32)"/{*.pyd,*.dll,*.exe,*.zip} "$(TBBDIR)"/App
-	mkdir -p "$(TBBDIR)"/Docs/PyObfsproxy
-	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/PyObfsproxy
+	mkdir -p "$(TBBDIR)"/Docs/Obfsproxy
+	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/Obfsproxy
 
 	cat bundle-torrc-windows >> "$(TBBDIR)"/Data/Tor/torrc
 
@@ -114,8 +114,8 @@ $(PT_BUNDLE_MACOSX_I686):
 	cp -r "$(OBFSPROXY_DIST)"/bin/obfsproxy "$(TBBDIR)"/Contents/MacOs/obfsproxy.bin
 	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/{Crypto,pyptlib} "$(TBBDIR)"/Contents/MacOS
 	cp "$(MACOSX_BUNDLE_ROOT)"/argparse-1.2.1/argparse.py "$(TBBDIR)"/Contents/MacOS
-	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/PyObfsproxy
-	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Contents/Resources/Docs/PyObfsproxy
+	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/Obfsproxy
+	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Contents/Resources/Docs/Obfsproxy
 	find "$(TBBDIR)"/Contents/MacOS -name '*.pyc' | xargs rm -f
 
 	cat bundle-torrc-macosx >> "$(TBBDIR)"/Library/Vidalia/torrc
@@ -144,8 +144,8 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 	cp -rL /usr/lib/python2.6/dist-packages/{Crypto,twisted,zope} "$(TBBDIR)"/App
 	cp -rL /usr/lib/pymodules/python2.6/argparse.py "$(TBBDIR)"/App
 	cp -rL /usr/local/lib/python2.6/dist-packages/pyptlib "$(TBBDIR)"/App
-	mkdir -p "$(TBBDIR)"/Docs/PyObfsproxy
-	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/PyObfsproxy
+	mkdir -p "$(TBBDIR)"/Docs/Obfsproxy
+	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/Obfsproxy
 	find "$(TBBDIR)"/App -name '*.pyc' | xargs rm -f
 
 	cat bundle-torrc-gnulinux >> "$(TBBDIR)"/Data/Tor/torrc

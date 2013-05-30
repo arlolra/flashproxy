@@ -81,9 +81,9 @@ Clone and build the flashproxy source.
 	$ cd flashproxy
 	$ make dist
 
-Clone pyobfsproxy.
+Clone obfsproxy.
 
-	$ git clone https://git.torproject.org/pluggable-transports/pyobfsproxy.git
+	$ git clone https://git.torproject.org/pluggable-transports/obfsproxy.git
 
 Update your Debian.
 
