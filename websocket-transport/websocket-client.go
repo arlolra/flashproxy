@@ -25,6 +25,15 @@ const bufSiz = 1500
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
+func usage() {
+	fmt.Printf("Usage: %s [OPTIONS]\n", os.Args[0])
+	fmt.Printf("WebSocket client pluggable transport for Tor.\n")
+	fmt.Printf("Works only as a managed proxy.\n")
+	fmt.Printf("\n")
+	fmt.Printf("  -h, --help    show this help.\n")
+	fmt.Printf("  --socks ADDR  listen for SOCKS on ADDR.\n")
+}
+
 func logDebug(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
 }
@@ -168,6 +177,7 @@ func main() {
 	var socksAddrStrs []string
 
 	var socksArg = flag.String("socks", "", "address on which to listen for SOCKS connections")
+	flag.Usage = usage
 	flag.Parse()
 	if *socksArg != "" {
 		socksAddrStrs = []string{*socksArg}
