@@ -182,13 +182,13 @@ func startListener(addrStr string) (*net.TCPListener, error) {
 }
 
 func main() {
-	var defaultSocksAddrStrs = []string{"127.0.0.1:0"}
-	var socksAddrStrs []string
 	var logFilename string
+	var socksAddrStrs = []string{"127.0.0.1:0"}
+	var socksArg string
 
-	var socksArg = flag.String("socks", "", "address on which to listen for SOCKS connections")
 	flag.Usage = usage
 	flag.StringVar(&logFilename, "log", "", "log file to write to")
+	flag.StringVar(&socksArg, "socks", "", "address on which to listen for SOCKS connections")
 	flag.Parse()
 
 	if logFilename != "" {
@@ -200,10 +200,8 @@ func main() {
 		logFile = f
 	}
 
-	if *socksArg != "" {
-		socksAddrStrs = []string{*socksArg}
-	} else {
-		socksAddrStrs = defaultSocksAddrStrs
+	if socksArg != "" {
+		socksAddrStrs = []string{socksArg}
 	}
 
 	Log("starting")
