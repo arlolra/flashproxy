@@ -201,12 +201,12 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 }
 
 func main() {
-	var defaultPort int
 	var logFilename string
+	var defaultPort int
 
 	flag.Usage = usage
-	flag.IntVar(&defaultPort, "port", 0, "port to listen on if unspecified by Tor")
 	flag.StringVar(&logFilename, "log", "", "log file to write to")
+	flag.IntVar(&defaultPort, "port", 0, "port to listen on if unspecified by Tor")
 	flag.Parse()
 
 	if logFilename != "" {
