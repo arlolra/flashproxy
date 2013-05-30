@@ -18,6 +18,7 @@ import (
 	"time"
 )
 
+const ptMethodName = "websocket"
 const socksTimeout = 2
 const bufSiz = 1500
 
@@ -172,7 +173,6 @@ func startListener(addrStr string) (*net.TCPListener, error) {
 }
 
 func main() {
-	const ptMethodName = "websocket"
 	var defaultSocksAddrStrs = []string{"127.0.0.1:0"}
 	var socksAddrStrs []string
 
