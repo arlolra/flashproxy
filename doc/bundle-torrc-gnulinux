@@ -23,4 +23,4 @@ CircuitBuildTimeout 60
 # receive connections from the Internet (the port for which you
 # configured port forwarding).
 ClientTransportPlugin websocket exec ./App/flashproxy-client --register :0 :9000
-ClientTransportPlugin obfs2,obfs3 exec ./App/pyobfsproxy managed
+ClientTransportPlugin obfs2,obfs3 exec ./App/obfsproxy.bin managed

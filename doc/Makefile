@@ -110,7 +110,8 @@ $(PT_BUNDLE_MACOSX_I686):
 	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/M2Crypto "$(TBBDIR)"/Contents/MacOS
 	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Contents/Resources/Docs/FlashProxy
-	cp -r "$(OBFSPROXY_DIST)"/{obfsproxy,bin/obfsproxy} "$(TBBDIR)"/Contents/MacOs
+	cp -r "$(OBFSPROXY_DIST)"/obfsproxy "$(TBBDIR)"/Contents/MacOs
+	cp -r "$(OBFSPROXY_DIST)"/bin/obfsproxy "$(TBBDIR)"/Contents/MacOs/obfsproxy.bin
 	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/{Crypto,pyptlib} "$(TBBDIR)"/Contents/MacOS
 	cp "$(MACOSX_BUNDLE_ROOT)"/argparse-1.2.1/argparse.py "$(TBBDIR)"/Contents/MacOS
 	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/PyObfsproxy
@@ -138,7 +139,8 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 	cp -rL /usr/lib/pymodules/python2.6/M2Crypto "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Docs/FlashProxy
-	cp -rL "$(OBFSPROXY_DIST)"/{obfsproxy,bin/obfsproxy} "$(TBBDIR)"/App
+	cp -rL "$(OBFSPROXY_DIST)"/obfsproxy "$(TBBDIR)"/App
+	cp -rL "$(OBFSPROXY_DIST)"/bin/obfsproxy "$(TBBDIR)"/App/obfsproxy.bin
 	cp -rL /usr/lib/python2.6/dist-packages/{Crypto,twisted,zope} "$(TBBDIR)"/App
 	cp -rL /usr/lib/pymodules/python2.6/argparse.py "$(TBBDIR)"/App
 	cp -rL /usr/local/lib/python2.6/dist-packages/pyptlib "$(TBBDIR)"/App
