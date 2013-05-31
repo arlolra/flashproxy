@@ -1,4 +1,6 @@
 Changes in version 1.1
+  o Programs that use certificate pins now take a --disable-pin option
+    that causes pins to be ignored.
 
 Changes in version 1.0
   o The facilitator runs on a new domain name fp-facilitator.org. Fixes

@@ -59,10 +59,12 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 1voqZiegDfqnc1zqcPGUIWVEX/r87yloqaKHee9570+sB3c4
 -----END CERTIFICATE-----
 """
-# SHA-1 digest of expected public key. See
+# SHA-1 digest of expected public keys. Any of these is valid. See
 # http://www.imperialviolet.org/2011/05/04/pinning.html for the reason behind
 # hashing the public key, not the entire certificate.
-PUBKEY_SHA1 = "c70ccd442ff4528c603aefef85206fd693990e09".decode("hex")
+PUBKEY_SHA1 = tuple(x.decode("hex") for x in (
+    "c70ccd442ff4528c603aefef85206fd693990e09",
+))
 
 class options(object):
     address_family = socket.AF_UNSPEC
@@ -194,9 +196,10 @@ class PinHTTPSConnection(httplib.HTTPSConnection):
         pubkey_der = cert.get_pubkey().as_der()
         pubkey_digest = sha1(pubkey_der).digest()
 
-        if pubkey_digest != PUBKEY_SHA1:
-            raise ValueError("Public key does not match pin: got %s but expected %s" %
-                (pubkey_digest.encode("hex"), PUBKEY_SHA1.encode("hex")))
+        if pubkey_digest not in PUBKEY_SHA1:
+            expected = "(" + ", ".join(x.encode("hex") for x in PUBKEY_SHA1) + ")"
+            raise ValueError("Public key does not match pin: got %s but expected any of %s" %
+                (pubkey_digest.encode("hex"), expected))
 
 class PinHTTPSHandler(urllib2.HTTPSHandler):
     def https_open(self, req):

@@ -57,10 +57,12 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 1voqZiegDfqnc1zqcPGUIWVEX/r87yloqaKHee9570+sB3c4
 -----END CERTIFICATE-----
 """
-# SHA-1 digest of expected public key. See
+# SHA-1 digest of expected public keys. Any of these is valid. See
 # http://www.imperialviolet.org/2011/05/04/pinning.html for the reason behind
 # hashing the public key, not the entire certificate.
-PUBKEY_SHA1 = "69ba4a72fc198b2203ecdf0c75493e4d5300dac9".decode("hex")
+PUBKEY_SHA1 = tuple(x.decode("hex") for x in (
+    "69ba4a72fc198b2203ecdf0c75493e4d5300dac9",
+))
 
 # Registrations are encrypted with this public key before being emailed. Only
 # the facilitator operators should have the corresponding private key. Given a
@@ -262,9 +264,10 @@ try:
     pubkey_der = cert.get_pubkey().as_der()
     pubkey_digest = sha1(pubkey_der).digest()
 
-    if pubkey_digest != PUBKEY_SHA1:
-        raise ValueError("Public key does not match pin: got %s but expected %s" %
-            (pubkey_digest.encode("hex"), PUBKEY_SHA1.encode("hex")))
+    if pubkey_digest not in PUBKEY_SHA1:
+        expected = "(" + ", ".join(x.encode("hex") for x in PUBKEY_SHA1) + ")"
+        raise ValueError("Public key does not match pin: got %s but expected any of %s" %
+            (pubkey_digest.encode("hex"), expected))
 
     smtp.ehlo(EHLO_FQDN)
 
