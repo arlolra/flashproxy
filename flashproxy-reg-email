@@ -87,6 +87,7 @@ class options(object):
     debug = False
     address_family = socket.AF_UNSPEC
     facilitator_pubkey_filename = None
+    use_certificate_pin = True
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -104,6 +105,7 @@ This program requires the M2Crypto library for Python.
   -4                      name lookups use only IPv4.
   -6                      name lookups use only IPv6.
   -d, --debug             enable debugging output (Python smtplib messages).
+      --disable-pin       don't check server public key against a known pin.
   -e, --email=ADDRESS     send mail to ADDRESS (default "%(email_addr)s").
       --facilitator-pubkey=FILENAME
                           encrypt registrations to the given PEM-formatted
@@ -190,7 +192,7 @@ def get_facilitator_pubkey():
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.smtp_addr = (DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:hs:", ["debug", "email=", "facilitator-pubkey=", "help", "smtp="])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:hs:", ["debug", "disable-pin", "email=", "facilitator-pubkey=", "help", "smtp="])
 for o, a in opts:
     if o == "-4":
         options.address_family = socket.AF_INET
@@ -198,6 +200,8 @@ for o, a in opts:
         options.address_family = socket.AF_INET6
     elif o == "-d" or o == "--debug":
         options.debug = True
+    elif o == "--disable-pin":
+        options.use_certificate_pin = False
     elif o == "-e" or o == "--email":
         options.email_addr = a
     elif o == "--facilitator-pubkey":
@@ -264,7 +268,7 @@ try:
     pubkey_der = cert.get_pubkey().as_der()
     pubkey_digest = sha1(pubkey_der).digest()
 
-    if pubkey_digest not in PUBKEY_SHA1:
+    if options.use_certificate_pin and pubkey_digest not in PUBKEY_SHA1:
         expected = "(" + ", ".join(x.encode("hex") for x in PUBKEY_SHA1) + ")"
         raise ValueError("Public key does not match pin: got %s but expected any of %s" %
             (pubkey_digest.encode("hex"), expected))

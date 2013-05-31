@@ -74,6 +74,7 @@ class options(object):
     pid_filename = None
     safe_logging = True
     imaplib_debug = False
+    use_certificate_pin = True
 
 class IMAP4_SSL_REQUIRED(imaplib.IMAP4_SSL):
     """A subclass of of IMAP4_SSL that uses ssl_version=ssl.PROTOCOL_TLSv1 and
@@ -94,6 +95,7 @@ an IMAP server for email messages with client registrations, deletes
 them, and forwards the registrations to the facilitator.
 
   -d, --debug             don't daemonize, log to stdout.
+      --disable-pin       don't check server public key against a known pin.
   -e, --email=ADDRESS     log in as ADDRESS (default "%(email_addr)s").
   -h, --help              show this help.
   -i, --imap=HOST[:PORT]  use the given IMAP server (default "%(imap_addr)s").
@@ -123,11 +125,13 @@ def log(msg):
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.imap_addr = (DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:", ["debug", "email=", "help", "imap=", "imaplib-debug", "log=", "pass=", "pidfile=", "unsafe-logging"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:", ["debug", "disable-pin", "email=", "help", "imap=", "imaplib-debug", "log=", "pass=", "pidfile=", "unsafe-logging"])
 for o, a in opts:
     if o == "-d" or o == "--debug":
         options.daemonize = False
         options.log_filename = None
+    elif o == "--disable-pin":
+        options.use_certificate_pin = False
     elif o == "-e" or o == "--email":
         options.email_addr = a
     elif o == "-h" or o == "--help":
@@ -296,7 +300,7 @@ def imap_login():
     pubkey_der = cert.get_pubkey().as_der()
     pubkey_digest = sha1(pubkey_der).digest()
 
-    if pubkey_digest not in PUBKEY_SHA1:
+    if options.use_certificate_pin and pubkey_digest not in PUBKEY_SHA1:
         expected = "(" + ", ".join(x.encode("hex") for x in PUBKEY_SHA1) + ")"
         raise ValueError("Public key does not match pin: got %s but expected any of %s" %
             (pubkey_digest.encode("hex"), expected))

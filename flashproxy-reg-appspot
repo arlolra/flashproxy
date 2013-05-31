@@ -70,6 +70,7 @@ PUBKEY_SHA1 = tuple(x.decode("hex") for x in (
 class options(object):
     address_family = socket.AF_UNSPEC
     facilitator_pubkey_filename = None
+    use_certificate_pin = True
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -78,12 +79,13 @@ Register with a flash proxy facilitator through a Google App Engine app.
 By default the remote address registered is "%(remote_addr)s" (the
 external IP address is guessed).
 
-  -4          name lookups use only IPv4.
-  -6          name lookups use only IPv6.
+  -4                 name lookups use only IPv4.
+  -6                 name lookups use only IPv6.
+      --disable-pin  don't check server public key against a known pin.
       --facilitator-pubkey=FILENAME
               encrypt registrations to the given PEM-formatted
                 public key (default built-in).
-  -h, --help  show this help.\
+  -h, --help         show this help.\
 """ % {
     "progname": sys.argv[0],
     "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
@@ -197,7 +199,7 @@ class PinHTTPSConnection(httplib.HTTPSConnection):
         pubkey_der = cert.get_pubkey().as_der()
         pubkey_digest = sha1(pubkey_der).digest()
 
-        if pubkey_digest not in PUBKEY_SHA1:
+        if options.use_certificate_pin and pubkey_digest not in PUBKEY_SHA1:
             expected = "(" + ", ".join(x.encode("hex") for x in PUBKEY_SHA1) + ")"
             raise ValueError("Public key does not match pin: got %s but expected any of %s" %
                 (pubkey_digest.encode("hex"), expected))
@@ -219,12 +221,14 @@ def get_external_ip():
     finally:
         f.close()
 
-opt, args = getopt.gnu_getopt(sys.argv[1:], "46h", ["facilitator-pubkey=", "help"])
+opt, args = getopt.gnu_getopt(sys.argv[1:], "46h", ["disable-pin", "facilitator-pubkey=", "help"])
 for o, a in opt:
     if o == "-4":
         options.address_family = socket.AF_INET
     elif o == "-6":
         options.address_family = socket.AF_INET6
+    elif o == "--disable-pin":
+        options.use_certificate_pin = False
     elif o == "--facilitator-pubkey":
         options.facilitator_pubkey_filename = a
     elif o == "-h" or o == "--help":

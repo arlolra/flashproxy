@@ -2,12 +2,12 @@
 .\"     Title: flashproxy-reg-email
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 05/19/2013
+.\"      Date: 05/31/2013
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "FLASHPROXY\-REG\-EMAIL" "1" "05/19/2013" "\ \&" "\ \&"
+.TH "FLASHPROXY\-REG\-EMAIL" "1" "05/31/2013" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -56,6 +56,11 @@ Name lookups use only IPv6\&.
 \fB\-d\fR, \fB\-\-debug\fR
 .RS 4
 Enable debugging output (Python smtplib messages)\&.
+.RE
+.PP
+\fB\-\-disable\-pin\fR
+.RS 4
+Don\(cqt check the server\(cqs public key against a list of known pins\&. You can use this if the server\(cqs public key has changed and this program hasn\(cqt been updated yet\&.
 .RE
 .PP
 \fB\-e\fR, \fB\-\-email\fR=\fIADDRESS\fR

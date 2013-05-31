@@ -41,6 +41,11 @@ OPTIONS
 **-d**, **--debug**::
     Enable debugging output (Python smtplib messages).
 
+**--disable-pin**::
+    Don't check the server's public key against a list of known pins.
+    You can use this if the server's public key has changed and this
+    program hasn't been updated yet.
+
 **-e**, **--email**=__ADDRESS__::
     Send mail to __ADDRESS__ (default is "flashproxyreg.a@gmail.com").
 

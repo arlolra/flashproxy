@@ -30,6 +30,11 @@ Requires the **flashproxy-reg-url** program.
 
 OPTIONS
 -------
+**--disable-pin**::
+    Don't check the server's public key against a list of known pins.
+    You can use this if the server's public key has changed and this
+    program hasn't been updated yet.
+
 **--facilitator-pubkey**=__FILENAME__::
     Encrypt registrations to the given PEM-formatted public key (default built-in).
 
