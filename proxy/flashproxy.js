@@ -668,8 +668,7 @@ function FlashProxy() {
 function ProxyPair(client_addr, relay_addr, rate_limit) {
     var MAX_BUFFER = 10 * 1024 * 1024;
 
-    function log(s)
-    {
+    function log(s) {
         puts(s)
     }
 
@@ -689,8 +688,7 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
 
     /* Return a function that shows an error message and closes the other
        half of a communication pair. */
-    this.make_onerror_callback = function(partner)
-    {
+    this.make_onerror_callback = function(partner) {
         return function(event) {
             var ws = event.target;
 
@@ -747,13 +745,11 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
         this.relay_s.onmessage = this.onmessage_relay_to_client;
     };
 
-    function is_open(ws)
-    {
+    function is_open(ws) {
         return ws.readyState === ws.OPEN;
     }
 
-    function is_closed(ws)
-    {
+    function is_closed(ws) {
         return ws.readyState === ws.CLOSED;
     }
 
