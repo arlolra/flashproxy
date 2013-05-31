@@ -686,18 +686,34 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
     this.complete_callback = function() {
     };
 
-    /* Return a function that shows an error message and closes the other
-       half of a communication pair. */
-    this.make_onerror_callback = function(partner) {
-        return function(event) {
-            var ws = event.target;
+    this.connect = function() {
+        log("Client: connecting.");
+        this.client_s = make_websocket(this.client_addr);
 
-            log(ws.label + ": error.");
-            partner.close();
-        }.bind(this);
+        /* Try to connect to the client first (since that is more likely to
+           fail) and only after that try to connect to the relay. */
+        this.client_s.label = "Client";
+        this.client_s.onopen = this.client_onopen_callback;
+        this.client_s.onclose = this.onclose_callback;
+        this.client_s.onerror = this.onerror_callback;
+        this.client_s.onmessage = this.onmessage_client_to_relay;
     };
 
-    this.onopen_callback = function(event) {
+    this.client_onopen_callback = function(event) {
+        var ws = event.target;
+
+        log(ws.label + ": connected.");
+        log("Relay: connecting.");
+        this.relay_s = make_websocket(this.relay_addr);
+
+        this.relay_s.label = "Relay";
+        this.relay_s.onopen = this.relay_onopen_callback;
+        this.relay_s.onclose = this.onclose_callback;
+        this.relay_s.onerror = this.onerror_callback;
+        this.relay_s.onmessage = this.onmessage_relay_to_client;
+    }.bind(this);
+
+    this.relay_onopen_callback = function(event) {
         var ws = event.target;
 
         log(ws.label + ": connected.");
@@ -715,6 +731,13 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
         }
     }.bind(this);
 
+    this.onerror_callback = function(event) {
+        var ws = event.target;
+
+        log(ws.label + ": error.");
+        this.close();
+    }.bind(this);
+
     this.onmessage_client_to_relay = function(event) {
         this.c2r_schedule.push(event.data);
         this.flush();
@@ -725,37 +748,19 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
         this.flush();
     }.bind(this);
 
-    this.connect = function() {
-        log("Client: connecting.");
-        this.client_s = make_websocket(this.client_addr);
-
-        log("Relay: connecting.");
-        this.relay_s = make_websocket(this.relay_addr);
-
-        this.client_s.label = "Client";
-        this.client_s.onopen = this.onopen_callback;
-        this.client_s.onclose = this.onclose_callback;
-        this.client_s.onerror = this.make_onerror_callback(this.relay_s);
-        this.client_s.onmessage = this.onmessage_client_to_relay;
-
-        this.relay_s.label = "Relay";
-        this.relay_s.onopen = this.onopen_callback;
-        this.relay_s.onclose = this.onclose_callback;
-        this.relay_s.onerror = this.make_onerror_callback(this.client_s);
-        this.relay_s.onmessage = this.onmessage_relay_to_client;
-    };
-
     function is_open(ws) {
-        return ws.readyState === ws.OPEN;
+        return ws !== undefined && ws.readyState === ws.OPEN;
     }
 
     function is_closed(ws) {
-        return ws.readyState === ws.CLOSED;
+        return ws === undefined || ws.readyState === ws.CLOSED;
     }
 
     this.close = function() {
-        this.client_s.close();
-        this.relay_s.close();
+        if (!is_closed(this.client_s))
+            this.client_s.close();
+        if (!is_closed(this.relay_s))
+            this.relay_s.close();
     };
 
     /* Send as much data as the rate limit currently allows. */
