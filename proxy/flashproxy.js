@@ -522,6 +522,7 @@ function FlashProxy() {
         }
         if (client_addr !== undefined && relay_addr !== undefined) {
             this.begin_proxy(client_addr, relay_addr);
+            return;
         } else if (client_addr !== undefined) {
             puts("Error: the \"client\" parameter requires \"relay\" also.")
             this.die();
