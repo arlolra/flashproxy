@@ -1,0 +1,29 @@
+== Headless flash proxies with node.js
+
+Traditionally, flash proxies have run in the browser. However, it may be
+desirable to run them as background daemons. This directory contains a main.js
+file which wraps the regular flashproxy.js (symlinked here) and runs
+headlessly from node.js.
+
+To install the requirements (known to be in Debian testing and Ubuntu universe),
+
+    > apt-get install git nodejs npm
+
+Then, if you've checked out the flashproxy source from git,
+
+    > git clone https://git.torproject.org/flashproxy.git
+    > cd flashproxy/modules/nodejs
+    > npm install
+    > npm start  # or, node main.js
+
+This package is also being published on the npm registry. To add a `flashproxy`
+bin to your path without checking out from git, at any time run,
+
+    > npm install -g flashproxy
+    > flashproxy
+
+Rather than install globally, you can also,
+
+    > cd ~/  # or, to the dir of your choice
+    > npm install flashproxy
+    > npm start flashproxy  # or, node node_modules/flashproxy
