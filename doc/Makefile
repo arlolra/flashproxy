@@ -70,7 +70,7 @@ $(PT_BUNDLE_GNULINUX_X86_64): WORKDIR = work/gnulinux-x86_64-$(PT_BUNDLE_VERSION
 $(PT_BUNDLE_GNULINUX_X86_64): BUNDLE_GNULINUX = $(BUNDLE_GNULINUX_X86_64)
 
 $(PT_BUNDLE_WINDOWS): TBBDIR = $(WORKDIR)/Tor Browser
-$(PT_BUNDLE_WINDOWS): export PYTHONPATH := $(shell cygpath --absolute --windows "$(PYPTLIB_WORK)"/build)
+$(PT_BUNDLE_WINDOWS): export PYTHONPATH = $(shell cygpath --absolute --windows "$(PYPTLIB_WORK)"/build)
 $(PT_BUNDLE_WINDOWS):
 	@if [ ! -f "$(BUNDLE_WINDOWS)" ]; then \
 		echo "$(BUNDLE_WINDOWS) is missing."; \
