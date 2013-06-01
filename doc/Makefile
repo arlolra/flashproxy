@@ -2,13 +2,14 @@ BUNDLE_VERSION = 2.4.12
 BUNDLE_RELEASE = alpha-2
 PT_BUNDLE_RELEASE = pt1
 
-FLASHPROXY_HOME = $(HOME)/flashproxy
 FLASHPROXY_VERSION = 1.0
-FLASHPROXY_DIST = $(FLASHPROXY_HOME)/dist/flashproxy-client-$(FLASHPROXY_VERSION)
+FLASHPROXY_HOME = $(HOME)/flashproxy
+FLASHPROXY_WORK = $(WORKDIR)/flashproxy
+FLASHPROXY_DIST = $(FLASHPROXY_WORK)/dist/flashproxy-client-$(FLASHPROXY_VERSION)
 FLASHPROXY_DIST_WIN32 = $(FLASHPROXY_HOME)/dist/flashproxy-client-$(FLASHPROXY_VERSION)-win32
 OBFSPROXY_HOME = $(HOME)/obfsproxy
-OBFSPROXY_DIST = $(OBFSPROXY_HOME)
-OBFSPROXY_DIST_WIN32 = $(OBFSPROXY_HOME)/py2exe_bundle/dist
+OBFSPROXY_WORK = $(WORKDIR)/obfsproxy
+OBFSPROXY_DIST_WIN32 = $(OBFSPROXY_WORK)/py2exe_bundle/dist
 PYPTLIB_HOME = $(HOME)/pyptlib
 PYPTLIB_WORK = $(WORKDIR)/pyptlib
 MACOSX_BUNDLE_ROOT = $(HOME)/bundle
@@ -47,11 +48,6 @@ all:
 	@echo $$'\tmake gnulinux-x86_64'
 	@echo
 	@echo "Configure version numbers at the top of this makefile."
-	@echo "Before starting, you need to run:"
-	@echo $$'\t"make dist" in the flashproxy directory'
-	@echo "Or on Windows:"
-	@echo $$'\t"make dist-exe" in the flashproxy directory'
-	@echo $$'\t"/cygdrive/c/Python27/python setup_py2exe.py py2exe" in the obfsproxy directory'
 
 fetch-windows: checksig-$(BUNDLE_WINDOWS)
 fetch-macosx-i686: checksig-$(BUNDLE_MACOSX_I686)
@@ -74,6 +70,7 @@ $(PT_BUNDLE_GNULINUX_X86_64): WORKDIR = work/gnulinux-x86_64-$(PT_BUNDLE_VERSION
 $(PT_BUNDLE_GNULINUX_X86_64): BUNDLE_GNULINUX = $(BUNDLE_GNULINUX_X86_64)
 
 $(PT_BUNDLE_WINDOWS): TBBDIR = $(WORKDIR)/Tor Browser
+$(PT_BUNDLE_WINDOWS): export PYTHONPATH := $(shell cygpath --absolute --windows "$(PYPTLIB_WORK)"/build)
 $(PT_BUNDLE_WINDOWS):
 	@if [ ! -f "$(BUNDLE_WINDOWS)" ]; then \
 		echo "$(BUNDLE_WINDOWS) is missing."; \
@@ -86,13 +83,17 @@ $(PT_BUNDLE_WINDOWS):
 
 	git clone "$(PYPTLIB_HOME)" "$(PYPTLIB_WORK)"
 	cd "$(PYPTLIB_WORK)" && "$(PYTHON)" setup.py clean --all build --build-lib build
+	git clone "$(OBFSPROXY_HOME)" "$(OBFSPROXY_WORK)"
+	cd "$(OBFSPROXY_WORK)" && "$(PYTHON)" setup_py2exe.py clean --all py2exe
+	git clone "$(FLASHPROXY_HOME)" "$(FLASHPROXY_WORK)"
+	cd "$(FLASHPROXY_WORK)" && "$(MAKE)" clean dist-exe
 
 	cp -nr "$(FLASHPROXY_DIST_WIN32)"/{*.pyd,*.dll,*.exe,*.zip} "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST_WIN32)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Docs/FlashProxy
 	cp -nr "$(OBFSPROXY_DIST_WIN32)"/{*.pyd,*.dll,*.exe,*.zip} "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/Obfsproxy
-	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/Obfsproxy
+	cp "$(OBFSPROXY_WORK)"/{LICENSE,README} "$(TBBDIR)"/Docs/Obfsproxy
 
 	cat bundle-torrc-windows >> "$(TBBDIR)"/Data/Tor/torrc
 
@@ -113,18 +114,22 @@ $(PT_BUNDLE_MACOSX_I686):
 
 	git clone "$(PYPTLIB_HOME)" "$(PYPTLIB_WORK)"
 	cd "$(PYPTLIB_WORK)" && "$(PYTHON)" setup.py clean --all build --build-lib build
+	git clone "$(OBFSPROXY_HOME)" "$(OBFSPROXY_WORK)"
+	cd "$(OBFSPROXY_WORK)" && "$(PYTHON)" setup.py clean --all build --build-lib build
+	git clone "$(FLASHPROXY_HOME)" "$(FLASHPROXY_WORK)"
+	cd "$(FLASHPROXY_WORK)" && "$(MAKE)" clean dist
 
 	cp "$(FLASHPROXY_DIST)"/{flashproxy-client,flashproxy-reg-appspot,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} "$(TBBDIR)"/Contents/MacOS
 	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/M2Crypto "$(TBBDIR)"/Contents/MacOS
 	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Contents/Resources/Docs/FlashProxy
-	cp -r "$(OBFSPROXY_DIST)"/obfsproxy "$(TBBDIR)"/Contents/MacOs
-	cp -r "$(OBFSPROXY_DIST)"/bin/obfsproxy "$(TBBDIR)"/Contents/MacOs/obfsproxy.bin
+	cp -r "$(OBFSPROXY_WORK)"/build/obfsproxy "$(TBBDIR)"/Contents/MacOs
+	cp -r "$(OBFSPROXY_WORK)"/bin/obfsproxy "$(TBBDIR)"/Contents/MacOs/obfsproxy.bin
 	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/Crypto "$(TBBDIR)"/Contents/MacOS
 	cp "$(MACOSX_BUNDLE_ROOT)"/argparse-1.2.1/argparse.py "$(TBBDIR)"/Contents/MacOS
 	cp -r "$(PYPTLIB_WORK)"/build/pyptlib "$(TBBDIR)"/Contents/MacOS
 	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/Obfsproxy
-	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Contents/Resources/Docs/Obfsproxy
+	cp "$(OBFSPROXY_WORK)"/{LICENSE,README} "$(TBBDIR)"/Contents/Resources/Docs/Obfsproxy
 	find "$(TBBDIR)"/Contents/MacOS -name '*.pyc' | xargs rm -f
 
 	cat bundle-torrc-macosx >> "$(TBBDIR)"/Library/Vidalia/torrc
@@ -146,18 +151,22 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 
 	git clone "$(PYPTLIB_HOME)" "$(PYPTLIB_WORK)"
 	cd "$(PYPTLIB_WORK)" && "$(PYTHON)" setup.py clean --all build --build-lib build
+	git clone "$(OBFSPROXY_HOME)" "$(OBFSPROXY_WORK)"
+	cd "$(OBFSPROXY_WORK)" && "$(PYTHON)" setup.py clean --all build --build-lib build
+	git clone "$(FLASHPROXY_HOME)" "$(FLASHPROXY_WORK)"
+	cd "$(FLASHPROXY_WORK)" && "$(MAKE)" clean dist
 
 	cp "$(FLASHPROXY_DIST)"/{flashproxy-client,flashproxy-reg-appspot,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} "$(TBBDIR)"/App
 	cp -rL /usr/lib/pymodules/python2.6/M2Crypto "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Docs/FlashProxy
-	cp -rL "$(OBFSPROXY_DIST)"/obfsproxy "$(TBBDIR)"/App
-	cp -rL "$(OBFSPROXY_DIST)"/bin/obfsproxy "$(TBBDIR)"/App/obfsproxy.bin
+	cp -rL "$(OBFSPROXY_WORK)"/build/obfsproxy "$(TBBDIR)"/App
+	cp -rL "$(OBFSPROXY_WORK)"/bin/obfsproxy "$(TBBDIR)"/App/obfsproxy.bin
 	cp -rL /usr/lib/python2.6/dist-packages/{Crypto,twisted,zope} "$(TBBDIR)"/App
 	cp -rL /usr/lib/pymodules/python2.6/argparse.py "$(TBBDIR)"/App
 	cp -rL "$(PYPTLIB_WORK)"/build/pyptlib "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/Obfsproxy
-	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/Obfsproxy
+	cp "$(OBFSPROXY_WORK)"/{LICENSE,README} "$(TBBDIR)"/Docs/Obfsproxy
 	find "$(TBBDIR)"/App -name '*.pyc' | xargs rm -f
 
 	cat bundle-torrc-gnulinux >> "$(TBBDIR)"/Data/Tor/torrc

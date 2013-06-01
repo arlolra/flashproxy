@@ -162,22 +162,13 @@ http://twistedmatrix.com/Releases/twisted-12.3.0-md5sums.txt
 
 == Browser bundle
 
-Clone the pyptlib source.
+Clone pyptlib, obfsproxy, and flashproxy. Set each one to the branch you
+want to include in the builds; e.g., "git pull" or "git checkout 1.0".
 
 	$ cd
 	$ git clone https://git.torproject.org/pluggable-transports/pyptlib.git
-
-Clone and build the flashproxy source.
-
-	$ git clone https://git.torproject.org/flashproxy.git
-	$ cd flashproxy
-	$ make dist-exe PYTHON=/cygdrive/c/Python27/python
-
-Clone obfsproxy and run py2exe on it.
-
 	$ git clone https://git.torproject.org/pluggable-transports/obfsproxy.git
-	$ cd obfsproxy
-	$ /cygdrive/c/Python27/python.exe setup_py2exe.py py2exe
+	$ git clone https://git.torproject.org/flashproxy.git
 
 Enter the doc directory and edit the top of Makefile to set the version
 numbers you want to use.
@@ -190,7 +181,7 @@ PT_BUNDLE_RELEASE release should increment each time you build a new
 bundle with the same BUNDLE_VERSION and BUNDLE_RELEASE, and be reset to
 "pt1" when either of those change.
 
-	$ make windows
+	$ make windows PYTHON=/cygdrive/c/Python27/python
 
 Test running the bundle. Extract into a separate directory, double-click
 the icon and "Start Tor Browser.exe".

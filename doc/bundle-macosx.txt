@@ -59,20 +59,13 @@ Extract the tarball into your bundle directory.
 
 == Browser bundle
 
-Clone the pyptlib source.
+Clone pyptlib, obfsproxy, and flashproxy. Set each one to the branch you
+want to include in the builds; e.g., "git pull" or "git checkout 1.0".
 
 	$ cd
 	$ git clone https://git.torproject.org/pluggable-transports/pyptlib.git
-
-Clone and build the flashproxy source.
-
-	$ git clone https://git.torproject.org/flashproxy.git
-	$ cd flashproxy
-	$ make dist
-
-Clone obfsproxy.
-
 	$ git clone https://git.torproject.org/pluggable-transports/obfsproxy.git
+	$ git clone https://git.torproject.org/flashproxy.git
 
 Enter the doc directory and edit the top of Makefile to set the version
 numbers you want to use.
