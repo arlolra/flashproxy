@@ -44,12 +44,6 @@ Extract and verify the tarball. Then run
 
 	$ python setup.py install --root=~/bundle --prefix=/usr
 
-=== pyptlib
-
-	$ git clone https://git.torproject.org/pluggable-transports/pyptlib.git
-	$ cd pyptlib
-	$ python setup.py install --root=~/bundle --prefix=/usr
-
 === argparse
 
 This is included for compatibility with older versions of python.
@@ -64,6 +58,11 @@ ddaf4b0a618335a32b6664d4ae038a1de8fbada3b25033f9021510ed2b3941a4  argparse-1.2.1
 Extract the tarball into your bundle directory.
 
 == Browser bundle
+
+Clone the pyptlib source.
+
+	$ cd
+	$ git clone https://git.torproject.org/pluggable-transports/pyptlib.git
 
 Clone and build the flashproxy source.
 

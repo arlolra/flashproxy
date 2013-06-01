@@ -9,8 +9,11 @@ FLASHPROXY_DIST_WIN32 = $(FLASHPROXY_HOME)/dist/flashproxy-client-$(FLASHPROXY_V
 OBFSPROXY_HOME = $(HOME)/obfsproxy
 OBFSPROXY_DIST = $(OBFSPROXY_HOME)
 OBFSPROXY_DIST_WIN32 = $(OBFSPROXY_HOME)/py2exe_bundle/dist
+PYPTLIB_HOME = $(HOME)/pyptlib
+PYPTLIB_WORK = $(WORKDIR)/pyptlib
 MACOSX_BUNDLE_ROOT = $(HOME)/bundle
 
+PYTHON = python
 P7Z = /cygdrive/c/Program Files (x86)/7-Zip/7z
 P7ZG = /cygdrive/c/Program Files (x86)/7-Zip/7zg
 
@@ -81,6 +84,9 @@ $(PT_BUNDLE_WINDOWS):
 	mkdir -p "$(WORKDIR)"
 	"$(P7Z)" x -o"$(WORKDIR)" "$(BUNDLE_WINDOWS)"
 
+	git clone "$(PYPTLIB_HOME)" "$(PYPTLIB_WORK)"
+	cd "$(PYPTLIB_WORK)" && "$(PYTHON)" setup.py clean --all build --build-lib build
+
 	cp -nr "$(FLASHPROXY_DIST_WIN32)"/{*.pyd,*.dll,*.exe,*.zip} "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST_WIN32)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Docs/FlashProxy
@@ -105,14 +111,18 @@ $(PT_BUNDLE_MACOSX_I686):
 	mkdir -p "$(WORKDIR)"
 	unzip "$(BUNDLE_MACOSX_I686)" -d "$(WORKDIR)"
 
+	git clone "$(PYPTLIB_HOME)" "$(PYPTLIB_WORK)"
+	cd "$(PYPTLIB_WORK)" && "$(PYTHON)" setup.py clean --all build --build-lib build
+
 	cp "$(FLASHPROXY_DIST)"/{flashproxy-client,flashproxy-reg-appspot,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} "$(TBBDIR)"/Contents/MacOS
 	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/M2Crypto "$(TBBDIR)"/Contents/MacOS
 	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/FlashProxy
 	cp "$(FLASHPROXY_DIST)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Contents/Resources/Docs/FlashProxy
 	cp -r "$(OBFSPROXY_DIST)"/obfsproxy "$(TBBDIR)"/Contents/MacOs
 	cp -r "$(OBFSPROXY_DIST)"/bin/obfsproxy "$(TBBDIR)"/Contents/MacOs/obfsproxy.bin
-	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/{Crypto,pyptlib} "$(TBBDIR)"/Contents/MacOS
+	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/Crypto "$(TBBDIR)"/Contents/MacOS
 	cp "$(MACOSX_BUNDLE_ROOT)"/argparse-1.2.1/argparse.py "$(TBBDIR)"/Contents/MacOS
+	cp -r "$(PYPTLIB_WORK)"/build/pyptlib "$(TBBDIR)"/Contents/MacOS
 	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/Obfsproxy
 	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Contents/Resources/Docs/Obfsproxy
 	find "$(TBBDIR)"/Contents/MacOS -name '*.pyc' | xargs rm -f
@@ -134,6 +144,9 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 	mkdir -p "$(WORKDIR)"
 	tar zxf "$(BUNDLE_GNULINUX)" -C "$(WORKDIR)"
 
+	git clone "$(PYPTLIB_HOME)" "$(PYPTLIB_WORK)"
+	cd "$(PYPTLIB_WORK)" && "$(PYTHON)" setup.py clean --all build --build-lib build
+
 	cp "$(FLASHPROXY_DIST)"/{flashproxy-client,flashproxy-reg-appspot,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} "$(TBBDIR)"/App
 	cp -rL /usr/lib/pymodules/python2.6/M2Crypto "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/FlashProxy
@@ -142,7 +155,7 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 	cp -rL "$(OBFSPROXY_DIST)"/bin/obfsproxy "$(TBBDIR)"/App/obfsproxy.bin
 	cp -rL /usr/lib/python2.6/dist-packages/{Crypto,twisted,zope} "$(TBBDIR)"/App
 	cp -rL /usr/lib/pymodules/python2.6/argparse.py "$(TBBDIR)"/App
-	cp -rL /usr/local/lib/python2.6/dist-packages/pyptlib "$(TBBDIR)"/App
+	cp -rL "$(PYPTLIB_WORK)"/build/pyptlib "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/Obfsproxy
 	cp "$(OBFSPROXY_DIST)"/{LICENSE,README} "$(TBBDIR)"/Docs/Obfsproxy
 	find "$(TBBDIR)"/App -name '*.pyc' | xargs rm -f

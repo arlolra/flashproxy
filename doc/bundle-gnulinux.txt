@@ -65,15 +65,12 @@ Packages to install:
 	$ sudo apt-get install --no-install-recommends git make python-m2crypto zip
 	$ sudo apt-get install --no-install-recommends python-setuptools python-crypto python-twisted python-argparse
 
-== Dependencies
-
-=== pyptlib
-
-	$ git clone https://git.torproject.org/pluggable-transports/pyptlib.git
-	$ cd pyptlib
-	$ sudo python setup.py install --single-version-externally-managed --root=/
-
 == Browser bundle
+
+Clone the pyptlib source.
+
+	$ cd
+	$ git clone https://git.torproject.org/pluggable-transports/pyptlib.git
 
 Clone and build the flashproxy source.
 
