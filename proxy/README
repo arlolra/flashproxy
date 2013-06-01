@@ -1,4 +1,4 @@
 This directory contains the flash proxy JavaScript proxy program and
-associated HTML and media files. End users don't ahve to do anything
+associated HTML and media files. End users don't have to do anything
 with these files. They are meant to be installed on a centralized web
 server and then accessed through a browser.
