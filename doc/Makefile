@@ -129,7 +129,7 @@ $(PT_BUNDLE_MACOSX_I686):
 	cp -r "$(PYPTLIB_WORK)"/build/pyptlib "$(TBBDIR)"/Contents/MacOS
 	mkdir -p "$(TBBDIR)"/Contents/Resources/Docs/Obfsproxy
 	cp "$(OBFSPROXY_WORK)"/{LICENSE,README} "$(TBBDIR)"/Contents/Resources/Docs/Obfsproxy
-	find "$(TBBDIR)"/Contents/MacOS -name '*.pyc' | xargs rm -f
+	find "$(TBBDIR)"/Contents/MacOS -name '*.pyc' -print0 | xargs -0 rm -f
 
 	cat bundle-torrc-macosx >> "$(TBBDIR)"/Library/Vidalia/torrc
 
@@ -166,7 +166,7 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 	cp -rL "$(PYPTLIB_WORK)"/build/pyptlib "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/Obfsproxy
 	cp "$(OBFSPROXY_WORK)"/{LICENSE,README} "$(TBBDIR)"/Docs/Obfsproxy
-	find "$(TBBDIR)"/App -name '*.pyc' | xargs rm -f
+	find "$(TBBDIR)"/App -name '*.pyc' -print0 | xargs -0 rm -f
 
 	cat bundle-torrc-gnulinux >> "$(TBBDIR)"/Data/Tor/torrc
 
