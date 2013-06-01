@@ -2,11 +2,10 @@ BUNDLE_VERSION = 2.4.12
 BUNDLE_RELEASE = alpha-2
 PT_BUNDLE_RELEASE = pt1
 
-FLASHPROXY_VERSION = 1.0
 FLASHPROXY_HOME = $(HOME)/flashproxy
 FLASHPROXY_WORK = $(WORKDIR)/flashproxy
-FLASHPROXY_DIST = $(FLASHPROXY_WORK)/dist/flashproxy-client-$(FLASHPROXY_VERSION)
-FLASHPROXY_DIST_WIN32 = $(FLASHPROXY_HOME)/dist/flashproxy-client-$(FLASHPROXY_VERSION)-win32
+FLASHPROXY_DISTNAME = flashproxy-client
+FLASHPROXY_DIST = $(FLASHPROXY_WORK)/dist/$(FLASHPROXY_DISTNAME)
 OBFSPROXY_HOME = $(HOME)/obfsproxy
 OBFSPROXY_WORK = $(WORKDIR)/obfsproxy
 OBFSPROXY_DIST_WIN32 = $(OBFSPROXY_WORK)/py2exe_bundle/dist
@@ -86,11 +85,11 @@ $(PT_BUNDLE_WINDOWS):
 	git clone "$(OBFSPROXY_HOME)" "$(OBFSPROXY_WORK)"
 	cd "$(OBFSPROXY_WORK)" && "$(PYTHON)" setup_py2exe.py clean --all py2exe
 	git clone "$(FLASHPROXY_HOME)" "$(FLASHPROXY_WORK)"
-	cd "$(FLASHPROXY_WORK)" && "$(MAKE)" clean dist-exe
+	cd "$(FLASHPROXY_WORK)" && "$(MAKE)" clean dist-exe DISTNAME="$(FLASHPROXY_DISTNAME)"
 
-	cp -nr "$(FLASHPROXY_DIST_WIN32)"/{*.pyd,*.dll,*.exe,*.zip} "$(TBBDIR)"/App
+	cp -nr "$(FLASHPROXY_DIST)"/{*.pyd,*.dll,*.exe,*.zip} "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/FlashProxy
-	cp "$(FLASHPROXY_DIST_WIN32)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Docs/FlashProxy
+	cp "$(FLASHPROXY_DIST)"/{doc/*,README,LICENSE,ChangeLog} "$(TBBDIR)"/Docs/FlashProxy
 	cp -nr "$(OBFSPROXY_DIST_WIN32)"/{*.pyd,*.dll,*.exe,*.zip} "$(TBBDIR)"/App
 	mkdir -p "$(TBBDIR)"/Docs/Obfsproxy
 	cp "$(OBFSPROXY_WORK)"/{LICENSE,README} "$(TBBDIR)"/Docs/Obfsproxy
@@ -117,7 +116,7 @@ $(PT_BUNDLE_MACOSX_I686):
 	git clone "$(OBFSPROXY_HOME)" "$(OBFSPROXY_WORK)"
 	cd "$(OBFSPROXY_WORK)" && "$(PYTHON)" setup.py clean --all build --build-lib build
 	git clone "$(FLASHPROXY_HOME)" "$(FLASHPROXY_WORK)"
-	cd "$(FLASHPROXY_WORK)" && "$(MAKE)" clean dist
+	cd "$(FLASHPROXY_WORK)" && "$(MAKE)" clean dist DISTNAME="$(FLASHPROXY_DISTNAME)"
 
 	cp "$(FLASHPROXY_DIST)"/{flashproxy-client,flashproxy-reg-appspot,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} "$(TBBDIR)"/Contents/MacOS
 	cp -r "$(MACOSX_BUNDLE_ROOT)"/usr/lib/python2.7/site-packages/M2Crypto "$(TBBDIR)"/Contents/MacOS
@@ -154,7 +153,7 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 	git clone "$(OBFSPROXY_HOME)" "$(OBFSPROXY_WORK)"
 	cd "$(OBFSPROXY_WORK)" && "$(PYTHON)" setup.py clean --all build --build-lib build
 	git clone "$(FLASHPROXY_HOME)" "$(FLASHPROXY_WORK)"
-	cd "$(FLASHPROXY_WORK)" && "$(MAKE)" clean dist
+	cd "$(FLASHPROXY_WORK)" && "$(MAKE)" clean dist DISTNAME="$(FLASHPROXY_DISTNAME)"
 
 	cp "$(FLASHPROXY_DIST)"/{flashproxy-client,flashproxy-reg-appspot,flashproxy-reg-email,flashproxy-reg-http,flashproxy-reg-url} "$(TBBDIR)"/App
 	cp -rL /usr/lib/pymodules/python2.6/M2Crypto "$(TBBDIR)"/App
