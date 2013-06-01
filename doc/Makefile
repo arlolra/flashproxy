@@ -128,7 +128,7 @@ $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64): TBBDIR = $(WORKDIR)/tor
 $(PT_BUNDLE_GNULINUX_I686) $(PT_BUNDLE_GNULINUX_X86_64):
 	@if [ ! -f "$(BUNDLE_GNULINUX)" ]; then \
 		echo "$(BUNDLE_GNULINUX) is missing."; \
-		echo "Run \"make fetch-gnulinux-i686\" or \"make fetch gnulinux-i86_64\"."; \
+		echo "Run \"make fetch-gnulinux-i686\" or \"make fetch gnulinux-x86_64\"."; \
 		false; \
 	fi
 	rm -rf "$(WORKDIR)"
