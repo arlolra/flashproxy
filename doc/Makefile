@@ -14,7 +14,6 @@ MACOSX_BUNDLE_ROOT = $(HOME)/bundle
 P7Z = /cygdrive/c/Program Files (x86)/7-Zip/7z
 P7ZG = /cygdrive/c/Program Files (x86)/7-Zip/7zg
 
-DOWNLOADDIR = download
 WORKDIR = work
 
 BUNDLE_DIST_URL = https://www.torproject.org/dist/torbrowser
