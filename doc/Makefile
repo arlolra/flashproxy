@@ -167,6 +167,13 @@ $(BUNDLE_GNULINUX_X86_64) $(BUNDLE_GNULINUX_X86_64).asc:
 checksig-%: % %.asc
 	gpg --verify "$*".asc "$*"
 
+clean:
+	rm -rf "$(WORKDIR)"
+	rm -rf "$(PT_BUNDLE_WINDOWS)"
+	rm -rf "$(PT_BUNDLE_MACOSX_I686)"
+	rm -rf "$(PT_BUNDLE_GNULINUX_I686)"
+	rm -rf "$(PT_BUNDLE_GNULINUX_X86_64)"
+
 # Need Bash for certain wildcards.
 SHELL = /bin/bash
-.PHONY: checksig-% windows macosx-i686 gnulinux-i686 gnulinux-x86_64
+.PHONY: clean checksig-% windows macosx-i686 gnulinux-i686 gnulinux-x86_64
