@@ -136,7 +136,8 @@ class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 def main():
     global rsa
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "dhk:l:p:", ["debug", "help", "key=", "log=", "port=", "pidfile=", "privdrop-user=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "dhk:l:p:",
+        ["debug", "help", "key=", "log=", "port=", "pidfile=", "privdrop-user=", "unsafe-logging"])
     for o, a in opts:
         if o == "-d" or o == "--debug":
             options.daemonize = False

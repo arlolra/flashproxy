@@ -127,7 +127,8 @@ def log(msg):
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.imap_addr = (DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:", ["debug", "disable-pin", "email=", "help", "imap=", "imaplib-debug", "log=", "pass=", "pidfile=", "privdrop-user=", "unsafe-logging"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:",
+    ["debug", "disable-pin", "email=", "help", "imap=", "imaplib-debug", "log=", "pass=", "pidfile=", "privdrop-user=", "unsafe-logging"])
 for o, a in opts:
     if o == "-d" or o == "--debug":
         options.daemonize = False
