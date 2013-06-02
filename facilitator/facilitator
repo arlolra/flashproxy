@@ -34,6 +34,7 @@ class options(object):
     relay_spec = None
     daemonize = True
     pid_filename = None
+    privdrop_username = None
     safe_logging = True
 
     @staticmethod
@@ -47,13 +48,14 @@ Usage: %(progname)s -r RELAY <OPTIONS>
 Flash proxy facilitator: Register client addresses and serve them out
 again. Listen on 127.0.0.1 and port PORT (by default %(port)d).
 
-  -d, --debug             don't daemonize, log to stdout.
-  -h, --help              show this help.
-  -l, --log FILENAME      write log to FILENAME (default \"%(log)s\").
-  -p, --port PORT         listen on PORT (by default %(port)d).
-      --pidfile FILENAME  write PID to FILENAME after daemonizing.
-  -r, --relay RELAY       send RELAY (host:port) to proxies as the relay to use.
-      --unsafe-logging    don't scrub IP addresses from logs.\
+  -d, --debug               don't daemonize, log to stdout.
+  -h, --help                show this help.
+  -l, --log FILENAME        write log to FILENAME (default \"%(log)s\").
+  -p, --port PORT           listen on PORT (by default %(port)d).
+      --pidfile FILENAME    write PID to FILENAME after daemonizing.
+      --privdrop-user USER  switch UID and GID to those of USER.
+  -r, --relay RELAY         send RELAY (host:port) to proxies as the relay to use.
+      --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "port": DEFAULT_LISTEN_PORT,
@@ -326,7 +328,7 @@ def put_reg(reg):
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
-        ["debug", "help", "log=", "port=", "pidfile=", "relay=", "unsafe-logging"])
+        ["debug", "help", "log=", "port=", "pidfile=", "privdrop-user=", "relay=", "unsafe-logging"])
     for o, a in opts:
         if o == "-d" or o == "--debug":
             options.daemonize = False
@@ -340,6 +342,8 @@ def main():
             options.listen_port = int(a)
         elif o == "--pidfile":
             options.pid_filename = a
+        elif o == "--privdrop-user":
+            options.privdrop_username = a
         elif o == "-r" or o == "--relay":
             try:
                 options.set_relay_spec(a)
@@ -379,6 +383,14 @@ The -r option is required. Give it the relay that will be sent to proxies.
                 print >> f, pid
                 f.close()
             sys.exit(0)
+
+    if options.privdrop_username is not None:
+        log(u"dropping privileges to those of user %s" % options.privdrop_username)
+        try:
+            fac.drop_privs(options.privdrop_username)
+        except BaseException, e:
+            print >> sys.stderr, "Can't drop privileges:", str(e)
+            sys.exit(1)
 
     try:
         server.serve_forever()

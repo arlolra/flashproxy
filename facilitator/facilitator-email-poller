@@ -72,6 +72,7 @@ class options(object):
     log_file = sys.stdout
     daemonize = True
     pid_filename = None
+    privdrop_username = None
     safe_logging = True
     imaplib_debug = False
     use_certificate_pin = True
@@ -94,16 +95,17 @@ Facilitator-side helper for the facilitator-reg-email rendezvous. Polls
 an IMAP server for email messages with client registrations, deletes
 them, and forwards the registrations to the facilitator.
 
-  -d, --debug             don't daemonize, log to stdout.
-      --disable-pin       don't check server public key against a known pin.
-  -e, --email=ADDRESS     log in as ADDRESS (default "%(email_addr)s").
-  -h, --help              show this help.
-  -i, --imap=HOST[:PORT]  use the given IMAP server (default "%(imap_addr)s").
-      --imaplib-debug     show raw IMAP messages (will include email password).
-  -l, --log FILENAME      write log to FILENAME (default \"%(log)s\").
-  -p, --pass=PASSFILE     use the email password contained in PASSFILE.
-      --pidfile FILENAME  write PID to FILENAME after daemonizing.
-      --unsafe-logging    don't scrub email password and IP addresses from logs.\
+  -d, --debug               don't daemonize, log to stdout.
+      --disable-pin         don't check server public key against a known pin.
+  -e, --email=ADDRESS       log in as ADDRESS (default "%(email_addr)s").
+  -h, --help                show this help.
+  -i, --imap=HOST[:PORT]    use the given IMAP server (default "%(imap_addr)s").
+      --imaplib-debug       show raw IMAP messages (will include email password).
+  -l, --log FILENAME        write log to FILENAME (default \"%(log)s\").
+  -p, --pass=PASSFILE       use the email password contained in PASSFILE.
+      --pidfile FILENAME    write PID to FILENAME after daemonizing.
+      --privdrop-user USER  switch UID and GID to those of USER.
+      --unsafe-logging      don't scrub email password and IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "email_addr": DEFAULT_EMAIL_ADDRESS,
@@ -125,7 +127,7 @@ def log(msg):
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.imap_addr = (DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:", ["debug", "disable-pin", "email=", "help", "imap=", "imaplib-debug", "log=", "pass=", "pidfile=", "unsafe-logging"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:", ["debug", "disable-pin", "email=", "help", "imap=", "imaplib-debug", "log=", "pass=", "pidfile=", "privdrop-user=", "unsafe-logging"])
 for o, a in opts:
     if o == "-d" or o == "--debug":
         options.daemonize = False
@@ -147,6 +149,8 @@ for o, a in opts:
         options.password_filename = a
     elif o == "--pidfile":
         options.pid_filename = a
+    elif o == "--privdrop-user":
+        options.privdrop_username = a
     elif o == "--unsafe-logging":
         options.safe_logging = False
 
@@ -190,6 +194,14 @@ if options.daemonize:
             print >> f, pid
             f.close()
         sys.exit(0)
+
+if options.privdrop_username is not None:
+    log(u"dropping privileges to those of user %s" % options.privdrop_username)
+    try:
+        fac.drop_privs(options.privdrop_username)
+    except BaseException, e:
+        print >> sys.stderr, "Can't drop privileges:", str(e)
+        sys.exit(1)
 
 if options.imaplib_debug:
     imaplib.Debug = 4
