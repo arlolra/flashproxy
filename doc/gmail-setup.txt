@@ -1,6 +1,6 @@
 These are instructions for setting up a Gmail account for use with the
 email-based rendezvous and flashproxy-reg-email. These instructions were
-current as of October 2012.
+current as of May 2013.
 
 You may have trouble if you are using Tor to create the account, for two
 reasons. The first is that exit nodes are a source of abuse and Google
