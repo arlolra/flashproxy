@@ -23,8 +23,9 @@ DESC="Flash proxy facilitator"
 NAME=facilitator
 PIDFILE=/var/run/$NAME.pid
 LOGFILE=/var/log/$NAME.log
+PRIVDROP_USER=facilitator-nobody
 DAEMON=/usr/local/bin/$NAME
-DAEMON_ARGS="-r $RELAY --log $LOGFILE --pidfile $PIDFILE"
+DAEMON_ARGS="-r $RELAY --log $LOGFILE --pidfile $PIDFILE --privdrop-user $PRIVDROP_USER"
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed

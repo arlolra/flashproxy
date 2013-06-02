@@ -20,8 +20,9 @@ NAME=facilitator-email-poller
 PIDFILE=/var/run/$NAME.pid
 LOGFILE=/var/log/$NAME.log
 CONFDIR=/etc/flashproxy
+PRIVDROP_USER=facilitator-nobody
 DAEMON=/usr/local/bin/$NAME
-DAEMON_ARGS="--pass $CONFDIR/reg-email.pass --log $LOGFILE --pidfile $PIDFILE"
+DAEMON_ARGS="--pass $CONFDIR/reg-email.pass --log $LOGFILE --pidfile $PIDFILE --privdrop-user $PRIVDROP_USER"
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
