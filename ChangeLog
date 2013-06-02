@@ -1,3 +1,9 @@
+  o The facilitator daemons have a --privdrop-user option that causes
+    them to change to another user ID after reading keys and opening log
+    files. facilitator-howto.txt shows how to configure them to use an
+    unprivileged facilitator-nobody user. Patch by Alexandre Allaire and
+    David Fifield. Fixes bug 8424.
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.
