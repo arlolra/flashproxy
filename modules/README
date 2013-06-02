@@ -1,2 +1,5 @@
 This directory contains modules and plugins for making flash proxies
 work with other systems such as web publishing platforms.
+
+See a collection of modules for other platforms at
+https://github.com/glamrock/cupcake.
