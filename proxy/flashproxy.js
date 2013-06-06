@@ -885,6 +885,7 @@ function escape_html(s) {
 var LOCALIZATIONS = {
     "en": { filename: "badge-en.png", text: "Internet Freedom" },
     "de": { filename: "badge-de.png", text: "Internetfreiheit" },
+    "pt": { filename: "badge-pt.png", text: "Internet Livre" },
     "ru": { filename: "badge-ru.png", text: "Свобода Интернета" }
 };
 var DEFAULT_LOCALIZATION = { filename: "badge.png", text: "Internet Freedom" };
