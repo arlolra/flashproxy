@@ -4,6 +4,11 @@
     unprivileged facilitator-nobody user. Patch by Alexandre Allaire and
     David Fifield. Fixes bug 8424.
 
+  o Proxies now send the list of clients they are currently serving in
+    their facilitator polling requests. This is meant to enable the
+    facilitator to estimate the level of service each client is getting.
+    Proxies send a protocol revision number "r=1" to signify the change.
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.
