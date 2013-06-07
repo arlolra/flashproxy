@@ -60,6 +60,7 @@ class options(object):
     register_commands = []
     pid_filename = None
     safe_logging = True
+    nat_traversal = False
     address_family = socket.AF_UNSPEC
 
 # We accept up to this many bytes from a socket not yet matched with a partner
@@ -112,6 +113,7 @@ omitted, it uses a public default.
                               methods. Implies --register. Possible methods are
                                 appspot email http
                               Default is "%(reg_methods)s".
+      --nat-traversal       attempt to traverse NAT with tor-fw-helper.
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
@@ -126,6 +128,29 @@ def safe_str(s):
         return "[scrubbed]"
     else:
         return s
+
+def traverse_nat():
+    if not options.nat_traversal:
+        return False
+    port = options.remote_addrs[0][1]
+    script_path = os.path.join(get_script_dir(), "tor-fw-helper")
+    command = [script_path, "-p", ":%s" % port]
+    try:
+        log(u"Attempting NAT traversal for port: %d" % port)
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+    except OSError, e:
+        log(u"Error opening tor-fw-helper.")
+        return False
+    if p.returncode != 0:
+        log("tor-fw-helper exited with status %d." % p.returncode)
+        return False
+    line = stdout.split()
+    if len(line) >= 5 and line[4] == "SUCCESS":
+        log(u"NAT traversal succeeded.")
+        return True
+    log(u"NAT traversal failed.")
+    return False
 
 log_lock = threading.Lock()
 def log(msg):
@@ -948,7 +973,7 @@ def proxy_loop():
             websocket_pending.pop(0)
             report_pending()
 
-def build_register_command(method):
+def get_script_dir():
     # sys.path[0] usually contains the directory the script is located in.
     # py2exe overwrites this for bundled executables.
     if getattr(sys, "frozen", False):
@@ -958,6 +983,10 @@ def build_register_command(method):
     if not script_dir:
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         raise ValueError("Can't find executable directory for registration helpers")
+    return script_dir
+
+def build_register_command(method):
+    script_dir = get_script_dir()
     af = []
     if options.address_family == socket.AF_INET:
         af = ["-4"]
@@ -1056,7 +1085,7 @@ def main():
     register_addr_spec = None
     register_methods = []
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "nat-traversal", "unsafe-logging"])
     for o, a in opts:
         if o == "-4":
             options.address_family = socket.AF_INET
@@ -1088,6 +1117,8 @@ def main():
         elif o == "--register-methods":
             options.register = True
             register_methods.extend(a.split(","))
+        elif o == "--nat-traversal":
+            options.nat_traversal = True
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
@@ -1142,6 +1173,9 @@ def main():
         register_methods = DEFAULT_REGISTER_METHODS
     for method in register_methods:
         options.register_commands.append(build_register_command(method))
+
+    # Attempt to traverse NAT if enabled
+    traverse_nat()
 
     # Remote sockets, accepting remote WebSocket connections from proxies.
     remote_listen = []
