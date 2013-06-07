@@ -564,10 +564,12 @@ function FlashProxy() {
         xhr.responseType = "text";
         xhr.onreadystatechange = function() {
             if (xhr.readyState === xhr.DONE) {
-                if (xhr.status === 200)
+                if (xhr.status === 200) {
                     this.fac_complete(xhr.responseText);
-                else
+                } else {
                     puts("Facilitator: can't connect: got status " + repr(xhr.status) + " and status text " + repr(xhr.statusText) + ".");
+                    this.die();
+                }
             }
         }.bind(this);
         puts("Facilitator: connecting to " + url + ".");
