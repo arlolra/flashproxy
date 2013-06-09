@@ -78,7 +78,7 @@ The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
 request are ignored and the local connection is always linked to a remote
 connection.
 
-By default, runs as a managed proxy: informs a parent Tor project of support for
+By default, runs as a managed proxy: informs a parent Tor process of support for
 the "websocket" pluggable transport. In managed mode, the LOCAL port is chosen
 arbitrarily instead of defaulting to %(local_port)d; however this can be
 overridden by including a LOCAL port in the command. This is the way the
