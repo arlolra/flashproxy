@@ -888,14 +888,27 @@ var LOCALIZATIONS = {
     "ru": { filename: "badge-ru.png", text: "Свобода Интернета" }
 };
 var DEFAULT_LOCALIZATION = { filename: "badge.png", text: "Internet Freedom" };
+/* Return an array of progressively less specific language tags, canonicalized
+   for lookup in LOCALIZATIONS. */
+function lang_keys(code) {
+    var result = [code];
+    var m = code.match(/^(\w+)/);
+    if (m !== null) {
+        result.push(m[0]);
+    }
+    return result;
+}
 /* Return an object with "filename" and "text" keys appropriate for the given
    array of language codes. Returns a default value if there is no localization
    for any of the codes. */
 function get_badge_localization(langs) {
     for (var i = 0; i < langs.length; i++) {
-        var localization = LOCALIZATIONS[langs[i]];
-        if (localization !== undefined)
-            return localization;
+        var tags = lang_keys(langs[i]);
+        for (var j = 0; j < tags.length; j++) {
+            var localization = LOCALIZATIONS[tags[j]];
+            if (localization !== undefined)
+                return localization;
+        }
     }
     return DEFAULT_LOCALIZATION;
 }

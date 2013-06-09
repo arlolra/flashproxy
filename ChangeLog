@@ -12,6 +12,9 @@
   o The managed transport method name "flashproxy" is now recognized as
     a synonym for "websocket".
 
+  o The badge localization now understands language subtags such as
+    "ru-RU". Fixes bug 8828.
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.

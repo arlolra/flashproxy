@@ -308,12 +308,36 @@ function test_get_param_addr()
     }
 }
 
+function test_lang_keys()
+{
+    var TESTS = [
+        { code: "de", expected: ["de"] },
+        { code: "de-at", expected: ["de-at", "de"] },
+    ];
+    for (var i = 0; i < TESTS.length; i++) {
+        var test = TESTS[i];
+        var actual = lang_keys(test.code);
+
+        var j, k;
+        k = 0;
+        for (j = 0; j < test.expected.length; j++) {
+            for (; k < actual.length; k++) {
+                if (test.expected[j] === actual[k])
+                    break;
+            }
+            if (k === actual.length)
+                fail(test.code, test.expected, actual)
+        }
+    }
+}
+
 test_build_url();
 test_parse_cookie_string();
 test_parse_query_string();
 test_get_param_boolean();
 test_parse_addr_spec();
 test_get_param_addr();
+test_lang_keys();
 
 if (num_failed == 0)
     quit(0);
