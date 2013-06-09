@@ -1039,10 +1039,10 @@ option.\
         sys.exit(1)
 
 def pt_cmethod(method_name, addr):
-	pt_line("CMETHOD", method_name, "socks4", format_sockaddr(addr))
+    pt_line("CMETHOD", method_name, "socks4", format_sockaddr(addr))
 
 def pt_cmethods_done():
-	pt_line("CMETHODS", "DONE")
+    pt_line("CMETHODS", "DONE")
 
 def main():
     global remote_listen, local_listen
