@@ -9,6 +9,9 @@
     facilitator to estimate the level of service each client is getting.
     Proxies send a protocol revision number "r=1" to signify the change.
 
+  o The managed transport method name "flashproxy" is now recognized as
+    a synonym for "websocket".
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.

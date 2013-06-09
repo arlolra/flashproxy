@@ -25,7 +25,7 @@ request are ignored and the local connection is always linked to a remote
 connection.
 
 By default, runs as a managed proxy: informs a parent Tor process of support for
-the "websocket" pluggable transport. In managed mode, the __LOCAL__ port is chosen
+the "flashproxy" or "websocket" pluggable transport. In managed mode, the __LOCAL__ port is chosen
 arbitrarily instead of defaulting to 9001; however this can be
 overridden by including a __LOCAL__ port in the command. This is the way the
 program should be invoked in a torrc ClientTransportPlugin "exec" line.

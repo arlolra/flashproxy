@@ -38,7 +38,7 @@ Wait for connections on a local and a remote port\&. When any pair of connection
 .sp
 The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS request are ignored and the local connection is always linked to a remote connection\&.
 .sp
-By default, runs as a managed proxy: informs a parent Tor process of support for the "websocket" pluggable transport\&. In managed mode, the \fILOCAL\fR port is chosen arbitrarily instead of defaulting to 9001; however this can be overridden by including a \fILOCAL\fR port in the command\&. This is the way the program should be invoked in a torrc ClientTransportPlugin "exec" line\&. Use the \fB\-\-external\fR option to run as an external proxy that does not interact with Tor\&.
+By default, runs as a managed proxy: informs a parent Tor process of support for the "flashproxy" or "websocket" pluggable transport\&. In managed mode, the \fILOCAL\fR port is chosen arbitrarily instead of defaulting to 9001; however this can be overridden by including a \fILOCAL\fR port in the command\&. This is the way the program should be invoked in a torrc ClientTransportPlugin "exec" line\&. Use the \fB\-\-external\fR option to run as an external proxy that does not interact with Tor\&.
 .sp
 If any of the \fB\-\-register\fR, \fB\-\-register\-addr\fR, or \fB\-\-register\-methods\fR options are used, then your IP address will be sent to the facilitator so that proxies can connect to you\&. You need to register in some way in order to get any service\&. The \fB\-\-facilitator\fR option allows controlling which facilitator is used; if omitted, it uses a public default\&.
 .SH "OPTIONS"
