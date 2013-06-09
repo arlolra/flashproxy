@@ -15,8 +15,7 @@ var document = {cookie: ""};
 
 load("flashproxy.js");
 
-function objects_equal(a, b)
-{
+function objects_equal(a, b) {
     if ((a === null) != (b === null))
         return false;
     if (typeof a != typeof b)
@@ -37,8 +36,7 @@ function objects_equal(a, b)
 }
 
 var top = true;
-function announce(test_name)
-{
+function announce(test_name) {
     if (VERBOSE) {
         if (!top)
             print();
@@ -47,22 +45,19 @@ function announce(test_name)
     top = false;
 }
 
-function pass(test)
-{
+function pass(test) {
     num_tests++;
     if (VERBOSE)
         print("PASS " + repr(test));
 }
 
-function fail(test, expected, actual)
-{
+function fail(test, expected, actual) {
     num_tests++;
     num_failed++;
     print("FAIL " + repr(test) + "  expected: " + repr(expected) + "  actual: " + repr(actual));
 }
 
-function test_build_url()
-{
+function test_build_url() {
     var TESTS = [
         { args: ["http", "example.com"],
           expected: "http://example.com" },
@@ -112,8 +107,7 @@ function test_build_url()
    several properties about this string, for example
    cookie names are unique with no trailing whitespace.
    See http://www.ietf.org/rfc/rfc2965.txt for the grammar. */
-function test_parse_cookie_string()
-{
+function test_parse_cookie_string() {
     var TESTS = [
         { cs: "",
           expected: { } },
@@ -150,8 +144,7 @@ function test_parse_cookie_string()
     }
 }
 
-function test_parse_query_string()
-{
+function test_parse_query_string() {
     var TESTS = [
         { qs: "",
           expected: { } },
@@ -203,8 +196,7 @@ function test_parse_query_string()
     }
 }
 
-function test_get_param_boolean()
-{
+function test_get_param_boolean() {
     var TESTS = [
         { qs: "param=true",
           expected: true },
@@ -239,8 +231,7 @@ function test_get_param_boolean()
     }
 }
 
-function test_parse_addr_spec()
-{
+function test_parse_addr_spec() {
     var TESTS = [
         { spec: "",
           expected: null },
@@ -281,8 +272,7 @@ function test_parse_addr_spec()
     }
 }
 
-function test_get_param_addr()
-{
+function test_get_param_addr() {
     var DEFAULT = { host: "1.1.1.1", port: 2222 };
     var TESTS = [
         { query: { },
@@ -308,8 +298,7 @@ function test_get_param_addr()
     }
 }
 
-function test_lang_keys()
-{
+function test_lang_keys() {
     var TESTS = [
         { code: "de", expected: ["de"] },
         { code: "DE", expected: ["de"] },
