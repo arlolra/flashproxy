@@ -891,6 +891,7 @@ var DEFAULT_LOCALIZATION = { filename: "badge.png", text: "Internet Freedom" };
 /* Return an array of progressively less specific language tags, canonicalized
    for lookup in LOCALIZATIONS. */
 function lang_keys(code) {
+    code = code.toLowerCase();
     var result = [code];
     var m = code.match(/^(\w+)/);
     if (m !== null) {

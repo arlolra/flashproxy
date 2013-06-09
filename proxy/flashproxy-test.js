@@ -312,7 +312,9 @@ function test_lang_keys()
 {
     var TESTS = [
         { code: "de", expected: ["de"] },
+        { code: "DE", expected: ["de"] },
         { code: "de-at", expected: ["de-at", "de"] },
+        { code: "de-AT", expected: ["de-at", "de"] },
     ];
     for (var i = 0; i < TESTS.length; i++) {
         var test = TESTS[i];
