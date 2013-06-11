@@ -22,6 +22,11 @@
     window.navigator.language when possible. Patch by Arlo Breault.
     Fixes bug 8827.
 
+  o Proxies now attempt to connect to the client first, and only connect
+    to the relay after the client connection is successful. This is
+    meant to reduce the number of connections to the relay when clients
+    haven't set up port forwarding. Introduced bug 9009, later fixed. 
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.

@@ -813,8 +813,8 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
             this.relay_s.close();
         }
 
-        if (this.r2c_schedule.length > 0 || this.client_s.bufferedAmount > 0
-            || this.c2r_schedule.length > 0 || this.relay_s.bufferedAmount > 0)
+        if (this.r2c_schedule.length > 0 || (is_open(this.client_s) && this.client_s.bufferedAmount > 0)
+            || this.c2r_schedule.length > 0 || (is_open(this.relay_s) && this.relay_s.bufferedAmount > 0))
             this.flush_timeout_id = setTimeout(this.flush.bind(this), this.rate_limit.when() * 1000);
     };
 }
