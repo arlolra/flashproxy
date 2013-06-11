@@ -58,6 +58,11 @@ def do_get():
     if len(path_parts) == 2 and path_parts[0] == "reg":
         url_reg(path_parts[1])
     elif len(path_parts) == 0:
+        # Check for recent enough flash proxy protocol.
+        r = fs.getlist("r")
+        if len(r) != 1 or r[0] != "1":
+            exit_error(400)
+
         try:
             reg = fac.get_reg(FACILITATOR_ADDR, remote_addr) or ""
         except Exception:
