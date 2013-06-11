@@ -10,6 +10,11 @@ import time
 
 import fac
 
+# from collections import OrderedDict
+# requires python >= 2.7
+# see: https://pypi.python.org/pypi/ordereddict
+from ordereddict import OrderedDict
+
 LISTEN_ADDRESS = "127.0.0.1"
 DEFAULT_LISTEN_PORT = 9002
 DEFAULT_RELAY_PORT = 9001
@@ -232,14 +237,17 @@ class Handler(SocketServer.StreamRequestHandler):
             log(u"syntax error in proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
             self.send_error()
             return False
-
+        rate_limit, check_back_in = get_check_back_in_for_proxy(proxy_addr)
+        if rate_limit:
+            log(u"proxy address %s was rate limited" % safe_str(repr(proxy_spec)))
+            print >> self.wfile, fac.render_transaction("NONE", ("CHECK-BACK-IN", str(check_back_in)))
+            return True
         try:
             reg = get_reg_for_proxy(proxy_addr)
         except Exception, e:
             log(u"error getting reg for proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
             self.send_error()
             return False
-        check_back_in = get_check_back_in_for_proxy(proxy_addr)
         if reg:
             log(u"proxy gets %s, relay %s (now %d)" %
                 (safe_str(unicode(reg)), options.relay_spec, num_regs()))
@@ -284,6 +292,22 @@ class Handler(SocketServer.StreamRequestHandler):
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
+class LRU(OrderedDict):
+    def __init__(self, *args, **kwds):
+        self.size = kwds.pop("size", None)
+        if self.size is None:
+            raise ValueError("Expected a size for the LRU")
+        OrderedDict.__init__(self, *args, **kwds)
+        self.limit()
+    def __setitem__(self, key, value):
+        if key in self:
+            del self[key]
+        OrderedDict.__setitem__(self, key, value)
+        self.limit()
+    def limit(self):
+        while len(self) > self.size:
+            self.popitem(last=False)
+
 # Separate pools for IPv4 and IPv6 clients.
 REGS_IPV4 = RegSet()
 REGS_IPV6 = RegSet()
@@ -315,9 +339,18 @@ def get_reg_for_proxy(proxy_addr):
     REGS = regs_for_af(af)
     return REGS.fetch()
 
+# Keep track of the latest <size> proxies for rate limiting.
+RL_PROXIES = LRU(size=10000)
+
 def get_check_back_in_for_proxy(proxy_addr):
     """Get a CHECK-BACK-IN interval suitable for this proxy."""
-    return POLL_INTERVAL
+    now = int(time.time())
+    last_time = RL_PROXIES.get(proxy_addr, (now - POLL_INTERVAL))
+    delta = now - last_time
+    if delta >= POLL_INTERVAL:
+        RL_PROXIES[proxy_addr] = now
+        return False, POLL_INTERVAL
+    return True, (POLL_INTERVAL - delta)
 
 def put_reg(reg):
     """Add a registration."""
