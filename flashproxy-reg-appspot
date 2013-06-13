@@ -65,6 +65,7 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 PUBKEY_SHA1 = tuple(x.decode("hex") for x in (
     "c70ccd442ff4528c603aefef85206fd693990e09",
     "1697e17a8a3317f031721b7b6293cd50643bbbd3",
+    "291e750bafedac444486327e50f26f64d840991a",
 ))
 
 class options(object):
