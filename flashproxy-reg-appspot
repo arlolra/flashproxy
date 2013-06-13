@@ -83,8 +83,8 @@ external IP address is guessed).
   -6                 name lookups use only IPv6.
       --disable-pin  don't check server public key against a known pin.
       --facilitator-pubkey=FILENAME
-              encrypt registrations to the given PEM-formatted
-                public key (default built-in).
+                     encrypt registrations to the given PEM-formatted
+                       public key (default built-in).
   -h, --help         show this help.\
 """ % {
     "progname": sys.argv[0],
