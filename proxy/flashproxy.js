@@ -1072,13 +1072,21 @@ function flashproxy_should_disable() {
     return false;
 }
 
-function flashproxy_badge_insert() {
+function flashproxy_badge_new() {
     var fp;
-    var e;
 
     fp = new FlashProxy();
     if (flashproxy_should_disable())
         fp.disable();
+
+    return fp;
+}
+
+function flashproxy_badge_insert() {
+    var fp;
+    var e;
+
+    fp = flashproxy_badge_new();
 
     /* http://intertwingly.net/blog/2006/11/10/Thats-Not-Write for this trick to
        insert right after the <script> element in the DOM. */
