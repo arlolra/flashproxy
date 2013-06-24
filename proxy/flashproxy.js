@@ -94,18 +94,20 @@ if (DEBUG) {
 }
 
 function puts(s) {
-    if (debug_div) {
-        var at_bottom;
-
+    if (DEBUG) {
         /* This shows up in the Web Console in Firefox and F12 developer tools
            in Internet Explorer. */
         (console.debug || console.log).call(console, s);
 
-        /* http://www.w3.org/TR/cssom-view/#element-scrolling-members */
-        at_bottom = (debug_div.scrollTop + debug_div.clientHeight === debug_div.scrollHeight);
-        debug_div.appendChild(document.createTextNode(s + "\n"));
-        if (at_bottom)
-            debug_div.scrollTop = debug_div.scrollHeight;
+        if (debug_div) {
+            var at_bottom;
+
+            /* http://www.w3.org/TR/cssom-view/#element-scrolling-members */
+            at_bottom = (debug_div.scrollTop + debug_div.clientHeight === debug_div.scrollHeight);
+            debug_div.appendChild(document.createTextNode(s + "\n"));
+            if (at_bottom)
+                debug_div.scrollTop = debug_div.scrollHeight;
+        }
     }
 }
 
