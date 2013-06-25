@@ -11,8 +11,8 @@ GOBUILDFLAGS =
 
 all: websocket-server
 
-websocket-client: websocket-client.go socks.go pt.go
-websocket-server: websocket-server.go pt.go websocket.go
+websocket-client: websocket-client.go socks.go
+websocket-server: websocket-server.go websocket.go
 
 %: %.go
 	go build $(GOBUILDFLAGS) -o $@ $^

@@ -2,35 +2,35 @@
 //
 // Sample client usage:
 //
-// PtClientSetup([]string{"foo"})
+// pt.ClientSetup([]string{"foo"})
 // ln, err := startSocksListener()
 // if err != nil {
 // 	panic(err.Error())
 // }
-// PtCmethod("foo", "socks4", ln.Addr())
-// PtCmethodsDone()
+// pt.Cmethod("foo", "socks4", ln.Addr())
+// pt.CmethodsDone()
 //
 // Sample server usage:
 //
-// var ptInfo PtServerInfo
-// info = PtServerSetup([]string{"foo", "bar"})
+// var ptInfo pt.ServerInfo
+// info = pt.ServerSetup([]string{"foo", "bar"})
 // for _, bindAddr := range info.BindAddrs {
 // 	ln, err := startListener(bindAddr.Addr)
 // 	if err != nil {
-// 		PtSmethodError(bindAddr.MethodName, err.Error())
+// 		pt.SmethodError(bindAddr.MethodName, err.Error())
 // 	}
-// 	PtSmethod(bindAddr.MethodName, ln.Addr())
+// 	pt.Smethod(bindAddr.MethodName, ln.Addr())
 // }
-// PtSmethodsDone()
+// pt.SmethodsDone()
 // func handler(conn net.Conn) {
-// 	or, err := PtConnectOr(&ptInfo, ws.Conn)
+// 	or, err := pt.ConnectOr(&ptInfo, ws.Conn)
 // 	if err != nil {
 // 		return
 // 	}
 // 	// Do something with or and conn.
 // }
 
-package main
+package pt
 
 import (
 	"bufio"
@@ -57,7 +57,7 @@ func getenv(key string) string {
 func getenvRequired(key string) string {
 	value := os.Getenv(key)
 	if value == "" {
-		PtEnvError(fmt.Sprintf("no %s environment variable", key))
+		EnvError(fmt.Sprintf("no %s environment variable", key))
 	}
 	return value
 }
@@ -82,7 +82,7 @@ func escape(s string) string {
 
 // Print a pluggable transports protocol line to stdout. The line consists of an
 // unescaped keyword, followed by any number of escaped strings.
-func PtLine(keyword string, v ...string) {
+func Line(keyword string, v ...string) {
 	var buf bytes.Buffer
 	buf.WriteString(keyword)
 	for _, x := range v {
@@ -92,51 +92,51 @@ func PtLine(keyword string, v ...string) {
 	os.Stdout.Sync()
 }
 
-// All of the Pt*Error functions call os.Exit(1).
+// All of the *Error functions call os.Exit(1).
 
 // Emit an ENV-ERROR with explanation text.
-func PtEnvError(msg string) {
-	PtLine("ENV-ERROR", msg)
+func EnvError(msg string) {
+	Line("ENV-ERROR", msg)
 	os.Exit(1)
 }
 
 // Emit a VERSION-ERROR with explanation text.
-func PtVersionError(msg string) {
-	PtLine("VERSION-ERROR", msg)
+func VersionError(msg string) {
+	Line("VERSION-ERROR", msg)
 	os.Exit(1)
 }
 
 // Emit a CMETHOD-ERROR with explanation text.
-func PtCmethodError(methodName, msg string) {
-	PtLine("CMETHOD-ERROR", methodName, msg)
+func CmethodError(methodName, msg string) {
+	Line("CMETHOD-ERROR", methodName, msg)
 	os.Exit(1)
 }
 
 // Emit an SMETHOD-ERROR with explanation text.
-func PtSmethodError(methodName, msg string) {
-	PtLine("SMETHOD-ERROR", methodName, msg)
+func SmethodError(methodName, msg string) {
+	Line("SMETHOD-ERROR", methodName, msg)
 	os.Exit(1)
 }
 
 // Emit a CMETHOD line. socks must be "socks4" or "socks5". Call this once for
 // each listening client SOCKS port.
-func PtCmethod(name string, socks string, addr net.Addr) {
-	PtLine("CMETHOD", name, socks, addr.String())
+func Cmethod(name string, socks string, addr net.Addr) {
+	Line("CMETHOD", name, socks, addr.String())
 }
 
 // Emit a CMETHODS DONE line. Call this after opening all client listeners.
-func PtCmethodsDone() {
-	PtLine("CMETHODS", "DONE")
+func CmethodsDone() {
+	Line("CMETHODS", "DONE")
 }
 
 // Emit an SMETHOD line. Call this once for each listening server port.
-func PtSmethod(name string, addr net.Addr) {
-	PtLine("SMETHOD", name, addr.String())
+func Smethod(name string, addr net.Addr) {
+	Line("SMETHOD", name, addr.String())
 }
 
 // Emit an SMETHODS DONE line. Call this after opening all server listeners.
-func PtSmethodsDone() {
-	PtLine("SMETHODS", "DONE")
+func SmethodsDone() {
+	Line("SMETHODS", "DONE")
 }
 
 // Get a pluggable transports version offered by Tor and understood by us, if
@@ -172,28 +172,28 @@ func getClientTransports(methodNames []string) []string {
 	return result
 }
 
-// This structure is returned by PtClientSetup. It consists of a list of method
+// This structure is returned by ClientSetup. It consists of a list of method
 // names.
-type PtClientInfo struct {
+type ClientInfo struct {
 	MethodNames []string
 }
 
 // Check the client pluggable transports environments, emitting an error message
 // and exiting the program if any error is encountered. Returns a subset of
 // methodNames requested by Tor.
-func PtClientSetup(methodNames []string) PtClientInfo {
-	var info PtClientInfo
+func ClientSetup(methodNames []string) ClientInfo {
+	var info ClientInfo
 
 	ver := getManagedTransportVer()
 	if ver == "" {
-		PtVersionError("no-version")
+		VersionError("no-version")
 	} else {
-		PtLine("VERSION", ver)
+		Line("VERSION", ver)
 	}
 
 	info.MethodNames = getClientTransports(methodNames)
 	if len(info.MethodNames) == 0 {
-		PtCmethodsDone()
+		CmethodsDone()
 		os.Exit(1)
 	}
 
@@ -202,7 +202,7 @@ func PtClientSetup(methodNames []string) PtClientInfo {
 
 // A combination of a method name and an address, as extracted from
 // TOR_PT_SERVER_BINDADDR.
-type PtBindAddr struct {
+type BindAddr struct {
 	MethodName string
 	Addr       *net.TCPAddr
 }
@@ -226,8 +226,8 @@ func resolveBindAddr(bindAddr string) (*net.TCPAddr, error) {
 
 // Return a new slice, the members of which are those members of addrs having a
 // MethodName in methodsNames.
-func filterBindAddrs(addrs []PtBindAddr, methodNames []string) []PtBindAddr {
-	var result []PtBindAddr
+func filterBindAddrs(addrs []BindAddr, methodNames []string) []BindAddr {
+	var result []BindAddr
 
 	for _, ba := range addrs {
 		for _, methodName := range methodNames {
@@ -244,22 +244,22 @@ func filterBindAddrs(addrs []PtBindAddr, methodNames []string) []PtBindAddr {
 // Return a map from method names to bind addresses. The map is the contents of
 // TOR_PT_SERVER_BINDADDR, with keys filtered by TOR_PT_SERVER_TRANSPORTS, and
 // further filtered by the methods in methodNames.
-func getServerBindAddrs(methodNames []string) []PtBindAddr {
-	var result []PtBindAddr
+func getServerBindAddrs(methodNames []string) []BindAddr {
+	var result []BindAddr
 
 	// Get the list of all requested bindaddrs.
 	var serverBindAddr = getenvRequired("TOR_PT_SERVER_BINDADDR")
 	for _, spec := range strings.Split(serverBindAddr, ",") {
-		var bindAddr PtBindAddr
+		var bindAddr BindAddr
 
 		parts := strings.SplitN(spec, "-", 2)
 		if len(parts) != 2 {
-			PtEnvError(fmt.Sprintf("TOR_PT_SERVER_BINDADDR: %q: doesn't contain \"-\"", spec))
+			EnvError(fmt.Sprintf("TOR_PT_SERVER_BINDADDR: %q: doesn't contain \"-\"", spec))
 		}
 		bindAddr.MethodName = parts[0]
 		addr, err := resolveBindAddr(parts[1])
 		if err != nil {
-			PtEnvError(fmt.Sprintf("TOR_PT_SERVER_BINDADDR: %q: %s", spec, err.Error()))
+			EnvError(fmt.Sprintf("TOR_PT_SERVER_BINDADDR: %q: %s", spec, err.Error()))
 		}
 		bindAddr.Addr = addr
 		result = append(result, bindAddr)
@@ -313,10 +313,10 @@ func readAuthCookieFile(filename string) ([]byte, error) {
 	return cookie, nil
 }
 
-// This structure is returned by PtServerSetup. It consists of a list of
-// PtBindAddrs, along with a single address for the ORPort.
-type PtServerInfo struct {
-	BindAddrs      []PtBindAddr
+// This structure is returned by ServerSetup. It consists of a list of
+// BindAddrs, along with a single address for the ORPort.
+type ServerInfo struct {
+	BindAddrs      []BindAddr
 	OrAddr         *net.TCPAddr
 	ExtendedOrAddr *net.TCPAddr
 	AuthCookie     []byte
@@ -324,28 +324,27 @@ type PtServerInfo struct {
 
 // Check the server pluggable transports environments, emitting an error message
 // and exiting the program if any error is encountered. Resolves the various
-// requested bind addresses and the server ORPort. Returns a PtServerInfo
-// struct.
-func PtServerSetup(methodNames []string) PtServerInfo {
-	var info PtServerInfo
+// requested bind addresses and the server ORPort. Returns a ServerInfo struct.
+func ServerSetup(methodNames []string) ServerInfo {
+	var info ServerInfo
 	var err error
 
 	ver := getManagedTransportVer()
 	if ver == "" {
-		PtVersionError("no-version")
+		VersionError("no-version")
 	} else {
-		PtLine("VERSION", ver)
+		Line("VERSION", ver)
 	}
 
 	var orPort = getenvRequired("TOR_PT_ORPORT")
 	info.OrAddr, err = net.ResolveTCPAddr("tcp", orPort)
 	if err != nil {
-		PtEnvError(fmt.Sprintf("cannot resolve TOR_PT_ORPORT %q: %s", orPort, err.Error()))
+		EnvError(fmt.Sprintf("cannot resolve TOR_PT_ORPORT %q: %s", orPort, err.Error()))
 	}
 
 	info.BindAddrs = getServerBindAddrs(methodNames)
 	if len(info.BindAddrs) == 0 {
-		PtSmethodsDone()
+		SmethodsDone()
 		os.Exit(1)
 	}
 
@@ -353,7 +352,7 @@ func PtServerSetup(methodNames []string) PtServerInfo {
 	if extendedOrPort != "" {
 		info.ExtendedOrAddr, err = net.ResolveTCPAddr("tcp", extendedOrPort)
 		if err != nil {
-			PtEnvError(fmt.Sprintf("cannot resolve TOR_PT_EXTENDED_SERVER_PORT %q: %s", extendedOrPort, err.Error()))
+			EnvError(fmt.Sprintf("cannot resolve TOR_PT_EXTENDED_SERVER_PORT %q: %s", extendedOrPort, err.Error()))
 		}
 	}
 
@@ -361,7 +360,7 @@ func PtServerSetup(methodNames []string) PtServerInfo {
 	if authCookieFilename != "" {
 		info.AuthCookie, err = readAuthCookieFile(authCookieFilename)
 		if err != nil {
-			PtEnvError(fmt.Sprintf("error reading TOR_PT_AUTH_COOKIE_FILE %q: %s", authCookieFilename, err.Error()))
+			EnvError(fmt.Sprintf("error reading TOR_PT_AUTH_COOKIE_FILE %q: %s", authCookieFilename, err.Error()))
 		}
 	}
 
@@ -369,7 +368,7 @@ func PtServerSetup(methodNames []string) PtServerInfo {
 }
 
 // See 217-ext-orport-auth.txt section 4.2.1.3.
-func computeServerHash(info *PtServerInfo, clientNonce, serverNonce []byte) []byte {
+func computeServerHash(info *ServerInfo, clientNonce, serverNonce []byte) []byte {
 	h := hmac.New(sha256.New, info.AuthCookie)
 	io.WriteString(h, "ExtORPort authentication server-to-client hash")
 	h.Write(clientNonce)
@@ -378,7 +377,7 @@ func computeServerHash(info *PtServerInfo, clientNonce, serverNonce []byte) []by
 }
 
 // See 217-ext-orport-auth.txt section 4.2.1.3.
-func computeClientHash(info *PtServerInfo, clientNonce, serverNonce []byte) []byte {
+func computeClientHash(info *ServerInfo, clientNonce, serverNonce []byte) []byte {
 	h := hmac.New(sha256.New, info.AuthCookie)
 	io.WriteString(h, "ExtORPort authentication client-to-server hash")
 	h.Write(clientNonce)
@@ -386,7 +385,7 @@ func computeClientHash(info *PtServerInfo, clientNonce, serverNonce []byte) []by
 	return h.Sum([]byte{})
 }
 
-func extOrPortAuthenticate(s *net.TCPConn, info *PtServerInfo) error {
+func extOrPortAuthenticate(s *net.TCPConn, info *ServerInfo) error {
 	r := bufio.NewReader(s)
 
 	// Read auth types. 217-ext-orport-auth.txt section 4.1.
@@ -577,7 +576,7 @@ func extOrPortSetup(s *net.TCPConn, conn net.Conn, methodName string) error {
 // open *net.TCPConn. If connecting to the extended OR port, extended OR port
 // authentication à la 217-ext-orport-auth.txt is done before returning; an
 // error is returned if authentication fails.
-func PtConnectOr(info *PtServerInfo, conn net.Conn, methodName string) (*net.TCPConn, error) {
+func ConnectOr(info *ServerInfo, conn net.Conn, methodName string) (*net.TCPConn, error) {
 	if info.ExtendedOrAddr == nil {
 		return net.DialTCP("tcp", nil, info.OrAddr)
 	}

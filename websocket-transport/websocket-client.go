@@ -18,6 +18,8 @@ import (
 	"time"
 )
 
+import "./pt"
+
 const ptMethodName = "websocket"
 const socksTimeout = 2 * time.Second
 const bufSiz = 1500
@@ -205,19 +207,19 @@ func main() {
 	}
 
 	Log("starting")
-	PtClientSetup([]string{ptMethodName})
+	pt.ClientSetup([]string{ptMethodName})
 
 	listeners := make([]*net.TCPListener, 0)
 	for _, socksAddrStr := range socksAddrStrs {
 		ln, err := startListener(socksAddrStr)
 		if err != nil {
-			PtCmethodError(ptMethodName, err.Error())
+			pt.CmethodError(ptMethodName, err.Error())
 		}
-		PtCmethod(ptMethodName, "socks4", ln.Addr())
+		pt.Cmethod(ptMethodName, "socks4", ln.Addr())
 		Log("listening on %s", ln.Addr().String())
 		listeners = append(listeners, ln)
 	}
-	PtCmethodsDone()
+	pt.CmethodsDone()
 
 	var numHandlers int = 0
 

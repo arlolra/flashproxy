@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+import "./pt"
+
 const ptMethodName = "websocket"
 const requestTimeout = 10 * time.Second
 // "4/3+1" accounts for possible base64 encoding.
@@ -26,7 +28,7 @@ const maxMessageSize = 64*1024*4/3 + 1
 
 var logFile = os.Stderr
 
-var ptInfo PtServerInfo
+var ptInfo pt.ServerInfo
 
 // When a connection handler starts, +1 is written to this channel; when it
 // ends, -1 is written.
@@ -171,7 +173,7 @@ func websocketHandler(ws *Websocket) {
 		handlerChan <- -1
 	}()
 
-	s, err := PtConnectOr(&ptInfo, ws.Conn, ptMethodName)
+	s, err := pt.ConnectOr(&ptInfo, ws.Conn, ptMethodName)
 	if err != nil {
 		Log("Failed to connect to ORPort: " + err.Error())
 		return
@@ -220,7 +222,7 @@ func main() {
 	}
 
 	Log("starting")
-	ptInfo = PtServerSetup([]string{ptMethodName})
+	ptInfo = pt.ServerSetup([]string{ptMethodName})
 
 	listeners := make([]*net.TCPListener, 0)
 	for _, bindAddr := range ptInfo.BindAddrs {
@@ -233,13 +235,13 @@ func main() {
 
 		ln, err := startListener(bindAddr.Addr)
 		if err != nil {
-			PtSmethodError(bindAddr.MethodName, err.Error())
+			pt.SmethodError(bindAddr.MethodName, err.Error())
 		}
-		PtSmethod(bindAddr.MethodName, ln.Addr())
+		pt.Smethod(bindAddr.MethodName, ln.Addr())
 		Log("listening on %s", ln.Addr().String())
 		listeners = append(listeners, ln)
 	}
-	PtSmethodsDone()
+	pt.SmethodsDone()
 
 	var numHandlers int = 0
 
