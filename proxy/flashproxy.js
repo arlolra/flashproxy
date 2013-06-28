@@ -86,6 +86,7 @@ var WebSocket = window.WebSocket || window.MozWebSocket;
 var query = parse_query_string(window.location.search.substr(1));
 var cookies = parse_cookie_string(document.cookie);
 var DEBUG = get_param_boolean(query, "debug", false);
+var SAFE_LOGGING = !get_param_boolean(query, "unsafe_logging", false);
 var debug_div;
 
 if (DEBUG) {
@@ -541,7 +542,7 @@ function FlashProxy() {
 
     this.proxy_main = function() {
         var params;
-        var url;
+        var base_url, url;
         var xhr;
 
         if (this.proxy_pairs.length >= this.max_num_proxy_pairs) {
@@ -554,7 +555,8 @@ function FlashProxy() {
         /* Clients we're currently handling. */
         for (var i = 0; i < this.proxy_pairs.length; i++)
             params.push(["client", format_addr(this.proxy_pairs[i].client_addr)]);
-        url = this.fac_url.replace(/\?.*/, "") + "?" + build_query_string(params);
+        base_url = this.fac_url.replace(/\?.*/, "");
+        url = base_url + "?" + build_query_string(params);
         xhr = new XMLHttpRequest();
         try {
             xhr.open("GET", url);
@@ -579,6 +581,11 @@ function FlashProxy() {
                 }
             }
         }.bind(this);
+
+        /* Remove query string if scrubbing. */
+        if (SAFE_LOGGING)
+            url = base_url;
+
         puts("Facilitator: connecting to " + url + ".");
         xhr.send(null);
     };
@@ -612,7 +619,7 @@ function FlashProxy() {
         }
         client_addr = parse_addr_spec(response.client);
         if (client_addr === null) {
-            puts("Error: can't parse client spec " + repr(response.client) + ".");
+            puts("Error: can't parse client spec " + safe_repr(response.client) + ".");
             return;
         }
         if (!response.relay) {
@@ -621,11 +628,11 @@ function FlashProxy() {
         }
         relay_addr = parse_addr_spec(response.relay);
         if (relay_addr === null) {
-            puts("Error: can't parse relay spec " + repr(response.relay) + ".");
+            puts("Error: can't parse relay spec " + safe_repr(response.relay) + ".");
             return;
         }
-        puts("Facilitator: got client:" + repr(client_addr) + " "
-            + "relay:" + repr(relay_addr) + ".");
+        puts("Facilitator: got client:" + safe_repr(client_addr) + " "
+            + "relay:" + safe_repr(relay_addr) + ".");
 
         this.begin_proxy(client_addr, relay_addr);
     };
@@ -653,7 +660,7 @@ function FlashProxy() {
         try {
             proxy_pair.connect();
         } catch (err) {
-            puts("ProxyPair: exception while connecting: " + repr(err.message) + ".");
+            puts("ProxyPair: exception while connecting: " + safe_repr(err.message) + ".");
             this.die();
             return;
         }
@@ -995,6 +1002,10 @@ function repr(x) {
     } else {
         return x.toString();
     }
+}
+
+function safe_repr(s) {
+    return SAFE_LOGGING ? "[scrubbed]" : repr(s);
 }
 
 /* Do we seem to be running in Tor Browser? Check the user-agent string and for
