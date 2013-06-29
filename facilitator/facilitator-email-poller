@@ -207,17 +207,6 @@ if options.privdrop_username is not None:
 if options.imaplib_debug:
     imaplib.Debug = 4
 
-def find_client_addr(body):
-    """Find and parse the first client line of the form
-        client=...
-    Returns None if no client line was found.
-    """
-    for line in body.splitlines():
-        if line.startswith("client="):
-            _, client_spec = line.split("=", 1)
-            return fac.parse_addr_spec(client_spec)
-    return None
-
 def handle_message(msg):
     try:
         if fac.put_reg_base64(msg.get_payload()):
