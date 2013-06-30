@@ -31,6 +31,12 @@
     "client" and "relay" parameters. It serves the one given client and
     then stops. Patch by Arlo Breault. Fixes bug 9006.
 
+  o facilitator-email-poller ignores messages received a long time ago.
+    This is to fix the situation where facilitator-email-poller stops
+    running for some reason, comes back after some hours, and then
+    flushes a lot of no-longer-relevant registrations out to proxies.
+    Patch by Sukhbir Singh and David Fifield. Fixes bug 8285.
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.

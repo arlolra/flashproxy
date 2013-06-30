@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+import calendar
+import datetime
 import email
+import email.utils
 import getopt
 import imaplib
 import math
@@ -24,6 +27,9 @@ DEFAULT_EMAIL_ADDRESS = "flashproxyreg.a@gmail.com"
 DEFAULT_LOG_FILENAME = "facilitator-email-poller.log"
 
 POLL_INTERVAL = 60
+# Ignore message older than this many seconds old, or newer than this many
+# seconds in the future.
+REGISTRATION_AGE_LIMIT = 30 * 60
 
 FACILITATOR_ADDR = ("127.0.0.1", 9002)
 
@@ -207,6 +213,39 @@ if options.privdrop_username is not None:
 if options.imaplib_debug:
     imaplib.Debug = 4
 
+def message_get_date(msg):
+    """Get the datetime when the message was received by reading the X-Received
+    header, relative to UTC. Returns None on error."""
+    x_received = msg["X-Received"]
+    if x_received is None:
+        log(u"X-Received is missing")
+        return None
+    try:
+        _, date_str = x_received.rsplit(";", 1)
+        date_str = date_str.strip()
+    except ValueError:
+        log(u"can't parse X-Received %s" % repr(x_received))
+        return None
+    date_tuple = email.utils.parsedate_tz(date_str)
+    if date_tuple is None:
+        log(u"can't parse X-Received date string %s" % repr(date_str))
+        return None
+    timestamp_utc = calendar.timegm(date_tuple[:8] + (0,)) - date_tuple[9]
+    return datetime.datetime.utcfromtimestamp(timestamp_utc)
+
+def message_ok(msg):
+    date = message_get_date(msg)
+    if date is not None:
+        now = datetime.datetime.utcnow()
+        age = time.mktime(now.utctimetuple()) - time.mktime(date.utctimetuple())
+        if age > REGISTRATION_AGE_LIMIT:
+            log(u"message dated %s UTC is too old: %d seconds" % (date, age))
+            return False
+        if -age > REGISTRATION_AGE_LIMIT:
+            log(u"message dated %s UTC is from the future: %d seconds" % (date, -age))
+            return False
+    return True
+
 def handle_message(msg):
     try:
         if fac.put_reg_base64(msg.get_payload()):
@@ -279,7 +318,8 @@ def imap_loop(imap):
 
                 try:
                     msg = email.message_from_string(msg_text)
-                    handle_message(msg)
+                    if message_ok(msg):
+                        handle_message(msg)
                 except Exception, e:
                     log("Error processing message, deleting anyway: %s" % str(e))
 
