@@ -59,8 +59,8 @@ class options(object):
     register = False
     register_commands = []
     pid_filename = None
+    port_forwarding = False
     safe_logging = True
-    nat_traversal = False
     address_family = socket.AF_UNSPEC
 
 # We accept up to this many bytes from a socket not yet matched with a partner
@@ -113,7 +113,7 @@ omitted, it uses a public default.
                               methods. Implies --register. Possible methods are
                                 appspot email http
                               Default is "%(reg_methods)s".
-      --nat-traversal       attempt to traverse NAT with tor-fw-helper.
+      --port-forwarding     attempt to forward REMOTE port with tor-fw-helper.
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
@@ -129,8 +129,8 @@ def safe_str(s):
     else:
         return s
 
-def traverse_nat():
-    if not options.nat_traversal:
+def forward_ports():
+    if not options.port_forwarding:
         return False
     port = options.remote_addrs[0][1]
     script_path = os.path.join(get_script_dir(), "tor-fw-helper")
@@ -1085,7 +1085,7 @@ def main():
     register_addr_spec = None
     register_methods = []
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "nat-traversal", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "port-forwarding", "unsafe-logging"])
     for o, a in opts:
         if o == "-4":
             options.address_family = socket.AF_INET
@@ -1117,8 +1117,8 @@ def main():
         elif o == "--register-methods":
             options.register = True
             register_methods.extend(a.split(","))
-        elif o == "--nat-traversal":
-            options.nat_traversal = True
+        elif o == "--port-forwarding":
+            options.port_forwarding = True
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
@@ -1174,8 +1174,8 @@ def main():
     for method in register_methods:
         options.register_commands.append(build_register_command(method))
 
-    # Attempt to traverse NAT if enabled
-    traverse_nat()
+    # Attempt to forward ports if requested.
+    forward_ports()
 
     # Remote sockets, accepting remote WebSocket connections from proxies.
     remote_listen = []
