@@ -77,7 +77,7 @@ OPTIONS
 
 **--register-methods**=__METHOD__[,__METHOD__]::
     Register using the given comma-separated list of methods. Implies --register. 
-    Possible methods are: email, http. Default is "email,http".
+    Possible methods are: appspot, email, http. Default is "appspot,email,http".
 
 **--port-forwarding**::
     Attempt to forward __REMOTE__ port.
