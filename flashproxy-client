@@ -37,6 +37,7 @@ DEFAULT_LOCAL_PORT_MANAGED = 0
 DEFAULT_LOCAL_PORT_EXTERNAL = 9001
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_REGISTER_METHODS = ["appspot", "email", "http"]
+DEFAULT_PORT_FORWARDING_HELPER = "tor-fw-helper"
 
 # We will re-register if we have fewer than this many waiting proxies. The
 # facilitator may choose to ignore our requests.
@@ -60,6 +61,7 @@ class options(object):
     register_commands = []
     pid_filename = None
     port_forwarding = False
+    port_forwarding_helper = DEFAULT_PORT_FORWARDING_HELPER
     safe_logging = True
     address_family = socket.AF_UNSPEC
 
@@ -113,13 +115,16 @@ omitted, it uses a public default.
                               methods. Implies --register. Possible methods are
                                 appspot email http
                               Default is "%(reg_methods)s".
-      --port-forwarding     attempt to forward REMOTE port with tor-fw-helper.
+      --port-forwarding     attempt to forward REMOTE port.
+      --port-forwarding-helper=PROGRAM  use the given PROGRAM to forward ports
+                              (default "%(port_forwarding_helper)s"). Implies --port-forwarding.
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "local_port": DEFAULT_LOCAL_PORT_EXTERNAL,
     "remote_port": DEFAULT_REMOTE_PORT,
     "reg_methods": ",".join(DEFAULT_REGISTER_METHODS),
+    "port_forwarding_helper": DEFAULT_PORT_FORWARDING_HELPER,
 }
 
 def safe_str(s):
@@ -132,8 +137,7 @@ def safe_str(s):
 def forward_ports(pairs):
     """Attempt to forward all given pairs (external, internal) pairs of ports
     using port_forwarding_helper."""
-    script_path = os.path.join(get_script_dir(), "tor-fw-helper")
-    command = [script_path]
+    command = [options.port_forwarding_helper]
     basename = os.path.basename(command[0])
     for external, internal in pairs:
         command += ["-p", "%d:%d" % (external, internal)]
@@ -1086,7 +1090,7 @@ def main():
     register_addr_spec = None
     register_methods = []
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "port-forwarding", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "port-forwarding", "port-forwarding-helper=", "unsafe-logging"])
     for o, a in opts:
         if o == "-4":
             options.address_family = socket.AF_INET
@@ -1120,6 +1124,9 @@ def main():
             register_methods.extend(a.split(","))
         elif o == "--port-forwarding":
             options.port_forwarding = True
+        elif o == "--port-forwarding-helper":
+            options.port_forwarding = True
+            options.port_forwarding_helper = a
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
