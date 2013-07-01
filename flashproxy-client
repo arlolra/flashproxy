@@ -129,14 +129,11 @@ def safe_str(s):
     else:
         return s
 
-def forward_ports():
-    if not options.port_forwarding:
-        return False
-    port = options.remote_addrs[0][1]
+def forward_ports(external, internal):
     script_path = os.path.join(get_script_dir(), "tor-fw-helper")
-    command = [script_path, "-p", ":%s" % port]
+    command = [script_path, "-p", "%d:%d" % (external, internal)]
     try:
-        log(u"Attempting NAT traversal for port: %d" % port)
+        log(u"Attempting NAT traversal for ports: %d:%d" % (external, internal))
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
     except OSError, e:
@@ -1175,7 +1172,8 @@ def main():
         options.register_commands.append(build_register_command(method))
 
     # Attempt to forward ports if requested.
-    forward_ports()
+    if options.port_forwarding:
+        forward_ports(remote_addr[1], remote_addr[1])
 
     # Remote sockets, accepting remote WebSocket connections from proxies.
     remote_listen = []
