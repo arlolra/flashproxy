@@ -79,6 +79,17 @@ OPTIONS
     Register using the given comma-separated list of methods. Implies --register. 
     Possible methods are: email, http. Default is "email,http".
 
+**--port-forwarding**::
+    Attempt to forward __REMOTE__ port.
+
+**--port-forwarding-helper**=__PROGRAM__::
+    Use the given PROGRAM to forward ports (default "tor-fw-helper"). Implies
+    --port-forwarding.
+
+**--port-forwarding-external**=__PORT__::
+    Forward the external __PORT__ to __REMOTE__ on the local host (default same
+    as REMOTE). Implies --port-forwarding.
+
 **--unsafe-logging**::
     Don't scrub IP addresses from logs.
 
