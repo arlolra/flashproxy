@@ -134,29 +134,6 @@ def safe_str(s):
     else:
         return s
 
-def forward_ports(pairs):
-    """Attempt to forward all given pairs (external, internal) pairs of ports
-    using port_forwarding_helper."""
-    command = [options.port_forwarding_helper]
-    basename = os.path.basename(command[0])
-    for external, internal in pairs:
-        command += ["-p", "%d:%d" % (external, internal)]
-    try:
-        log(u"Running port forwarding command: %s" % " ".join(command))
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = p.communicate()
-    except OSError, e:
-        log(u"Error running %s: %s" % (basename, str(e)))
-        return False
-    for line in stdout.splitlines():
-        log(u"%s: %s" % (basename, line))
-    for line in stderr.splitlines():
-        log(u"%s: %s" % (basename, line))
-    if p.returncode != 0:
-        log("%s exited with status %d." % (basename, p.returncode))
-        return False
-    return True
-
 log_lock = threading.Lock()
 def log(msg):
     log_lock.acquire()
@@ -724,6 +701,29 @@ def handle_socks_request(fd):
 def report_pending():
     log(u"locals  (%d): %s" % (len(locals), [safe_format_peername(x) for x in locals]))
     log(u"remotes (%d): %s" % (len(remotes), [safe_format_peername(x) for x in remotes]))
+
+def forward_ports(pairs):
+    """Attempt to forward all given pairs (external, internal) pairs of ports
+    using port_forwarding_helper."""
+    command = [options.port_forwarding_helper]
+    basename = os.path.basename(command[0])
+    for external, internal in pairs:
+        command += ["-p", "%d:%d" % (external, internal)]
+    try:
+        log(u"Running port forwarding command: %s" % " ".join(command))
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+    except OSError, e:
+        log(u"Error running %s: %s" % (basename, str(e)))
+        return False
+    for line in stdout.splitlines():
+        log(u"%s: %s" % (basename, line))
+    for line in stderr.splitlines():
+        log(u"%s: %s" % (basename, line))
+    if p.returncode != 0:
+        log("%s exited with status %d." % (basename, p.returncode))
+        return False
+    return True
  
 register_condvar = threading.Condition()
 def register():
