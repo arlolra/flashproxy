@@ -62,6 +62,7 @@ class options(object):
     pid_filename = None
     port_forwarding = False
     port_forwarding_helper = DEFAULT_PORT_FORWARDING_HELPER
+    port_forwarding_external = None
     safe_logging = True
     address_family = socket.AF_UNSPEC
 
@@ -118,6 +119,9 @@ omitted, it uses a public default.
       --port-forwarding     attempt to forward REMOTE port.
       --port-forwarding-helper=PROGRAM  use the given PROGRAM to forward ports
                               (default "%(port_forwarding_helper)s"). Implies --port-forwarding.
+      --port-forwarding-external=PORT  forward the external PORT to REMOTE on
+                              the local host (default same as REMOTE). Implies
+                              --port-forwarding.
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
@@ -1086,7 +1090,7 @@ def main():
     register_addr_spec = None
     register_methods = []
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "port-forwarding", "port-forwarding-helper=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "port-forwarding", "port-forwarding-helper=", "port-forwarding-external=", "unsafe-logging"])
     for o, a in opts:
         if o == "-4":
             options.address_family = socket.AF_INET
@@ -1123,6 +1127,9 @@ def main():
         elif o == "--port-forwarding-helper":
             options.port_forwarding = True
             options.port_forwarding_helper = a
+        elif o == "--port-forwarding-external":
+            options.port_forwarding = True
+            options.port_forwarding_external = int(a)
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
@@ -1180,7 +1187,12 @@ def main():
 
     # Attempt to forward ports if requested.
     if options.port_forwarding:
-        forward_ports(((remote_addr[1], remote_addr[1]),))
+        internal = remote_addr[1]
+        if options.port_forwarding_external is not None:
+            external = options.port_forwarding_external
+        else:
+            external = internal
+        forward_ports(((external, internal),))
 
     # Remote sockets, accepting remote WebSocket connections from proxies.
     remote_listen = []
