@@ -38,7 +38,8 @@
     Patch by Sukhbir Singh and David Fifield. Fixes bug 8285.
 
   o New --port-forwarding and friends options enable flashproxy-client
-    to invoke tor-fw-helper to forward ports automatically.
+    to invoke tor-fw-helper to forward ports automatically. Patch by
+    Arlo Breault and David Fifield. Fixes bug 9033.
 
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
