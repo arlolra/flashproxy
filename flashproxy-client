@@ -1001,16 +1001,22 @@ def build_register_command(method):
         command = [os.path.join(script_dir, "flashproxy-reg-appspot")] + af
         if options.facilitator_pubkey_filename is not None:
             command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
+        if not options.safe_logging:
+            command += ["--unsafe-logging"]
         return command
     elif method == "email":
         command = [os.path.join(script_dir, "flashproxy-reg-email")] + af
         if options.facilitator_pubkey_filename is not None:
             command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
+        if not options.safe_logging:
+            command += ["--unsafe-logging"]
         return command
     elif method == "http":
         command = [os.path.join(script_dir, "flashproxy-reg-http")] + af
         if options.facilitator_url is not None:
             command += ["-f", options.facilitator_url]
+        if not options.safe_logging:
+            command += ["--unsafe-logging"]
         return command
     else:
         raise ValueError("Unknown registration method \"%s\"" % method)

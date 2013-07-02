@@ -16,6 +16,7 @@ class options(object):
     remote_addr = None
     facilitator_url = None
     address_family = socket.AF_UNSPEC
+    safe_logging = True
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -27,12 +28,20 @@ remote address registered is "%(remote_addr)s".
   -6                     name lookups use only IPv6.
   -f, --facilitator=URL  register with the given facilitator
                            (by default "%(fac_url)s").
-  -h, --help             show this help.\
+  -h, --help             show this help.
+  --unsafe-logging       don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "fac_url": DEFAULT_FACILITATOR_URL,
     "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
 }
+
+def safe_str(s):
+    """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
+    if options.safe_logging:
+        return "[scrubbed]"
+    else:
+        return s
 
 def parse_addr_spec(spec, defhost = None, defport = None):
     host = None
@@ -87,7 +96,7 @@ def format_addr(addr):
 options.facilitator_url = DEFAULT_FACILITATOR_URL
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:h", ["facilitator=", "help"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:h", ["facilitator=", "help", "unsafe-logging"])
 for o, a in opts:
     if o == "-4":
         options.address_family = socket.AF_INET
@@ -98,6 +107,8 @@ for o, a in opts:
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
+    elif o == "--unsafe-logging":
+        options.safe_logging = False
 
 if len(args) == 0:
     pass
@@ -127,4 +138,4 @@ except Exception, e:
     sys.exit(1)
 http.close()
 
-print "Registered \"%s\" with %s." % (spec, options.facilitator_url)
+print "Registered \"%s\" with %s." % (safe_str(spec), options.facilitator_url)

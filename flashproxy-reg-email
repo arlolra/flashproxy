@@ -88,6 +88,7 @@ class options(object):
     address_family = socket.AF_UNSPEC
     facilitator_pubkey_filename = None
     use_certificate_pin = True
+    safe_logging = True
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -112,13 +113,21 @@ This program requires the M2Crypto library for Python.
                             public key (default built-in).
   -h, --help              show this help.
   -s, --smtp=HOST[:PORT]  use the given SMTP server
-                            (default "%(smtp_addr)s").\
+                            (default "%(smtp_addr)s").
+  --unsafe-logging        don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
     "email_addr": DEFAULT_EMAIL_ADDRESS,
     "smtp_addr": format_addr((DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)),
 }
+
+def safe_str(s):
+    """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
+    if options.safe_logging:
+        return "[scrubbed]"
+    else:
+        return s
 
 def parse_addr_spec(spec, defhost = None, defport = None):
     host = None
@@ -170,6 +179,9 @@ def format_addr(addr):
         result += u":%d" % port
     return result
 
+def safe_format_addr(addr):
+    return safe_str(format_addr(addr))
+
 def get_state_dir():
     """Get a directory where we can put temporary files. Returns None if any
     suitable temporary directory will do."""
@@ -192,7 +204,7 @@ def get_facilitator_pubkey():
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.smtp_addr = (DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:hs:", ["debug", "disable-pin", "email=", "facilitator-pubkey=", "help", "smtp="])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:hs:", ["debug", "disable-pin", "email=", "facilitator-pubkey=", "help", "smtp=", "unsafe-logging"])
 for o, a in opts:
     if o == "-4":
         options.address_family = socket.AF_INET
@@ -211,6 +223,8 @@ for o, a in opts:
         sys.exit()
     elif o == "-s" or o == "--smtp":
         options.smtp_addr = parse_addr_spec(a, DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
+    elif o == "--unsafe-logging":
+        options.safe_logging = False
 
 if len(args) == 0:
     options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
@@ -310,4 +324,4 @@ except Exception, e:
     print >> sys.stderr, "Failed to register: %s" % str(e)
     sys.exit(1)
 
-print "Registered \"%s\" with %s." % (format_addr(options.remote_addr), options.email_addr)
+print "Registered \"%s\" with %s." % (safe_format_addr(options.remote_addr), options.email_addr)
