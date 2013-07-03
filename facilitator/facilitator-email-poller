@@ -289,41 +289,54 @@ def imap_get_uid(imap, index):
 # delete it from there. Messages in Trash are deleted automatically after 30
 # days, but we do it immediately.
 def imap_loop(imap):
+    # Copy all messages to Trash, and work on them from there. This is a
+    # failsafe so that messages will eventually be deleted if we are not
+    # able to retrieve them. This act of copying also deletes from All Mail.
+    typ, data = imap.select("[Gmail]/All Mail")
+    check_imap_return(typ, data)
+    imap.copy("1:*", "[Gmail]/Trash")
+
+    typ, data = imap.select("[Gmail]/Trash")
+    check_imap_return(typ, data)
+    exists = int(data[0])
+    if exists > 0:
+        while True:
+            # Grab message 1 on each iteration; remaining messages shift down so
+            # the next message we process is also message 1.
+            uid = imap_get_uid(imap, "1")
+            if uid is None:
+                break
+
+            typ, data = imap.uid("FETCH", uid, "(BODY[])")
+            check_imap_return(typ, data)
+            msg_text = data[0][1]
+            typ, data = imap.uid("STORE", uid, "+FLAGS", "\\Deleted")
+            check_imap_return(typ, data)
+            typ, data = imap.expunge()
+            check_imap_return(typ, data)
+
+            try:
+                msg = email.message_from_string(msg_text)
+                if message_ok(msg):
+                    handle_message(msg)
+            except Exception, e:
+                log("Error processing message, deleting anyway: %s" % str(e))
+
+def imap_idle(imap):
     while True:
-        # Copy all messages to Trash, and work on them from there. This is a
-        # failsafe so that messages will eventually be deleted if we are not
-        # able to retrieve them. This act of copying also deletes from All Mail.
         typ, data = imap.select("[Gmail]/All Mail")
         check_imap_return(typ, data)
-        imap.copy("1:*", "[Gmail]/Trash")
-
-        typ, data = imap.select("[Gmail]/Trash")
-        check_imap_return(typ, data)
-        exists = int(data[0])
-        if exists > 0:
-            while True:
-                # Grab message 1 on each iteration; remaining messages shift down so
-                # the next message we process is also message 1.
-                uid = imap_get_uid(imap, "1")
-                if uid is None:
-                    break
-
-                typ, data = imap.uid("FETCH", uid, "(BODY[])")
-                check_imap_return(typ, data)
-                msg_text = data[0][1]
-                typ, data = imap.uid("STORE", uid, "+FLAGS", "\\Deleted")
-                check_imap_return(typ, data)
-                typ, data = imap.expunge()
-                check_imap_return(typ, data)
-
-                try:
-                    msg = email.message_from_string(msg_text)
-                    if message_ok(msg):
-                        handle_message(msg)
-                except Exception, e:
-                    log("Error processing message, deleting anyway: %s" % str(e))
-
-        time.sleep(POLL_INTERVAL)
+        tag = imap._new_tag()
+        imap.send("%s IDLE\r\n" % tag)
+        resp = imap.readline()
+        if resp != '+ idling\r\n':
+            raise Exception("IDLE not handled? : %s" % resp)
+        while True:
+            resp = imap.readline()
+            if re.search(r'EXISTS', resp):
+                imap.send("DONE\r\n")
+                imap_loop(imap)
+                break
 
 def imap_login():
     """Make an IMAP connection, check the certificate and public key, and log in."""
@@ -376,10 +389,12 @@ while True:
     try:
         imap = imap_login()
         imap_loop(imap)
+        imap_idle(imap)
     except (imaplib.IMAP4.abort, ssl.SSLError, socket.error), e:
         # Try again after a disconnection.
         log(u"lost server connection: %s" % str(e))
     except KeyboardInterrupt:
+        imap.send("DONE\r\n")
         break
 
     try:
