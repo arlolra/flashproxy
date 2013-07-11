@@ -63,12 +63,11 @@ A4GBAFjOKer89961zgK5F7WF0bnj4JXMJTENAKaSbn+2kmOeUJXRmm/kEd5jhW6Y
 # SHA-1 digest of expected public keys. Any of these is valid. See
 # http://www.imperialviolet.org/2011/05/04/pinning.html for the reason behind
 # hashing the public key, not the entire certificate.
-PUBKEY_SHA1 = tuple(x.decode("hex") for x in (
-    "c70ccd442ff4528c603aefef85206fd693990e09",
-    "1697e17a8a3317f031721b7b6293cd50643bbbd3",
-    "291e750bafedac444486327e50f26f64d840991a",
-    "1e3f66cfa0eb03136297fdb238ad6619c30ff375",
-))
+PUBKEY_SHA1 = (
+    # https://src.chromium.org/viewvc/chrome/trunk/src/net/http/transport_security_state_static.h?revision=209003&view=markup
+    # kSPKIHash_Google1024
+    "\x40\xc5\x40\x1d\x6f\x8c\xba\xf0\x8b\x00\xed\xef\xb1\xee\x87\xd0\x05\xb3\xb9\xcd",
+)
 
 class options(object):
     address_family = socket.AF_UNSPEC
@@ -234,15 +233,18 @@ class PinHTTPSConnection(httplib.HTTPSConnection):
         self.sock = SSL.Connection(ctx, sock)
         self.sock.connect((self.host, self.port))
 
-        # Check that the public key is what we expect.
-        cert = self.sock.get_peer_cert()
-        pubkey_der = cert.get_pubkey().as_der()
-        pubkey_digest = sha1(pubkey_der).digest()
-
-        if options.use_certificate_pin and pubkey_digest not in PUBKEY_SHA1:
-            expected = "(" + ", ".join(x.encode("hex") for x in PUBKEY_SHA1) + ")"
-            raise ValueError("Public key does not match pin: got %s but expected any of %s" %
-                (pubkey_digest.encode("hex"), expected))
+        if options.use_certificate_pin:
+            found = []
+            for cert in self.sock.get_peer_cert_chain():
+                pubkey_der = cert.get_pubkey().as_der()
+                pubkey_digest = sha1(pubkey_der).digest()
+                if pubkey_digest in PUBKEY_SHA1:
+                    break
+                found.append(pubkey_digest)
+            else:
+                found = "(" + ", ".join(x.encode("hex") for x in found) + ")"
+                expected = "(" + ", ".join(x.encode("hex") for x in PUBKEY_SHA1) + ")"
+                raise ValueError("Public key does not match pin: got %s but expected any of %s" % (found, expected))
 
 class PinHTTPSHandler(urllib2.HTTPSHandler):
     def https_open(self, req):
