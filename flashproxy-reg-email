@@ -13,7 +13,7 @@ import tempfile
 from hashlib import sha1
 
 try:
-    from M2Crypto import BIO, RSA, X509
+    from M2Crypto import BIO, RSA, SSL, X509
 except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
     X509 = None
@@ -257,6 +257,9 @@ if options.debug:
     smtp.set_debuglevel(1)
 
 try:
+    ctx = SSL.Context("tlsv1")
+    ctx.set_verify(SSL.verify_peer, 2)
+
     ca_certs_fd, ca_certs_path = tempfile.mkstemp(prefix="flashproxy-reg-email-",
         dir=get_state_dir(), suffix=".crt")
     try:
@@ -270,15 +273,19 @@ try:
         code, msg = smtp.docmd("STARTTLS")
         if code != 220:
             raise ValueError("Got code %d after STARTTLS" % code)
-        smtp.sock = ssl.wrap_socket(smtp.sock, ssl_version=ssl.PROTOCOL_TLSv1,
-            cert_reqs=ssl.CERT_REQUIRED, ca_certs=ca_certs_path)
-        smtp.file = smtp.sock.makefile()
+        ret = ctx.load_verify_locations(ca_certs_path)
+        assert ret == 1
     finally:
         os.unlink(ca_certs_path)
 
+    smtp.sock = SSL.Connection(ctx, smtp.sock)
+    smtp.sock.setup_ssl()
+    smtp.sock.set_connect_state()
+    smtp.sock.connect_ssl()
+    smtp.file = smtp.sock.makefile()
+
     # Check that the public key is what we expect.
-    cert_der = smtp.sock.getpeercert(binary_form=True)
-    cert = X509.load_cert_string(cert_der, format=X509.FORMAT_DER)
+    cert = smtp.sock.get_peer_cert()
     pubkey_der = cert.get_pubkey().as_der()
     pubkey_digest = sha1(pubkey_der).digest()
 

@@ -19,7 +19,7 @@ import time
 import fac
 
 from hashlib import sha1
-from M2Crypto import X509
+from M2Crypto import SSL, X509
 
 DEFAULT_IMAP_HOST = "imap.gmail.com"
 DEFAULT_IMAP_PORT = 993
@@ -83,15 +83,41 @@ class options(object):
     imaplib_debug = False
     use_certificate_pin = True
 
+# Like socket.create_connection in that it tries resolving different address
+# families, but doesn't connect the socket.
+def create_socket(address, timeout = None, source_address = None):
+    host, port = address
+    addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)
+    if not addrs:
+        raise error("getaddrinfo returns an empty list")
+    err = None
+    for addr in addrs:
+        try:
+            s = socket.socket(addr[0], addr[1], addr[2])
+            if timeout is not None and type(timeout) == float:
+                s.settimeout(timeout)
+            if source_address is not None:
+                s.bind(source_address)
+            return s
+        except Exception, e:
+            err = e
+    raise err
+
 class IMAP4_SSL_REQUIRED(imaplib.IMAP4_SSL):
     """A subclass of of IMAP4_SSL that uses ssl_version=ssl.PROTOCOL_TLSv1 and
     cert_reqs=ssl.CERT_REQUIRED."""
     def open(self, host = "", port = imaplib.IMAP4_SSL_PORT):
+        ctx = SSL.Context("tlsv1")
+        ctx.set_verify(SSL.verify_peer, 2)
+        ret = ctx.load_verify_locations(self.certfile)
+        assert ret == 1
+
         self.host = host
         self.port = port
-        self.sock = socket.create_connection((host, port))
-        self.sslobj = ssl.wrap_socket(self.sock, ssl_version=ssl.PROTOCOL_TLSv1,
-            cert_reqs=ssl.CERT_REQUIRED, ca_certs=self.certfile)
+        self.sock = create_socket((self.host, self.port))
+
+        self.sslobj = SSL.Connection(ctx, self.sock)
+        self.sslobj.connect((self.host, self.port))
         self.file = self.sslobj.makefile('rb')
 
 def usage(f = sys.stdout):
@@ -337,8 +363,7 @@ def imap_login():
         ca_certs_file.close()
 
     # Check that the public key is what we expect.
-    cert_der = imap.ssl().getpeercert(binary_form=True)
-    cert = X509.load_cert_string(cert_der, format=X509.FORMAT_DER)
+    cert = imap.ssl().get_peer_cert()
     pubkey_der = cert.get_pubkey().as_der()
     pubkey_digest = sha1(pubkey_der).digest()
 
