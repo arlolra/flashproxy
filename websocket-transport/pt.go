@@ -89,6 +89,7 @@ func PtLine(keyword string, v ...string) {
 		buf.WriteString(" " + escape(x))
 	}
 	fmt.Println(buf.String())
+	os.Stdout.Sync()
 }
 
 // All of the Pt*Error functions call os.Exit(1).
