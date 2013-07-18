@@ -21,6 +21,8 @@ import (
 
 const ptMethodName = "websocket"
 const requestTimeout = 10 * time.Second
+// 16 kilobytes, possibly base64-encoded.
+const maxMessageSize = 16*1024*4/3 + 1
 
 var logFile = os.Stderr
 
@@ -186,8 +188,7 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 	go func() {
 		var config WebsocketConfig
 		config.Subprotocols = []string{"base64"}
-		// 16 kilobytes, possibly base64-encoded.
-		config.MaxMessageSize = 16*1024*4/3 + 1
+		config.MaxMessageSize = maxMessageSize
 		s := &http.Server{
 			Handler:     config.Handler(websocketHandler),
 			ReadTimeout: requestTimeout,
