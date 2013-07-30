@@ -2,8 +2,7 @@
 
 Traditionally, flash proxies have run in the browser. However, it may be
 desirable to run them as background daemons. This directory contains a main.js
-file which wraps the regular flashproxy.js (symlinked here) and runs
-headlessly from node.js.
+file which wraps the regular flashproxy.js and runs headlessly from node.js.
 
 To install the requirements (known to be in Debian testing and Ubuntu universe),
 
