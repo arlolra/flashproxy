@@ -45,6 +45,10 @@
     information like IP addresses. Patch by Arlo Breault. Fixes bug
     9170.
 
+  o The new modules/nodejs allows running a standalone flash proxy
+    (outside a browser) under Node.js. Patch by Arlo Breault. Fixes bug
+    7944.
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.
