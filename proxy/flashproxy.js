@@ -584,9 +584,10 @@ function FlashProxy() {
 
         /* Remove query string if scrubbing. */
         if (SAFE_LOGGING)
-            url = base_url;
+            puts("Facilitator: connecting to " + base_url + ".");
+        else
+            puts("Facilitator: connecting to " + url + ".");
 
-        puts("Facilitator: connecting to " + url + ".");
         xhr.send(null);
     };
 
