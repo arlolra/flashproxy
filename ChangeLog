@@ -41,6 +41,10 @@
     to invoke tor-fw-helper to forward ports automatically. Patch by
     Arlo Breault and David Fifield. Fixes bug 9033.
 
+  o The flash proxy, in debug mode, now hides potentially sensistive
+    information like IP addresses. Patch by Arlo Breault. Fixes bug
+    9170.
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.
