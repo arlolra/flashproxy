@@ -120,7 +120,7 @@ them, and forwards the registrations to the facilitator.
 }
 
 def safe_str(s):
-    """Return s if options.safe_logging is true, and "[scrubbed]" otherwise."""
+    """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
     if options.safe_logging:
         return "[scrubbed]"
     else:
