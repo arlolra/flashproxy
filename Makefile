@@ -47,7 +47,6 @@ $(PY2EXE_TMPDIR)/dist: $(CLIENT_BIN)
 	rm -rf $(PY2EXE_TMPDIR)
 	$(PYTHON) setup.py py2exe -q
 
-# See doc/windows-deployment-howto.txt.
 dist-exe: DISTNAME := $(DISTNAME)-win32
 dist-exe: CLIENT_BIN := $(PY2EXE_TMPDIR)/dist/*
 dist-exe: CLIENT_MAN := $(addsuffix .txt,$(CLIENT_MAN))
