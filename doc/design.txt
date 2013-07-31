@@ -35,18 +35,12 @@ Design of flash proxies
   But because of the limited networking facilities available to an
   in-browser application, several other pieces are needed.
 
-  1. Tor client: Is just ordinary Tor with a special configuration to
-     allow it to connect through a flash proxy. It advertises its need
-     for a connection the the facilitator, and communicates with the
-     flash proxy through the client transport plugin.
-  2. Client transport plugin: Runs on the same computer as the Tor
-     client. It opens one socket to the Internet and another to
-     localhost. It waits for a connection on both sockets, then starts
-     proxying data between them. The transport plugin speaks SOCKS on
-     the localhost side so that it can work as a pluggable transport for
-     Tor using the ClientTransportPlugin configuration option. On
-     startup, the transport plugin registers with the the facilitator to
-     inform the facilitator that it is waiting for a connection.
+  1. Tor client: with a ClientTransportPlugin config option to allow it to
+     use the flashproxy transport client.
+  2. Client transport plugin: Runs on the same computer as the Tor client.
+     On startup, it registers with the facilitator to inform that it is
+     waiting for a connection from a flash proxy. When this is received,
+     it starts proxying data between it and the local Tor client.
   3. Flash proxy: Runs in someone's browser, in an uncensored region of
      the Internet. The flash proxy first connects to the facilitator to
      get a client registration. It then makes two outgoing connections,
@@ -57,7 +51,29 @@ Design of flash proxies
      variety of ways. It sends registrations to flash proxies over HTTP.
      The facilitator is responsible for matching clients to proxies in a
      reasonable manner.
-  5. Tor relay: An ordinary Tor relay.
+  5. Tor relay: with a ServerTransportPlugin config option to allow it to
+     use the flashproxy transport server.
+  6. Server transport plugin: Waits for a connection from a flash proxy and
+     proxies data between it and the local Tor relay.
+
+3. Protocols
+
+  The numbers refer to the same components as in sect 2 above. Arrows
+  indicate the direction of the initial TCP connection.
+
+  1>2. Pluggable transport, client-side. See core tor docs for details.
+  2>4. Secure rendezvous using a variety of custom methods; see
+       facilitator-howto.txt for details. This must be very hard to censor,
+       e.g. using a popular web service over HTTPS.
+  3>4. Custom protocol specific to flashproxy, where each flashproxy polls
+       a facilitator for client registrations.
+  2<3. WebSocket. This must be very hard to censor, which may require
+       additional transformations to the underlying data stream. Note
+       that this stream is controlled by the source client, not the flash
+       proxy; in a plain flashproxy-only channel, it is as described in
+       websocket-transport.txt.
+  5<3. WebSocket.
+  5>6. Pluggable transport, server-side. See core tor docs for details.
 
 4. Sample session
 
