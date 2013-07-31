@@ -49,6 +49,10 @@
     (outside a browser) under Node.js. Patch by Arlo Breault. Fixes bug
     7944.
 
+  o Registration helpers have a new --unsafe-logging option and helpers
+    don't log IP addresses by default. Patch by Arlo Breault. Fixes bug
+    9185.
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.
