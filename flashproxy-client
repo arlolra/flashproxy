@@ -730,10 +730,15 @@ def forward_ports(pairs):
     return True
  
 register_condvar = threading.Condition()
+# register_flag true means registration_thread_func should register at its next
+# opportunity.
+register_flag = False
 def register():
+    global register_flag
     if not options.register:
         return
     register_condvar.acquire()
+    register_flag = True
     register_condvar.notify()
     register_condvar.release()
 
@@ -765,9 +770,12 @@ def register_one():
         log(u"All registration commands failed.")
 
 def registration_thread_func():
+    global register_flag
     while True:
         register_condvar.acquire()
-        register_condvar.wait()
+        while not register_flag:
+            register_condvar.wait()
+        register_flag = False
         register_condvar.release()
         if len(unlinked_remotes) < DESIRED_NUMBER_OF_PROXIES:
             register_one()
