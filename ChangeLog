@@ -53,6 +53,12 @@
     don't log IP addresses by default. Patch by Arlo Breault. Fixes bug
     9185.
 
+  o Certificate pins now match against the public keys of intermediate
+    certificates, not only those of leaves. This will help with
+    flashproxy-reg-appspot, whose leaf key was often changing. It also
+    allows us to copy pin digests directly from the Chromium source
+    code. Patch by David Fifield. Fixed bug 9167.
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.
