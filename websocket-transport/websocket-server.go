@@ -21,7 +21,7 @@ import (
 
 const ptMethodName = "websocket"
 const requestTimeout = 10 * time.Second
-// 16 kilobytes, possibly base64-encoded.
+// "4/3+1" accounts for possible base64 encoding.
 const maxMessageSize = 64*1024*4/3 + 1
 
 var logFile = os.Stderr
