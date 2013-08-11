@@ -3,6 +3,7 @@ BINDIR = $(PREFIX)/bin
 
 PROGRAMS = websocket-client websocket-server
 
+export GOPATH = $(CURDIR)
 GOBUILDFLAGS =
 # Alternate flags to use gccgo, allowing cross-compiling for x86 from
 # x86_64, and presumably better optimization. Install this package:
@@ -11,11 +12,13 @@ GOBUILDFLAGS =
 
 all: websocket-server
 
-websocket-client: websocket-client.go socks.go
-websocket-server: websocket-server.go websocket.go
+%: $(GOPATH)/src/%/*.go
+	go build $(GOBUILDFLAGS) "$*"
 
-%: %.go
-	go build $(GOBUILDFLAGS) -o $@ $^
+# websocket-client has a special rule because "go get" is necessary.
+websocket-client: $(GOPATH)/src/websocket-client/*.go
+	go get -d $(GOBUILDFLAGS) websocket-client
+	go build $(GOBUILDFLAGS) websocket-client
 
 install:
 	mkdir -p "$(BINDIR)"
@@ -25,6 +28,6 @@ clean:
 	rm -f $(PROGRAMS)
 
 fmt:
-	go fmt
+	go fmt $$(basename -a src/*)
 
 .PHONY: all install clean fmt

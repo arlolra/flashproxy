@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-import "./pt"
+import "pt"
 
 const ptMethodName = "websocket"
 const socksTimeout = 2 * time.Second

@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-import "./pt"
+import "pt"
 
 const ptMethodName = "websocket"
 const requestTimeout = 10 * time.Second
