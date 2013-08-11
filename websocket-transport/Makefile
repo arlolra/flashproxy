@@ -18,8 +18,8 @@ websocket-server: websocket-server.go pt.go websocket.go
 	go build $(GOBUILDFLAGS) -o $@ $^
 
 install:
-	mkdir -p $(BINDIR)
-	cp -f websocket-server $(BINDIR)
+	mkdir -p "$(BINDIR)"
+	cp -f websocket-server "$(BINDIR)"
 
 clean:
 	rm -f $(PROGRAMS)
