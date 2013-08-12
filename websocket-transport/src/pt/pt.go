@@ -278,7 +278,7 @@ func getServerBindAddrs(methodNames []string) []BindAddr {
 	return result
 }
 
-// Reads and validates the contents of an auth cookie file. Returns the 32-byte
+// Read and validate the contents of an auth cookie file. Returns the 32-byte
 // cookie. See section 4.2.1.2 of pt-spec.txt.
 func readAuthCookieFile(filename string) ([]byte, error) {
 	authCookieHeader := []byte("! Extended ORPort Auth Cookie !\x0a")
@@ -315,7 +315,8 @@ func readAuthCookieFile(filename string) ([]byte, error) {
 }
 
 // This structure is returned by ServerSetup. It consists of a list of
-// BindAddrs, along with a single address for the ORPort.
+// BindAddrs, an address for the ORPort, an address for the extended ORPort (if
+// any), and an authentication cookie (if any).
 type ServerInfo struct {
 	BindAddrs      []BindAddr
 	OrAddr         *net.TCPAddr
@@ -325,7 +326,8 @@ type ServerInfo struct {
 
 // Check the server pluggable transports environments, emitting an error message
 // and exiting the program if any error is encountered. Resolves the various
-// requested bind addresses and the server ORPort. Returns a ServerInfo struct.
+// requested bind addresses, the server ORPort and extended ORPort, and reads
+// the auth cookie file. Returns a ServerInfo struct.
 func ServerSetup(methodNames []string) ServerInfo {
 	var info ServerInfo
 	var err error
