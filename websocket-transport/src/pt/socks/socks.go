@@ -23,22 +23,22 @@ const (
 // request failed message. Otherwise, sends a SOCKS request granted message for
 // the destination address returned by the callback.
 func AwaitSocks4aConnect(conn *net.TCPConn, connect func(string) (*net.TCPAddr, error)) error {
-	dest, err := ReadSocks4aConnect(conn)
+	dest, err := readSocks4aConnect(conn)
 	if err != nil {
-		SendSocks4aResponseFailed(conn)
+		sendSocks4aResponseFailed(conn)
 		return err
 	}
 	destAddr, err := connect(dest)
 	if err != nil {
-		SendSocks4aResponseFailed(conn)
+		sendSocks4aResponseFailed(conn)
 		return err
 	}
-	SendSocks4aResponseGranted(conn, destAddr)
+	sendSocks4aResponseGranted(conn, destAddr)
 	return nil
 }
 
 // Read a SOCKS4a connect request. Returns a "host:port" string.
-func ReadSocks4aConnect(s io.Reader) (string, error) {
+func readSocks4aConnect(s io.Reader) (string, error) {
 	r := bufio.NewReader(s)
 
 	var h [8]byte
@@ -80,7 +80,7 @@ func ReadSocks4aConnect(s io.Reader) (string, error) {
 }
 
 // Send a SOCKS4a response with the given code and address.
-func SendSocks4aResponse(w io.Writer, code byte, addr *net.TCPAddr) error {
+func sendSocks4aResponse(w io.Writer, code byte, addr *net.TCPAddr) error {
 	var resp [8]byte
 	resp[0] = socksResponseVersion
 	resp[1] = code
@@ -97,11 +97,11 @@ func SendSocks4aResponse(w io.Writer, code byte, addr *net.TCPAddr) error {
 var emptyAddr = net.TCPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 0}
 
 // Send a SOCKS4a response code 0x5a.
-func SendSocks4aResponseGranted(w io.Writer, addr *net.TCPAddr) error {
-	return SendSocks4aResponse(w, socksRequestGranted, addr)
+func sendSocks4aResponseGranted(w io.Writer, addr *net.TCPAddr) error {
+	return sendSocks4aResponse(w, socksRequestGranted, addr)
 }
 
 // Send a SOCKS4a response code 0x5b (with an all-zero address).
-func SendSocks4aResponseFailed(w io.Writer) error {
-	return SendSocks4aResponse(w, socksRequestFailed, &emptyAddr)
+func sendSocks4aResponseFailed(w io.Writer) error {
+	return sendSocks4aResponse(w, socksRequestFailed, &emptyAddr)
 }
