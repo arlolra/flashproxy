@@ -285,7 +285,7 @@ func commaSplit(s string) []string {
 	return result
 }
 
-// Returns true iff one of the strings in haystack is needle.
+// Returns true iff one of the strings in haystack is needle (case-insensitive).
 func containsCase(haystack []string, needle string) bool {
 	for _, e := range haystack {
 		if strings.ToLower(e) == strings.ToLower(needle) {

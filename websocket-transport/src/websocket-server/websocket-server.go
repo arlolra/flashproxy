@@ -57,8 +57,8 @@ func Log(format string, v ...interface{}) {
 }
 
 // An abstraction that makes an underlying WebSocket connection look like an
-// io.ReadWriteCloser. It internally takes care of things like base64 encoding and
-// decoding.
+// io.ReadWriteCloser. It internally takes care of things like base64 encoding
+// and decoding.
 type webSocketConn struct {
 	Ws         *websocket.WebSocket
 	Base64     bool
