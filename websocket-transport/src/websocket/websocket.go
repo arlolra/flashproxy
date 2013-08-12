@@ -1,8 +1,8 @@
 // WebSocket library. Only the RFC 6455 variety of WebSocket is supported.
 //
 // Reading and writing is strictly per-frame (or per-message). There is no way
-// to partially read a frame. WebSocketConfig.MaxMessageSize affords control of
-// the maximum buffering of messages.
+// to partially read a frame. Config.MaxMessageSize affords control of the
+// maximum buffering of messages.
 //
 // The reason for using this custom implementation instead of
 // code.google.com/p/go.net/websocket is that the latter has problems with long
@@ -22,7 +22,7 @@
 //
 // func doSomething(ws *WebSocket) {
 // }
-// var config WebSocketConfig
+// var config websocket.Config
 // config.Subprotocols = []string{"base64"}
 // config.MaxMessageSize = 2500
 // http.Handle("/", config.Handler(doSomething))
@@ -50,25 +50,25 @@ import (
 // requests, the first of the client's requests subprotocols that is also in
 // this list (if any) will be used as the subprotocol for the connection.
 // MaxMessageSize is a limit on buffering messages.
-type WebSocketConfig struct {
+type Config struct {
 	Subprotocols   []string
 	MaxMessageSize int
 }
 
 // Representation of a WebSocket frame. The Payload is always without masking.
-type WebSocketFrame struct {
+type Frame struct {
 	Fin     bool
 	Opcode  byte
 	Payload []byte
 }
 
 // Return true iff the frame's opcode says it is a control frame.
-func (frame *WebSocketFrame) IsControl() bool {
+func (frame *Frame) IsControl() bool {
 	return (frame.Opcode & 0x08) != 0
 }
 
 // Representation of a WebSocket message. The Payload is always without masking.
-type WebSocketMessage struct {
+type Message struct {
 	Opcode  byte
 	Payload []byte
 }
@@ -80,7 +80,7 @@ type WebSocket struct {
 	Bufrw *bufio.ReadWriter
 	// Whether we are a client or a server has implications for masking.
 	IsClient bool
-	// Set from a parent WebSocketConfig.
+	// Set from a parent Config.
 	MaxMessageSize int
 	// The single selected subprotocol after negotiation, or "".
 	Subprotocol string
@@ -103,7 +103,7 @@ func (ws *WebSocket) maxMessageSize() int {
 }
 
 // Read a single frame from the WebSocket.
-func (ws *WebSocket) ReadFrame() (frame WebSocketFrame, err error) {
+func (ws *WebSocket) ReadFrame() (frame Frame, err error) {
 	var b byte
 	err = binary.Read(ws.Bufrw, binary.BigEndian, &b)
 	if err != nil {
@@ -171,10 +171,10 @@ func (ws *WebSocket) ReadFrame() (frame WebSocketFrame, err error) {
 // combined into a single message before being returned. Non-control messages
 // may be interrupted by control frames. The control frames are returned as
 // individual messages before the message that they interrupt.
-func (ws *WebSocket) ReadMessage() (message WebSocketMessage, err error) {
+func (ws *WebSocket) ReadMessage() (message Message, err error) {
 	var opcode byte = 0
 	for {
-		var frame WebSocketFrame
+		var frame Frame
 		frame, err = ws.ReadFrame()
 		if err != nil {
 			return
@@ -310,16 +310,15 @@ func httpError(w http.ResponseWriter, bufrw *bufio.ReadWriter, code int) {
 	bufrw.Flush()
 }
 
-// An implementation of http.Handler with a WebSocketConfig. The ServeHTTP
-// function calls websocketCallback assuming WebSocket HTTP negotiation is
-// successful.
-type WebSocketHTTPHandler struct {
-	Config            *WebSocketConfig
-	WebSocketCallback func(*WebSocket)
+// An implementation of http.Handler with a Config. The ServeHTTP function calls
+// Callback assuming WebSocket HTTP negotiation is successful.
+type HTTPHandler struct {
+	Config            *Config
+	Callback func(*WebSocket)
 }
 
 // Implements the http.Handler interface.
-func (handler *WebSocketHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (handler *HTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	conn, bufrw, err := w.(http.Hijacker).Hijack()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -423,10 +422,10 @@ func (handler *WebSocketHTTPHandler) ServeHTTP(w http.ResponseWriter, req *http.
 	bufrw.Flush()
 
 	// Call the WebSocket-specific handler.
-	handler.WebSocketCallback(&ws)
+	handler.Callback(&ws)
 }
 
 // Return an http.Handler with the given callback function.
-func (config *WebSocketConfig) Handler(callback func(*WebSocket)) http.Handler {
-	return &WebSocketHTTPHandler{config, callback}
+func (config *Config) Handler(callback func(*WebSocket)) http.Handler {
+	return &HTTPHandler{config, callback}
 }

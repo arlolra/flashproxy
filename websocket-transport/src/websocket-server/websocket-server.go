@@ -68,7 +68,7 @@ type webSocketConn struct {
 // Implements io.Reader.
 func (conn *webSocketConn) Read(b []byte) (n int, err error) {
 	for len(conn.messageBuf) == 0 {
-		var m websocket.WebSocketMessage
+		var m websocket.Message
 		m, err = conn.Ws.ReadMessage()
 		if err != nil {
 			return
@@ -190,7 +190,7 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 		return nil, err
 	}
 	go func() {
-		var config websocket.WebSocketConfig
+		var config websocket.Config
 		config.Subprotocols = []string{"base64"}
 		config.MaxMessageSize = maxMessageSize
 		s := &http.Server{
