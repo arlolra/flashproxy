@@ -28,6 +28,6 @@ clean:
 	rm -f $(PROGRAMS)
 
 fmt:
-	go fmt $$(basename -a src/*)
+	go fmt $(PROGRAMS)
 
 .PHONY: all install clean fmt
