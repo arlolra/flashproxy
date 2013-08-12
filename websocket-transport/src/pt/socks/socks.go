@@ -1,6 +1,6 @@
 // SOCKS4a server library.
 
-package main
+package socks
 
 import (
 	"bufio"

@@ -19,6 +19,7 @@ import (
 )
 
 import "pt"
+import "pt/socks"
 
 const ptMethodName = "websocket"
 const socksTimeout = 2 * time.Second
@@ -125,7 +126,7 @@ func handleConnection(conn *net.TCPConn) error {
 	var ws *websocket.Conn
 
 	conn.SetDeadline(time.Now().Add(socksTimeout))
-	err := AwaitSocks4aConnect(conn, func(dest string) (*net.TCPAddr, error) {
+	err := socks.AwaitSocks4aConnect(conn, func(dest string) (*net.TCPAddr, error) {
 		// Disable deadline.
 		conn.SetDeadline(time.Time{})
 		Log("SOCKS request for %s", dest)
