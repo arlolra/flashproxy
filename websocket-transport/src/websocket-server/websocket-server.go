@@ -237,6 +237,7 @@ func main() {
 		ln, err := startListener(bindAddr.Addr)
 		if err != nil {
 			pt.SmethodError(bindAddr.MethodName, err.Error())
+			continue
 		}
 		pt.Smethod(bindAddr.MethodName, ln.Addr())
 		Log("listening on %s", ln.Addr().String())
