@@ -226,7 +226,7 @@ func resolveBindAddr(bindAddr string) (*net.TCPAddr, error) {
 }
 
 // Return a new slice, the members of which are those members of addrs having a
-// MethodName in methodsNames.
+// MethodName in methodNames.
 func filterBindAddrs(addrs []BindAddr, methodNames []string) []BindAddr {
 	var result []BindAddr
 
