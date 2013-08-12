@@ -20,6 +20,7 @@ import (
 )
 
 import "pt"
+import "websocket"
 
 const ptMethodName = "websocket"
 const requestTimeout = 10 * time.Second
@@ -59,7 +60,7 @@ func Log(format string, v ...interface{}) {
 // io.ReadWriteCloser. It internally takes care of things like base64 encoding and
 // decoding.
 type websocketConn struct {
-	Ws         *Websocket
+	Ws         *websocket.Websocket
 	Base64     bool
 	messageBuf []byte
 }
@@ -67,7 +68,7 @@ type websocketConn struct {
 // Implements io.Reader.
 func (conn *websocketConn) Read(b []byte) (n int, err error) {
 	for len(conn.messageBuf) == 0 {
-		var m WebsocketMessage
+		var m websocket.WebsocketMessage
 		m, err = conn.Ws.ReadMessage()
 		if err != nil {
 			return
@@ -128,7 +129,7 @@ func (conn *websocketConn) Close() error {
 }
 
 // Create a new websocketConn.
-func NewWebsocketConn(ws *Websocket) websocketConn {
+func NewWebsocketConn(ws *websocket.Websocket) websocketConn {
 	var conn websocketConn
 	conn.Ws = ws
 	conn.Base64 = (ws.Subprotocol == "base64")
@@ -164,7 +165,7 @@ func proxy(local *net.TCPConn, conn *websocketConn) {
 	wg.Wait()
 }
 
-func websocketHandler(ws *Websocket) {
+func websocketHandler(ws *websocket.Websocket) {
 	// Undo timeouts on HTTP request handling.
 	ws.Conn.SetDeadline(time.Time{})
 	conn := NewWebsocketConn(ws)
@@ -189,7 +190,7 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 		return nil, err
 	}
 	go func() {
-		var config WebsocketConfig
+		var config websocket.WebsocketConfig
 		config.Subprotocols = []string{"base64"}
 		config.MaxMessageSize = maxMessageSize
 		s := &http.Server{

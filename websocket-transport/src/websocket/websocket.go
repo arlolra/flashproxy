@@ -28,7 +28,7 @@
 // http.Handle("/", config.Handler(doSomething))
 // err = http.ListenAndServe(":8080", nil)
 
-package main
+package websocket
 
 import (
 	"bufio"
