@@ -116,14 +116,24 @@ Design of flash proxies
   flash proxy and the local Tor client.
 
   On startup, the client transport plugin sends a registration message
-  to the facilitator, informing the facilitator that it is waiting for a
-  connection. The facilitator will later hand this registration to a
-  flash proxy. The registration message is an HTTP POST request of the
-  form:
+  to the facilitator, informing the facilitator that it is waiting for
+  a connection. If the client transport plugin obfuscates its
+  connections using pluggable transports, then it also appends the
+  listening address of its transports to the registration message.
+
+  The facilitator will later hand this registration to a flash
+  proxy. The registration message is an HTTP POST request of the form:
 
     POST / HTTP/1.0
 
-    client=[<address>]:<port>
+    client-<transport>=[<address>]:<port>[&client-<transport>=[<address>]:<port>...]
+
+  Where 'transport' is the name of the pluggable transport that is
+  listening on <address>:<port>. The default flashproxy transport is
+  named 'websocket'.
+
+  For example a registration message would look like this:
+    client-websocket=1.2.3.4:9000&client-obfs3|websocket=1.2.3.4:10000
 
   The facilitator sends a 200 reply if the registration was successful
   and an error status otherwise. If the transport plugin omits the
@@ -149,12 +159,24 @@ Design of flash proxies
   The proxy asks the facilitator for a registration with an HTTP GET
   request:
 
-    GET / HTTP/1.0
+    GET /r=<version>&client=<client addr>&transport=<transport name> HTTP/1.0
 
+  The 'r' parameter is the protocol revision number (should be '1' for now).
+  The 'client' parameter carries the IP address of a flashproxy
+  client. The client parameter can can repeat to report multiple
+  connected clients.
+  The 'transport' parameter is optional and signals the transports that
+  this flashproxy supports.
+
+  For example:
+   GET /r=1&client=7.1.43.21&client=1.2.3.4&transport=webrtc&transport=websocket HTTP/1.0
 
   The response code is 200 and the body looks like this:
 
-    client=[<address>:<port>]&relay=<address>:<port>
+    client-<transport>=[<address>:<port>]&relay-<transport>=<address>:<port>
+
+  For example:
+   client-obfs3|websocket=1.2.3.4:2000&relay-obfs3|websocket=10.10.10:9902
 
   If the value for the client parameter is empty, it means that there are no
   client registrations for this proxy.
