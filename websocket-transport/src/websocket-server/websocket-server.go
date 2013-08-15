@@ -48,7 +48,7 @@ func usage() {
 
 var logMutex sync.Mutex
 
-func Log(format string, v ...interface{}) {
+func log(format string, v ...interface{}) {
 	dateStr := time.Now().Format("2006-01-02 15:04:05")
 	logMutex.Lock()
 	defer logMutex.Unlock()
@@ -129,7 +129,7 @@ func (conn *webSocketConn) Close() error {
 }
 
 // Create a new webSocketConn.
-func NewWebSocketConn(ws *websocket.WebSocket) webSocketConn {
+func newWebSocketConn(ws *websocket.WebSocket) webSocketConn {
 	var conn webSocketConn
 	conn.Ws = ws
 	conn.Base64 = (ws.Subprotocol == "base64")
@@ -145,7 +145,7 @@ func proxy(local *net.TCPConn, conn *webSocketConn) {
 	go func() {
 		_, err := io.Copy(conn, local)
 		if err != nil {
-			Log("error copying ORPort to WebSocket")
+			log("error copying ORPort to WebSocket")
 		}
 		local.CloseRead()
 		conn.Close()
@@ -155,7 +155,7 @@ func proxy(local *net.TCPConn, conn *webSocketConn) {
 	go func() {
 		_, err := io.Copy(local, conn)
 		if err != nil {
-			Log("error copying WebSocket to ORPort")
+			log("error copying WebSocket to ORPort")
 		}
 		local.CloseWrite()
 		conn.Close()
@@ -168,7 +168,7 @@ func proxy(local *net.TCPConn, conn *webSocketConn) {
 func webSocketHandler(ws *websocket.WebSocket) {
 	// Undo timeouts on HTTP request handling.
 	ws.Conn.SetDeadline(time.Time{})
-	conn := NewWebSocketConn(ws)
+	conn := newWebSocketConn(ws)
 
 	handlerChan <- 1
 	defer func() {
@@ -177,7 +177,7 @@ func webSocketHandler(ws *websocket.WebSocket) {
 
 	s, err := pt.ConnectOr(&ptInfo, ws.Conn, ptMethodName)
 	if err != nil {
-		Log("Failed to connect to ORPort: " + err.Error())
+		log("Failed to connect to ORPort: " + err.Error())
 		return
 	}
 
@@ -199,7 +199,7 @@ func startListener(addr *net.TCPAddr) (*net.TCPListener, error) {
 		}
 		err = s.Serve(ln)
 		if err != nil {
-			Log("http.Serve: " + err.Error())
+			log("http.Serve: " + err.Error())
 		}
 	}()
 	return ln, nil
@@ -223,7 +223,7 @@ func main() {
 		logFile = f
 	}
 
-	Log("starting")
+	log("starting")
 	ptInfo = pt.ServerSetup([]string{ptMethodName})
 
 	listeners := make([]*net.TCPListener, 0)
@@ -241,7 +241,7 @@ func main() {
 			continue
 		}
 		pt.Smethod(bindAddr.MethodName, ln.Addr())
-		Log("listening on %s", ln.Addr().String())
+		log("listening on %s", ln.Addr().String())
 		listeners = append(listeners, ln)
 	}
 	pt.SmethodsDone()
@@ -256,7 +256,7 @@ func main() {
 		case n := <-handlerChan:
 			numHandlers += n
 		case <-signalChan:
-			Log("SIGINT")
+			log("SIGINT")
 			sigint = true
 		}
 	}
@@ -271,7 +271,7 @@ func main() {
 		case n := <-handlerChan:
 			numHandlers += n
 		case <-signalChan:
-			Log("SIGINT")
+			log("SIGINT")
 			sigint = true
 		}
 	}
