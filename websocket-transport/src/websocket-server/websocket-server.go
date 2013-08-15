@@ -36,8 +36,6 @@ var ptInfo pt.ServerInfo
 // ends, -1 is written.
 var handlerChan = make(chan int)
 
-var logMutex sync.Mutex
-
 func usage() {
 	fmt.Printf("Usage: %s [OPTIONS]\n", os.Args[0])
 	fmt.Printf("WebSocket server pluggable transport for Tor.\n")
@@ -47,6 +45,8 @@ func usage() {
 	fmt.Printf("  --log FILE   log messages to FILE (default stderr).\n")
 	fmt.Printf("  --port PORT  listen on PORT (overrides Tor's requested port).\n")
 }
+
+var logMutex sync.Mutex
 
 func Log(format string, v ...interface{}) {
 	dateStr := time.Now().Format("2006-01-02 15:04:05")
