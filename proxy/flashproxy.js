@@ -734,20 +734,6 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
         this.client_s.onmessage = this.onmessage_client_to_relay;
     };
 
-    this.client_onopen_callback = function(event) {
-        var ws = event.target;
-
-        log(ws.label + ": connected.");
-        log("Relay: connecting.");
-        this.relay_s = make_websocket(this.relay_addr);
-
-        this.relay_s.label = "Relay";
-        this.relay_s.onopen = this.relay_onopen_callback;
-        this.relay_s.onclose = this.onclose_callback;
-        this.relay_s.onerror = this.onerror_callback;
-        this.relay_s.onmessage = this.onmessage_relay_to_client;
-    }.bind(this);
-
     this.relay_onopen_callback = function(event) {
         var ws = event.target;
 
@@ -838,7 +824,23 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
             || this.c2r_schedule.length > 0 || (is_open(this.relay_s) && this.relay_s.bufferedAmount > 0))
             this.flush_timeout_id = setTimeout(this.flush.bind(this), this.rate_limit.when() * 1000);
     };
+
+    this.client_onopen_callback = this.client_onopen_callback.bind(this)
 }
+
+ProxyPair.prototype.client_onopen_callback = function(event) {
+    var ws = event.target;
+
+    log(ws.label + ": connected.");
+    log("Relay: connecting.");
+    this.relay_s = make_websocket(this.relay_addr);
+
+    this.relay_s.label = "Relay";
+    this.relay_s.onopen = this.relay_onopen_callback;
+    this.relay_s.onclose = this.onclose_callback;
+    this.relay_s.onerror = this.onerror_callback;
+    this.relay_s.onmessage = this.onmessage_relay_to_client;
+};
 
 function BucketRateLimit(capacity, time) {
     this.amount = 0.0;
