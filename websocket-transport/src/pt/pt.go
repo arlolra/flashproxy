@@ -24,7 +24,7 @@
 // }
 // pt.SmethodsDone()
 // func handler(conn net.Conn) {
-// 	or, err := pt.ConnectOr(&ptInfo, ws.Conn)
+// 	or, err := pt.ConnectOr(&ptInfo, conn)
 // 	if err != nil {
 // 		return
 // 	}
