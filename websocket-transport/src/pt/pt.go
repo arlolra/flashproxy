@@ -23,8 +23,8 @@
 // 	pt.Smethod(bindAddr.MethodName, ln.Addr())
 // }
 // pt.SmethodsDone()
-// func handler(conn net.Conn) {
-// 	or, err := pt.ConnectOr(&ptInfo, conn)
+// func handler(conn net.Conn, methodName) {
+// 	or, err := pt.ConnectOr(&ptInfo, conn, methodName)
 // 	if err != nil {
 // 		return
 // 	}
