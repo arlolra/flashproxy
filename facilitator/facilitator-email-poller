@@ -110,7 +110,7 @@ class IMAP4_SSL_REQUIRED(imaplib.IMAP4_SSL):
     cert_reqs=ssl.CERT_REQUIRED."""
     def open(self, host = "", port = imaplib.IMAP4_SSL_PORT):
         ctx = SSL.Context("tlsv1")
-        ctx.set_verify(SSL.verify_peer, 2)
+        ctx.set_verify(SSL.verify_peer, 3)
         ret = ctx.load_verify_locations(self.certfile)
         assert ret == 1
 
