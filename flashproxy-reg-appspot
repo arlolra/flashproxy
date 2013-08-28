@@ -218,7 +218,7 @@ class PinHTTPSConnection(httplib.HTTPSConnection):
             self._tunnel()
 
         ctx = SSL.Context("tlsv1")
-        ctx.set_verify(SSL.verify_peer, 2)
+        ctx.set_verify(SSL.verify_peer, 3)
 
         ca_certs_fd, ca_certs_path = tempfile.mkstemp(prefix="flashproxy-reg-appspot-",
             dir=get_state_dir(), suffix=".crt")
