@@ -59,6 +59,8 @@
     allows us to copy pin digests directly from the Chromium source
     code. Patch by David Fifield. Fixed bug 9167.
 
+  o Added a new observed Google public key pin.
+
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
     that causes pins to be ignored.
