@@ -33,16 +33,33 @@ class options(object):
     listen_port = DEFAULT_LISTEN_PORT
     log_filename = DEFAULT_LOG_FILENAME
     log_file = sys.stdout
-    relay_spec = None
     daemonize = True
     pid_filename = None
     privdrop_username = None
     safe_logging = True
 
+    # Dictionary containing Tor relays that we can pass to
+    # flashproxies. It looks like this:
+    # {"websocket" : ["1.1.1.1:123"], "obfs3|websocket" : ["3.1.2.3:5555", "1.2.3.4:6666"], "obfs2|websocket" : ["1.2.4.4:5123"]}
+    relays = {}
+
     @staticmethod
-    def set_relay_spec(spec):
+    def num_relays():
+        """Return the number of registered relays."""
+
+        num_relays = 0
+        for relay_list in options.relays.values():
+            num_relays += len(relay_list)
+
+        return num_relays
+
+    @staticmethod
+    def add_relay(transport, spec):
         spec = fac.parse_addr_spec(spec, defport = DEFAULT_RELAY_PORT, resolve = True)
-        options.relay_spec = fac.format_addr(spec)
+        if transport not in options.relays:
+            options.relays[transport] = []
+
+        options.relays[transport].append(fac.format_addr(spec))
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -57,12 +74,21 @@ again. Listen on 127.0.0.1 and port PORT (by default %(port)d).
       --pidfile FILENAME    write PID to FILENAME after daemonizing.
       --privdrop-user USER  switch UID and GID to those of USER.
   -r, --relay RELAY         send RELAY (host:port) to proxies as the relay to use.
+  -f, --relay-file FILE     learn relays from FILE
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "port": DEFAULT_LISTEN_PORT,
     "log": DEFAULT_LOG_FILENAME,
 }
+
+def get_outermost_transport(transport):
+    """
+    Given a combined transport name in 'transport', return the name of
+    the outermost transport.
+    e.g. if 'transport' == 'obfs3|websocket' this function returns 'websocket'
+    """
+    return transport.split("|")[-1]
 
 def safe_str(s):
     """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
@@ -243,9 +269,9 @@ class Handler(SocketServer.StreamRequestHandler):
             return False
         check_back_in = get_check_back_in_for_proxy(proxy_addr)
         if reg:
-            log(u"proxy gets %s, relay %s (now %d)" %
-                (safe_str(unicode(reg)), options.relay_spec, num_regs()))
-            print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", options.relay_spec), ("CHECK-BACK-IN", str(check_back_in)))
+            log(u"proxy gets %s, num_relays %s (now %d)" %
+                (safe_str(unicode(reg)), options.num_relays(), num_regs()))
+            print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", reg.relay), ("CHECK-BACK-IN", str(check_back_in)))
         else:
             log(u"proxy gets none")
             print >> self.wfile, fac.render_transaction("NONE", ("CHECK-BACK-IN", str(check_back_in)))
@@ -354,9 +380,27 @@ def put_reg(reg):
     REGS = get_regs(af, get_outermost_transport(reg.transport_chain))
     return REGS.add(reg)
 
+def parse_relay_file(fname):
+    """
+    Parse a file containing Tor relays that we can point proxies to.
+    Throws ValueError if the file is not properly formatted.
+    """
+    # File format is:
+    #  <transport> <addrport>
+    # Example:
+    #  obfs2|websocket 1.4.6.1:4123
+    with open(fname) as input:
+        for line in input:
+            words_list = line.split()
+            if len(words_list) != 2:
+                raise ValueError("Wrong line format: %s" % line)
+
+            # XXX Maybe we should validate here
+            options.add_relay(words_list[0], words_list[1])
+
 def main():
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
-        ["debug", "help", "log=", "port=", "pidfile=", "privdrop-user=", "relay=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:f:",
+        ["debug", "help", "log=", "port=", "pidfile=", "privdrop-user=", "relay=", "relay-file=", "unsafe-logging"])
     for o, a in opts:
         if o == "-d" or o == "--debug":
             options.daemonize = False
@@ -374,20 +418,35 @@ def main():
             options.privdrop_username = a
         elif o == "-r" or o == "--relay":
             try:
-                options.set_relay_spec(a)
-            except socket.gaierror, e:
+                options.add_relay("websocket", a)
+            except (ValueError, socket.gaierror) as e:
                 print >> sys.stderr, u"Can't resolve relay %s: %s" % (repr(a), str(e))
+                sys.exit(1)
+        elif o == "-f" or o == "--relay-file":
+            try:
+                parse_relay_file(a)
+            except ValueError as e:
+                print >> sys.stderr, u"Could not parse file '%s': %s" % (repr(a), str(e))
                 sys.exit(1)
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
-    if not options.relay_spec:
+    if not options.relays:
         print >> sys.stderr, """\
 The -r option is required. Give it the relay that will be sent to proxies.
   -r HOST[:PORT]\
     """
         sys.exit(1)
 
+
+    # Create RegSets for our supported transports
+    for transport in options.relays.keys():
+        outermost_transport = get_outermost_transport(transport)
+        if outermost_transport not in REGSETS_IPV4:
+            REGSETS_IPV4[outermost_transport] = RegSet()
+            REGSETS_IPV6[outermost_transport] = RegSet()
+
+    # Setup log file
     if options.log_filename:
         options.log_file = open(options.log_filename, "a")
         # Send error tracebacks to the log.
@@ -400,7 +459,7 @@ The -r option is required. Give it the relay that will be sent to proxies.
     server = Server(addrinfo[4], Handler)
 
     log(u"start on %s" % fac.format_addr(addrinfo[4]))
-    log(u"using relay address %s" % options.relay_spec)
+    log(u"using relays %s" % str(options.relays))
 
     if options.daemonize:
         log(u"daemonizing")
@@ -427,3 +486,4 @@ The -r option is required. Give it the relay that will be sent to proxies.
 
 if __name__ == "__main__":
     main()
+
