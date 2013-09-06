@@ -270,6 +270,8 @@ class Handler(SocketServer.StreamRequestHandler):
     def send_error(self):
         print >> self.wfile, "ERROR"
 
+    # Handle a GET request (got flashproxy poll; need to return a proper client registration)
+    # Example: GET FROM="3.3.3.3:3333" TRANSPORTS="websocket,webrtc"
     def do_GET(self, params):
         proxy_spec = fac.param_first("FROM", params)
         if proxy_spec is None:
@@ -283,12 +285,20 @@ class Handler(SocketServer.StreamRequestHandler):
             self.send_error()
             return False
 
+        transports = fac.param_first("TRANSPORTS", params)
+        if transports is None:
+            log(u"TRANSPORTS missing FROM param")
+            self.send_error()
+            return False
+        transport_list = transports.split(",") # XXX messy
+
         try:
-            reg = get_reg_for_proxy(proxy_addr)
+            reg = get_reg_for_proxy(proxy_addr, transport_list)
         except Exception, e:
             log(u"error getting reg for proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
             self.send_error()
             return False
+
         check_back_in = get_check_back_in_for_proxy(proxy_addr)
         if reg:
             log(u"proxy gets %s, num_relays %s (now %d)" %

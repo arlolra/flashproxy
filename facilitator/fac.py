@@ -253,14 +253,21 @@ def put_reg(facilitator_addr, client_addr, transport_chain, registrant_addr=None
         f.close()
     return command == "OK"
 
-def get_reg(facilitator_addr, proxy_addr):
-    """Get a registration from the facilitator using a one-time socket. Returns
-    a dict with keys "client" and "relay" if successful, or a dict with the key
-    "client" mapped to the value "" if there are no registrations available for
+def get_reg(facilitator_addr, proxy_addr, transport_list):
+    """
+    Get a client registration for proxy 'proxy_addr' from the
+    facilitator at 'facilitator_addr' using a one-time
+    socket. 'transports' is a list containing the transport names that
+    the flashproxy supports.
+
+    Returns a dict with keys "client-<transport>" and
+    "relay-<transport>" if successful, or a dict with the key "client"
+    mapped to the value "" if there are no registrations available for
     proxy_addr. Raises an exception otherwise."""
     f = fac_socket(facilitator_addr)
+    transports = ",".join(transport_list) # xxx wtf
     try:
-        command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)))
+        command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)), ("TRANSPORTS", transports))
     finally:
         f.close()
     response = {}

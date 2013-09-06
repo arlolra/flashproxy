@@ -32,7 +32,6 @@ path_info = os.environ.get("PATH_INFO") or "/"
 
 if not method or not remote_addr[0]:
     exit_error(400)
-
 fs = cgi.FieldStorage()
 
 # Print the HEAD part of a URL-based registration response, or exit with an
@@ -54,6 +53,10 @@ def do_head():
         exit_error(400)
 
 def do_get():
+    """Parses flashproxy polls.
+       Example: GET /r=1&client=7.1.43.21&client=1.2.3.4&transports=webrtc,websocket
+    """
+
     path_parts = [x for x in path_info.split("/") if x]
     if len(path_parts) == 2 and path_parts[0] == "reg":
         url_reg(path_parts[1])
@@ -63,8 +66,14 @@ def do_get():
         if len(r) != 1 or r[0] != "1":
             exit_error(400)
 
+        # 'transports' (optional) can be repeated and carries
+        # transport names.
+        transport_list = fs.getlist("transports")
+        if transport_list is None:
+            transport_list = ["websocket"]
+
         try:
-            reg = fac.get_reg(FACILITATOR_ADDR, remote_addr) or ""
+            reg = fac.get_reg(FACILITATOR_ADDR, remote_addr, transport_list) or ""
         except Exception:
             exit_error(500)
         # Allow XMLHttpRequest from any domain. http://www.w3.org/TR/cors/.
