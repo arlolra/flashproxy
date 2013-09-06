@@ -27,6 +27,8 @@ MAX_PROXIES_PER_CLIENT = 5
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+class UnknownTransport(Exception): pass
+
 class options(object):
     listen_port = DEFAULT_LISTEN_PORT
     log_filename = DEFAULT_LOG_FILENAME
@@ -284,20 +286,33 @@ class Handler(SocketServer.StreamRequestHandler):
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
-# Separate pools for IPv4 and IPv6 clients.
-REGS_IPV4 = RegSet()
-REGS_IPV6 = RegSet()
+# Registration sets per-outermost-transport
+# {"websocket" : <RegSet for websocket>, "webrtc" : <RegSet for webrtc>}
+REGSETS_IPV4 = {}
+REGSETS_IPV6 = {}
 
 def num_regs():
     """Return the total number of registrations."""
-    return len(REGS_IPV4) + len(REGS_IPV6)
+    num_regs = 0
 
-def regs_for_af(af):
-    """Return the correct regs pool for the given address family."""
+    # Iterate the regsets of each regset-dictionary, and count their
+    # registrations.
+    for regset in REGSETS_IPV4.values():
+        num_regs += len(regset)
+    for regset in REGSETS_IPV6.values():
+        num_regs += len(regset)
+
+    return num_regs
+
+def get_regs(af, transport):
+    """Return the correct regs pool for the given address family and transport."""
+    if transport not in REGSETS_IPV4:
+        raise UnknownTransport("unknown transport %s" % transport)
+
     if af == socket.AF_INET:
-        return REGS_IPV4
+        return REGSETS_IPV4[transport]
     elif af == socket.AF_INET6:
-        return REGS_IPV6
+        return REGSETS_IPV6[transport]
     else:
         raise ValueError("unknown address family %d" % af)
 
@@ -307,13 +322,26 @@ def addr_af(addr_str):
     addrs = socket.getaddrinfo(addr_str, 0, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
     return addrs[0][0]
 
-def get_reg_for_proxy(proxy_addr):
-    """Get a client registration appropriate for the given proxy (one of a
-    matching address family)."""
-    addr_str = proxy_addr[0]
-    af = addr_af(addr_str)
-    REGS = regs_for_af(af)
-    return REGS.fetch()
+def get_reg_for_proxy(proxy_addr, transport_list):
+    """Get a client registration appropriate for the given proxy (one
+    of a matching address family). If 'transports' is set, try to find
+    a client registration that supports the outermost transport of a
+    transport chain."""
+    # XXX How should we prioritize transport matching? We currently
+    # just iterate the transport list that was provided by the flashproxy
+    for transport in transport_list:
+        addr_str = proxy_addr[0]
+        af = addr_af(addr_str)
+
+        try:
+            REGS = get_regs(af, transport)
+        except UnknownTransport as e:
+            log(u"%s" % e)
+            continue # move to the next transport
+
+        return REGS.fetch()
+
+    raise UnknownTransport("Could not find registration for transport list: %s" % str(transport_list))
 
 def get_check_back_in_for_proxy(proxy_addr):
     """Get a CHECK-BACK-IN interval suitable for this proxy."""
@@ -323,7 +351,7 @@ def put_reg(reg):
     """Add a registration."""
     addr_str = reg.host
     af = addr_af(addr_str)
-    REGS = regs_for_af(af)
+    REGS = get_regs(af, get_outermost_transport(reg.transport_chain))
     return REGS.add(reg)
 
 def main():
