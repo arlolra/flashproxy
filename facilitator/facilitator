@@ -299,18 +299,35 @@ class Handler(SocketServer.StreamRequestHandler):
             print >> self.wfile, fac.render_transaction("NONE", ("CHECK-BACK-IN", str(check_back_in)))
         return True
 
+    # Handle a PUT request (client made a registration request; register it.)
+    # Example: PUT CLIENT="1.1.1.1:5555" FROM="1.1.1.2:6666" TRANSPORT_CHAIN="obfs3|websocket"
     def do_PUT(self, params):
+        # Check out if we recognize the transport chain in this registration request
+        transport_chain = fac.param_first("TRANSPORT_CHAIN", params)
+        if transport_chain is None:
+            log(u"PUT missing TRANSPORT_CHAIN param")
+            self.send_error()
+            return False
+
+        # See if we have relays that support this transport chain
+        if transport_chain not in options.relays:
+            log(u"Unrecognized transport chain: %s" % transport_chain)
+            self.send_error() # XXX can we tell the flashproxy client of this error?
+            return False
+        # if we have relays that support this transport chain, we
+        # certainly have a regset for its outermost transport too.
+        assert(get_outermost_transport(transport_chain) in REGSETS_IPV4)
+
         client_spec = fac.param_first("CLIENT", params)
         if client_spec is None:
             log(u"PUT missing CLIENT param")
             self.send_error()
             return False
 
-        # FROM
-
         try:
-            reg = Reg.parse(client_spec)
-        except ValueError, e:
+            reg = Reg.parse(client_spec, transport_chain)
+        except (UnknownTransport, ValueError) as e:
+            # XXX should we throw a better error message to the client? Is it possible?
             log(u"syntax error in %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
             self.send_error()
             return False

@@ -239,11 +239,12 @@ def transact(f, command, *params):
         raise ValueError("No newline at end of string returned by facilitator")
     return parse_transaction(line[:-1])
 
-def put_reg(facilitator_addr, client_addr, registrant_addr=None):
+def put_reg(facilitator_addr, client_addr, transport_chain, registrant_addr=None):
     """Send a registration to the facilitator using a one-time socket. Returns
     true iff the command was successful."""
     f = fac_socket(facilitator_addr)
     params = [("CLIENT", format_addr(client_addr))]
+    params.append(("TRANSPORT_CHAIN", transport_chain))
     if registrant_addr is not None:
         params.append(("FROM", format_addr(registrant_addr)))
     try:
