@@ -107,9 +107,30 @@ def log(msg):
         log_lock.release()
 
 class TCPReg(object):
-    def __init__(self, host, port):
+    def __init__(self, host, port, transport_chain):
         self.host = host
         self.port = port
+        self.transport_chain = transport_chain
+        # Get a relay for this registration. Throw UnknownTransport if
+        # could not be found.
+        self.relay = self._get_matching_relay()
+
+    def _get_matching_relay(self):
+        """
+        Return a matching relay addrspec for this registration
+
+        Raise UnknownTransport if a relay with a matching transport
+        chain could not be found.
+        """
+        if self.transport_chain not in options.relays:
+            raise UnknownTransport("Can't find relay with transport chain: %s" % self.transport_chain)
+
+        # Maybe this should be a random pick from the set of all the
+        # eligible relays. But let's keep it deterministic for now,
+        # and return the first one.
+
+        # return random.choice(options.relays[self.transport_chain])
+        return options.relays[self.transport_chain][0]
 
     def __unicode__(self):
         return fac.format_addr((self.host, self.port))
@@ -119,15 +140,16 @@ class TCPReg(object):
 
     def __cmp__(self, other):
         if isinstance(other, TCPReg):
-            return cmp((self.host, self.port), (other.host, other.port))
+            # XXX is this correct comparison?
+            return cmp((self.host, self.port, self.transport_chain), (other.host, other.port, other.transport_chain))
         else:
             return False
 
 class Reg(object):
     @staticmethod
-    def parse(spec, defhost = None, defport = None):
+    def parse(spec, transport_chain, defhost = None, defport = None):
         host, port = fac.parse_addr_spec(spec, defhost, defport)
-        return TCPReg(host, port)
+        return TCPReg(host, port, transport_chain)
 
 class RegSet(object):
     def __init__(self):
