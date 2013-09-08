@@ -61,7 +61,7 @@ Changes in version 1.2
     certificates, not only those of leaves. This will help with
     flashproxy-reg-appspot, whose leaf key was often changing. It also
     allows us to copy pin digests directly from the Chromium source
-    code. Patch by David Fifield. Fixed bug 9167.
+    code. Patch by David Fifield. Fixes bug 9167.
 
 Changes in version 1.1
   o Programs that use certificate pins now take a --disable-pin option
@@ -203,4 +203,4 @@ Changes in version 0.8
   o Fixed an exception that happened on Windows in flashproxy-client,
     relating to the use of nonblocking sockets:
       Socket error writing to local: '[Errno 10035] A non-blocking socket operation could not be completed immediately'
-    Fixed bug 7272. Patch by Alexandre Allaire.
+    Fixes bug 7272. Patch by Alexandre Allaire.
