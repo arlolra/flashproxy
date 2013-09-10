@@ -108,6 +108,9 @@ def log(msg):
 
 class TCPReg(object):
     def __init__(self, host, port, transport_chain):
+        """
+        transport_chain: string that looks like "obfs3|websocket"
+        """
         self.host = host
         self.port = port
         self.transport_chain = transport_chain
@@ -300,13 +303,15 @@ class Handler(SocketServer.StreamRequestHandler):
             return False
 
         check_back_in = get_check_back_in_for_proxy(proxy_addr)
+
         if reg:
-            log(u"proxy gets %s, num_relays %s (now %d)" %
-                (safe_str(unicode(reg)), options.num_relays(), num_regs()))
+            log(u"proxy (%s) gets client '%s' (transport_chain: %s) (num relays: %s) (remaining regs: %d)" %
+                (safe_str(repr(proxy_spec)), safe_str(unicode(reg)), reg.transport_chain, options.num_relays(), num_regs()))
             print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", reg.relay), ("CHECK-BACK-IN", str(check_back_in)))
         else:
-            log(u"proxy gets none")
+            log(u"proxy (%s) gets none" % safe_str(repr(proxy_spec)))
             print >> self.wfile, fac.render_transaction("NONE", ("CHECK-BACK-IN", str(check_back_in)))
+
         return True
 
     # Handle a PUT request (client made a registration request; register it.)
@@ -348,10 +353,11 @@ class Handler(SocketServer.StreamRequestHandler):
             log(u"error putting reg %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
             self.send_error()
             return False
+
         if ok:
-            log(u"client %s (now %d)" % (safe_str(unicode(reg)), num_regs()))
+            log(u"client %s (transports: %s) (remaining regs: %d)" % (safe_str(unicode(reg)), reg.transport_chain, num_regs()))
         else:
-            log(u"client %s (already present, now %d)" % (safe_str(unicode(reg)), num_regs()))
+            log(u"client %s (already present) (transports: %s) (remaining regs: %d)" % (safe_str(unicode(reg)), reg.transport_chain, num_regs()))
 
         self.send_ok()
         return True
@@ -382,7 +388,7 @@ def num_regs():
 def get_regs(af, transport):
     """Return the correct regs pool for the given address family and transport."""
     if transport not in REGSETS_IPV4:
-        raise UnknownTransport("unknown transport %s" % transport)
+        raise UnknownTransport("unknown transport '%s'" % transport)
 
     if af == socket.AF_INET:
         return REGSETS_IPV4[transport]
