@@ -58,9 +58,14 @@ clean:
 	rm -f *.pyc
 	rm -rf dist $(PY2EXE_TMPDIR)
 
+clean-all: clean
+	rm -f doc/*.1
+
 test:
 	./flashproxy-client-test
-	cd facilitator && ./facilitator-test
-	cd proxy && ./flashproxy-test.js
 
-.PHONY: all install dist sign dist-exe clean test
+test-full: test
+	cd facilitator && make test
+	cd proxy && make test
+
+.PHONY: all install dist sign dist-exe clean clean-all test test-full
