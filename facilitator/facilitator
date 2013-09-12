@@ -305,8 +305,8 @@ class Handler(SocketServer.StreamRequestHandler):
         check_back_in = get_check_back_in_for_proxy(proxy_addr)
 
         if reg:
-            log(u"proxy (%s) gets client '%s' (transport_chain: %s) (num relays: %s) (remaining regs: %d)" %
-                (safe_str(repr(proxy_spec)), safe_str(unicode(reg)), reg.transport_chain, options.num_relays(), num_regs()))
+            log(u"proxy (%s) gets client '%s' (transport_chain: %s) (num relays: %s) (remaining regs: %d/%d)" %
+                (safe_str(repr(proxy_spec)), safe_str(unicode(reg)), reg.transport_chain, options.num_relays(), num_unhandled_regs(), num_regs()))
             print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", reg.relay), ("CHECK-BACK-IN", str(check_back_in)))
         else:
             log(u"proxy (%s) gets none" % safe_str(repr(proxy_spec)))
@@ -355,9 +355,9 @@ class Handler(SocketServer.StreamRequestHandler):
             return False
 
         if ok:
-            log(u"client %s (transports: %s) (remaining regs: %d)" % (safe_str(unicode(reg)), reg.transport_chain, num_regs()))
+            log(u"client %s (transports: %s) (remaining regs: %d/%d)" % (safe_str(unicode(reg)), reg.transport_chain, num_unhandled_regs(), num_regs()))
         else:
-            log(u"client %s (already present) (transports: %s) (remaining regs: %d)" % (safe_str(unicode(reg)), reg.transport_chain, num_regs()))
+            log(u"client %s (already present) (transports: %s) (remaining regs: %d/%d)" % (safe_str(unicode(reg)), reg.transport_chain, num_unhandled_regs(), num_regs()))
 
         self.send_ok()
         return True
@@ -382,6 +382,20 @@ def num_regs():
         num_regs += len(regset)
     for regset in REGSETS_IPV6.values():
         num_regs += len(regset)
+
+    return num_regs
+
+def num_unhandled_regs():
+    """Return the total number of unhandled registrations."""
+    num_regs = 0
+
+    # Iterate the regsets of each regset-dictionary, and count their
+    # unhandled registrations. The first tier of each regset contains
+    # the registrations with no assigned proxy.
+    for regset in REGSETS_IPV4.values():
+        num_regs += len(regset.tiers[0])
+    for regset in REGSETS_IPV6.values():
+        num_regs += len(regset.tiers[0])
 
     return num_regs
 
