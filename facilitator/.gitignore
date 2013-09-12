@@ -1,0 +1,27 @@
+# files build by autogen.sh
+/aclocal.m4
+/configure
+/depcomp
+/install-sh
+/missing
+/test-driver
+/Makefile.in
+
+# files built by ./configure
+/init.d/facilitator
+/init.d/facilitator-email-poller
+/init.d/facilitator-reg-daemon
+/Makefile
+/config.status
+/config.log
+
+# files built by autoconf not meant for source-distribution
+/autom4te.cache
+
+# files for binary-distribution
+/flashproxy-facilitator-*.tar.*
+
+# files output by test-driver
+/test-*.log
+/*-test.log
+/*-test.trs

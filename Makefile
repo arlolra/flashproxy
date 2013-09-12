@@ -65,7 +65,10 @@ test:
 	./flashproxy-client-test
 
 test-full: test
-	cd facilitator && make test
+	cd facilitator && \
+	  { test -x ./config.status && ./config.status || \
+	  { test -x ./configure || ./autogen.sh; } && ./configure; } \
+	  && make && make check
 	cd proxy && make test
 
 .PHONY: all install dist sign dist-exe clean clean-all test test-full

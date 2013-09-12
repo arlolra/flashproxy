@@ -1,0 +1,27 @@
+# This is an example apache2 config for serving the facilitator.
+#
+# You can edit this file according to the instructions below, then copy it to
+# /etc/apache2/sites-available/fp-facilitator, or wherever is appropriate. Then
+# you can run `a2ensite fp-facilitator` to enable it.
+#
+<VirtualHost *:443>
+	# Update this with your hostname!
+	ServerName fp-facilitator.example.com
+	DocumentRoot /dev/null
+	# Make sure the path below matchs where you installed the facilitator.
+	ScriptAliasMatch ^(.*) /usr/bin/facilitator.cgi$1
+	MaxClients 256
+
+	CustomLog ${APACHE_LOG_DIR}/fp-access.log common
+	ErrorLog ${APACHE_LOG_DIR}/fp-error.log
+	LogLevel warn
+	SSLEngine on
+
+	# Manually install your certificate to the following location.
+	SSLCertificateFile /etc/apache2/fp-facilitator.pem
+	# If you got an intermediate certificate, uncomment the following line
+	# and install the certificate to that location too.
+	#SSLCertificateChainFile /etc/apache2/fp-intermediate.pem
+
+	Header add Strict-Transport-Security "max-age=15768000"
+</VirtualHost>
