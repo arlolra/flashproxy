@@ -20,7 +20,14 @@ CLEANFILES = $(initscript_SCRIPTS)
 
 # our own targets
 
-post-install:
+# The {pre,post}-{install,remove} targets are just given as reference, and
+# ought to be separate scripts as part of your distro's installation process.
+# They are intentionally not linked to the install target since they require
+# root access and *must not be run* for fake/staged installs, e.g. when giving
+# non-standard directories to ./configure or DESTDIR to make.
+
+pre-install:
+	id -u $(fpfacilitatoruser) >/dev/null 2>&1 || { \
 	which adduser >/dev/null 2>&1 && \
 	  adduser --quiet \
 	    --system \
@@ -28,15 +35,32 @@ post-install:
 	    --home $(sysconfdir)/flashproxy \
 	    --no-create-home \
 	    --shell /bin/false \
-	    --group \
 	    $(fpfacilitatoruser) || \
 	  useradd \
 	    --system \
 	    --home $(sysconfdir)/flashproxy \
 	    -M \
 	    --shell /bin/false \
-	    $(fpfacilitatoruser)
+	    $(fpfacilitatoruser) ; }
+
+post-install:
 	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
 	  update-rc.d $$i defaults; \
-	  /etc/init.d/$$i start; \
+	  invoke-rc.d $$i start; \
 	done
+
+pre-remove:
+	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
+	  invoke-rc.d $$i stop; \
+	done
+
+post-remove:
+	id -u $(fpfacilitatoruser) >/dev/null 2>&1 && { \
+	which deluser >/dev/null 2>&1 && \
+	  deluser --quiet \
+	    --system \
+	    $(fpfacilitatoruser) || \
+	  userdel \
+	    $(fpfacilitatoruser) ; }
+
+.PHONY: pre-install post-install pre-remove post-remove

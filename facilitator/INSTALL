@@ -1,0 +1,21 @@
+Install the dependencies.
+
+	$ apt-get install python-m2crypto make
+	$ apt-get install gnulib # if running from git
+
+Configure and install.
+
+	$ ./autogen.sh # if running from git or ./configure doesn't otherwise exist
+	$ ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var && make
+	# make pre-install install post-install
+
+This installs facilitator.cgi, facilitator, facilitator-email-poller,
+facilitator-reg-daemon, facilitator-reg, and fac.py to /usr/bin.
+It also installs System V init files to /etc/init.d/.
+
+The pre/post-install scripts create a user for the daemon to as, and
+sets up the initscripts in the default system runlevels.
+
+Uninstall.
+
+	# make pre-remove uninstall post-remove

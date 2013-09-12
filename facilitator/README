@@ -1,3 +1,10 @@
-This directory contains files needed to run a flash proxy facilitator.
-Normal users don't need any of these files. For instructions on setting
-up a facilitator, see doc/facilitator-howto.txt.
+This package contains files needed to run a flashproxy facilitator.
+Normal users who just want to bypass censorship, should use the
+flashproxy-client package instead.
+
+For instructions on building/installing this package from source, see
+INSTALL. (This should only be necessary if your distro does not already
+integrate this package into its repositories.)
+
+For instructions on setting up and running the facilitator, see
+doc/facilitator-howto.txt.

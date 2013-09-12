@@ -85,43 +85,6 @@ Restart servers.
 	# /etc/init.d/shorewall start
 	# /etc/init.d/shorewall6 start
 
-== Facilitator program installation
-
-Install the programs.
-
-	# cd
-	# apt-get install git python-m2crypto make
-	# git clone https://git.torproject.org/flashproxy.git
-	# cd flashproxy/facilitator
-	# make install
-
-This installs facilitator.cgi, facilitator, facilitator-email-poller,
-facilitator-reg-daemon, facilitator-reg, and fac.py to /usr/local/bin.
-It also installs System V init files to /etc/init.d/.
-
-Do post-installation tasks.
-
-	# make postinst
-
-This creates a user for the daemons to run as, and sets up the init.d
-scripts in the default system runlevels.
-
-=== Registration daemon setup
-
-The facilitator-reg-daemon program requires a private RSA key (used to
-decrypt encrypted client registrations).
-
-	# mkdir /etc/flashproxy
-	# openssl genrsa -out /etc/flashproxy/reg-daemon.key 2048
-	# chmod 600 /etc/flashproxy/reg-daemon.key
-	# openssl rsa -pubout < /etc/flashproxy/reg-daemon.key > reg-daemon.pub
-
-You will have to edit flashproxy-reg-email and copy the contents of
-reg-daemon.pub into the appropriate place.
-
-Install reg-daemon.key /etc/flashproxy to match what the init script
-expects.
-
 == HTTP server setup
 
 Apache is the web server that runs the CGI program.
