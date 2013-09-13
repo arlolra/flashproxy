@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -247,32 +248,38 @@ func main() {
 	pt.SmethodsDone()
 
 	var numHandlers int = 0
+	var sig os.Signal
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-	var sigint bool = false
-	for !sigint {
+	sig = nil
+	for sig == nil {
 		select {
 		case n := <-handlerChan:
 			numHandlers += n
-		case <-signalChan:
-			log("SIGINT")
-			sigint = true
+		case sig = <-sigChan:
 		}
 	}
-
+	log("Got first signal %q with %d running handlers.", sig, numHandlers)
 	for _, ln := range listeners {
 		ln.Close()
 	}
 
-	sigint = false
-	for numHandlers != 0 && !sigint {
+	if sig == syscall.SIGTERM {
+		log("Caught signal %q, exiting.", sig)
+		return
+	}
+
+	sig = nil
+	for sig == nil && numHandlers != 0 {
 		select {
 		case n := <-handlerChan:
 			numHandlers += n
-		case <-signalChan:
-			log("SIGINT")
-			sigint = true
+			log("%d remaining handlers.", numHandlers)
+		case sig = <-sigChan:
 		}
+	}
+	if sig != nil {
+		log("Got second signal %q with %d running handlers.", sig, numHandlers)
 	}
 }
