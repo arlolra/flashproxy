@@ -97,7 +97,7 @@ Edit /etc/apache2/ports.conf and comment out the port 80 configuration.
 	# NameVirtualHost *:80
 	# Listen 80
 
-Edit conf/fp-facilitator as per the instructions given in that file, and
+Edit examples/fp-facilitator as per the instructions given in that file, and
 install it to /etc/apache2/sites-available/fp-facilitator or whatever is
 appropriate for your apache2 installation.
 
@@ -125,19 +125,3 @@ Copy the new fp-facilitator.pem to the facilitator server as
 /etc/apache2/fp-facilitator.pem.
 
 	# /etc/init.d/apache2 restart
-
-=== Email poller setup
-
-The facilitator-email-poller program requires a password that is used to
-log in to the designated Gmail account. See the file gmail-howto.txt for
-instructions on setting up a Gmail account. After you've set up the
-account and have the password, save it to a file reg-email.pass and make
-it not readable or writable by anyone but its owner.
-
-	# chmod 600 /etc/flashproxy/reg-email.pass
-
-Install reg-email.pass to /etc/flashproxy to match what the init script
-expects.
-
-	# update-rc.d facilitator-email-poller defaults
-	# /etc/init.d/facilitator-email-poller start

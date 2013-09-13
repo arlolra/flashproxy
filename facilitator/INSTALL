@@ -16,6 +16,14 @@ It also installs System V init files to /etc/init.d/.
 The pre/post-install scripts create a user for the daemon to as, and
 sets up the initscripts in the default system runlevels.
 
+They also generate a RSA key in /etc/flashproxy/reg-daemon.{key,pub}.
+You will have to edit flashproxy-reg-email (in the client package) and
+copy the contents of reg-daemon.pub into the appropriate place.
+TODO(infinity0): find a better solution for this.
+
+You should also edit /etc/flashproxy/reg-email.pass to contain your
+app-specific Gmail password; see doc/gmail-setup.txt for instructions.
+
 Uninstall.
 
 	# make pre-remove uninstall post-remove

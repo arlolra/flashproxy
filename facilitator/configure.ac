@@ -10,4 +10,5 @@ AC_CONFIG_FILES([Makefile
 	init.d/facilitator-email-poller
 	init.d/facilitator-reg-daemon])
 
+AC_PROG_LN_S
 AC_OUTPUT
