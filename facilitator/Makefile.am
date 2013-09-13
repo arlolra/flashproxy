@@ -3,6 +3,7 @@
 fpfacilitatoruser = @fpfacilitatoruser@
 initscriptdir = $(sysconfdir)/init.d
 exampledir = $(docdir)/examples
+appenginedir = $(pkgdatadir)/appengine
 
 # automake PLVs
 
@@ -11,6 +12,7 @@ initscript_SCRIPTS = init.d/facilitator init.d/facilitator-email-poller init.d/f
 
 dist_doc_DATA = doc/appengine-howto.txt doc/facilitator-howto.txt doc/gmail-howto.txt README
 dist_example_DATA = conf/fp-facilitator
+dist_appengine_DATA = appengine/app.yaml appengine/config.go appengine/fp-reg.go appengine/README
 
 dist_TESTS = facilitator-test
 
