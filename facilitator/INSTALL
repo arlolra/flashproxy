@@ -1,27 +1,27 @@
 Install the dependencies.
 
-	$ apt-get install python-m2crypto make
+	$ apt-get install make openssl python-m2crypto
 	$ apt-get install gnulib # if running from git
 
 Configure and install.
 
 	$ ./autogen.sh # if running from git or ./configure doesn't otherwise exist
-	$ ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var && make
+	$ ./configure --localstatedir=/var/local && make
 	# make pre-install install post-install
 
 This installs facilitator.cgi, facilitator, facilitator-email-poller,
-facilitator-reg-daemon, facilitator-reg, and fac.py to /usr/bin.
+facilitator-reg-daemon, facilitator-reg, and fac.py to /usr/local/bin.
 It also installs System V init files to /etc/init.d/.
 
 The pre/post-install scripts create a user for the daemon to as, and
 sets up the initscripts in the default system runlevels.
 
-They also generate a RSA key in /etc/flashproxy/reg-daemon.{key,pub}.
+They also generate a RSA key in /usr/local/etc/flashproxy/reg-daemon.{key,pub}.
 You will have to edit flashproxy-reg-email (in the client package) and
 copy the contents of reg-daemon.pub into the appropriate place.
 TODO(infinity0): find a better solution for this.
 
-You should also edit /etc/flashproxy/reg-email.pass to contain your
+You should also edit /usr/local/etc/flashproxy/reg-email.pass to contain your
 app-specific Gmail password; see doc/gmail-setup.txt for instructions.
 
 Uninstall.
