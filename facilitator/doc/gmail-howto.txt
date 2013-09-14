@@ -57,5 +57,6 @@ https://www.google.com/accounts/SmsAuthConfig.
 
 Still on the 2-step summary page, click "Manage application-specific
 passwords". Enter "IMAP" for the name and click "Generate password".
-Save the password to encrypted storage. This is the password that will
-be used with the --pass option of facilitator-email-poller.
+Save the password to encrypted storage. You should save this password
+into /etc/flashproxy/reg-email.pass (or wherever you installed it), so
+that facilitator-email-poller can pick it up.

@@ -22,7 +22,7 @@ copy the contents of reg-daemon.pub into the appropriate place.
 TODO(infinity0): find a better solution for this.
 
 You should also edit /usr/local/etc/flashproxy/reg-email.pass to contain your
-app-specific Gmail password; see doc/gmail-setup.txt for instructions.
+app-specific Gmail password; see doc/gmail-howto.txt for instructions.
 
 Uninstall.
 
