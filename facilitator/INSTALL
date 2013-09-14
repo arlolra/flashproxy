@@ -6,7 +6,7 @@ Install the dependencies.
 Configure and install.
 
 	$ ./autogen.sh # if running from git or ./configure doesn't otherwise exist
-	$ ./configure --localstatedir=/var/local && make
+	$ ./configure --localstatedir=/var/local --enable-initscripts && make
 	# make pre-install install post-install
 
 This installs facilitator.cgi, facilitator, facilitator-email-poller,
