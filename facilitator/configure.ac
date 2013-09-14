@@ -11,4 +11,12 @@ AC_CONFIG_FILES([Makefile
 	init.d/facilitator-reg-daemon])
 
 AC_PROG_LN_S
+# check that we want to install initscripts. don't bother checking that they
+# are supported, since we might be doing a staged install on a different system.
+AC_ARG_ENABLE([initscripts],
+	[AS_HELP_STRING([--disable-initscripts],
+		[install and configure sysvinit-style initscripts (default yes)])],
+	[do_initscripts=], [do_initscripts=yes])
+AM_CONDITIONAL([DO_INITSCRIPTS], [test "x$do_initscripts" = xyes])
+
 AC_OUTPUT

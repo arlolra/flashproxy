@@ -1,7 +1,9 @@
 # our own variables
 
 fpfacilitatoruser = @fpfacilitatoruser@
-initscriptdir = $(sysconfdir)/init.d
+# unfortunately sysvinit does not support having initscripts in /usr/local/etc
+# yet, so we have to hard code a path here. :(
+initscriptdir = /etc/init.d
 exampledir = $(docdir)/examples
 appenginedir = $(pkgdatadir)/appengine
 pkgconfdir = $(sysconfdir)/flashproxy
@@ -10,7 +12,9 @@ appengineconfdir = $(pkgconfdir)/reg-appengine
 # automake PLVs
 
 dist_bin_SCRIPTS = facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg facilitator.cgi fac.py
+if DO_INITSCRIPTS
 initscript_SCRIPTS = init.d/facilitator init.d/facilitator-email-poller init.d/facilitator-reg-daemon
+endif
 
 dist_doc_DATA = doc/appengine-howto.txt doc/facilitator-howto.txt doc/gmail-howto.txt README
 dist_example_DATA = examples/fp-facilitator conf/reg-email.pass
@@ -31,7 +35,16 @@ CLEANFILES = $(initscript_SCRIPTS)
 # root access and *must not be run* for fake/staged installs, e.g. when giving
 # non-standard directories to ./configure or DESTDIR to make.
 
-pre-install:
+pre-install: meta-install-sanity install-user
+post-install: meta-install-sanity install-secrets install-symlinks install-daemon
+pre-remove: meta-install-sanity remove-daemon remove-symlinks remove-secrets
+post-remove: meta-install-sanity remove-user
+
+meta-install-sanity:
+	test "x$(DESTDIR)" = "x" || { echo >&2 \
+	  "don't run {pre,post}-{install,remove} when DESTDIR is set"; false; }
+
+install-user:
 	id -u $(fpfacilitatoruser) >/dev/null 2>&1 || { \
 	which adduser >/dev/null 2>&1 && \
 	  adduser --quiet \
@@ -49,41 +62,7 @@ pre-install:
 	    --shell /bin/false \
 	    $(fpfacilitatoruser) ; }
 
-post-install-secrets:
-	install -m 600 /dev/null $(pkgconfdir)/reg-daemon.key
-	openssl genrsa 2048 | tee $(pkgconfdir)/reg-daemon.key | \
-	openssl rsa -pubout > $(pkgconfdir)/reg-daemon.pub
-	install -m 600 $(exampledir)/reg-email.pass $(pkgconfdir)/reg-email.pass
-	chown $(fpfacilitatoruser): $(pkgconfdir)/reg-daemon.key
-	chown $(fpfacilitatoruser): $(pkgconfdir)/reg-email.pass
-
-post-install-symlinks:
-	for i in fp-reg.go app.yaml README; do \
-	  $(LN_S) -f $(appenginedir)/$$i $(appengineconfdir)/$$i; \
-	done
-
-post-install-daemon:
-	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
-	  update-rc.d $$i defaults; \
-	  invoke-rc.d $$i start; \
-	done
-
-post-install: post-install-secrets post-install-symlinks post-install-daemon
-
-pre-remove-daemon:
-	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
-	  invoke-rc.d $$i stop; \
-	done
-
-pre-remove-symlinks:
-	rm -rf $(appengineconfdir)
-
-pre-remove-secrets:
-	rm -f $(pkgconfdir)/reg-*
-
-pre-remove: pre-remove-daemon pre-remove-symlinks pre-remove-secrets
-
-post-remove:
+remove-user:
 	: # deluser does actually remove the group as well
 	id -u $(fpfacilitatoruser) >/dev/null 2>&1 && { \
 	which deluser >/dev/null 2>&1 && \
@@ -93,6 +72,47 @@ post-remove:
 	  userdel \
 	    $(fpfacilitatoruser) ; } || true
 
+install-secrets:
+	install -m 600 /dev/null $(pkgconfdir)/reg-daemon.key
+	openssl genrsa 2048 | tee $(pkgconfdir)/reg-daemon.key | \
+	openssl rsa -pubout > $(pkgconfdir)/reg-daemon.pub
+	install -m 600 $(exampledir)/reg-email.pass $(pkgconfdir)/reg-email.pass
+	chown $(fpfacilitatoruser): $(pkgconfdir)/reg-daemon.key
+	chown $(fpfacilitatoruser): $(pkgconfdir)/reg-email.pass
+
+remove-secrets:
+	rm -f $(pkgconfdir)/reg-*
+
+install-symlinks:
+	for i in fp-reg.go app.yaml README; do \
+	  $(LN_S) -f $(appenginedir)/$$i $(appengineconfdir)/$$i; \
+	done
+
+remove-symlinks:
+	rm -rf $(appengineconfdir)
+
+# initscripts: assume that if the user wanted to install them, then they also
+# wanted to configure them, and that the system supports them. if this isn't the
+# case then either (a) they are doing a staged install for another system and
+# shouldn't be running {pre,post}-{install,remove} or (b) they shouldn't have
+# told us to install initscripts for their system that doesn't support it.
+
+install-daemon:
+if DO_INITSCRIPTS
+	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
+	  update-rc.d $$i defaults; \
+	  invoke-rc.d $$i start; \
+	done
+endif
+
+remove-daemon:
+if DO_INITSCRIPTS
+	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
+	  invoke-rc.d $$i stop; \
+	  update-rc.d $$i remove; \
+	done
+endif
+
 .PHONY: pre-install post-install pre-remove post-remove
-.PHONY: post-install-secrets post-install-symlinks post-install-daemon
-.PHONY: pre-remove-daemon pre-remove-symlinks pre-remove-secrets
+.PHONY: install-user install-secrets install-symlinks install-daemon
+.PHONY: remove-user remove-secrets remove-symlinks remove-daemon
