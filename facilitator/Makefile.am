@@ -29,6 +29,9 @@ CLEANFILES = $(initscript_SCRIPTS)
 
 # our own targets
 
+check:
+	./facilitator-test
+
 # The {pre,post}-{install,remove} targets are just given as reference, and
 # ought to be separate scripts as part of your distro's installation process.
 # They are intentionally not linked to the install target since they require
