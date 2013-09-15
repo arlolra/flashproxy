@@ -17,9 +17,9 @@ The pre/post-install scripts create a user for the daemon to as, and
 sets up the initscripts in the default system runlevels.
 
 They also generate a RSA key in /usr/local/etc/flashproxy/reg-daemon.{key,pub}.
-You will have to edit flashproxy-reg-email (in the client package) and
-copy the contents of reg-daemon.pub into the appropriate place.
-TODO(infinity0): find a better solution for this.
+You should securely distribute the public key to anyone that wants to
+use your facilitator; they will need to pass it as the
+--facilitator-pubkey option to flashproxy-reg-email.
 
 You should also edit /usr/local/etc/flashproxy/reg-email.pass to contain your
 app-specific Gmail password; see doc/gmail-howto.txt for instructions.
