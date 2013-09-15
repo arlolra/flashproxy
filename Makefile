@@ -5,13 +5,14 @@ PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
 
-PYTHON = python
+PYTHON ?= PYTHONPATH=common python
 export PY2EXE_TMPDIR = py2exe-tmp
 
 CLIENT_BIN = flashproxy-client flashproxy-reg-appspot flashproxy-reg-email flashproxy-reg-http flashproxy-reg-url
 CLIENT_MAN = doc/flashproxy-client.1 doc/flashproxy-reg-appspot.1 doc/flashproxy-reg-email.1 doc/flashproxy-reg-http.1 doc/flashproxy-reg-url.1
 CLIENT_DIST_FILES = $(CLIENT_BIN) README LICENSE ChangeLog torrc
 CLIENT_DIST_DOC_FILES = $(CLIENT_MAN)
+CLIENT_DIST_LIB_COMMON = common/flashproxy/__init__.py common/flashproxy/keys.py common/flashproxy/util.py
 
 all: $(CLIENT_DIST_FILES) $(CLIENT_MAN)
 	:
@@ -34,6 +35,9 @@ dist: $(CLIENT_MAN)
 	mkdir $(DISTDIR)/doc
 	cp -f $(CLIENT_DIST_FILES) $(DISTDIR)
 	cp -f $(CLIENT_DIST_DOC_FILES) $(DISTDIR)/doc
+	test -n "$(CLIENT_DIST_LIB_COMMON)" && \
+	  { mkdir $(DISTDIR)/flashproxy && \
+	  cp -f $(CLIENT_DIST_LIB_COMMON) $(DISTDIR)/flashproxy; } || true
 	cd dist && zip -q -r -9 $(DISTNAME).zip $(DISTNAME)
 
 dist/$(DISTNAME).zip: $(CLIENT_DIST_FILES)
@@ -51,6 +55,7 @@ $(PY2EXE_TMPDIR)/dist: $(CLIENT_BIN)
 dist-exe: DISTNAME := $(DISTNAME)-win32
 dist-exe: CLIENT_BIN := $(PY2EXE_TMPDIR)/dist/*
 dist-exe: CLIENT_MAN := $(addsuffix .txt,$(CLIENT_MAN))
+dist-exe: CLIENT_DIST_LIB_COMMON := # py2exe static-links dependencies
 # Delegate to the "dist" target using the substitutions above.
 dist-exe: $(PY2EXE_TMPDIR)/dist setup.py dist
 

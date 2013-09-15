@@ -8,7 +8,7 @@ import socket
 import subprocess
 import sys
 import unittest
-
+print sys.path
 try:
     from hashlib import sha1
 except ImportError:
@@ -20,14 +20,14 @@ except ImportError:
 import imp
 dont_write_bytecode = sys.dont_write_bytecode
 sys.dont_write_bytecode = True
-flashproxy = imp.load_source("flashproxy", "flashproxy-client")
-parse_socks_request = flashproxy.parse_socks_request
-handle_websocket_request = flashproxy.handle_websocket_request
-WebSocketDecoder = flashproxy.WebSocketDecoder
-WebSocketEncoder = flashproxy.WebSocketEncoder
+fp_client = imp.load_source("fp_client", "flashproxy-client")
+parse_socks_request = fp_client.parse_socks_request
+handle_websocket_request = fp_client.handle_websocket_request
+WebSocketDecoder = fp_client.WebSocketDecoder
+WebSocketEncoder = fp_client.WebSocketEncoder
 sys.dont_write_bytecode = dont_write_bytecode
 del dont_write_bytecode
-del flashproxy
+del fp_client
 
 LOCAL_ADDRESS = ("127.0.0.1", 40000)
 REMOTE_ADDRESS = ("127.0.0.1", 40001)
