@@ -73,8 +73,7 @@ again. Listen on 127.0.0.1 and port PORT (by default %(port)d).
   -p, --port PORT           listen on PORT (by default %(port)d).
       --pidfile FILENAME    write PID to FILENAME after daemonizing.
       --privdrop-user USER  switch UID and GID to those of USER.
-  -r, --relay RELAY         send RELAY (host:port) to proxies as the relay to use.
-  -f, --relay-file FILE     learn relays from FILE
+  -r, --relay-file RELAY    learn relays from FILE
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
@@ -448,7 +447,7 @@ def put_reg(reg):
     REGS = get_regs(af, get_outermost_transport(reg.transport_chain))
     return REGS.add(reg)
 
-def parse_relay_file(fname):
+def handle_relay_file(fname):
     """
     Parse a file containing Tor relays that we can point proxies to.
     Throws ValueError if the file is not properly formatted.
@@ -467,8 +466,8 @@ def parse_relay_file(fname):
             options.add_relay(words_list[0], words_list[1])
 
 def main():
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:f:",
-        ["debug", "help", "log=", "port=", "pidfile=", "privdrop-user=", "relay=", "relay-file=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
+        ["debug", "help", "log=", "port=", "pidfile=", "privdrop-user=", "relay-file=", "unsafe-logging"])
     for o, a in opts:
         if o == "-d" or o == "--debug":
             options.daemonize = False
@@ -484,15 +483,9 @@ def main():
             options.pid_filename = a
         elif o == "--privdrop-user":
             options.privdrop_username = a
-        elif o == "-r" or o == "--relay":
+        elif o == "-r" or o == "--relay-file":
             try:
-                options.add_relay("websocket", a)
-            except (ValueError, socket.gaierror) as e:
-                print >> sys.stderr, u"Can't resolve relay %s: %s" % (repr(a), str(e))
-                sys.exit(1)
-        elif o == "-f" or o == "--relay-file":
-            try:
-                parse_relay_file(a)
+                handle_relay_file(a)
             except ValueError as e:
                 print >> sys.stderr, u"Could not parse file '%s': %s" % (repr(a), str(e))
                 sys.exit(1)
