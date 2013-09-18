@@ -81,13 +81,26 @@ again. Listen on 127.0.0.1 and port PORT (by default %(port)d).
     "log": DEFAULT_LOG_FILENAME,
 }
 
-def get_outermost_transport(transport):
+def parse_transport_chain(transport_chain):
+    """
+    Given a combined transport name in 'transport', return a tuple that
+    contains the transport chain.
+    e.g. if 'transport' == 'obfs3|websocket' we return (obfs3, websocket)
+    """
+    assert(transport_chain)
+    # XXX We explicitly cast to tuple so that the return value can be
+    # used as a dictionary key. Transport chains are not supposed to
+    # be manipulated so it should be cool.
+    return tuple(transport_chain.split("|"))
+
+def get_outermost_transport(transport_chain):
     """
     Given a combined transport name in 'transport', return the name of
     the outermost transport.
-    e.g. if 'transport' == 'obfs3|websocket' this function returns 'websocket'
+    e.g. if 'transport' is (obfs3, websocket) this function returns 'websocket'
     """
-    return transport.split("|")[-1]
+    assert(transport_chain)
+    return transport_chain[-1]
 
 def safe_str(s):
     """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
@@ -108,7 +121,7 @@ def log(msg):
 class TCPReg(object):
     def __init__(self, host, port, transport_chain):
         """
-        transport_chain: string that looks like "obfs3|websocket"
+        transport_chain: transport chain list. e.g. (obfs3, websocket)
         """
         self.host = host
         self.port = port
@@ -322,6 +335,9 @@ class Handler(SocketServer.StreamRequestHandler):
             self.send_error()
             return False
 
+        # Turn the transport chain to tuple-form.
+        transport_chain = parse_transport_chain(transport_chain)
+
         # See if we have relays that support this transport chain
         if transport_chain not in options.relays:
             log(u"Unrecognized transport chain: %s" % transport_chain)
@@ -463,7 +479,7 @@ def handle_relay_file(fname):
                 raise ValueError("Wrong line format: %s" % line)
 
             # XXX Maybe we should validate here
-            options.add_relay(words_list[0], words_list[1])
+            options.add_relay(parse_transport_chain(words_list[0]), words_list[1])
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
