@@ -54,7 +54,7 @@ def do_head():
 
 def do_get():
     """Parses flashproxy polls.
-       Example: GET /r=1&client=7.1.43.21&client=1.2.3.4&transports=webrtc,websocket
+       Example: GET /r=1&client=7.1.43.21&client=1.2.3.4&transport=webrtc&transport=websocket
     """
 
     path_parts = [x for x in path_info.split("/") if x]
@@ -68,7 +68,7 @@ def do_get():
 
         # 'transports' (optional) can be repeated and carries
         # transport names.
-        transport_list = fs.getlist("transports")
+        transport_list = fs.getlist("transport")
         if transport_list is None:
             transport_list = ["websocket"]
 
