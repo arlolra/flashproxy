@@ -69,7 +69,7 @@ def do_get():
         # 'transports' (optional) can be repeated and carries
         # transport names.
         transport_list = fs.getlist("transport")
-        if transport_list is None:
+        if not transport_list:
             transport_list = ["websocket"]
 
         try:
