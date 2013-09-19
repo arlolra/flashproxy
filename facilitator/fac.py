@@ -206,10 +206,21 @@ def parse_transaction(line):
     return command, tuple(pairs)
 
 def param_first(key, params):
+    """Search 'params' for 'key' and return the first value that
+    occurs. If 'key' was not found, return None."""
     for k, v in params:
         if key == k:
             return v
     return None
+
+def param_getlist(key, params):
+    """Search 'params' for 'key' and return a list with its values. If
+    'key' did not appear in 'params', return the empty list."""
+    result = []
+    for k, v in params:
+        if key == k:
+            result.append(v)
+    return result
 
 def quote_string(s):
     chars = []
@@ -265,9 +276,17 @@ def get_reg(facilitator_addr, proxy_addr, transport_list):
     mapped to the value "" if there are no registrations available for
     proxy_addr. Raises an exception otherwise."""
     f = fac_socket(facilitator_addr)
-    transports = ",".join(transport_list) # xxx wtf
+
+    # Form a list (in transact() format) with the transports that we
+    # should send to the facilitator.  Then pass that list to the
+    # transact() function.
+    # For example, TRANSPORT=obfs2 TRANSPORT=obfs3.
+    transports = []
+    for transport in transport_list:
+        transports += ("TRANSPORT", transport)
+
     try:
-        command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)), ("TRANSPORTS", transports))
+        command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)), transports)
     finally:
         f.close()
     response = {}
