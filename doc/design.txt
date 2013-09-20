@@ -159,7 +159,7 @@ Design of flash proxies
   The proxy asks the facilitator for a registration with an HTTP GET
   request:
 
-    GET /r=<version>&client=<client addr>&transport=<transport name> HTTP/1.0
+    GET /?r=<version>&client=<client addr>&transport=<transport name> HTTP/1.0
 
   The 'r' parameter is the protocol revision number (should be '1' for now).
   The 'client' parameter carries the IP address of a flashproxy
@@ -169,7 +169,7 @@ Design of flash proxies
   this flashproxy supports.
 
   For example:
-   GET /r=1&client=7.1.43.21&client=1.2.3.4&transport=webrtc&transport=websocket HTTP/1.0
+   GET /?r=1&client=7.1.43.21&client=1.2.3.4&transport=webrtc&transport=websocket HTTP/1.0
 
   The response code is 200 and the body looks like this:
 
