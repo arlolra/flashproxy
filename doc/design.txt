@@ -176,7 +176,7 @@ Design of flash proxies
     client-<transport>=[<address>:<port>]&relay-<transport>=<address>:<port>
 
   For example:
-   client-obfs3|websocket=1.2.3.4:2000&relay-obfs3|websocket=10.10.10:9902
+   client-websocket=1.2.3.4:2000&relay-websocket=10.10.10:9902
 
   If the value for the client parameter is empty, it means that there are no
   client registrations for this proxy.
