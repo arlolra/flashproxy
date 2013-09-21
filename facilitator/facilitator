@@ -73,7 +73,7 @@ again. Listen on 127.0.0.1 and port PORT (by default %(port)d).
   -p, --port PORT           listen on PORT (by default %(port)d).
       --pidfile FILENAME    write PID to FILENAME after daemonizing.
       --privdrop-user USER  switch UID and GID to those of USER.
-  -r, --relay-file RELAY    learn relays from FILE
+  -r, --relay-file RELAY    learn relays from FILE.
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
