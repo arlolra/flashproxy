@@ -122,8 +122,6 @@ It also installs System V init files to /etc/init.d/.
 
 	# update-rc.d facilitator defaults
 	# /etc/init.d/facilitator start
-	# update-rc.d facilitator-email-poller defaults
-	# /etc/init.d/facilitator-email-poller start
 	# update-rc.d facilitator-reg-daemon defaults
 	# /etc/init.d/facilitator-reg-daemon start
 
@@ -210,3 +208,6 @@ it not readable or writable by anyone but its owner.
 
 Install reg-email.pass to /etc/flashproxy to match what the init script
 expects.
+
+	# update-rc.d facilitator-email-poller defaults
+	# /etc/init.d/facilitator-email-poller start
