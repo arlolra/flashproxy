@@ -47,7 +47,7 @@ class options(object):
     @staticmethod
     def add_relay(addr, transport):
         RELAYS.setdefault(transport, [])
-        RELAYS[transport].append(fac.format_addr(addr))
+        RELAYS[transport].append(addr)
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -122,7 +122,7 @@ class TCPReg(object):
         self.relay = self._get_matching_relay()
 
     def _get_matching_relay(self):
-        """Return a matching relay addr_spec for this registration. Raise
+        """Return a matching relay address for this registration. Raise
         UnknownTransport if a relay with a matching transport chain could not be
         found."""
         if self.transports not in RELAYS:
@@ -306,7 +306,7 @@ class Handler(SocketServer.StreamRequestHandler):
         if reg:
             log(u"proxy (%s) gets client '%s' (transports: %s) (num relays: %s) (remaining regs: %d/%d)" %
                 (safe_str(repr(proxy_spec)), safe_str(unicode(reg)), reg.transports, num_relays(), num_unhandled_regs(), num_regs()))
-            print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", reg.relay), ("CHECK-BACK-IN", str(check_back_in)))
+            print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", fac.format_addr(reg.relay)), ("CHECK-BACK-IN", str(check_back_in)))
         else:
             log(u"proxy (%s) gets none" % safe_str(repr(proxy_spec)))
             print >> self.wfile, fac.render_transaction("NONE", ("CHECK-BACK-IN", str(check_back_in)))
