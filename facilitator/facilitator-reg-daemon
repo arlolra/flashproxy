@@ -53,7 +53,7 @@ single process.
   -p, --port PORT           listen on PORT (by default %(port)d).
       --pidfile FILENAME    write PID to FILENAME after daemonizing.
       --privdrop-user USER  switch UID and GID to those of USER.
-      --unsafe-logging      don't scrub email password and IP addresses from logs.\
+      --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "log": DEFAULT_LOG_FILENAME,
