@@ -522,7 +522,7 @@ obfs2|websocket 1.4.6.1:4123\
         sys.exit(1)
 
     if not options.relays:
-        sys.exit(1)
+        print >> sys.stderr, u"Warning: no relays configured."
 
     # Create RegSets for our supported transports
     for transport in options.relays.keys():
