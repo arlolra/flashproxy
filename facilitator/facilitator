@@ -55,10 +55,9 @@ class options(object):
         return num_relays
 
     @staticmethod
-    def add_relay(transport, spec):
-        spec = fac.parse_addr_spec(spec, defport = DEFAULT_RELAY_PORT, resolve = True)
+    def add_relay(transport, addr):
         options.relays.setdefault(transport, [])
-        options.relays[transport].append(fac.format_addr(spec))
+        options.relays[transport].append(fac.format_addr(addr))
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -477,8 +476,8 @@ def handle_relay_file(fname):
             if len(words_list) != 2:
                 raise ValueError("Wrong line format: %s" % line)
 
-            # XXX Maybe we should validate here
-            options.add_relay(parse_transport_chain(words_list[0]), words_list[1])
+            addr = fac.parse_addr_spec(words_list[1], defport = DEFAULT_RELAY_PORT, resolve = True)
+            options.add_relay(parse_transport_chain(words_list[0]), addr)
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
