@@ -14,18 +14,16 @@
 
 # Based on /etc/init.d/skeleton from Debian 6.
 
-# The relay must support the websocket pluggable transport.
-# This is the IPv4 address of tor1.bamsoftware.com.
-RELAY=173.255.221.44:9901
-
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 DESC="Flash proxy facilitator"
 NAME=facilitator
 PIDFILE=/var/run/$NAME.pid
 LOGFILE=/var/log/$NAME.log
+CONFDIR=/etc/flashproxy
+RELAYFILE=$CONFDIR/relays
 PRIVDROP_USER=facilitator-nobody
 DAEMON=/usr/local/bin/$NAME
-DAEMON_ARGS="-r $RELAY --log $LOGFILE --pidfile $PIDFILE --privdrop-user $PRIVDROP_USER"
+DAEMON_ARGS="--relay-file $CONFDIR/relays --log $LOGFILE --pidfile $PIDFILE --privdrop-user $PRIVDROP_USER"
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
