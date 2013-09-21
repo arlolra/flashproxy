@@ -46,8 +46,6 @@ class options(object):
 
     @staticmethod
     def num_relays():
-        """Return the number of registered relays."""
-
         num_relays = 0
         for relay_list in options.relays.values():
             num_relays += len(relay_list)
@@ -80,11 +78,9 @@ again. Listen on 127.0.0.1 and port PORT (by default %(port)d).
 }
 
 def parse_transport_chain(transport_chain):
-    """
-    Given a combined transport name in 'transport', return a tuple that
-    contains the transport chain.
-    e.g. if 'transport' == 'obfs3|websocket' we return (obfs3, websocket)
-    """
+    """Given a combined transport name in 'transport', return a tuple that
+    contains the transport chain. e.g. if 'transport' == 'obfs3|websocket' we
+    return (obfs3, websocket)"""
     assert(transport_chain)
     # XXX We explicitly cast to tuple so that the return value can be
     # used as a dictionary key. Transport chains are not supposed to
@@ -92,11 +88,9 @@ def parse_transport_chain(transport_chain):
     return tuple(transport_chain.split("|"))
 
 def get_outermost_transport(transport_chain):
-    """
-    Given a combined transport name in 'transport', return the name of
-    the outermost transport.
-    e.g. if 'transport' is (obfs3, websocket) this function returns 'websocket'
-    """
+    """Given a combined transport name in 'transport', return the name of the
+    outermost transport. e.g. if 'transport' is (obfs3, websocket) this function
+    returns 'websocket'"""
     assert(transport_chain)
     return transport_chain[-1]
 
@@ -118,9 +112,7 @@ def log(msg):
 
 class TCPReg(object):
     def __init__(self, host, port, transport_chain):
-        """
-        transport_chain: transport chain list. e.g. (obfs3, websocket)
-        """
+        """transport_chain: transport chain list. e.g. (obfs3, websocket)"""
         self.host = host
         self.port = port
         self.transport_chain = transport_chain
@@ -129,12 +121,9 @@ class TCPReg(object):
         self.relay = self._get_matching_relay()
 
     def _get_matching_relay(self):
-        """
-        Return a matching relay addrspec for this registration
-
-        Raise UnknownTransport if a relay with a matching transport
-        chain could not be found.
-        """
+        """Return a matching relay addrspec for this registration. Raise
+        UnknownTransport if a relay with a matching transport chain could not be
+        found."""
         if self.transport_chain not in options.relays:
             raise UnknownTransport("Can't find relay with transport chain: %s" % self.transport_chain)
 
@@ -462,10 +451,8 @@ def put_reg(reg):
     return REGS.add(reg)
 
 def handle_relay_file(fname):
-    """
-    Parse a file containing Tor relays that we can point proxies to.
-    Throws ValueError if the file is not properly formatted.
-    """
+    """Parse a file containing Tor relays that we can point proxies to.
+    Throws ValueError if the file is not properly formatted."""
     # File format is:
     #  <transport> <addrport>
     # Example:
