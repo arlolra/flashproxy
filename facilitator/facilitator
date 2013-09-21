@@ -44,11 +44,6 @@ class options(object):
     privdrop_username = None
     safe_logging = True
 
-    @staticmethod
-    def add_relay(addr, transport):
-        RELAYS.setdefault(transport, [])
-        RELAYS[transport].append(addr)
-
 def usage(f = sys.stdout):
     print >> f, """\
 Usage: %(progname)s -r RELAY <OPTIONS>
@@ -443,13 +438,14 @@ def put_reg(reg):
     REGS = get_regs(af, get_outermost_transport(reg.transports))
     return REGS.add(reg)
 
-def handle_relay_file(fname):
+def parse_relay_file(fname):
     """Parse a file containing Tor relays that we can point proxies to.
     Throws ValueError if the file is not properly formatted."""
     # File format is:
     #  <transport> <addrport>
     # Example:
     #  obfs2|websocket 1.4.6.1:4123
+    relays = {}
     with open(fname) as input:
         for line in input:
             words_list = line.split()
@@ -458,7 +454,9 @@ def handle_relay_file(fname):
 
             addr = fac.parse_addr_spec(words_list[1], defport = DEFAULT_RELAY_PORT, resolve = True)
             transports = parse_transport_chain(words_list[0])
-            options.add_relay(addr, transports)
+            relays.setdefault(transports, [])
+            relays[transports].append(addr)
+    return relays
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
@@ -493,7 +491,7 @@ obfs2|websocket 1.4.6.1:4123\
 """
         sys.exit(1)
 
-    handle_relay_file(options.relay_filename)
+    RELAYS.update(parse_relay_file(options.relay_filename))
 
     if not RELAYS:
         print >> sys.stderr, u"Warning: no relays configured."
