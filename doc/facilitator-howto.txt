@@ -111,6 +111,7 @@ Create the user the daemons will run as.
 
 Install the programs.
 
+	# cd
 	# apt-get install git python-m2crypto make
 	# git clone https://git.torproject.org/flashproxy.git
 	# cd flashproxy/facilitator
@@ -186,6 +187,7 @@ Copy the new fp-facilitator.pem to the facilitator server as
 The facilitator-reg-daemon program requires a private RSA key (used to
 decrypt encrypted client registrations).
 
+	# mkdir /etc/flashproxy
 	# openssl genrsa -out /etc/flashproxy/reg-daemon.key 2048
 	# chmod 600 /etc/flashproxy/reg-daemon.key
 	# openssl rsa -pubout < /etc/flashproxy/reg-daemon.key > reg-daemon.pub
