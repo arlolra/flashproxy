@@ -121,6 +121,24 @@ This installs facilitator.cgi, facilitator, facilitator-email-poller,
 facilitator-reg-daemon, facilitator-reg, and fac.py to /usr/local/bin.
 It also installs System V init files to /etc/init.d/.
 
+=== Registration daemon setup
+
+The facilitator-reg-daemon program requires a private RSA key (used to
+decrypt encrypted client registrations).
+
+	# mkdir /etc/flashproxy
+	# openssl genrsa -out /etc/flashproxy/reg-daemon.key 2048
+	# chmod 600 /etc/flashproxy/reg-daemon.key
+	# openssl rsa -pubout < /etc/flashproxy/reg-daemon.key > reg-daemon.pub
+
+You will have to edit flashproxy-reg-email and copy the contents of
+reg-daemon.pub into the appropriate place.
+
+Install reg-daemon.key /etc/flashproxy to match what the init script
+expects.
+
+=== Init script setup
+
 	# update-rc.d facilitator defaults
 	# /etc/init.d/facilitator start
 	# update-rc.d facilitator-reg-daemon defaults
@@ -181,22 +199,6 @@ Copy the new fp-facilitator.pem to the facilitator server as
 /etc/apache2/fp-facilitator.pem.
 
 	# /etc/init.d/apache2 restart
-
-=== Registration daemon setup
-
-The facilitator-reg-daemon program requires a private RSA key (used to
-decrypt encrypted client registrations).
-
-	# mkdir /etc/flashproxy
-	# openssl genrsa -out /etc/flashproxy/reg-daemon.key 2048
-	# chmod 600 /etc/flashproxy/reg-daemon.key
-	# openssl rsa -pubout < /etc/flashproxy/reg-daemon.key > reg-daemon.pub
-
-You will have to edit flashproxy-reg-email and copy the contents of
-reg-daemon.pub into the appropriate place.
-
-Install reg-daemon.key /etc/flashproxy to match what the init script
-expects.
 
 === Email poller setup
 
