@@ -551,4 +551,3 @@ obfs2|websocket 1.4.6.1:4123\
 
 if __name__ == "__main__":
     main()
-
