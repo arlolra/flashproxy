@@ -57,9 +57,7 @@ class options(object):
     @staticmethod
     def add_relay(transport, spec):
         spec = fac.parse_addr_spec(spec, defport = DEFAULT_RELAY_PORT, resolve = True)
-        if transport not in options.relays:
-            options.relays[transport] = []
-
+        options.relays.setdefault(transport, [])
         options.relays[transport].append(fac.format_addr(spec))
 
 def usage(f = sys.stdout):
