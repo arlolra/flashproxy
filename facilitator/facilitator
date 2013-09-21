@@ -55,7 +55,7 @@ class options(object):
         return num_relays
 
     @staticmethod
-    def add_relay(transport, addr):
+    def add_relay(addr, transport):
         options.relays.setdefault(transport, [])
         options.relays[transport].append(fac.format_addr(addr))
 
@@ -477,7 +477,7 @@ def handle_relay_file(fname):
                 raise ValueError("Wrong line format: %s" % line)
 
             addr = fac.parse_addr_spec(words_list[1], defport = DEFAULT_RELAY_PORT, resolve = True)
-            options.add_relay(parse_transport_chain(words_list[0]), addr)
+            options.add_relay(addr, parse_transport_chain(words_list[0]))
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
