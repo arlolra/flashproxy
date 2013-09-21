@@ -79,9 +79,6 @@ def parse_transport_chain(spec):
     ('obfs3', 'websocket')
     """
     assert(spec)
-    # XXX We explicitly cast to tuple so that the return value can be
-    # used as a dictionary key. Transport chains are not supposed to
-    # be manipulated so it should be cool.
     return tuple(spec.split("|"))
 
 def get_outermost_transport(transports):
