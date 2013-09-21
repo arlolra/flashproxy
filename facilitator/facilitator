@@ -33,6 +33,7 @@ class options(object):
     listen_port = DEFAULT_LISTEN_PORT
     log_filename = DEFAULT_LOG_FILENAME
     log_file = sys.stdout
+    relay_filename = None
     daemonize = True
     pid_filename = None
     privdrop_username = None
@@ -500,21 +501,28 @@ def main():
         elif o == "--privdrop-user":
             options.privdrop_username = a
         elif o == "-r" or o == "--relay-file":
-            try:
-                handle_relay_file(a)
-            except ValueError as e:
-                print >> sys.stderr, u"Could not parse file '%s': %s" % (repr(a), str(e))
-                sys.exit(1)
+            options.relay_filename = a
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
-    if not options.relays:
+    if not options.relay_filename:
         print >> sys.stderr, """\
-The -r option is required. Give it the relay that will be sent to proxies.
-  -r HOST[:PORT]\
-    """
+The -r option is required. Give it the name of a file
+containing relay transports and addresses.
+  -r HOST[:PORT]
+Example file contents:
+obfs2|websocket 1.4.6.1:4123\
+"""
         sys.exit(1)
 
+    try:
+        handle_relay_file(options.relay_filename)
+    except ValueError as e:
+        print >> sys.stderr, u"Could not parse relay file %s: %s." % (repr(options.relay_filename), str(e))
+        sys.exit(1)
+
+    if not options.relays:
+        sys.exit(1)
 
     # Create RegSets for our supported transports
     for transport in options.relays.keys():
