@@ -515,11 +515,7 @@ obfs2|websocket 1.4.6.1:4123\
 """
         sys.exit(1)
 
-    try:
-        handle_relay_file(options.relay_filename)
-    except ValueError as e:
-        print >> sys.stderr, u"Could not parse relay file %s: %s." % (repr(options.relay_filename), str(e))
-        sys.exit(1)
+    handle_relay_file(options.relay_filename)
 
     if not options.relays:
         print >> sys.stderr, u"Warning: no relays configured."
