@@ -438,22 +438,21 @@ def put_reg(reg):
     REGS = get_regs(af, get_outermost_transport(reg.transports))
     return REGS.add(reg)
 
-def parse_relay_file(fname):
+def parse_relay_file(filename):
     """Parse a file containing Tor relays that we can point proxies to.
-    Throws ValueError if the file is not properly formatted."""
-    # File format is:
-    #  <transport> <addrport>
-    # Example:
-    #  obfs2|websocket 1.4.6.1:4123
+    Throws ValueError on a parsing error. Each line contains a transport chain
+    and an address, for example
+        obfs2|websocket 1.4.6.1:4123
+    """
     relays = {}
-    with open(fname) as input:
-        for line in input:
-            words_list = line.split()
-            if len(words_list) != 2:
-                raise ValueError("Wrong line format: %s" % line)
-
-            addr = fac.parse_addr_spec(words_list[1], defport = DEFAULT_RELAY_PORT, resolve = True)
-            transports = parse_transport_chain(words_list[0])
+    with open(filename) as f:
+        for line in f:
+            try:
+                transport_spec, addr_spec = line.strip().split()
+            except ValueError, e:
+                raise ValueError("Wrong line format: %s." % repr(line))
+            addr = fac.parse_addr_spec(addr_spec, defport=DEFAULT_RELAY_PORT, resolve=True)
+            transports = parse_transport_chain(transport_spec)
             relays.setdefault(transports, [])
             relays[transports].append(addr)
     return relays
