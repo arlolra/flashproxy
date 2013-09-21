@@ -27,6 +27,11 @@ MAX_PROXIES_PER_CLIENT = 5
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+# Dictionary containing Tor relay addresses that we can pass to
+# proxies. It looks like this:
+# {"websocket" : ["1.1.1.1:123"], "obfs3|websocket" : ["3.1.2.3:5555", "1.2.3.4:6666"], "obfs2|websocket" : ["1.2.4.4:5123"]}
+RELAYS = {}
+
 class UnknownTransport(Exception): pass
 
 class options(object):
@@ -39,23 +44,10 @@ class options(object):
     privdrop_username = None
     safe_logging = True
 
-    # Dictionary containing Tor relays that we can pass to
-    # flashproxies. It looks like this:
-    # {"websocket" : ["1.1.1.1:123"], "obfs3|websocket" : ["3.1.2.3:5555", "1.2.3.4:6666"], "obfs2|websocket" : ["1.2.4.4:5123"]}
-    relays = {}
-
-    @staticmethod
-    def num_relays():
-        num_relays = 0
-        for relay_list in options.relays.values():
-            num_relays += len(relay_list)
-
-        return num_relays
-
     @staticmethod
     def add_relay(addr, transport):
-        options.relays.setdefault(transport, [])
-        options.relays[transport].append(fac.format_addr(addr))
+        RELAYS.setdefault(transport, [])
+        RELAYS[transport].append(fac.format_addr(addr))
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -76,6 +68,13 @@ again. Listen on 127.0.0.1 and port PORT (by default %(port)d).
     "port": DEFAULT_LISTEN_PORT,
     "log": DEFAULT_LOG_FILENAME,
 }
+
+def num_relays():
+    num_relays = 0
+    for relay_list in RELAYS.values():
+        num_relays += len(relay_list)
+
+    return num_relays
 
 def parse_transport_chain(spec):
     """Parse a transport chain string and return a tuple of individual
@@ -126,15 +125,15 @@ class TCPReg(object):
         """Return a matching relay addr_spec for this registration. Raise
         UnknownTransport if a relay with a matching transport chain could not be
         found."""
-        if self.transports not in options.relays:
+        if self.transports not in RELAYS:
             raise UnknownTransport("Can't find relay with transport chain: %s" % self.transports)
 
         # Maybe this should be a random pick from the set of all the
         # eligible relays. But let's keep it deterministic for now,
         # and return the first one.
 
-        # return random.choice(options.relays[self.transports])
-        return options.relays[self.transports][0]
+        # return random.choice(RELAYS[self.transports])
+        return RELAYS[self.transports][0]
 
     def __unicode__(self):
         return fac.format_addr((self.host, self.port))
@@ -306,7 +305,7 @@ class Handler(SocketServer.StreamRequestHandler):
 
         if reg:
             log(u"proxy (%s) gets client '%s' (transports: %s) (num relays: %s) (remaining regs: %d/%d)" %
-                (safe_str(repr(proxy_spec)), safe_str(unicode(reg)), reg.transports, options.num_relays(), num_unhandled_regs(), num_regs()))
+                (safe_str(repr(proxy_spec)), safe_str(unicode(reg)), reg.transports, num_relays(), num_unhandled_regs(), num_regs()))
             print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", reg.relay), ("CHECK-BACK-IN", str(check_back_in)))
         else:
             log(u"proxy (%s) gets none" % safe_str(repr(proxy_spec)))
@@ -327,7 +326,7 @@ class Handler(SocketServer.StreamRequestHandler):
         transports = parse_transport_chain(transports_spec)
 
         # See if we have relays that support this transport chain
-        if transports not in options.relays:
+        if transports not in RELAYS:
             log(u"Unrecognized transport chain: %s" % transports)
             self.send_error() # XXX can we tell the flashproxy client of this error?
             return False
@@ -503,11 +502,11 @@ obfs2|websocket 1.4.6.1:4123\
 
     handle_relay_file(options.relay_filename)
 
-    if not options.relays:
+    if not RELAYS:
         print >> sys.stderr, u"Warning: no relays configured."
 
     # Create RegSets for our supported transports
-    for transport in options.relays.keys():
+    for transport in RELAYS.keys():
         outermost_transport = get_outermost_transport(transport)
         if outermost_transport not in REGSETS_IPV4:
             REGSETS_IPV4[outermost_transport] = RegSet()
@@ -526,7 +525,7 @@ obfs2|websocket 1.4.6.1:4123\
     server = Server(addrinfo[4], Handler)
 
     log(u"start on %s" % fac.format_addr(addrinfo[4]))
-    log(u"using relays %s" % str(options.relays))
+    log(u"using relays %s" % str(RELAYS))
 
     if options.daemonize:
         log(u"daemonizing")
