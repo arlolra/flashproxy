@@ -477,7 +477,8 @@ def handle_relay_file(fname):
                 raise ValueError("Wrong line format: %s" % line)
 
             addr = fac.parse_addr_spec(words_list[1], defport = DEFAULT_RELAY_PORT, resolve = True)
-            options.add_relay(addr, parse_transport_chain(words_list[0]))
+            transports = parse_transport_chain(words_list[0])
+            options.add_relay(addr, transports)
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
