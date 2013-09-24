@@ -1,5 +1,6 @@
 VERSION = 1.3
 
+DESTDIR =
 PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
@@ -20,10 +21,10 @@ all: $(CLIENT_DIST_FILES) $(CLIENT_MAN)
 	a2x --no-xmllint --xsltproc-opts "--stringparam man.th.title.max.length 24" -d manpage -f manpage $<
 
 install:
-	mkdir -p $(BINDIR)
-	mkdir -p $(MANDIR)/man1
-	cp -f $(CLIENT_BIN) $(BINDIR)
-	cp -f $(CLIENT_MAN) $(MANDIR)/man1
+	mkdir -p $(DESTDIR)$(BINDIR)
+	mkdir -p $(DESTDIR)$(MANDIR)/man1
+	cp -f $(CLIENT_BIN) $(DESTDIR)$(BINDIR)
+	cp -f $(CLIENT_MAN) $(DESTDIR)$(MANDIR)/man1
 
 DISTNAME = flashproxy-client-$(VERSION)
 DISTDIR = dist/$(DISTNAME)

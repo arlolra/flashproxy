@@ -1,3 +1,4 @@
+DESTDIR =
 PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 
@@ -21,8 +22,8 @@ websocket-client: $(GOPATH)/src/websocket-client/*.go
 	go build $(GOBUILDFLAGS) websocket-client
 
 install:
-	mkdir -p "$(BINDIR)"
-	cp -f websocket-server "$(BINDIR)"
+	mkdir -p "$(DESTDIR)$(BINDIR)"
+	cp -f websocket-server "$(DESTDIR)$(BINDIR)"
 
 clean:
 	rm -f $(PROGRAMS)
