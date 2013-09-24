@@ -24,8 +24,15 @@ PIDFILE=@localstatedir@/run/$NAME.pid
 LOGFILE=@localstatedir@/log/$NAME.log
 CONFDIR=@sysconfdir@/flashproxy
 PRIVDROP_USER=@fpfacilitatoruser@
+DEFAULTSFILE=@sysconfdir@/default/$NAME
+
+# Include defaults if available
+if [ -f $DEFAULTSFILE ] ; then
+    . $DEFAULTSFILE
+fi
+
 DAEMON=@bindir@/$NAME
-DAEMON_ARGS="--pass $CONFDIR/reg-email.pass --log $LOGFILE --pidfile $PIDFILE --privdrop-user $PRIVDROP_USER"
+DAEMON_ARGS="--email $FACILITATOR_EMAIL_ADDR --pass $CONFDIR/reg-email.pass --log $LOGFILE --pidfile $PIDFILE --privdrop-user $PRIVDROP_USER"
 
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
@@ -76,6 +83,10 @@ do_stop()
 
 case "$1" in
   start)
+    if [ "$RUN_DAEMON" != "yes" ]; then
+        log_action_msg "Not starting $DESC (Disabled in $DEFAULTSFILE)."
+        exit 0
+    fi
 	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
 	do_start
 	case "$?" in

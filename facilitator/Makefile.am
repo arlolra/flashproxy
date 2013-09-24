@@ -7,6 +7,7 @@ initscriptdir = /etc/init.d
 exampledir = $(docdir)/examples
 appenginedir = $(pkgdatadir)/appengine
 pkgconfdir = $(sysconfdir)/flashproxy
+initdefaultdir = $(sysconfdir)/default
 appengineconfdir = $(pkgconfdir)/reg-appengine
 
 # automake PLVs
@@ -14,6 +15,7 @@ appengineconfdir = $(pkgconfdir)/reg-appengine
 dist_bin_SCRIPTS = facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg facilitator.cgi fac.py
 if DO_INITSCRIPTS
 initscript_SCRIPTS = init.d/facilitator init.d/facilitator-email-poller init.d/facilitator-reg-daemon
+initdefault_DATA = default/facilitator-email-poller
 endif
 
 dist_doc_DATA = doc/appengine-howto.txt doc/facilitator-howto.txt doc/gmail-howto.txt README

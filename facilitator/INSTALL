@@ -21,8 +21,10 @@ You should securely distribute the public key to anyone that wants to
 use your facilitator; they will need to pass it as the
 --facilitator-pubkey option to flashproxy-reg-email.
 
-You should also edit /usr/local/etc/flashproxy/reg-email.pass to contain your
-app-specific Gmail password; see doc/gmail-howto.txt for instructions.
+You should also edit /usr/local/etc/default/facilitator-email-poller to
+contain your Gmail address and /usr/local/etc/flashproxy/reg-email.pass
+to contain your app-specific password; see doc/gmail-howto.txt for
+instructions.
 
 Uninstall.
 

@@ -1,0 +1,6 @@
+# Change to "yes" to run the email poller.
+RUN_DAEMON="no"
+
+# Replace this with the email address for your facilitator.
+# You should also edit the reg-email.pass file as needed.
+FACILITATOR_EMAIL_ADDR="invalid"

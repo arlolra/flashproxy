@@ -23,7 +23,6 @@ from M2Crypto import SSL, X509
 
 DEFAULT_IMAP_HOST = "imap.gmail.com"
 DEFAULT_IMAP_PORT = 993
-DEFAULT_EMAIL_ADDRESS = "flashproxyreg.a@gmail.com"
 DEFAULT_LOG_FILENAME = "facilitator-email-poller.log"
 
 POLL_INTERVAL = 60
@@ -126,14 +125,14 @@ class IMAP4_SSL_REQUIRED(imaplib.IMAP4_SSL):
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %(progname)s --pass=PASSFILE
+Usage: %(progname)s --email=ADDRESS --pass=PASSFILE
 Facilitator-side helper for the facilitator-reg-email rendezvous. Polls
 an IMAP server for email messages with client registrations, deletes
 them, and forwards the registrations to the facilitator.
 
   -d, --debug               don't daemonize, log to stdout.
       --disable-pin         don't check server public key against a known pin.
-  -e, --email=ADDRESS       log in as ADDRESS (default "%(email_addr)s").
+  -e, --email=ADDRESS       log in as ADDRESS
   -h, --help                show this help.
   -i, --imap=HOST[:PORT]    use the given IMAP server (default "%(imap_addr)s").
       --imaplib-debug       show raw IMAP messages (will include email password).
@@ -144,7 +143,6 @@ them, and forwards the registrations to the facilitator.
       --unsafe-logging      don't scrub email password and IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
-    "email_addr": DEFAULT_EMAIL_ADDRESS,
     "imap_addr": fac.format_addr((DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)),
     "log": DEFAULT_LOG_FILENAME,
 }
@@ -160,7 +158,7 @@ def log(msg):
     print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
     options.log_file.flush()
 
-options.email_addr = DEFAULT_EMAIL_ADDRESS
+options.email_addr = None
 options.imap_addr = (DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:", [
@@ -204,6 +202,11 @@ for o, a in opts:
 
 if len(args) != 0:
     usage(sys.stderr)
+    sys.exit(1)
+
+# Check the email
+if not options.email_addr or '@' not in options.email_addr:
+    print >> sys.stderr, "The --email option is required and must be an email address."
     sys.exit(1)
 
 # Load the email password.
