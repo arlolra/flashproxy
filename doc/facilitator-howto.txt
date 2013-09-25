@@ -72,8 +72,8 @@ HTTPS(ACCEPT)	net	$FW
 	# cp /usr/share/doc/shorewall6/examples/Universal/{interfaces,policy,rules,zones} .
 	Edit /etc/shorewall6/rules:
 SECTION NEW
-SSH/ACCEPT	all	$FW
-HTTPS/ACCEPT	all	$FW
+SSH(ACCEPT)	all	$FW
+HTTPS(ACCEPT)	all	$FW
 
 Edit /etc/default/shorewall and /etc/default/shorewall6 and set
 
