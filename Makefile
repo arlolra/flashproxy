@@ -50,14 +50,14 @@ sign: dist/$(DISTNAME).zip
 
 $(PY2EXE_TMPDIR)/dist: $(CLIENT_BIN)
 	rm -rf $(PY2EXE_TMPDIR)
-	$(PYTHON) setup.py py2exe -q
+	$(PYTHON) setup-client-exe.py py2exe -q
 
 dist-exe: DISTNAME := $(DISTNAME)-win32
 dist-exe: CLIENT_BIN := $(PY2EXE_TMPDIR)/dist/*
 dist-exe: CLIENT_MAN := $(addsuffix .txt,$(CLIENT_MAN))
 dist-exe: CLIENT_DIST_LIB_COMMON :=# py2exe static-links dependencies
 # Delegate to the "dist" target using the substitutions above.
-dist-exe: $(PY2EXE_TMPDIR)/dist setup.py dist
+dist-exe: $(PY2EXE_TMPDIR)/dist setup-client-exe.py dist
 
 clean:
 	rm -f *.pyc

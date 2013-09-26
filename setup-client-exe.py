@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from distutils.core import setup
 import os
 import py2exe
