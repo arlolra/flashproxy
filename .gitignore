@@ -1,7 +1,5 @@
 *.pyc
 /dist
 /py2exe-tmp
-/websocket-transport/websocket-client
-/websocket-transport/websocket-server
 /modules/nodejs/node_modules
 /modules/nodejs/flashproxy.js
