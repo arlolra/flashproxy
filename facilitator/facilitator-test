@@ -60,6 +60,7 @@ class FacilitatorTest(unittest.TestCase):
             while buflen + 1024 < 200000:
                 s.send("X" * 1024)
                 buflen += 1024
+            # TODO(dcf1): sometimes no error is raised, and this test fails
             self.fail("should have raised a socket error")
         except socket.error:
             pass
