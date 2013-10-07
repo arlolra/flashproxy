@@ -1,15 +1,19 @@
 #!/usr/bin/env python
 
+from cStringIO import StringIO
 import socket
 import subprocess
+import tempfile
 import time
 import unittest
 
+from facilitator import parse_transport_chain
 import fac
 
 FACILITATOR_HOST = "127.0.0.1"
-FACILITATOR_PORT = 9002
+FACILITATOR_PORT = 39002 # diff port to not conflict with production service
 FACILITATOR_ADDR = (FACILITATOR_HOST, FACILITATOR_PORT)
+WS_TRANSPORT = ("websocket",)
 
 def gimme_socket(host, port):
     addrinfo = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
@@ -19,6 +23,12 @@ def gimme_socket(host, port):
     return s
 
 class FacilitatorTest(unittest.TestCase):
+
+    def test_parse_transport_chain(self):
+        self.assertEquals(parse_transport_chain("a"), ("a",))
+        self.assertEquals(parse_transport_chain("a|b|c"), ("a","b","c"))
+
+class FacilitatorProcTest(unittest.TestCase):
     IPV4_CLIENT_ADDR = ("1.1.1.1", 9000)
     IPV6_CLIENT_ADDR = ("[11::11]", 9000)
     IPV4_PROXY_ADDR = ("2.2.2.2", 13000)
@@ -28,7 +38,12 @@ class FacilitatorTest(unittest.TestCase):
         return gimme_socket(FACILITATOR_HOST, FACILITATOR_PORT)
 
     def setUp(self):
-        self.process = subprocess.Popen(["./facilitator", "-d", "-p", str(FACILITATOR_PORT), "-r", "0.0.1.0:1", "-l", "/dev/null"])
+        self.relay_file = tempfile.NamedTemporaryFile()
+        self.relay_file.write("websocket 0.0.1.0:1\n")
+        self.relay_file.write("websocket [0:0::1:0]:1\n")
+        self.relay_file.flush()
+        self.relay_file.seek(0)
+        self.process = subprocess.Popen(["./facilitator", "-p", str(FACILITATOR_PORT), "-r", self.relay_file.name, "-d", "--unsafe-logging"])
         time.sleep(0.1)
 
     def tearDown(self):
@@ -66,34 +81,34 @@ class FacilitatorTest(unittest.TestCase):
 
     def test_af_v4_v4(self):
         """Test that IPv4 proxies can get IPv4 clients."""
-        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR)
-        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR)
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, WS_TRANSPORT)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, WS_TRANSPORT)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR, WS_TRANSPORT)
         self.assertEqual(reg["client"], fac.format_addr(self.IPV4_CLIENT_ADDR))
 
     def test_af_v4_v6(self):
         """Test that IPv4 proxies do not get IPv6 clients."""
-        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR)
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, WS_TRANSPORT)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR, WS_TRANSPORT)
         self.assertEqual(reg["client"], "")
 
     def test_af_v6_v4(self):
         """Test that IPv6 proxies do not get IPv4 clients."""
-        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR)
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, WS_TRANSPORT)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, WS_TRANSPORT)
         self.assertEqual(reg["client"], "")
 
     def test_af_v6_v6(self):
         """Test that IPv6 proxies can get IPv6 clients."""
-        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR)
-        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR)
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, WS_TRANSPORT)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, WS_TRANSPORT)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, WS_TRANSPORT)
         self.assertEqual(reg["client"], fac.format_addr(self.IPV6_CLIENT_ADDR))
 
     def test_check_back_in(self):
         """Test that facilitator responses contain a CHECK-BACK-IN key with a
         numeric value."""
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, WS_TRANSPORT)
         self.assertGreater(int(reg["check-back-in"]), 0)
 
 #     def test_same_proxy(self):
