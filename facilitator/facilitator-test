@@ -7,7 +7,7 @@ import tempfile
 import time
 import unittest
 
-from facilitator import parse_transport_chain
+from facilitator import Transport, Reg, Endpoints, parse_relay_file
 import fac
 
 FACILITATOR_HOST = "127.0.0.1"
@@ -23,11 +23,169 @@ def gimme_socket(host, port):
     s.connect(addrinfo[4])
     return s
 
+class EndpointsTest(unittest.TestCase):
+
+    def setUp(self):
+        self.pts = Endpoints(af=socket.AF_INET)
+
+    def _observeProxySupporting(self, *supported_suf):
+        # semantically observe the existence of a proxy, to make our intent
+        # a bit clearer than simply calling findPrefixesForSuffixes
+        self.pts._findPrefixesForSuffixes(*supported_suf)
+
+    def test_addEndpoints_twice(self):
+        self.pts.addEndpoint("A", "a|b|p")
+        self.assertFalse(self.pts.addEndpoint("A", "zzz"))
+        self.assertEquals(self.pts._endpoints["A"], Transport("a|b", "p"))
+
+    def test_addEndpoints_lazy_indexing(self):
+        self.pts.addEndpoint("A", "a|b|p")
+        default_index = {"websocket": set()} # we always index known_suffixes
+
+        # no index until we've asked for it
+        self.assertEquals(self.pts._indexes, default_index)
+        self._observeProxySupporting("p")
+        self.assertEquals(self.pts._indexes["p"], set("A"))
+
+        # indexes are updated correctly after observing new addresses
+        self.pts.addEndpoint("B", "c|p")
+        self.assertEquals(self.pts._indexes["p"], set("AB"))
+
+        # indexes are updated correctly after observing new proxies
+        self.pts.addEndpoint("C", "a|q")
+        self._observeProxySupporting("q")
+        self.assertEquals(self.pts._indexes["q"], set("C"))
+
+    def test_supports_default(self):
+        # we know there are websocket-capable proxies out there;
+        # support them implicitly without needing to see a proxy.
+        self.pts.addEndpoint("A", "obfs3|websocket")
+        self.assertTrue(self.pts.supports("obfs3|websocket"))
+        self.assertFalse(self.pts.supports("xxx|websocket"))
+        self.assertFalse(self.pts.supports("websocket"))
+        self.assertFalse(self.pts.supports("unknownwhat"))
+        # doesn't matter what the first part is
+        self.pts.addEndpoint("B", "xxx|websocket")
+        self.assertTrue(self.pts.supports("xxx|websocket"))
+
+    def test_supports_seen_proxy(self):
+        # OTOH if some 3rd-party proxy decides to implement its own transport
+        # we are fully capable of supporting them too, but only if we have
+        # an endpoint that also speaks it.
+        self.assertFalse(self.pts.supports("obfs3|unknownwhat"))
+        suf = self._observeProxySupporting("unknownwhat")
+        self.assertFalse(self.pts.supports("obfs3|unknownwhat"))
+        self.pts.addEndpoint("A", "obfs3|unknownwhat")
+        self.assertTrue(self.pts.supports("obfs3|unknownwhat"))
+        self.assertFalse(self.pts.supports("obfs2|unknownwhat"))
+
+    def _test_serveReg_maxserve_infinite_roundrobin(self):
+        # case for servers, they never exhaust
+        self.pts.addEndpoint("A", "a|p")
+        self.pts.addEndpoint("B", "a|p")
+        self.pts.addEndpoint("C", "a|p")
+        for i in xrange(64): # 64 is infinite ;)
+            served = set()
+            served.add(self.pts._serveReg("ABC"))
+            served.add(self.pts._serveReg("ABC"))
+            served.add(self.pts._serveReg("ABC"))
+            self.assertEquals(served, set("ABC"))
+
+    def _test_serveReg_maxserve_finite_exhaustion(self):
+        # case for clients, we don't want to keep serving them
+        self.pts = Endpoints(af=socket.AF_INET, maxserve=5)
+        self.pts.addEndpoint("A", "a|p")
+        self.pts.addEndpoint("B", "a|p")
+        self.pts.addEndpoint("C", "a|p")
+        # test getNumUnservedEndpoints whilst we're at it
+        self.assertEquals(self.pts.getNumUnservedEndpoints(), 3)
+        for i in xrange(5):
+            served = set()
+            served.add(self.pts._serveReg("ABC"))
+            served.add(self.pts._serveReg("ABC"))
+            served.add(self.pts._serveReg("ABC"))
+            self.assertEquals(served, set("ABC"))
+        self.assertEquals(None, self.pts._serveReg("ABC"))
+        self.assertEquals(self.pts.getNumUnservedEndpoints(), 0)
+
+    def test_match_normal(self):
+        self.pts.addEndpoint("A", "a|p")
+        self.pts2 = Endpoints(af=socket.AF_INET)
+        self.pts2.addEndpoint("B", "a|p")
+        self.pts2.addEndpoint("C", "b|p")
+        self.pts2.addEndpoint("D", "a|q")
+        expected = (Reg("A", Transport("a","p")), Reg("B", Transport("a","p")))
+        empty = Endpoints.EMPTY_MATCH
+        self.assertEquals(expected, Endpoints.match(self.pts, self.pts2, ["p"]))
+        self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
+
+    def test_match_unequal_client_server(self):
+        self.pts.addEndpoint("A", "a|p")
+        self.pts2 = Endpoints(af=socket.AF_INET)
+        self.pts2.addEndpoint("B", "a|q")
+        expected = (Reg("A", Transport("a","p")), Reg("B", Transport("a","q")))
+        empty = Endpoints.EMPTY_MATCH
+        self.assertEquals(expected, Endpoints.match(self.pts, self.pts2, ["p", "q"]))
+        self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["p"]))
+        self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["q"]))
+        self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
+
+    def test_match_raw_server(self):
+        self.pts.addEndpoint("A", "p")
+        self.pts2 = Endpoints(af=socket.AF_INET)
+        self.pts2.addEndpoint("B", "p")
+        expected = (Reg("A", Transport("","p")), Reg("B", Transport("","p")))
+        empty = Endpoints.EMPTY_MATCH
+        self.assertEquals(expected, Endpoints.match(self.pts, self.pts2, ["p"]))
+        self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
+
+    def test_match_many_prefixes(self):
+        self.pts.addEndpoint("A", "a|p")
+        self.pts.addEndpoint("B", "b|p")
+        self.pts.addEndpoint("C", "p")
+        self.pts2 = Endpoints(af=socket.AF_INET)
+        self.pts2.addEndpoint("D", "a|p")
+        self.pts2.addEndpoint("E", "b|p")
+        self.pts2.addEndpoint("F", "p")
+        # this test ensures we have a sane policy for selecting between prefix pools
+        expected = set()
+        expected.add((Reg("A", Transport("a","p")), Reg("D", Transport("a","p"))))
+        expected.add((Reg("B", Transport("b","p")), Reg("E", Transport("b","p"))))
+        expected.add((Reg("C", Transport("","p")), Reg("F", Transport("","p"))))
+        result = set()
+        result.add(Endpoints.match(self.pts, self.pts2, ["p"]))
+        result.add(Endpoints.match(self.pts, self.pts2, ["p"]))
+        result.add(Endpoints.match(self.pts, self.pts2, ["p"]))
+        empty = Endpoints.EMPTY_MATCH
+        self.assertEquals(expected, result)
+        self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
+        self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
+        self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
+
 class FacilitatorTest(unittest.TestCase):
 
-    def test_parse_transport_chain(self):
-        self.assertEquals(parse_transport_chain("a"), ("a",))
-        self.assertEquals(parse_transport_chain("a|b|c"), ("a","b","c"))
+    def test_transport_parse(self):
+        self.assertEquals(Transport.parse("a"), Transport("", "a"))
+        self.assertEquals(Transport.parse("|a"), Transport("", "a"))
+        self.assertEquals(Transport.parse("a|b|c"), Transport("a|b","c"))
+        self.assertEquals(Transport.parse(Transport("a|b","c")), Transport("a|b","c"))
+        self.assertRaises(ValueError, Transport, "", "")
+        self.assertRaises(ValueError, Transport, "a", "")
+        self.assertRaises(ValueError, Transport.parse, "")
+        self.assertRaises(ValueError, Transport.parse, "|")
+        self.assertRaises(ValueError, Transport.parse, "a|")
+        self.assertRaises(ValueError, Transport.parse, ["a"])
+        self.assertRaises(ValueError, Transport.parse, [Transport("a", "b")])
+
+    def test_parse_relay_file(self):
+        fp = StringIO()
+        fp.write("websocket 0.0.1.0:1\n")
+        fp.flush()
+        fp.seek(0)
+        af = socket.AF_INET
+        servers = { af: Endpoints(af=af) }
+        parse_relay_file(servers, fp)
+        self.assertEquals(servers[af]._endpoints, {('0.0.1.0', 1): Transport('', 'websocket')})
 
 class FacilitatorProcTest(unittest.TestCase):
     IPV4_CLIENT_ADDR = ("1.1.1.1", 9000)
