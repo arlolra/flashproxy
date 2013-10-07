@@ -54,7 +54,7 @@ def do_head():
 
 def do_get():
     """Parses flashproxy polls.
-       Example: GET /r=1&client=7.1.43.21&client=1.2.3.4&transport=webrtc&transport=websocket
+       Example: GET /?r=1&client=7.1.43.21&client=1.2.3.4&transport=webrtc&transport=websocket
     """
 
     path_parts = [x for x in path_info.split("/") if x]
