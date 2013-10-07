@@ -111,8 +111,7 @@ class Reg(namedtuple("Reg", "addr transport")):
 
 class Endpoints(object):
     """
-    Tracks endpoints (either client/server) and the transport chains that
-    they support.
+    Tracks endpoints (either client/server) and the transports they support.
     """
 
     matchingLock = threading.Condition()
@@ -357,9 +356,9 @@ class Handler(SocketServer.StreamRequestHandler):
         except ValueError as e:
             return self.error(u"syntax error in proxy address %s: %%(cause)s" % safe_str(repr(proxy_spec)), e)
 
-        transport_list = fac.param_getlist("TRANSPORT", params)
+        transport_list = fac.param_getlist("PROXY_TRANSPORT", params)
         if not transport_list:
-            return self.error(u"TRANSPORT missing FROM param")
+            return self.error(u"PROXY_TRANSPORT missing FROM param")
 
         try:
             client_reg, relay_reg = get_match_for_proxy(proxy_addr, transport_list)
@@ -382,15 +381,15 @@ class Handler(SocketServer.StreamRequestHandler):
         return True
 
     # Handle a PUT request (client made a registration request; register it.)
-    # Example: PUT CLIENT="1.1.1.1:5555" TRANSPORT_CHAIN="obfs3|websocket"
+    # Example: PUT CLIENT="1.1.1.1:5555" TRANSPORT="obfs3|websocket"
     def do_PUT(self, params):
-        # Check out if we recognize the transport chain in this registration request
-        transport = fac.param_first("TRANSPORT_CHAIN", params)
+        # Check out if we recognize the transport in this registration request
+        transport = fac.param_first("TRANSPORT", params)
         if transport is None:
-            return self.error(u"PUT missing TRANSPORT_CHAIN param")
+            return self.error(u"PUT missing TRANSPORT param")
 
         transport = Transport.parse(transport)
-        # See if we have relays that support this transport chain
+        # See if we have relays that support this transport
         if all(not pts.supports(transport) for pts in SERVERS.itervalues()):
             return self.error(u"Unrecognized transport: %s" % transport)
 

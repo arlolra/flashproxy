@@ -107,9 +107,9 @@ def do_post():
             continue
 
         if key == "client": # reg without transport info -- default to websocket.
-            transport_chain = "websocket"
+            transport = "websocket"
         else: # reg with transport info -- get the "websocket" part out of "client-websocket".
-            transport_chain = key[len("client-"):]
+            transport = key[len("client-"):]
 
         # Get the "1.2.3.4:9000" part of "client-websocket=1.2.3.4:9000".
         client_spec = fs[key].value.strip()
@@ -124,7 +124,7 @@ def do_post():
 
         # XXX need to link these registrations together, so that
         # when one is answerered the rest are invalidated.
-        if not fac.put_reg(FACILITATOR_ADDR, client_addr, transport_chain, remote_addr):
+        if not fac.put_reg(FACILITATOR_ADDR, client_addr, transport, remote_addr):
             exit_error(500)
 
     print """\

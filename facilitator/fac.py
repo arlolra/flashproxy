@@ -250,14 +250,12 @@ def transact(f, command, *params):
         raise ValueError("No newline at end of string returned by facilitator: %r" % line)
     return parse_transaction(line[:-1])
 
-def put_reg(facilitator_addr, client_addr, transport_chain, registrant_addr=None):
+def put_reg(facilitator_addr, client_addr, transport, registrant_addr=None):
     """Send a registration to the facilitator using a one-time socket. Returns
     true iff the command was successful."""
-    # TODO(infinity0): replace "transport_chain" with better terminology, e.g.
-    # transport_pair
     f = fac_socket(facilitator_addr)
     params = [("CLIENT", format_addr(client_addr))]
-    params.append(("TRANSPORT_CHAIN", transport_chain))
+    params.append(("TRANSPORT", transport))
     if registrant_addr is not None:
         params.append(("FROM", format_addr(registrant_addr)))
     try:
@@ -266,7 +264,7 @@ def put_reg(facilitator_addr, client_addr, transport_chain, registrant_addr=None
         f.close()
     return command == "OK"
 
-def get_reg(facilitator_addr, proxy_addr, transport_list):
+def get_reg(facilitator_addr, proxy_addr, proxy_transport_list):
     """
     Get a client registration for proxy 'proxy_addr' from the
     facilitator at 'facilitator_addr' using a one-time
@@ -277,15 +275,13 @@ def get_reg(facilitator_addr, proxy_addr, transport_list):
     "relay-<transport>" if successful, or a dict with the key "client"
     mapped to the value "" if there are no registrations available for
     proxy_addr. Raises an exception otherwise."""
-    # TODO(infinity0): replace "transport_list" with better terminology, e.g.
-    # transport_suffix_list
     f = fac_socket(facilitator_addr)
 
     # Form a list (in transact() format) with the transports that we
     # should send to the facilitator.  Then pass that list to the
     # transact() function.
     # For example, TRANSPORT=obfs2 TRANSPORT=obfs3.
-    transports = [("TRANSPORT", transport) for transport in transport_list]
+    transports = [("PROXY_TRANSPORT", tp) for tp in proxy_transport_list]
 
     try:
         command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)), *transports)
