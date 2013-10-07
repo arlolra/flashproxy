@@ -13,7 +13,8 @@ import fac
 FACILITATOR_HOST = "127.0.0.1"
 FACILITATOR_PORT = 39002 # diff port to not conflict with production service
 FACILITATOR_ADDR = (FACILITATOR_HOST, FACILITATOR_PORT)
-WS_TRANSPORT = ("websocket",)
+CLIENT_TP = "websocket"
+PROXY_TPS = ["websocket", "webrtc"]
 
 def gimme_socket(host, port):
     addrinfo = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)[0]
@@ -81,34 +82,34 @@ class FacilitatorProcTest(unittest.TestCase):
 
     def test_af_v4_v4(self):
         """Test that IPv4 proxies can get IPv4 clients."""
-        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, WS_TRANSPORT)
-        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, WS_TRANSPORT)
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR, WS_TRANSPORT)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, CLIENT_TP)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, CLIENT_TP)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR, PROXY_TPS)
         self.assertEqual(reg["client"], fac.format_addr(self.IPV4_CLIENT_ADDR))
 
     def test_af_v4_v6(self):
         """Test that IPv4 proxies do not get IPv6 clients."""
-        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, WS_TRANSPORT)
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR, WS_TRANSPORT)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, CLIENT_TP)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR, PROXY_TPS)
         self.assertEqual(reg["client"], "")
 
     def test_af_v6_v4(self):
         """Test that IPv6 proxies do not get IPv4 clients."""
-        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, WS_TRANSPORT)
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, WS_TRANSPORT)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, CLIENT_TP)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, PROXY_TPS)
         self.assertEqual(reg["client"], "")
 
     def test_af_v6_v6(self):
         """Test that IPv6 proxies can get IPv6 clients."""
-        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, WS_TRANSPORT)
-        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, WS_TRANSPORT)
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, WS_TRANSPORT)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, CLIENT_TP)
+        fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, CLIENT_TP)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, PROXY_TPS)
         self.assertEqual(reg["client"], fac.format_addr(self.IPV6_CLIENT_ADDR))
 
     def test_check_back_in(self):
         """Test that facilitator responses contain a CHECK-BACK-IN key with a
         numeric value."""
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, WS_TRANSPORT)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, PROXY_TPS)
         self.assertGreater(int(reg["check-back-in"]), 0)
 
 #     def test_same_proxy(self):

@@ -253,6 +253,8 @@ def transact(f, command, *params):
 def put_reg(facilitator_addr, client_addr, transport_chain, registrant_addr=None):
     """Send a registration to the facilitator using a one-time socket. Returns
     true iff the command was successful."""
+    # TODO(infinity0): replace "transport_chain" with better terminology, e.g.
+    # transport_pair
     f = fac_socket(facilitator_addr)
     params = [("CLIENT", format_addr(client_addr))]
     params.append(("TRANSPORT_CHAIN", transport_chain))
@@ -275,18 +277,18 @@ def get_reg(facilitator_addr, proxy_addr, transport_list):
     "relay-<transport>" if successful, or a dict with the key "client"
     mapped to the value "" if there are no registrations available for
     proxy_addr. Raises an exception otherwise."""
+    # TODO(infinity0): replace "transport_list" with better terminology, e.g.
+    # transport_suffix_list
     f = fac_socket(facilitator_addr)
 
     # Form a list (in transact() format) with the transports that we
     # should send to the facilitator.  Then pass that list to the
     # transact() function.
     # For example, TRANSPORT=obfs2 TRANSPORT=obfs3.
-    transports = []
-    for transport in transport_list:
-        transports += ("TRANSPORT", transport)
+    transports = [("TRANSPORT", transport) for transport in transport_list]
 
     try:
-        command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)), transports)
+        command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)), *transports)
     finally:
         f.close()
     response = {}
