@@ -71,12 +71,9 @@ def safe_str(s):
 
 log_lock = threading.Lock()
 def log(msg):
-    log_lock.acquire()
-    try:
+    with log_lock:
         print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
         options.log_file.flush()
-    finally:
-        log_lock.release()
 
 class TCPReg(object):
     def __init__(self, host, port):
