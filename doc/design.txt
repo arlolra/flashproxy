@@ -178,6 +178,10 @@ Design of flash proxies
   For example:
    client-websocket=1.2.3.4:2000&relay-websocket=10.10.10:9902
 
+  As with the request, the response transports are actually outer
+  transports; inner transports are not the proxy's concern and therefore
+  not given.
+
   If the value for the client parameter is empty, it means that there are no
   client registrations for this proxy.
 
