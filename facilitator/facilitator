@@ -8,9 +8,9 @@ import sys
 import threading
 import time
 import traceback
-from collections import namedtuple
 
 import fac
+from fac import Transport, Endpoint
 
 LISTEN_ADDRESS = "127.0.0.1"
 DEFAULT_LISTEN_PORT = 9002
@@ -78,35 +78,6 @@ def log(msg):
     with log_lock:
         print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
         options.log_file.flush()
-
-
-class Transport(namedtuple("Transport", "prefix suffix")):
-    @classmethod
-    def parse(cls, transport):
-        if isinstance(transport, cls):
-            return transport
-        elif type(transport) == str:
-            if "|" in transport:
-                prefix, suffix = transport.rsplit("|", 1)
-            else:
-                prefix, suffix = "", transport
-            return cls(prefix, suffix)
-        else:
-            raise ValueError("could not parse transport: %s" % transport)
-
-    def __init__(self, prefix, suffix):
-        if not suffix:
-            raise ValueError("suffix (proxy) part of transport must be non-empty: %s" % str(self))
-
-    def __str__(self):
-        return "%s|%s" % (self.prefix, self.suffix) if self.prefix else self.suffix
-
-
-class Reg(namedtuple("Reg", "addr transport")):
-    @classmethod
-    def parse(cls, spec, transport, defhost = None, defport = None):
-        host, port = fac.parse_addr_spec(spec, defhost, defport)
-        return cls((host, port), Transport.parse(transport))
 
 
 class Endpoints(object):
@@ -261,7 +232,7 @@ class Endpoints(object):
             # assume servers never run out
             client_transport = ptsClient._endpoints[client_addr]
             server_transport = ptsServer._endpoints[server_addr]
-            return Reg(client_addr, client_transport), Reg(server_addr, server_transport)
+            return Endpoint(client_addr, client_transport), Endpoint(server_addr, server_transport)
 
 
 class Handler(SocketServer.StreamRequestHandler):
@@ -398,7 +369,7 @@ class Handler(SocketServer.StreamRequestHandler):
             return self.error(u"PUT missing CLIENT param")
 
         try:
-            reg = Reg.parse(client_spec, transport)
+            reg = Endpoint.parse(client_spec, transport)
         except (UnknownTransport, ValueError) as e:
             # XXX should we throw a better error message to the client? Is it possible?
             return self.error(u"syntax error in %s: %%(cause)s" % safe_str(repr(client_spec)), e)

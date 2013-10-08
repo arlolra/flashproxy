@@ -5,6 +5,7 @@ import socket
 import stat
 import subprocess
 import pwd
+from collections import namedtuple
 
 # Return true iff the given fd is readable, writable, and executable only by its
 # owner.
@@ -145,6 +146,36 @@ def format_addr(addr):
     if not host_str and not port_str:
         raise ValueError("host and port may not both be None")
     return u"%s%s" % (host_str, port_str)
+
+
+class Transport(namedtuple("Transport", "prefix suffix")):
+    @classmethod
+    def parse(cls, transport):
+        if isinstance(transport, cls):
+            return transport
+        elif type(transport) == str:
+            if "|" in transport:
+                prefix, suffix = transport.rsplit("|", 1)
+            else:
+                prefix, suffix = "", transport
+            return cls(prefix, suffix)
+        else:
+            raise ValueError("could not parse transport: %s" % transport)
+
+    def __init__(self, prefix, suffix):
+        if not suffix:
+            raise ValueError("suffix (proxy) part of transport must be non-empty: %s" % str(self))
+
+    def __str__(self):
+        return "%s|%s" % (self.prefix, self.suffix) if self.prefix else self.suffix
+
+
+class Endpoint(namedtuple("Endpoint", "addr transport")):
+    @classmethod
+    def parse(cls, spec, transport, defhost = None, defport = None):
+        host, port = parse_addr_spec(spec, defhost, defport)
+        return cls((host, port), Transport.parse(transport))
+
 
 def skip_space(pos, line):
     """Skip a (possibly empty) sequence of space characters (the ASCII character

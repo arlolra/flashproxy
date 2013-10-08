@@ -7,8 +7,9 @@ import tempfile
 import time
 import unittest
 
-from facilitator import Transport, Reg, Endpoints, parse_relay_file
+from facilitator import Endpoints, parse_relay_file
 import fac
+from fac import Transport, Endpoint
 
 FACILITATOR_HOST = "127.0.0.1"
 FACILITATOR_PORT = 39002 # diff port to not conflict with production service
@@ -114,7 +115,7 @@ class EndpointsTest(unittest.TestCase):
         self.pts2.addEndpoint("B", "a|p")
         self.pts2.addEndpoint("C", "b|p")
         self.pts2.addEndpoint("D", "a|q")
-        expected = (Reg("A", Transport("a","p")), Reg("B", Transport("a","p")))
+        expected = (Endpoint("A", Transport("a","p")), Endpoint("B", Transport("a","p")))
         empty = Endpoints.EMPTY_MATCH
         self.assertEquals(expected, Endpoints.match(self.pts, self.pts2, ["p"]))
         self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
@@ -123,7 +124,7 @@ class EndpointsTest(unittest.TestCase):
         self.pts.addEndpoint("A", "a|p")
         self.pts2 = Endpoints(af=socket.AF_INET)
         self.pts2.addEndpoint("B", "a|q")
-        expected = (Reg("A", Transport("a","p")), Reg("B", Transport("a","q")))
+        expected = (Endpoint("A", Transport("a","p")), Endpoint("B", Transport("a","q")))
         empty = Endpoints.EMPTY_MATCH
         self.assertEquals(expected, Endpoints.match(self.pts, self.pts2, ["p", "q"]))
         self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["p"]))
@@ -134,7 +135,7 @@ class EndpointsTest(unittest.TestCase):
         self.pts.addEndpoint("A", "p")
         self.pts2 = Endpoints(af=socket.AF_INET)
         self.pts2.addEndpoint("B", "p")
-        expected = (Reg("A", Transport("","p")), Reg("B", Transport("","p")))
+        expected = (Endpoint("A", Transport("","p")), Endpoint("B", Transport("","p")))
         empty = Endpoints.EMPTY_MATCH
         self.assertEquals(expected, Endpoints.match(self.pts, self.pts2, ["p"]))
         self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
@@ -149,9 +150,9 @@ class EndpointsTest(unittest.TestCase):
         self.pts2.addEndpoint("F", "p")
         # this test ensures we have a sane policy for selecting between prefix pools
         expected = set()
-        expected.add((Reg("A", Transport("a","p")), Reg("D", Transport("a","p"))))
-        expected.add((Reg("B", Transport("b","p")), Reg("E", Transport("b","p"))))
-        expected.add((Reg("C", Transport("","p")), Reg("F", Transport("","p"))))
+        expected.add((Endpoint("A", Transport("a","p")), Endpoint("D", Transport("a","p"))))
+        expected.add((Endpoint("B", Transport("b","p")), Endpoint("E", Transport("b","p"))))
+        expected.add((Endpoint("C", Transport("","p")), Endpoint("F", Transport("","p"))))
         result = set()
         result.add(Endpoints.match(self.pts, self.pts2, ["p"]))
         result.add(Endpoints.match(self.pts, self.pts2, ["p"]))
