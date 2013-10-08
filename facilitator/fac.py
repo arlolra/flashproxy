@@ -148,26 +148,26 @@ def format_addr(addr):
     return u"%s%s" % (host_str, port_str)
 
 
-class Transport(namedtuple("Transport", "prefix suffix")):
+class Transport(namedtuple("Transport", "inner outer")):
     @classmethod
     def parse(cls, transport):
         if isinstance(transport, cls):
             return transport
         elif type(transport) == str:
             if "|" in transport:
-                prefix, suffix = transport.rsplit("|", 1)
+                inner, outer = transport.rsplit("|", 1)
             else:
-                prefix, suffix = "", transport
-            return cls(prefix, suffix)
+                inner, outer = "", transport
+            return cls(inner, outer)
         else:
             raise ValueError("could not parse transport: %s" % transport)
 
-    def __init__(self, prefix, suffix):
-        if not suffix:
-            raise ValueError("suffix (proxy) part of transport must be non-empty: %s" % str(self))
+    def __init__(self, inner, outer):
+        if not outer:
+            raise ValueError("outer (proxy) part of transport must be non-empty: %s" % str(self))
 
     def __str__(self):
-        return "%s|%s" % (self.prefix, self.suffix) if self.prefix else self.suffix
+        return "%s|%s" % (self.inner, self.outer) if self.inner else self.outer
 
 
 class Endpoint(namedtuple("Endpoint", "addr transport")):

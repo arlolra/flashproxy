@@ -29,10 +29,10 @@ class EndpointsTest(unittest.TestCase):
     def setUp(self):
         self.pts = Endpoints(af=socket.AF_INET)
 
-    def _observeProxySupporting(self, *supported_suf):
+    def _observeProxySupporting(self, *supported_outer):
         # semantically observe the existence of a proxy, to make our intent
-        # a bit clearer than simply calling findPrefixesForSuffixes
-        self.pts._findPrefixesForSuffixes(*supported_suf)
+        # a bit clearer than simply calling _findInnerForOuter
+        self.pts._findInnerForOuter(*supported_outer)
 
     def test_addEndpoints_twice(self):
         self.pts.addEndpoint("A", "a|b|p")
@@ -41,7 +41,7 @@ class EndpointsTest(unittest.TestCase):
 
     def test_addEndpoints_lazy_indexing(self):
         self.pts.addEndpoint("A", "a|b|p")
-        default_index = {"websocket": set()} # we always index known_suffixes
+        default_index = {"websocket": set()} # we always index known_outer
 
         # no index until we've asked for it
         self.assertEquals(self.pts._indexes, default_index)
@@ -74,7 +74,7 @@ class EndpointsTest(unittest.TestCase):
         # we are fully capable of supporting them too, but only if we have
         # an endpoint that also speaks it.
         self.assertFalse(self.pts.supports("obfs3|unknownwhat"))
-        suf = self._observeProxySupporting("unknownwhat")
+        self._observeProxySupporting("unknownwhat")
         self.assertFalse(self.pts.supports("obfs3|unknownwhat"))
         self.pts.addEndpoint("A", "obfs3|unknownwhat")
         self.assertTrue(self.pts.supports("obfs3|unknownwhat"))
@@ -155,7 +155,7 @@ class EndpointsTest(unittest.TestCase):
         self.assertEquals(expected, Endpoints.match(self.pts, self.pts2, ["p"]))
         self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
 
-    def test_match_many_prefixes(self):
+    def test_match_many_inners(self):
         self.pts.addEndpoint("A", "a|p")
         self.pts.addEndpoint("B", "b|p")
         self.pts.addEndpoint("C", "p")
@@ -163,7 +163,7 @@ class EndpointsTest(unittest.TestCase):
         self.pts2.addEndpoint("D", "a|p")
         self.pts2.addEndpoint("E", "b|p")
         self.pts2.addEndpoint("F", "p")
-        # this test ensures we have a sane policy for selecting between prefix pools
+        # this test ensures we have a sane policy for selecting between inners pools
         expected = set()
         expected.add((Endpoint("A", Transport("a","p")), Endpoint("D", Transport("a","p"))))
         expected.add((Endpoint("B", Transport("b","p")), Endpoint("E", Transport("b","p"))))
