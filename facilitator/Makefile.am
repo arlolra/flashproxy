@@ -86,8 +86,6 @@ install-secrets:
 	  "Replace this file's contents with your Gmail app-specific password;"
 	@echo >> $(pkgconfdir)/reg-email.pass \
 	  "see gmail-howto.txt in this package's documentation for details."
-	chown $(fpfacilitatoruser): $(pkgconfdir)/reg-daemon.key
-	chown $(fpfacilitatoruser): $(pkgconfdir)/reg-email.pass
 
 remove-secrets:
 	rm -f $(pkgconfdir)/reg-*
