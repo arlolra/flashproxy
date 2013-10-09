@@ -5,11 +5,6 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_ARG_VAR(fpfacilitatoruser, [the user/group for the facilitator to run as])
 fpfacilitatoruser="${fpfacilitatoruser:-flashproxy-fac}"
 
-AC_CONFIG_FILES([Makefile
-	init.d/facilitator
-	init.d/facilitator-email-poller
-	init.d/facilitator-reg-daemon])
-
 AC_PROG_LN_S
 AM_PATH_PYTHON
 
@@ -21,5 +16,10 @@ AC_ARG_ENABLE([initscripts],
 		[install and configure sysvinit-style initscripts (default no)])],
 	[do_initscripts=yes], [do_initscripts=])
 AM_CONDITIONAL([DO_INITSCRIPTS], [test "x$do_initscripts" = xyes])
+
+AC_CONFIG_FILES([Makefile
+	init.d/facilitator
+	init.d/facilitator-email-poller
+	init.d/facilitator-reg-daemon])
 
 AC_OUTPUT
