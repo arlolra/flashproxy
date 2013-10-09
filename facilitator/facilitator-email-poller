@@ -406,7 +406,7 @@ while True:
     try:
         imap = imap_login()
         imap_loop(imap)
-    except (imaplib.IMAP4.abort, ssl.SSLError, M2Crypto.SSL.SSLError, socket.error), e:
+    except (imaplib.IMAP4.abort, ssl.SSLError, SSL.SSLError, socket.error), e:
         # Try again after a disconnection.
         log(u"lost server connection: %s" % str(e))
     except KeyboardInterrupt:
