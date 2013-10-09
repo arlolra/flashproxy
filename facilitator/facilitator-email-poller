@@ -407,18 +407,16 @@ login_limit = RateLimit()
 while True:
     try:
         imap = imap_login()
-        imap_loop(imap)
+        try:
+            imap_loop(imap)
+        except imaplib.IMAP4.error:
+            imap.close()
+            imap.logout()
     except (imaplib.IMAP4.error, ssl.SSLError, SSL.SSLError, socket.error), e:
         # Try again after a disconnection.
         log(u"lost server connection: %s" % str(e))
     except KeyboardInterrupt:
         break
-
-    try:
-        imap.close()
-        imap.logout()
-    except (imaplib.IMAP4.abort, imaplib.IMAP4.error):
-        pass
 
     # Don't reconnect too fast.
     t = login_limit.time_to_wait()
