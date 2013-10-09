@@ -11,6 +11,8 @@ AC_CONFIG_FILES([Makefile
 	init.d/facilitator-reg-daemon])
 
 AC_PROG_LN_S
+AM_PATH_PYTHON
+
 # check that we want to install initscripts. don't bother checking that they
 # are supported, since we might be doing a staged install on a different system.
 # disabled by default since it ignores ${prefix} so `make distcheck` would fail

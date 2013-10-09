@@ -22,6 +22,6 @@
 /flashproxy-facilitator-*.tar.*
 
 # files output by test-driver
-/test-*.log
-/*-test.log
-/*-test.trs
+test*.log
+*test.log
+*test.trs

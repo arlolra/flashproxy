@@ -23,16 +23,18 @@ dist_example_DATA = examples/fp-facilitator
 dist_appengine_DATA = appengine/app.yaml appengine/config.go appengine/fp-reg.go appengine/README
 appengineconf_DATA = appengine/config.go
 
-dist_TESTS = facilitator-test
+TESTS = facilitator-test.py
+# see http://www.gnu.org/software/automake/manual/html_node/Parallel-Test-Harness.html#index-TEST_005fEXTENSIONS
+TEST_EXTENSIONS = .py
+PY_LOG_COMPILER = $(PYTHON)
+AM_TESTS_ENVIRONMENT = PYTHONPATH='$(srcdir)'; export PYTHONPATH;
+AM_PY_LOG_FLAGS =
 
 # stuff built from AC_CONFIG_FILES
 # see http://www.gnu.org/software/automake/manual/html_node/Scripts.html
 CLEANFILES = $(initscript_SCRIPTS)
 
 # our own targets
-
-check:
-	./facilitator-test
 
 # The {pre,post}-{install,remove} targets are just given as reference, and
 # ought to be separate scripts as part of your distro's installation process.
