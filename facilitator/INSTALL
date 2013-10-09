@@ -29,3 +29,8 @@ instructions.
 Uninstall.
 
 	# make pre-remove uninstall post-remove
+
+This will leave behind some config files (e.g. secret keys and passwords). To
+get rid of those too, run this instead:
+
+	# make pre-purge uninstall post-purge

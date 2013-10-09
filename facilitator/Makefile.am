@@ -44,8 +44,10 @@ CLEANFILES = $(initscript_SCRIPTS)
 
 pre-install: meta-install-sanity install-user
 post-install: meta-install-sanity install-secrets install-symlinks install-daemon
-pre-remove: meta-install-sanity remove-daemon remove-symlinks remove-secrets
-post-remove: meta-install-sanity remove-user
+pre-remove: meta-install-sanity remove-daemon remove-symlinks
+post-remove: meta-install-sanity
+pre-purge: pre-remove remove-secrets
+post-purge: post-remove remove-user
 
 meta-install-sanity:
 	test "x$(DESTDIR)" = "x" || { echo >&2 \
@@ -80,14 +82,16 @@ remove-user:
 	    $(fpfacilitatoruser) ; } || true
 
 install-secrets:
-	install -m 600 /dev/null $(pkgconfdir)/reg-daemon.key
-	openssl genrsa 2048 | tee $(pkgconfdir)/reg-daemon.key | \
-	openssl rsa -pubout > $(pkgconfdir)/reg-daemon.pub
-	install -m 600 /dev/null $(pkgconfdir)/reg-email.pass
-	@echo >> $(pkgconfdir)/reg-email.pass \
-	  "Replace this file's contents with your Gmail app-specific password;"
-	@echo >> $(pkgconfdir)/reg-email.pass \
-	  "see gmail-howto.txt in this package's documentation for details."
+	test -f $(pkgconfdir)/reg-daemon.key || { \
+	  install -m 600 /dev/null $(pkgconfdir)/reg-daemon.key && \
+	  openssl genrsa 2048 | tee $(pkgconfdir)/reg-daemon.key | \
+	  openssl rsa -pubout > $(pkgconfdir)/reg-daemon.pub; }
+	test -f $(pkgconfdir)/reg-email.pass || { \
+	  install -m 600 /dev/null $(pkgconfdir)/reg-email.pass && \
+	  echo >> $(pkgconfdir)/reg-email.pass \
+	  "Replace this file's contents with your Gmail app-specific password;" && \
+	  echo >> $(pkgconfdir)/reg-email.pass \
+	  "see gmail-howto.txt in this package's documentation for details."; }
 
 remove-secrets:
 	rm -f $(pkgconfdir)/reg-*
@@ -122,6 +126,6 @@ if DO_INITSCRIPTS
 	done
 endif
 
-.PHONY: pre-install post-install pre-remove post-remove
+.PHONY: pre-install post-install pre-remove post-remove pre-purge post-purge
 .PHONY: install-user install-secrets install-symlinks install-daemon
 .PHONY: remove-user remove-secrets remove-symlinks remove-daemon
