@@ -68,6 +68,8 @@ PUBKEY_SHA1 = (
     # https://src.chromium.org/viewvc/chrome/trunk/src/net/http/transport_security_state_static.h?revision=209003&view=markup
     # kSPKIHash_Google1024
     "\x40\xc5\x40\x1d\x6f\x8c\xba\xf0\x8b\x00\xed\xef\xb1\xee\x87\xd0\x05\xb3\xb9\xcd",
+    # kSPKIHash_GoogleG2
+    "\x43\xda\xd6\x30\xee\x53\xf8\xa9\x80\xca\x6e\xfd\x85\xf4\x6a\xa3\x79\x90\xe0\xea",
 )
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
