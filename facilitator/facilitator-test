@@ -80,7 +80,7 @@ class EndpointsTest(unittest.TestCase):
         self.assertTrue(self.pts.supports("obfs3|unknownwhat"))
         self.assertFalse(self.pts.supports("obfs2|unknownwhat"))
 
-    def _test_serveReg_maxserve_infinite_roundrobin(self):
+    def test_serveReg_maxserve_infinite_roundrobin(self):
         # case for servers, they never exhaust
         self.pts.addEndpoint("A", "a|p")
         self.pts.addEndpoint("B", "a|p")
@@ -92,7 +92,7 @@ class EndpointsTest(unittest.TestCase):
             served.add(self.pts._serveReg("ABC"))
             self.assertEquals(served, set("ABC"))
 
-    def _test_serveReg_maxserve_finite_exhaustion(self):
+    def test_serveReg_maxserve_finite_exhaustion(self):
         # case for clients, we don't want to keep serving them
         self.pts = Endpoints(af=socket.AF_INET, maxserve=5)
         self.pts.addEndpoint("A", "a|p")
@@ -100,13 +100,28 @@ class EndpointsTest(unittest.TestCase):
         self.pts.addEndpoint("C", "a|p")
         # test getNumUnservedEndpoints whilst we're at it
         self.assertEquals(self.pts.getNumUnservedEndpoints(), 3)
-        for i in xrange(5):
+        served = set()
+        served.add(self.pts._serveReg("ABC"))
+        self.assertEquals(self.pts.getNumUnservedEndpoints(), 2)
+        served.add(self.pts._serveReg("ABC"))
+        self.assertEquals(self.pts.getNumUnservedEndpoints(), 1)
+        served.add(self.pts._serveReg("ABC"))
+        self.assertEquals(self.pts.getNumUnservedEndpoints(), 0)
+        self.assertEquals(served, set("ABC"))
+        for i in xrange(5-2):
             served = set()
             served.add(self.pts._serveReg("ABC"))
             served.add(self.pts._serveReg("ABC"))
             served.add(self.pts._serveReg("ABC"))
             self.assertEquals(served, set("ABC"))
-        self.assertEquals(None, self.pts._serveReg("ABC"))
+        remaining = set("ABC")
+        remaining.remove(self.pts._serveReg(remaining))
+        self.assertRaises(KeyError, self.pts._serveReg, "ABC")
+        remaining.remove(self.pts._serveReg(remaining))
+        self.assertRaises(KeyError, self.pts._serveReg, "ABC")
+        remaining.remove(self.pts._serveReg(remaining))
+        self.assertRaises(KeyError, self.pts._serveReg, "ABC")
+        self.assertEquals(remaining, set())
         self.assertEquals(self.pts.getNumUnservedEndpoints(), 0)
 
     def test_match_normal(self):

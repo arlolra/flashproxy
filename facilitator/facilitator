@@ -173,17 +173,18 @@ class Endpoints(object):
     def _serveReg(self, addrpool):
         """
         :param list addrpool: List of candidate addresses.
-        :returns: An address of an endpoint from the given pool, or None if all
-            endpoints have already been served _maxserve times. The serve
-            counter for that address is also incremented.
+        :returns: An address of an endpoint from the given pool. The serve
+            counter for that address is also incremented, and if it hits
+            self._maxserve the endpoint is removed from this collection.
+        :raises: KeyError if any address is not registered with this collection
         """
-        if not addrpool: return None
+        if not addrpool: raise ValueError("gave empty address pool")
         prio_addr = min(addrpool, key=lambda a: self._served[a])
-        if self._served[prio_addr] < self._maxserve:
-            self._served[prio_addr] += 1
-            return prio_addr
-        else:
-            return None
+        assert self._served[prio_addr] < self._maxserve
+        self._served[prio_addr] += 1
+        if self._served[prio_addr] == self._maxserve:
+            self.delEndpoint(prio_addr)
+        return prio_addr
 
     def _ensureIndexForSuffix(self, suf):
         if suf in self._indexes: return
@@ -227,7 +228,6 @@ class Endpoints(object):
             assert all(client_pre.itervalues()) # no pool is empty
             pre = min(both, key=lambda p: ptsClient._avServed(client_pre[p]))
             client_addr = ptsClient._serveReg(client_pre[pre])
-            if not client_addr: return Endpoints.EMPTY_MATCH
             server_addr = ptsServer._serveReg(server_pre[pre])
             # assume servers never run out
             client_transport = ptsClient._endpoints[client_addr]
