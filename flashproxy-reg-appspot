@@ -73,8 +73,8 @@ PUBKEY_SHA1 = (
 
 class options(object):
     address_family = socket.AF_UNSPEC
-    facilitator_pubkey_filename = None
     use_certificate_pin = True
+    facilitator_pubkey_filename = None
     safe_logging = True
 
 def usage(f = sys.stdout):

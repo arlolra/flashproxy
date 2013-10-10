@@ -86,12 +86,13 @@ gwIDAQAB
 
 class options(object):
     remote_addr = None
-    email_addr = None
-    smtp_addr = None
-    debug = False
+
     address_family = socket.AF_UNSPEC
-    facilitator_pubkey_filename = None
+    debug = False
     use_certificate_pin = True
+    email_addr = None
+    facilitator_pubkey_filename = None
+    smtp_addr = None
     safe_logging = True
 
 def usage(f = sys.stdout):

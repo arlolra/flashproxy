@@ -14,8 +14,9 @@ DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
 
 class options(object):
     remote_addr = None
-    facilitator_url = None
+
     address_family = socket.AF_UNSPEC
+    facilitator_url = None
     safe_logging = True
 
 def usage(f = sys.stdout):

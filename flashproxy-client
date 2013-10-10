@@ -49,22 +49,22 @@ class options(object):
     local_addrs = []
     remote_addrs = []
     register_addr = None
-    facilitator_url = None
-    facilitator_pubkey_filename = None
 
     managed = True
 
+    address_family = socket.AF_UNSPEC
+    daemonize = False
+    facilitator_url = None
+    facilitator_pubkey_filename = None
     log_filename = None
     log_file = sys.stdout
-    daemonize = False
-    register = False
-    register_commands = []
     pid_filename = None
     port_forwarding = False
     port_forwarding_helper = DEFAULT_PORT_FORWARDING_HELPER
     port_forwarding_external = None
+    register = False
+    register_commands = []
     safe_logging = True
-    address_family = socket.AF_UNSPEC
 
 # We accept up to this many bytes from a socket not yet matched with a partner
 # before disconnecting it.
@@ -108,6 +108,12 @@ omitted, it uses a public default.
   -h, --help                show this help.
   -l, --log FILENAME        write log to FILENAME (default stdout).
       --pidfile FILENAME    write PID to FILENAME after daemonizing.
+      --port-forwarding     attempt to forward REMOTE port.
+      --port-forwarding-helper=PROGRAM  use the given PROGRAM to forward ports
+                              (default "%(port_forwarding_helper)s"). Implies --port-forwarding.
+      --port-forwarding-external=PORT  forward the external PORT to REMOTE on
+                              the local host (default same as REMOTE). Implies
+                              --port-forwarding.
   -r, --register            register with the facilitator.
       --register-addr=ADDR  register the given address (in case it differs from
                               REMOTE). Implies --register.
@@ -116,12 +122,6 @@ omitted, it uses a public default.
                               methods. Implies --register. Possible methods are
                                 appspot email http
                               Default is "%(reg_methods)s".
-      --port-forwarding     attempt to forward REMOTE port.
-      --port-forwarding-helper=PROGRAM  use the given PROGRAM to forward ports
-                              (default "%(port_forwarding_helper)s"). Implies --port-forwarding.
-      --port-forwarding-external=PORT  forward the external PORT to REMOTE on
-                              the local host (default same as REMOTE). Implies
-                              --port-forwarding.
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
