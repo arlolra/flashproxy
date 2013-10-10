@@ -124,6 +124,8 @@ omitted, it uses a public default.
                               methods. Implies --register. Possible methods are
                                 appspot email http
                               Default is "%(reg_methods)s".
+      --transport=TRANSPORT  register using the given transport
+                              (default "%(transport)s").
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
@@ -131,6 +133,7 @@ omitted, it uses a public default.
     "remote_port": DEFAULT_REMOTE_PORT,
     "reg_methods": ",".join(DEFAULT_REGISTER_METHODS),
     "port_forwarding_helper": DEFAULT_PORT_FORWARDING_HELPER,
+    "transport": DEFAULT_TRANSPORT,
 }
 
 def safe_str(s):
@@ -1007,22 +1010,26 @@ def build_register_command(method):
         af = ["-4"]
     elif options.address_family == socket.AF_INET6:
         af = ["-6"]
+    # "common" is options shared by every registration helper.
+    common = []
+    if options.transport is not None:
+        common += ["--transport", options.transport]
     if method == "appspot":
-        command = [os.path.join(script_dir, "flashproxy-reg-appspot")] + af
+        command = [os.path.join(script_dir, "flashproxy-reg-appspot")] + af + common
         if options.facilitator_pubkey_filename is not None:
             command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
         if not options.safe_logging:
             command += ["--unsafe-logging"]
         return command
     elif method == "email":
-        command = [os.path.join(script_dir, "flashproxy-reg-email")] + af
+        command = [os.path.join(script_dir, "flashproxy-reg-email")] + af + common
         if options.facilitator_pubkey_filename is not None:
             command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
         if not options.safe_logging:
             command += ["--unsafe-logging"]
         return command
     elif method == "http":
-        command = [os.path.join(script_dir, "flashproxy-reg-http")] + af
+        command = [os.path.join(script_dir, "flashproxy-reg-http")] + af + common
         if options.facilitator_url is not None:
             command += ["-f", options.facilitator_url]
         if not options.safe_logging:
@@ -1106,7 +1113,7 @@ def main():
     register_addr_spec = None
     register_methods = []
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "port-forwarding", "port-forwarding-helper=", "port-forwarding-external=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", ["daemon", "external", "facilitator=", "facilitator-pubkey=", "help", "log=", "pidfile=", "register", "register-addr=", "register-methods=", "port-forwarding", "port-forwarding-helper=", "port-forwarding-external=", "transport=", "unsafe-logging"])
     for o, a in opts:
         if o == "-4":
             options.address_family = socket.AF_INET
@@ -1146,6 +1153,8 @@ def main():
         elif o == "--port-forwarding-external":
             options.port_forwarding = True
             options.port_forwarding_external = int(a)
+        elif o == "--transport":
+            options.transport = a
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
