@@ -28,7 +28,7 @@ remote address registered is "%(remote_addr)s".
   -4                     name lookups use only IPv4.
   -6                     name lookups use only IPv6.
   -f, --facilitator=URL  register with the given facilitator
-                           (by default "%(fac_url)s").
+                           (default "%(fac_url)s").
   -h, --help             show this help.
   --unsafe-logging       don't scrub IP addresses from logs.\
 """ % {

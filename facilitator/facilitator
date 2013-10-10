@@ -51,7 +51,7 @@ again. Listen on 127.0.0.1 and port PORT (by default %(port)d).
   -d, --debug               don't daemonize, log to stdout.
   -h, --help                show this help.
   -l, --log FILENAME        write log to FILENAME (default \"%(log)s\").
-  -p, --port PORT           listen on PORT (by default %(port)d).
+  -p, --port PORT           listen on PORT (default %(port)d).
       --pidfile FILENAME    write PID to FILENAME after daemonizing.
       --privdrop-user USER  switch UID and GID to those of USER.
   -r, --relay RELAY         send RELAY (host:port) to proxies as the relay to use.

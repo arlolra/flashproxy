@@ -40,7 +40,7 @@ REMOTE[:PORT] to be registered with the flash proxy facilitator. The
 default PORT is %(port)d.
 
   -f, --facilitator=URL  register with the given facilitator
-                           (by default "%(fac_url)s").
+                           (default "%(fac_url)s").
       --facilitator-pubkey=FILENAME
                          encrypt registrations to the given PEM-formatted
                            public key (default built-in).

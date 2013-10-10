@@ -18,7 +18,7 @@ feeds it to a local facilitator-reg-daemon process. Returns 0 if the
 registration was successful, 1 otherwise.
 
   -h, --help              show this help.
-  -p, --port PORT         connect to PORT (by default %(port)d).\
+  -p, --port PORT         connect to PORT (default %(port)d).\
 """ % {
     "progname": sys.argv[0],
     "port": DEFAULT_CONNECT_PORT,

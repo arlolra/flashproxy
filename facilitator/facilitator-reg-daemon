@@ -50,7 +50,7 @@ single process.
   -h, --help                show this help.
   -k, --key=KEYFILE         read the private key from KEYFILE (required).
   -l, --log FILENAME        write log to FILENAME (default \"%(log)s\").
-  -p, --port PORT           listen on PORT (by default %(port)d).
+  -p, --port PORT           listen on PORT (default %(port)d).
       --pidfile FILENAME    write PID to FILENAME after daemonizing.
       --privdrop-user USER  switch UID and GID to those of USER.
       --unsafe-logging      don't scrub IP addresses from logs.\
