@@ -30,6 +30,12 @@ Requires the **flashproxy-reg-url** program.
 
 OPTIONS
 -------
+**-4**::
+    Name lookups use only IPv4.
+
+**-6**::
+    Name lookups use only IPv6.
+
 **--disable-pin**::
     Don't check the server's public key against a list of known pins.
     You can use this if the server's public key has changed and this
@@ -40,6 +46,9 @@ OPTIONS
 
 **-h**, **--help**::
     Display help message and exit.
+
+**--unsafe-logging**::
+    Don't scrub IP addresses from logs.
 
 SEE ALSO
 --------
