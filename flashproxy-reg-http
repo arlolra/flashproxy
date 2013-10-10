@@ -111,7 +111,12 @@ def build_reg(addr, transport):
 options.facilitator_url = DEFAULT_FACILITATOR_URL
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:h", ["facilitator=", "help", "transport=", "unsafe-logging"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:h", [
+    "facilitator=",
+    "help",
+    "transport=",
+    "unsafe-logging",
+])
 for o, a in opts:
     if o == "-4":
         options.address_family = socket.AF_INET

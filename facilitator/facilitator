@@ -327,8 +327,16 @@ def put_reg(reg):
     return REGS.add(reg)
 
 def main():
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:",
-        ["debug", "help", "log=", "port=", "pidfile=", "privdrop-user=", "relay=", "unsafe-logging"])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:", [
+        "debug",
+        "help",
+        "log=",
+        "port=",
+        "pidfile=",
+        "privdrop-user=",
+        "relay=",
+        "unsafe-logging",
+    ])
     for o, a in opts:
         if o == "-d" or o == "--debug":
             options.daemonize = False

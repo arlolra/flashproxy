@@ -272,7 +272,13 @@ def get_external_ip():
     finally:
         f.close()
 
-opt, args = getopt.gnu_getopt(sys.argv[1:], "46h", ["disable-pin", "facilitator-pubkey=", "help", "transport=", "unsafe-logging"])
+opt, args = getopt.gnu_getopt(sys.argv[1:], "46h", [
+    "disable-pin",
+    "facilitator-pubkey=",
+    "help",
+    "transport=",
+    "unsafe-logging",
+])
 for o, a in opt:
     if o == "-4":
         options.address_family = socket.AF_INET

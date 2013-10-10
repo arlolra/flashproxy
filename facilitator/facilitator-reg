@@ -25,7 +25,10 @@ registration was successful, 1 otherwise.
 }
 
 def main():
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "hp:", ["help", "port="])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "hp:", [
+        "help",
+        "port=",
+    ])
     for o, a in opts:
         if o == "-h" or o == "--help":
             usage()

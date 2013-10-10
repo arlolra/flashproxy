@@ -121,7 +121,12 @@ def get_facilitator_pubkey():
 
 options.facilitator_url = DEFAULT_FACILITATOR_URL
 
-opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "facilitator-pubkey=", "help", "transport="])
+opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h", [
+    "facilitator=",
+    "facilitator-pubkey=",
+    "help",
+    "transport=",
+])
 for o, a in opt:
     if o == "-f" or o == "--facilitator":
         options.facilitator_url = a

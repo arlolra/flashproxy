@@ -221,7 +221,16 @@ def get_facilitator_pubkey():
 options.email_addr = DEFAULT_EMAIL_ADDRESS
 options.smtp_addr = (DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:hs:", ["debug", "disable-pin", "email=", "facilitator-pubkey=", "help", "smtp=", "transport=", "unsafe-logging"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:hs:", [
+    "debug",
+    "disable-pin",
+    "email=",
+    "facilitator-pubkey=",
+    "help",
+    "smtp=",
+    "transport=",
+    "unsafe-logging",
+])
 for o, a in opts:
     if o == "-4":
         options.address_family = socket.AF_INET
