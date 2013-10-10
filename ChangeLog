@@ -8,7 +8,8 @@
   o New --transport options in the client programs allow you to inform
     the facilitator that you want to receive connections of a certain
     kind. Transports other than the default "websocket" are
-    experimental.
+    experimental. Patch by George Kadianakis and David Fifield. Part of
+    bug 9349.
 
 Changes in version 1.3
   o Added a new observed Google public key pin.
