@@ -24,6 +24,7 @@ except ImportError:
 
 DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
+DEFAULT_TRANSPORT = "websocket"
 
 # The domain to which requests appear to go.
 FRONT_DOMAIN = "www.google.com"
@@ -75,6 +76,7 @@ class options(object):
     address_family = socket.AF_UNSPEC
     use_certificate_pin = True
     facilitator_pubkey_filename = None
+    transport = DEFAULT_TRANSPORT
     safe_logging = True
 
 def usage(f = sys.stdout):

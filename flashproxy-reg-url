@@ -5,6 +5,7 @@ import getopt
 import re
 import socket
 import sys
+import urllib
 import urlparse
 
 try:
@@ -16,6 +17,7 @@ except ImportError:
 DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
+DEFAULT_TRANSPORT = "websocket"
 DEFAULT_FACILITATOR_PUBKEY_PEM = """\
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA44Mt8c599/4N2fgu6ppN
@@ -31,6 +33,7 @@ gwIDAQAB
 class options(object):
     facilitator_url = None
     facilitator_pubkey_filename = None
+    transport = DEFAULT_TRANSPORT
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -101,6 +104,12 @@ def format_addr(addr):
         result += u":%d" % port
     return result
 
+def build_reg(addr, transport):
+    return urllib.urlencode((
+        ("client", format_addr(addr)),
+        ("client-transport", transport),
+    ))
+
 def get_facilitator_pubkey():
     if options.facilitator_pubkey_filename is not None:
         return RSA.load_pub_key(options.facilitator_pubkey_filename)
@@ -139,7 +148,7 @@ On Debian-like systems, use the command "apt-get install python-m2crypto".\
 """
     sys.exit(1)
 
-reg_plain = (u"client=%s" % format_addr(remote_addr)).encode("utf-8")
+reg_plain = build_reg(remote_addr, options.transport)
 rsa = get_facilitator_pubkey()
 reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
 reg = base64.urlsafe_b64encode(reg_crypt)

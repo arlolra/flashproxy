@@ -11,12 +11,14 @@ import urllib2
 DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
+DEFAULT_TRANSPORT = "websocket"
 
 class options(object):
     remote_addr = None
 
     address_family = socket.AF_UNSPEC
     facilitator_url = None
+    transport = DEFAULT_TRANSPORT
     safe_logging = True
 
 def usage(f = sys.stdout):
@@ -97,6 +99,12 @@ def format_addr(addr):
 def safe_format_addr(addr):
     return safe_str(format_addr(addr))
 
+def build_reg(addr, transport):
+    return urllib.urlencode((
+        ("client", format_addr(addr)),
+        ("client-transport", transport),
+    ))
+
 options.facilitator_url = DEFAULT_FACILITATOR_URL
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 
@@ -128,9 +136,9 @@ if options.address_family != socket.AF_UNSPEC:
         return getaddrinfo(host, port, options.address_family, *args, **kwargs)
     socket.getaddrinfo = getaddrinfo_replacement
 
-spec = format_addr(options.remote_addr)
+body = build_reg(options.remote_addr, options.transport)
 try:
-    http = urllib2.urlopen(options.facilitator_url, urllib.urlencode({"client": spec}), 10)
+    http = urllib2.urlopen(options.facilitator_url, body, 10)
 except urllib2.HTTPError, e:
     print >> sys.stderr, "Status code was %d, not 200" % e.code
     sys.exit(1)

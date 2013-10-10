@@ -9,6 +9,7 @@ import socket
 import ssl
 import sys
 import tempfile
+import urllib
 
 from hashlib import sha1
 
@@ -24,6 +25,7 @@ DEFAULT_EMAIL_ADDRESS = "flashproxyreg.a@gmail.com"
 # dig MX gmail.com
 DEFAULT_SMTP_HOST = "gmail-smtp-in.l.google.com"
 DEFAULT_SMTP_PORT = 25
+DEFAULT_TRANSPORT = "websocket"
 
 # Use this to prevent Python smtplib from guessing and leaking our hostname.
 EHLO_FQDN = "[127.0.0.1]"
@@ -93,6 +95,7 @@ class options(object):
     email_addr = None
     facilitator_pubkey_filename = None
     smtp_addr = None
+    transport = DEFAULT_TRANSPORT
     safe_logging = True
 
 def usage(f = sys.stdout):
@@ -186,6 +189,12 @@ def format_addr(addr):
 
 def safe_format_addr(addr):
     return safe_str(format_addr(addr))
+
+def build_reg(addr, transport):
+    return urllib.urlencode((
+        ("client", format_addr(addr)),
+        ("client-transport", transport),
+    ))
 
 def get_state_dir():
     """Get a directory where we can put temporary files. Returns None if any
@@ -320,7 +329,7 @@ try:
             spec = "[" + spec + "]"
         options.remote_addr = parse_addr_spec(spec, *options.remote_addr)
 
-    body_plain = (u"client=%s" % format_addr(options.remote_addr)).encode("utf-8")
+    body_plain = build_reg(options.remote_addr, options.transport)
     rsa = get_facilitator_pubkey()
     body_crypt = rsa.public_encrypt(body_plain, RSA.pkcs1_oaep_padding)
     body = body_crypt.encode("base64")

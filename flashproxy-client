@@ -38,6 +38,7 @@ DEFAULT_LOCAL_PORT_EXTERNAL = 9001
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_REGISTER_METHODS = ["appspot", "email", "http"]
 DEFAULT_PORT_FORWARDING_HELPER = "tor-fw-helper"
+DEFAULT_TRANSPORT = "websocket"
 
 # We will re-register if we have fewer than this many waiting proxies. The
 # facilitator may choose to ignore our requests.
@@ -68,6 +69,7 @@ class options(object):
     port_forwarding_external = None
     register = False
     register_commands = []
+    transport = DEFAULT_TRANSPORT
     safe_logging = True
 
 def usage(f = sys.stdout):
