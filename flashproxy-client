@@ -43,6 +43,10 @@ DEFAULT_PORT_FORWARDING_HELPER = "tor-fw-helper"
 # facilitator may choose to ignore our requests.
 DESIRED_NUMBER_OF_PROXIES = 3
 
+# We accept up to this many bytes from a socket not yet matched with a partner
+# before disconnecting it.
+UNCONNECTED_BUFFER_LIMIT = 10240
+
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class options(object):
@@ -65,10 +69,6 @@ class options(object):
     register = False
     register_commands = []
     safe_logging = True
-
-# We accept up to this many bytes from a socket not yet matched with a partner
-# before disconnecting it.
-UNCONNECTED_BUFFER_LIMIT = 10240
 
 def usage(f = sys.stdout):
     print >> f, """\
