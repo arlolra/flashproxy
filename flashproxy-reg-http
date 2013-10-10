@@ -93,6 +93,9 @@ def format_addr(addr):
         result += u":%d" % port
     return result
 
+def safe_format_addr(addr):
+    return safe_str(format_addr(addr))
+
 options.facilitator_url = DEFAULT_FACILITATOR_URL
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 
@@ -138,4 +141,4 @@ except Exception, e:
     sys.exit(1)
 http.close()
 
-print "Registered \"%s\" with %s." % (safe_str(spec), options.facilitator_url)
+print "Registered \"%s\" with %s." % (safe_format_addr(options.remote_addr), options.facilitator_url)
