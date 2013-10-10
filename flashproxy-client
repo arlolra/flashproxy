@@ -1005,35 +1005,32 @@ def build_register_command(method):
     if not script_dir:
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         raise ValueError("Can't find executable directory for registration helpers")
-    af = []
-    if options.address_family == socket.AF_INET:
-        af = ["-4"]
-    elif options.address_family == socket.AF_INET6:
-        af = ["-6"]
+
     # "common" is options shared by every registration helper.
     common = []
+    if options.address_family == socket.AF_INET:
+        common += ["-4"]
+    elif options.address_family == socket.AF_INET6:
+        common += ["-6"]
     if options.transport is not None:
         common += ["--transport", options.transport]
+    if not options.safe_logging:
+        common += ["--unsafe-logging"]
+
     if method == "appspot":
-        command = [os.path.join(script_dir, "flashproxy-reg-appspot")] + af + common
+        command = [os.path.join(script_dir, "flashproxy-reg-appspot")] + common
         if options.facilitator_pubkey_filename is not None:
             command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
-        if not options.safe_logging:
-            command += ["--unsafe-logging"]
         return command
     elif method == "email":
-        command = [os.path.join(script_dir, "flashproxy-reg-email")] + af + common
+        command = [os.path.join(script_dir, "flashproxy-reg-email")] + common
         if options.facilitator_pubkey_filename is not None:
             command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
-        if not options.safe_logging:
-            command += ["--unsafe-logging"]
         return command
     elif method == "http":
-        command = [os.path.join(script_dir, "flashproxy-reg-http")] + af + common
+        command = [os.path.join(script_dir, "flashproxy-reg-http")] + common
         if options.facilitator_url is not None:
             command += ["-f", options.facilitator_url]
-        if not options.safe_logging:
-            command += ["--unsafe-logging"]
         return command
     else:
         raise ValueError("Unknown registration method \"%s\"" % method)
