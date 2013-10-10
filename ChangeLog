@@ -3,6 +3,8 @@
   o Makefiles that install now obey DESTDIR to install relative to a
     different root.
 
+  o Added a new observed Google public key pin for flashproxy-reg-email.
+
 Changes in version 1.3
   o Added a new observed Google public key pin.
 
