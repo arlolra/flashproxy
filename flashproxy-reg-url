@@ -47,11 +47,14 @@ default PORT is %(port)d.
       --facilitator-pubkey=FILENAME
                          encrypt registrations to the given PEM-formatted
                            public key (default built-in).
-  -h, --help             show this help.\
+  -h, --help             show this help.
+      --transport=TRANSPORT  register using the given transport
+                           (default "%(transport)s").\
 """ % {
     "progname": sys.argv[0],
     "fac_url": DEFAULT_FACILITATOR_URL,
     "port": DEFAULT_REMOTE_PORT,
+    "transport": DEFAULT_TRANSPORT,
 }
 
 def parse_addr_spec(spec, defhost = None, defport = None):
@@ -118,7 +121,7 @@ def get_facilitator_pubkey():
 
 options.facilitator_url = DEFAULT_FACILITATOR_URL
 
-opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "facilitator-pubkey=", "help"])
+opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h", ["facilitator=", "facilitator-pubkey=", "help", "transport="])
 for o, a in opt:
     if o == "-f" or o == "--facilitator":
         options.facilitator_url = a
@@ -127,6 +130,8 @@ for o, a in opt:
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
+    elif o == "--transport":
+        options.transport = a
 
 if len(args) != 1:
     usage(sys.stderr)

@@ -32,11 +32,14 @@ remote address registered is "%(remote_addr)s".
   -f, --facilitator=URL  register with the given facilitator
                            (default "%(fac_url)s").
   -h, --help             show this help.
+      --transport=TRANSPORT  register using the given transport
+                           (default "%(transport)s").
       --unsafe-logging   don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "fac_url": DEFAULT_FACILITATOR_URL,
     "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
+    "transport": DEFAULT_TRANSPORT,
 }
 
 def safe_str(s):
@@ -108,7 +111,7 @@ def build_reg(addr, transport):
 options.facilitator_url = DEFAULT_FACILITATOR_URL
 options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:h", ["facilitator=", "help", "unsafe-logging"])
+opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:h", ["facilitator=", "help", "transport=", "unsafe-logging"])
 for o, a in opts:
     if o == "-4":
         options.address_family = socket.AF_INET
@@ -119,6 +122,8 @@ for o, a in opts:
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
+    elif o == "--transport":
+        options.transport = a
     elif o == "--unsafe-logging":
         options.safe_logging = False
 
