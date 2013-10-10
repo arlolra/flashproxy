@@ -30,7 +30,7 @@ remote address registered is "%(remote_addr)s".
   -f, --facilitator=URL  register with the given facilitator
                            (default "%(fac_url)s").
   -h, --help             show this help.
-  --unsafe-logging       don't scrub IP addresses from logs.\
+      --unsafe-logging   don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "fac_url": DEFAULT_FACILITATOR_URL,

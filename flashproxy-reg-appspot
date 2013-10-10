@@ -84,14 +84,14 @@ Register with a flash proxy facilitator through a Google App Engine app.
 By default the remote address registered is "%(remote_addr)s" (the
 external IP address is guessed).
 
-  -4                 name lookups use only IPv4.
-  -6                 name lookups use only IPv6.
-      --disable-pin  don't check server public key against a known pin.
+  -4                    name lookups use only IPv4.
+  -6                    name lookups use only IPv6.
+      --disable-pin     don't check server public key against a known pin.
       --facilitator-pubkey=FILENAME
-                     encrypt registrations to the given PEM-formatted
-                       public key (default built-in).
-  -h, --help         show this help.
-  --unsafe-logging   don't scrub IP addresses from logs.\
+                        encrypt registrations to the given PEM-formatted
+                          public key (default built-in).
+  -h, --help            show this help.
+      --unsafe-logging  don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
