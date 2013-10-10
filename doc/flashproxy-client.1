@@ -2,12 +2,12 @@
 .\"     Title: flashproxy-client
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 07/01/2013
+.\"      Date: 10/09/2013
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "FLASHPROXY\-CLIENT" "1" "07/01/2013" "\ \&" "\ \&"
+.TH "FLASHPROXY\-CLIENT" "1" "10/09/2013" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -78,33 +78,18 @@ Encrypt registrations to the given PEM\-formatted public key (default built\-in)
 Display a help message and exit\&.
 .RE
 .PP
-\fB\-l\fR, \fB\-\-log\fR \fIFILENAME\fR
+\fB\-l\fR, \fB\-\-log\fR=\fIFILENAME\fR
 .RS 4
 Write log to
 \fIFILENAME\fR
 (default is stdout)\&.
 .RE
 .PP
-\fB\-\-pidfile\fR \fIFILENAME\fR
+\fB\-\-pidfile\fR=\fIFILENAME\fR
 .RS 4
 Write PID to
 \fIFILENAME\fR
 after daemonizing\&.
-.RE
-.PP
-\fB\-r\fR, \fB\-\-register\fR
-.RS 4
-Register with the facilitator\&.
-.RE
-.PP
-\fB\-\-register\-addr\fR=\fIADDR\fR
-.RS 4
-Register the given address (in case it differs from REMOTE)\&. Implies \-\-register\&.
-.RE
-.PP
-\fB\-\-register\-methods\fR=\fIMETHOD\fR[,\fIMETHOD\fR]
-.RS 4
-Register using the given comma\-separated list of methods\&. Implies \-\-register\&. Possible methods are: appspot, email, http\&. Default is "appspot,email,http"\&.
 .RE
 .PP
 \fB\-\-port\-forwarding\fR
@@ -116,7 +101,10 @@ port\&.
 .PP
 \fB\-\-port\-forwarding\-helper\fR=\fIPROGRAM\fR
 .RS 4
-Use the given PROGRAM to forward ports (default "tor\-fw\-helper")\&. Implies \-\-port\-forwarding\&.
+Use the given
+\fIPROGRAM\fR
+to forward ports (default "tor\-fw\-helper")\&. Implies
+\fB\-\-port\-forwarding\fR\&.
 .RE
 .PP
 \fB\-\-port\-forwarding\-external\fR=\fIPORT\fR
@@ -125,7 +113,26 @@ Forward the external
 \fIPORT\fR
 to
 \fIREMOTE\fR
-on the local host (default same as REMOTE)\&. Implies \-\-port\-forwarding\&.
+on the local host (default same as REMOTE)\&. Implies
+\fB\-\-port\-forwarding\fR\&.
+.RE
+.PP
+\fB\-r\fR, \fB\-\-register\fR
+.RS 4
+Register with the facilitator\&.
+.RE
+.PP
+\fB\-\-register\-addr\fR=\fIADDR\fR
+.RS 4
+Register the given address (in case it differs from
+\fIREMOTE\fR)\&. Implies
+\fB\-\-register\fR\&.
+.RE
+.PP
+\fB\-\-register\-methods\fR=\fIMETHOD\fR[,\fIMETHOD\fR]
+.RS 4
+Register using the given comma\-separated list of methods\&. Implies
+\fB\-\-register\fR\&. Possible methods are: appspot, email, http\&. Default is "appspot,email,http"\&.
 .RE
 .PP
 \fB\-\-unsafe\-logging\fR
