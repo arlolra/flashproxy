@@ -5,6 +5,11 @@
 
   o Added a new observed Google public key pin for flashproxy-reg-email.
 
+  o New --transport options in the client programs allow you to inform
+    the facilitator that you want to receive connections of a certain
+    kind. Transports other than the default "websocket" are
+    experimental.
+
 Changes in version 1.3
   o Added a new observed Google public key pin.
 
