@@ -58,6 +58,9 @@ OPTIONS
 **-s**, **--smtp**=__HOST__[:__PORT__]::
     Use the given SMTP server (default is "gmail-smtp-in.l.google.com:25").
 
+**--transport**=__TRANSPORT__::
+    Registrations include the fact that you intend to use the given __TRANSPORT__ (default "websocket").
+
 **--unsafe-logging**::
     Don't scrub IP addresses from logs.
 

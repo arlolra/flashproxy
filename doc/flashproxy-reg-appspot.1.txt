@@ -47,6 +47,9 @@ OPTIONS
 **-h**, **--help**::
     Display help message and exit.
 
+**--transport**=__TRANSPORT__::
+    Registrations include the fact that you intend to use the given __TRANSPORT__ (default "websocket").
+
 **--unsafe-logging**::
     Don't scrub IP addresses from logs.
 

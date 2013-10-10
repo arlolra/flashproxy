@@ -31,6 +31,9 @@ OPTIONS
 **-h**, **--help**::
     Display help message and exit.
 
+**--transport**=__TRANSPORT__::
+    Registrations include the fact that you intend to use the given __TRANSPORT__ (default "websocket").
+
 EXAMPLE
 -------
 Say you wish to register 192.0.2.1:9000. Run

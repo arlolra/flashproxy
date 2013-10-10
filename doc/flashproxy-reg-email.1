@@ -2,12 +2,12 @@
 .\"     Title: flashproxy-reg-email
 .\"    Author: [FIXME: author] [see http://docbook.sf.net/el/author]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 10/09/2013
+.\"      Date: 10/10/2013
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "FLASHPROXY\-REG\-EMAIL" "1" "10/09/2013" "\ \&" "\ \&"
+.TH "FLASHPROXY\-REG\-EMAIL" "1" "10/10/2013" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -83,6 +83,13 @@ Display help message and exit\&.
 \fB\-s\fR, \fB\-\-smtp\fR=\fIHOST\fR[:\fIPORT\fR]
 .RS 4
 Use the given SMTP server (default is "gmail\-smtp\-in\&.l\&.google\&.com:25")\&.
+.RE
+.PP
+\fB\-\-transport\fR=\fITRANSPORT\fR
+.RS 4
+Registrations include the fact that you intend to use the given
+\fITRANSPORT\fR
+(default "websocket")\&.
 .RE
 .PP
 \fB\-\-unsafe\-logging\fR
