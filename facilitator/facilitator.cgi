@@ -31,7 +31,6 @@ path_info = os.environ.get("PATH_INFO") or "/"
 
 if not method or not remote_addr[0]:
     exit_error(400)
-fs = cgi.FieldStorage()
 
 # Print the HEAD part of a URL-based registration response, or exit with an
 # error if appropriate.
@@ -55,6 +54,7 @@ def do_get():
     """Parses flashproxy polls.
        Example: GET /?r=1&client=7.1.43.21&client=1.2.3.4&transport=webrtc&transport=websocket
     """
+    fs = cgi.FieldStorage()
 
     path_parts = [x for x in path_info.split("/") if x]
     if len(path_parts) == 2 and path_parts[0] == "reg":
