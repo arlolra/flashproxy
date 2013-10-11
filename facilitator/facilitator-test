@@ -29,56 +29,29 @@ class EndpointsTest(unittest.TestCase):
     def setUp(self):
         self.pts = Endpoints(af=socket.AF_INET)
 
-    def _observeProxySupporting(self, *supported_outer):
-        # semantically observe the existence of a proxy, to make our intent
-        # a bit clearer than simply calling _findInnerForOuter
-        self.pts._findInnerForOuter(*supported_outer)
-
     def test_addEndpoints_twice(self):
         self.pts.addEndpoint("A", "a|b|p")
         self.assertFalse(self.pts.addEndpoint("A", "zzz"))
         self.assertEquals(self.pts._endpoints["A"], Transport("a|b", "p"))
 
-    def test_addEndpoints_lazy_indexing(self):
+    def test_delEndpoints_twice(self):
         self.pts.addEndpoint("A", "a|b|p")
-        default_index = {"websocket": set()} # we always index known_outer
+        self.assertTrue(self.pts.delEndpoint("A"))
+        self.assertFalse(self.pts.delEndpoint("A"))
+        self.assertEquals(self.pts._endpoints.get("A"), None)
 
-        # no index until we've asked for it
-        self.assertEquals(self.pts._indexes, default_index)
-        self._observeProxySupporting("p")
-        self.assertEquals(self.pts._indexes["p"], set("A"))
-
-        # indexes are updated correctly after observing new addresses
-        self.pts.addEndpoint("B", "c|p")
-        self.assertEquals(self.pts._indexes["p"], set("AB"))
-
-        # indexes are updated correctly after observing new proxies
-        self.pts.addEndpoint("C", "a|q")
-        self._observeProxySupporting("q")
-        self.assertEquals(self.pts._indexes["q"], set("C"))
-
-    def test_supports_default(self):
-        # we know there are websocket-capable proxies out there;
-        # support them implicitly without needing to see a proxy.
-        self.pts.addEndpoint("A", "obfs3|websocket")
-        self.assertTrue(self.pts.supports("obfs3|websocket"))
-        self.assertFalse(self.pts.supports("xxx|websocket"))
-        self.assertFalse(self.pts.supports("websocket"))
-        self.assertFalse(self.pts.supports("unknownwhat"))
-        # doesn't matter what the first part is
-        self.pts.addEndpoint("B", "xxx|websocket")
-        self.assertTrue(self.pts.supports("xxx|websocket"))
-
-    def test_supports_seen_proxy(self):
-        # OTOH if some 3rd-party proxy decides to implement its own transport
-        # we are fully capable of supporting them too, but only if we have
-        # an endpoint that also speaks it.
-        self.assertFalse(self.pts.supports("obfs3|unknownwhat"))
-        self._observeProxySupporting("unknownwhat")
-        self.assertFalse(self.pts.supports("obfs3|unknownwhat"))
-        self.pts.addEndpoint("A", "obfs3|unknownwhat")
-        self.assertTrue(self.pts.supports("obfs3|unknownwhat"))
-        self.assertFalse(self.pts.supports("obfs2|unknownwhat"))
+    def test_Endpoints_indexing(self):
+        self.assertEquals(self.pts._indexes.get("p"), None)
+        # test defaultdict works as expected
+        self.assertEquals(self.pts._indexes["p"]["a|b"], set(""))
+        self.pts.addEndpoint("A", "a|b|p")
+        self.assertEquals(self.pts._indexes["p"]["a|b"], set("A"))
+        self.pts.addEndpoint("B", "a|b|p")
+        self.assertEquals(self.pts._indexes["p"]["a|b"], set("AB"))
+        self.pts.delEndpoint("A")
+        self.assertEquals(self.pts._indexes["p"]["a|b"], set("B"))
+        self.pts.delEndpoint("B")
+        self.assertEquals(self.pts._indexes["p"]["a|b"], set(""))
 
     def test_serveReg_maxserve_infinite_roundrobin(self):
         # case for servers, they never exhaust
