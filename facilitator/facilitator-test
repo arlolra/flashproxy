@@ -60,9 +60,9 @@ class EndpointsTest(unittest.TestCase):
         self.pts.addEndpoint("C", "a|p")
         for i in xrange(64): # 64 is infinite ;)
             served = set()
-            served.add(self.pts._serveReg("ABC"))
-            served.add(self.pts._serveReg("ABC"))
-            served.add(self.pts._serveReg("ABC"))
+            served.add(self.pts._serveReg("ABC").addr)
+            served.add(self.pts._serveReg("ABC").addr)
+            served.add(self.pts._serveReg("ABC").addr)
             self.assertEquals(served, set("ABC"))
 
     def test_serveReg_maxserve_finite_exhaustion(self):
@@ -74,25 +74,25 @@ class EndpointsTest(unittest.TestCase):
         # test getNumUnservedEndpoints whilst we're at it
         self.assertEquals(self.pts.getNumUnservedEndpoints(), 3)
         served = set()
-        served.add(self.pts._serveReg("ABC"))
+        served.add(self.pts._serveReg("ABC").addr)
         self.assertEquals(self.pts.getNumUnservedEndpoints(), 2)
-        served.add(self.pts._serveReg("ABC"))
+        served.add(self.pts._serveReg("ABC").addr)
         self.assertEquals(self.pts.getNumUnservedEndpoints(), 1)
-        served.add(self.pts._serveReg("ABC"))
+        served.add(self.pts._serveReg("ABC").addr)
         self.assertEquals(self.pts.getNumUnservedEndpoints(), 0)
         self.assertEquals(served, set("ABC"))
         for i in xrange(5-2):
             served = set()
-            served.add(self.pts._serveReg("ABC"))
-            served.add(self.pts._serveReg("ABC"))
-            served.add(self.pts._serveReg("ABC"))
+            served.add(self.pts._serveReg("ABC").addr)
+            served.add(self.pts._serveReg("ABC").addr)
+            served.add(self.pts._serveReg("ABC").addr)
             self.assertEquals(served, set("ABC"))
         remaining = set("ABC")
-        remaining.remove(self.pts._serveReg(remaining))
+        remaining.remove(self.pts._serveReg(remaining).addr)
         self.assertRaises(KeyError, self.pts._serveReg, "ABC")
-        remaining.remove(self.pts._serveReg(remaining))
+        remaining.remove(self.pts._serveReg(remaining).addr)
         self.assertRaises(KeyError, self.pts._serveReg, "ABC")
-        remaining.remove(self.pts._serveReg(remaining))
+        remaining.remove(self.pts._serveReg(remaining).addr)
         self.assertRaises(KeyError, self.pts._serveReg, "ABC")
         self.assertEquals(remaining, set())
         self.assertEquals(self.pts.getNumUnservedEndpoints(), 0)
@@ -150,6 +150,20 @@ class EndpointsTest(unittest.TestCase):
         self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
         self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
         self.assertEquals(empty, Endpoints.match(self.pts, self.pts2, ["x"]))
+
+    def test_match_exhaustion(self):
+        self.pts.addEndpoint("A", "p")
+        self.pts2 = Endpoints(af=socket.AF_INET, maxserve=2)
+        self.pts2.addEndpoint("B", "p")
+        print self.pts2._indexes, self.pts2._served
+        Endpoints.match(self.pts2, self.pts, ["p"])
+        print self.pts2._indexes, self.pts2._served
+        Endpoints.match(self.pts2, self.pts, ["p"])
+        empty = Endpoints.EMPTY_MATCH
+        self.assertTrue("B" not in self.pts2._endpoints)
+        self.assertTrue("B" not in self.pts2._indexes["p"][""])
+        self.assertEquals(empty, Endpoints.match(self.pts2, self.pts, ["p"]))
+
 
 class FacilitatorTest(unittest.TestCase):
 
