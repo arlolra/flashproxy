@@ -16,6 +16,16 @@
     assign proxies to clients that use matching transports. Patch by
     George Kadianakis. Part of bug 9349.
 
+  o Changed to use the pluggable transport method name "flashproxy"
+    rather than "websocket". Both names are equivalent and "websocket"
+    continues to work. The reason for this change is to reduce confusion
+    with a transport that simply makes a WebSocket connection to a
+    "websocket" bridge, without receiving an inbound connection from a
+    flash proxy. The default argument to the --transport option
+    continues to be "websocket", because that option controls which
+    particular protocol flash proxies should use to connect to you, and
+    is distinct from the transport method name used by Tor.
+
 Changes in version 1.3
   o Added a new observed Google public key pin.
 

@@ -19,11 +19,11 @@ By default the transport plugin listens on Internet-facing TCP port
 9000. If you have to use a different port (to get through a firewall,
 for example), edit the ClientTransportPlugin line of the torrc to give a
 different port number:
-	ClientTransportPlugin websocket exec ./flashproxy-client --register :0 :8888
+	ClientTransportPlugin flashproxy exec ./flashproxy-client --register :0 :8888
 If the flashproxy-client program is in a different directoy (after being
 installed, for example), use the full path in the ClientTransportPlugin
 line:
-	ClientTransportPlugin websocket exec /usr/local/bin/flashproxy-client --register
+	ClientTransportPlugin flashproxy exec /usr/local/bin/flashproxy-client --register
 
 You should receive a flash proxy connection within about 60 seconds. See
 "Troubleshooting" below if it doesn't work.
@@ -69,7 +69,7 @@ public instance of it. This way is not as realistic because all your Tor
 traffic will first go to a fixed address and can be easily blocked.
 However this is an easy way to try out the system without having to do
 port forwarding.
-	$ tor ClientTransportPlugin "websocket socks4 fp-facilitator.org:9999" UseBridges 1 Bridge "websocket 0.0.1.0:1" LearnCircuitBuildTimeout 0 CircuitBuildTimeout 60
+	$ tor ClientTransportPlugin "flashproxy socks4 fp-facilitator.org:9999" UseBridges 1 Bridge "flashproxy 0.0.1.0:1" LearnCircuitBuildTimeout 0 CircuitBuildTimeout 60
 
 
 == Troubleshooting
