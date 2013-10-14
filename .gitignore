@@ -1,5 +1,5 @@
 *.pyc
 /dist
 /py2exe-tmp
-/modules/nodejs/node_modules
-/modules/nodejs/flashproxy.js
+/proxy/modules/nodejs/node_modules
+/proxy/modules/nodejs/flashproxy.js
