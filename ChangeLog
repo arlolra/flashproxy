@@ -30,6 +30,7 @@
     is now under facilitator/doc. The App Engine source code is under
     facilitator/appengine. The directory containing other ways to use
     the proxy moved from modules to proxy/modules. Patch by Ximin Luo.
+    Fixed bug 9668.
 
 Changes in version 1.3
   o Added a new observed Google public key pin.
