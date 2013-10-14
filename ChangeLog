@@ -26,6 +26,11 @@
     particular protocol flash proxies should use to connect to you, and
     is distinct from the transport method name used by Tor.
 
+  o Rearranged some files in the source tree. Facilitator documentation
+    is now under facilitator/doc. The App Engine source code is under
+    facilitator/appengine. The directory containing other ways to use
+    the proxy moved from modules to proxy/modules. Patch by Ximin Luo.
+
 Changes in version 1.3
   o Added a new observed Google public key pin.
 
