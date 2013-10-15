@@ -30,12 +30,19 @@ CONFDIR=@sysconfdir@/flashproxy
 PRIVDROP_USER=@fpfacilitatoruser@
 DAEMON=@bindir@/$NAME
 DAEMON_ARGS="-r $RELAY --log $LOGFILE --pidfile $PIDFILE --privdrop-user $PRIVDROP_USER"
+DEFAULTSFILE=@sysconfdir@/default/$NAME
 
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
 
+# Read configuration variable file if it is present
+[ -r "$DEFAULTSFILE" ] && . "$DEFAULTSFILE"
+
 . /lib/init/vars.sh
 . /lib/lsb/init-functions
+
+[ "$UNSAFE_LOGGING" = "yes" ] && DAEMON_ARGS="$DAEMON_ARGS --unsafe-logging"
+[ -n "$PORT" ] && DAEMON_ARGS="$DAEMON_ARGS --port $PORT"
 
 #
 # Function that starts the daemon/service
@@ -80,6 +87,10 @@ do_stop()
 
 case "$1" in
   start)
+	if [ "$RUN_DAEMON" != "yes" ]; then
+		log_action_msg "Not starting $DESC (Disabled in $DEFAULTSFILE)."
+		exit 0
+	fi
 	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
 	do_start
 	case "$?" in

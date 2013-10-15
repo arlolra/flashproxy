@@ -1,0 +1,11 @@
+# Change to "yes" to run the service.
+RUN_DAEMON="no"
+
+# Uncomment this to log potentially sensitive information from your users.
+# This may be useful for debugging or diagnosing functional problems, but
+# should be avoided in a high-risk environment.
+#UNSAFE_LOGGING="yes"
+
+# Set the port for this service to listen on.
+# If not set, uses the default (9002).
+#PORT=9002

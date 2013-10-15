@@ -15,7 +15,7 @@ appengineconfdir = $(pkgconfdir)/reg-appengine
 dist_bin_SCRIPTS = facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg facilitator.cgi fac.py
 if DO_INITSCRIPTS
 initscript_SCRIPTS = init.d/facilitator init.d/facilitator-email-poller init.d/facilitator-reg-daemon
-initdefault_DATA = default/facilitator-email-poller
+dist_initdefault_DATA = default/facilitator default/facilitator-email-poller default/facilitator-reg-daemon
 endif
 
 dist_doc_DATA = doc/appengine-howto.txt doc/facilitator-howto.txt doc/gmail-howto.txt README
