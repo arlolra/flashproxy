@@ -30,10 +30,6 @@ PY_LOG_COMPILER = $(PYTHON)
 AM_TESTS_ENVIRONMENT = PYTHONPATH='$(srcdir)'; export PYTHONPATH;
 AM_PY_LOG_FLAGS =
 
-# stuff built from AC_CONFIG_FILES
-# see http://www.gnu.org/software/automake/manual/html_node/Scripts.html
-CLEANFILES = $(initscript_SCRIPTS)
-
 EXTRA_DIST = $(TESTS)
 
 # our own targets
