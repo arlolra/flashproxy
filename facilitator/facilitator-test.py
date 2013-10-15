@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import socket
 import subprocess
 import time
@@ -28,7 +29,8 @@ class FacilitatorTest(unittest.TestCase):
         return gimme_socket(FACILITATOR_HOST, FACILITATOR_PORT)
 
     def setUp(self):
-        self.process = subprocess.Popen(["./facilitator", "-d", "-p", str(FACILITATOR_PORT), "-r", "0.0.1.0:1", "-l", "/dev/null"])
+        fn = os.path.join(os.path.dirname(__file__), "./facilitator")
+        self.process = subprocess.Popen(["python", fn, "-d", "-p", str(FACILITATOR_PORT), "-r", "0.0.1.0:1", "-l", "/dev/null"])
         time.sleep(0.1)
 
     def tearDown(self):

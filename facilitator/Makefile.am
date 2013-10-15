@@ -34,6 +34,8 @@ AM_PY_LOG_FLAGS =
 # see http://www.gnu.org/software/automake/manual/html_node/Scripts.html
 CLEANFILES = $(initscript_SCRIPTS)
 
+EXTRA_DIST = $(TESTS)
+
 # our own targets
 
 # The {pre,post}-{install,remove} targets are just given as reference, and
