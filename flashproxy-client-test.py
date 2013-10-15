@@ -8,7 +8,6 @@ import socket
 import subprocess
 import sys
 import unittest
-print sys.path
 try:
     from hashlib import sha1
 except ImportError:
