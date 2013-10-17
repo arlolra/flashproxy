@@ -365,14 +365,14 @@ CLIENTS = {
     socket.AF_INET6: Endpoints(af=socket.AF_INET6, maxserve=MAX_PROXIES_PER_CLIENT)
 }
 
-SERVERS = {
+RELAYS = {
     socket.AF_INET: Endpoints(af=socket.AF_INET),
     socket.AF_INET6: Endpoints(af=socket.AF_INET6)
 }
 
 def num_relays():
     """Return the total number of relays."""
-    return sum(pts.getNumEndpoints() for pts in SERVERS.itervalues())
+    return sum(pts.getNumEndpoints() for pts in RELAYS.itervalues())
 
 def num_regs():
     """Return the total number of registrations."""
@@ -391,7 +391,7 @@ def addr_af(addr_str):
 def get_match_for_proxy(proxy_addr, transport_list):
     af = addr_af(proxy_addr[0])
     try:
-        return Endpoints.match(CLIENTS[af], SERVERS[af], transport_list)
+        return Endpoints.match(CLIENTS[af], RELAYS[af], transport_list)
     except ValueError as e:
         raise UnknownTransport("Could not find registration for transport list: %s: %s" % (transport_list, e))
 
@@ -467,7 +467,7 @@ obfs2|websocket 1.4.6.1:4123\
 
     try:
         with open(options.relay_filename) as fp:
-            parse_relay_file(SERVERS, fp)
+            parse_relay_file(RELAYS, fp)
     except ValueError as e:
         print >> sys.stderr, u"Could not parse file '%s': %s" % (repr(a), str(e))
         sys.exit(1)
@@ -485,8 +485,8 @@ obfs2|websocket 1.4.6.1:4123\
     server = Server(addrinfo[4], Handler)
 
     log(u"start on %s" % fac.format_addr(addrinfo[4]))
-    log(u"using IPv4 relays %s" % str(SERVERS[socket.AF_INET]._endpoints))
-    log(u"using IPv6 relays %s" % str(SERVERS[socket.AF_INET6]._endpoints))
+    log(u"using IPv4 relays %s" % str(RELAYS[socket.AF_INET]._endpoints))
+    log(u"using IPv6 relays %s" % str(RELAYS[socket.AF_INET6]._endpoints))
 
     if options.daemonize:
         log(u"daemonizing")
