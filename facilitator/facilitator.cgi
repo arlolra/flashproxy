@@ -92,7 +92,8 @@ def do_post():
     # Old style client registration:
     #   client=1.2.3.4:9000
     # New style client registration:
-    #   client-websocket=1.2.3.4:9000&client-obfs3|websocket=1.2.3.4:10000
+    #   client-addr=1.2.3.4:9000&client-transport=websocket
+    #   client-addr=1.2.3.4:9090&client-transport=obfs3|websocket
 
     if path_info != "/":
         exit_error(400)
@@ -101,29 +102,15 @@ def do_post():
     # them look like "client-websocket=1.2.3.4:9000". We then split
     # all those items and send them as separate registrations to the
     # facilitator.
-    for key in fs.keys():
-        if key != "client" and not key.startswith("client-"):
-            continue
+    try:
+        regs = list(fac.read_client_registrations(sys.stdin.read(), defhost=remote_addr[0]))
+    except ValueError:
+        exit_error(400)
 
-        if key == "client": # reg without transport info -- default to websocket.
-            transport = "websocket"
-        else: # reg with transport info -- get the "websocket" part out of "client-websocket".
-            transport = key[len("client-"):]
-
-        # Get the "1.2.3.4:9000" part of "client-websocket=1.2.3.4:9000".
-        client_spec = fs[key].value.strip()
-        try:
-            client_addr = fac.parse_addr_spec(client_spec, defhost=remote_addr[0])
-        except ValueError:
-            exit_error(400)
-
-        # XXX what if previous registrations passed through
-        # successfully, but the last one failed and called
-        # exit_error()?
-
+    for reg in regs:
         # XXX need to link these registrations together, so that
-        # when one is answerered the rest are invalidated.
-        if not fac.put_reg(FACILITATOR_ADDR, client_addr, transport):
+        # when one is answerered (or errors) the rest are invalidated.
+        if not fac.put_reg(FACILITATOR_ADDR, reg.addr, reg.transport):
             exit_error(500)
 
     print """\
