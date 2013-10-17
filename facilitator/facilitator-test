@@ -4,12 +4,23 @@ from cStringIO import StringIO
 import socket
 import subprocess
 import tempfile
+import sys
 import time
 import unittest
 
-from facilitator import Endpoints, parse_relay_file
 import fac
 from fac import Transport, Endpoint
+
+# Import the facilitator program as a module.
+import imp
+dont_write_bytecode = sys.dont_write_bytecode
+sys.dont_write_bytecode = True
+facilitator = imp.load_source("facilitator", "facilitator")
+Endpoints = facilitator.Endpoints
+parse_relay_file = facilitator.parse_relay_file
+sys.dont_write_bytecode = dont_write_bytecode
+del dont_write_bytecode
+del facilitator
 
 FACILITATOR_HOST = "127.0.0.1"
 FACILITATOR_PORT = 39002 # diff port to not conflict with production service
