@@ -1,1 +1,1 @@
-../../proxy/flashproxy.js
+../../flashproxy.js
