@@ -126,14 +126,16 @@ Design of flash proxies
 
     POST / HTTP/1.0
 
-    client-<transport>=[<address>]:<port>[&client-<transport>=[<address>]:<port>...]
+    client=[<address>]:<port>[&client-transport=<transport>][
+    client=[<address>]:<port>[&client-transport=<transport>] ...]
 
   Where 'transport' is the name of the pluggable transport that is
   listening on <address>:<port>. The default flashproxy transport is
   named 'websocket'.
 
-  For example a registration message would look like this:
-    client-websocket=1.2.3.4:9000&client-obfs3|websocket=1.2.3.4:10000
+  For example a registration message might look like this:
+    client=1.2.3.4:9000
+    client=1.2.3.4:10000&client-transport=obfs3|websocket
 
   The facilitator sends a 200 reply if the registration was successful
   and an error status otherwise. If the transport plugin omits the
@@ -163,20 +165,21 @@ Design of flash proxies
 
   The 'r' parameter is the protocol revision number (should be '1' for now).
   The 'client' parameter carries the IP address of a flashproxy
-  client. The client parameter can can repeat to report multiple
+  client. The client parameter can repeat to report multiple
   connected clients.
-  The 'transport' parameter is optional and signals the transports that
-  this flashproxy supports.
+  The 'transport' parameter may be repeated zero or many times and
+  signals the outer-transports that this flashproxy supports. (See
+  section 10 for a discussion of inner and outer transports.)
 
   For example:
    GET /?r=1&client=7.1.43.21:9999&client=1.2.3.4:9000&transport=webrtc&transport=websocket HTTP/1.0
 
   The response code is 200 and the body looks like this:
 
-    client-<transport>=[<address>:<port>]&relay-<transport>=<address>:<port>
+    client=<address>:<port>&client-transport=<transport>&relay=<address>:<port>&relay-transport=<transport>
 
   For example:
-   client-websocket=1.2.3.4:2000&relay-websocket=10.10.10:9902
+   client=1.2.3.4:2000&client-transport=websocket&relay=10.10.10:9902&relay-transport=websocket
 
   As with the request, the response transports are actually outer
   transports; inner transports are not the proxy's concern and therefore
@@ -200,3 +203,7 @@ Design of flash proxies
 9. Behavior of the Tor relay.
 
   The Tor relay requires no special configuration.
+
+10. Inner and outer transports
+
+  TODO: import discussion from #9349.
