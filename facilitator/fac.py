@@ -161,11 +161,11 @@ def get_single(qs, key, default=None):
         raise ValueError("more than one %r key" % key)
     return vals[0]
 
-def read_client_registrations(body):
+def read_client_registrations(body, defhost=None, defport=None):
     """Parse the lines of body and yield an Endpoint for each."""
     for line in body.splitlines():
         qs = urlparse.parse_qs(line, keep_blank_values=True, strict_parsing=True)
-        addr = parse_addr_spec(get_single(qs, "client"))
+        addr = parse_addr_spec(get_single(qs, "client"), defhost, defport)
         transport = get_single(qs, "client-transport", DEFAULT_CLIENT_TRANSPORT)
         yield Endpoint(addr, transport)
 

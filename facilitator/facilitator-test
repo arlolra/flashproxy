@@ -402,6 +402,12 @@ class ReadClientRegistrationsTest(unittest.TestCase):
         self.assertEqual(len(l), 1)
         self.assertEqual(l[0].addr, ("1::2", 3333))
 
+    def testDefaultAddress(self):
+        l = list(fac.read_client_registrations("client=:1111&transport=websocket", defhost="1.2.3.4"))
+        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
+        l = list(fac.read_client_registrations("client=1.2.3.4:&transport=websocket", defport=1111))
+        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
+
     def testDefaultTransport(self):
         l = list(fac.read_client_registrations("client=1.2.3.4:1111"))
         self.assertEqual(l[0].transport, "websocket")
