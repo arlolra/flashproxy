@@ -299,7 +299,7 @@ class Handler(SocketServer.StreamRequestHandler):
 
         transport_list = fac.param_getlist("PROXY_TRANSPORT", params)
         if not transport_list:
-            return self.error(u"PROXY TRANSPORT missing FROM param")
+            return self.error(u"GET missing PROXY_TRANSPORT param")
 
         try:
             client_reg, relay_reg = get_match_for_proxy(proxy_addr, transport_list)
