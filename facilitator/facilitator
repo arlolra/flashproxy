@@ -287,7 +287,7 @@ class Handler(SocketServer.StreamRequestHandler):
         return False
 
     # Handle a GET request (got flashproxy poll; need to return a proper client registration)
-    # Example: GET FROM="3.3.3.3:3333" TRANSPORT="websocket" TRANSPORT="webrtc"
+    # Example: GET FROM="3.3.3.3:3333" PROXY_TRANSPORT="websocket" PROXY_TRANSPORT="webrtc"
     def do_GET(self, params):
         proxy_spec = fac.param_first("FROM", params)
         if proxy_spec is None:

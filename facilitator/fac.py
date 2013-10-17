@@ -295,13 +295,13 @@ def put_reg(facilitator_addr, client_addr, transport):
 
 def get_reg(facilitator_addr, proxy_addr, proxy_transport_list):
     """
-    Get a client registration for proxy 'proxy_addr' from the
-    facilitator at 'facilitator_addr' using a one-time
-    socket. 'transports' is a list containing the transport names that
+    Get a client registration for proxy proxy_addr from the
+    facilitator at facilitator_addr using a one-time
+    socket. proxy_transport_list is a list containing the transport names that
     the flashproxy supports.
 
-    Returns a dict with keys "client-<transport>" and
-    "relay-<transport>" if successful, or a dict with the key "client"
+    Returns a dict with keys "client" and
+    "relay" if successful, or a dict with the key "client"
     mapped to the value "" if there are no registrations available for
     proxy_addr. Raises an exception otherwise."""
     f = fac_socket(facilitator_addr)
@@ -309,7 +309,7 @@ def get_reg(facilitator_addr, proxy_addr, proxy_transport_list):
     # Form a list (in transact() format) with the transports that we
     # should send to the facilitator.  Then pass that list to the
     # transact() function.
-    # For example, TRANSPORT=obfs2 TRANSPORT=obfs3.
+    # For example, PROXY_TRANSPORT=obfs2 PROXY_TRANSPORT=obfs3.
     transports = [("PROXY_TRANSPORT", tp) for tp in proxy_transport_list]
 
     try:
