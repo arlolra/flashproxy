@@ -382,5 +382,50 @@ class ParseTransactionTest(unittest.TestCase):
     def test_newline(self):
         self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC\" \nY=\"DEF\"")
 
+class ReadClientRegistrationsTest(unittest.TestCase):
+    def testSingle(self):
+        l = list(fac.read_client_registrations(""))
+        self.assertEqual(len(l), 0)
+        l = list(fac.read_client_registrations("client=1.2.3.4:1111"))
+        self.assertEqual(len(l), 1)
+        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
+        l = list(fac.read_client_registrations("client=1.2.3.4:1111\n"))
+        self.assertEqual(len(l), 1)
+        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
+        l = list(fac.read_client_registrations("foo=bar&client=1.2.3.4:1111&baz=quux"))
+        self.assertEqual(len(l), 1)
+        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
+        l = list(fac.read_client_registrations("foo=b%3dar&client=1.2.3.4%3a1111"))
+        self.assertEqual(len(l), 1)
+        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
+        l = list(fac.read_client_registrations("client=%5b1::2%5d:3333"))
+        self.assertEqual(len(l), 1)
+        self.assertEqual(l[0].addr, ("1::2", 3333))
+
+    def testDefaultTransport(self):
+        l = list(fac.read_client_registrations("client=1.2.3.4:1111"))
+        self.assertEqual(l[0].transport, "websocket")
+
+    def testMultiple(self):
+        l = list(fac.read_client_registrations("client=1.2.3.4:1111&foo=bar\nfoo=bar&client=5.6.7.8:2222"))
+        self.assertEqual(len(l), 2)
+        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
+        self.assertEqual(l[1].addr, ("5.6.7.8", 2222))
+        l = list(fac.read_client_registrations("client=1.2.3.4:1111&foo=bar\nfoo=bar&client=%5b1::2%5d:3333"))
+        self.assertEqual(len(l), 2)
+        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
+        self.assertEqual(l[1].addr, ("1::2", 3333))
+
+    def testInvalid(self):
+        # Missing "client".
+        with self.assertRaises(ValueError):
+            list(fac.read_client_registrations("foo=bar"))
+        # More than one "client".
+        with self.assertRaises(ValueError):
+            list(fac.read_client_registrations("client=1.2.3.4:1111&foo=bar&client=5.6.7.8:2222"))
+        # Single client with bad syntax.
+        with self.assertRaises(ValueError):
+            list(fac.read_client_registrations("client=1.2.3.4,1111"))
+
 if __name__ == "__main__":
     unittest.main()
