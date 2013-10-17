@@ -199,9 +199,7 @@ class Handler(SocketServer.StreamRequestHandler):
         try:
             command, params = fac.parse_transaction(line[:-1])
         except ValueError, e:
-            log("fac.parse_transaction: %s" % e)
-            self.send_error()
-            return False
+            return self.error("fac.parse_transaction: %s" % e)
 
         if command == "GET":
             return self.do_GET(params)
@@ -217,25 +215,24 @@ class Handler(SocketServer.StreamRequestHandler):
     def send_error(self):
         print >> self.wfile, "ERROR"
 
+    def error(self, log_msg):
+        log(log_msg)
+        self.send_error()
+        return False
+
     def do_GET(self, params):
         proxy_spec = fac.param_first("FROM", params)
         if proxy_spec is None:
-            log(u"GET missing FROM param")
-            self.send_error()
-            return False
+            return self.error(u"GET missing FROM param")
         try:
             proxy_addr = fac.parse_addr_spec(proxy_spec, defport=0)
         except ValueError, e:
-            log(u"syntax error in proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
-            self.send_error()
-            return False
+            return self.error(u"syntax error in proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
 
         try:
             reg = get_reg_for_proxy(proxy_addr)
         except Exception, e:
-            log(u"error getting reg for proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
-            self.send_error()
-            return False
+            return self.error(u"error getting reg for proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
         check_back_in = get_check_back_in_for_proxy(proxy_addr)
         if reg:
             log(u"proxy gets %s, relay %s (now %d)" %
@@ -249,25 +246,19 @@ class Handler(SocketServer.StreamRequestHandler):
     def do_PUT(self, params):
         client_spec = fac.param_first("CLIENT", params)
         if client_spec is None:
-            log(u"PUT missing CLIENT param")
-            self.send_error()
-            return False
+            return self.error(u"PUT missing CLIENT param")
 
         # FROM
 
         try:
             reg = Reg.parse(client_spec)
         except ValueError, e:
-            log(u"syntax error in %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
-            self.send_error()
-            return False
+            return self.error(u"syntax error in %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
 
         try:
             ok = put_reg(reg)
         except Exception, e:
-            log(u"error putting reg %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
-            self.send_error()
-            return False
+            return self.error(u"error putting reg %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
         if ok:
             log(u"client %s (now %d)" % (safe_str(unicode(reg)), num_regs()))
         else:
