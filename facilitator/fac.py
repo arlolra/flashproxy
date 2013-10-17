@@ -300,8 +300,8 @@ def get_reg(facilitator_addr, proxy_addr, proxy_transport_list):
     socket. proxy_transport_list is a list containing the transport names that
     the flashproxy supports.
 
-    Returns a dict with keys "client" and
-    "relay" if successful, or a dict with the key "client"
+    Returns a dict with keys "client", "client-transport", "relay",
+    and "relay-transport" if successful, or a dict with the key "client"
     mapped to the value "" if there are no registrations available for
     proxy_addr. Raises an exception otherwise."""
     f = fac_socket(facilitator_addr)
@@ -329,16 +329,24 @@ def get_reg(facilitator_addr, proxy_addr, proxy_transport_list):
         return response
     elif command == "OK":
         client_spec = param_first("CLIENT", params)
+        client_transport = param_first("CLIENT-TRANSPORT", params)
         relay_spec = param_first("RELAY", params)
+        relay_transport = param_first("RELAY-TRANSPORT", params)
         if not client_spec:
             raise ValueError("Facilitator did not return CLIENT")
+        if not client_transport:
+            raise ValueError("Facilitator did not return CLIENT-TRANSPORT")
         if not relay_spec:
             raise ValueError("Facilitator did not return RELAY")
+        if not relay_transport:
+            raise ValueError("Facilitator did not return RELAY-TRANSPORT")
         # Check the syntax returned by the facilitator.
         client = parse_addr_spec(client_spec)
         relay = parse_addr_spec(relay_spec)
         response["client"] = format_addr(client)
+        response["client-transport"] = client_transport
         response["relay"] = format_addr(relay)
+        response["relay-transport"] = relay_transport
         return response
     else:
         raise ValueError("Facilitator response was not \"OK\"")
