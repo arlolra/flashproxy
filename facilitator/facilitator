@@ -248,8 +248,6 @@ class Handler(SocketServer.StreamRequestHandler):
         if client_spec is None:
             return self.error(u"PUT missing CLIENT param")
 
-        # FROM
-
         try:
             reg = Reg.parse(client_spec)
         except ValueError, e:

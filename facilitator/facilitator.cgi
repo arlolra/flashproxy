@@ -89,7 +89,7 @@ def do_post():
         client_addr = fac.parse_addr_spec(client_spec, defhost=remote_addr[0])
     except ValueError:
         exit_error(400)
-    if not fac.put_reg(FACILITATOR_ADDR, client_addr, remote_addr):
+    if not fac.put_reg(FACILITATOR_ADDR, client_addr):
         exit_error(500)
     print """\
 Status: 200\r
