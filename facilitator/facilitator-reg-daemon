@@ -125,7 +125,7 @@ class Handler(SocketServer.StreamRequestHandler):
             plaintext = rsa.private_decrypt(ciphertext, RSA.pkcs1_oaep_padding)
             client_addr = find_client_addr(plaintext)
             log(u"registering %s" % safe_str(fac.format_addr(client_addr)))
-            if fac.put_reg(FACILITATOR_ADDR, client_addr):
+            if fac.put_reg(FACILITATOR_ADDR, client_addr, "websocket"):
                 print >> self.wfile, "OK"
             else:
                 print >> self.wfile, "FAIL"
