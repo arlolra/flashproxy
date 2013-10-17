@@ -107,9 +107,9 @@ class Handler(SocketServer.StreamRequestHandler):
         try:
             ciphertext = b64_ciphertext.decode("base64")
             plaintext = rsa.private_decrypt(ciphertext, RSA.pkcs1_oaep_padding)
-            client_addr = fac.find_client_addr(plaintext)
-            log(u"registering %s" % safe_str(fac.format_addr(client_addr)))
-            if fac.put_reg(FACILITATOR_ADDR, client_addr, "websocket"):
+            client_reg = fac.find_client_addr(plaintext)
+            log(u"registering %s" % safe_str(fac.format_addr(client_reg.addr)))
+            if fac.put_reg(FACILITATOR_ADDR, client_reg.addr, client_reg.transport):
                 print >> self.wfile, "OK"
             else:
                 print >> self.wfile, "FAIL"

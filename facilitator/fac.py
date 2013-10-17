@@ -160,7 +160,9 @@ def find_client_addr(body):
         client_specs = qs["client"]
         if len(client_specs) != 1:
             continue
-        return parse_addr_spec(client_specs[0])
+        addr = parse_addr_spec(client_specs[0])
+        transport = "websocket"
+        return Endpoint(addr, transport)
     return None
 
 
