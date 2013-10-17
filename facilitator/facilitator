@@ -332,7 +332,7 @@ class Handler(SocketServer.StreamRequestHandler):
         transport = Transport.parse(transport)
         # See if we have relays that support this transport
         if transport.outer not in options.outer_transports:
-            return self.error(u"Unrecognized transport: %s" % transport)
+            return self.error(u"Unrecognized transport: %s" % transport.outer)
 
         client_spec = fac.param_first("CLIENT", params)
         if client_spec is None:
