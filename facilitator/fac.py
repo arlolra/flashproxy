@@ -8,6 +8,8 @@ import pwd
 import urlparse
 from collections import namedtuple
 
+DEFAULT_CLIENT_TRANSPORT = "websocket"
+
 # Return true iff the given fd is readable, writable, and executable only by its
 # owner.
 def check_perms(fd):
@@ -148,22 +150,24 @@ def format_addr(addr):
         raise ValueError("host and port may not both be None")
     return u"%s%s" % (host_str, port_str)
 
-def find_client_addr(body):
-    """Find and parse the first client line of the form
-        client=...
-    Returns None if no client line was found."""
+def get_single(qs, key, default=None):
+    try:
+        vals = qs[key]
+    except KeyError:
+        if default is None:
+            raise ValueError("missing %r key" % key)
+        vals = (default,)
+    if len(vals) != 1:
+        raise ValueError("more than one %r key" % key)
+    return vals[0]
+
+def read_client_registrations(body):
+    """Parse the lines of body and yield an Endpoint for each."""
     for line in body.splitlines():
-        try:
-            qs = urlparse.parse_qs(line, keep_blank_values=True, strict_parsing=True)
-        except ValueError:
-            continue
-        client_specs = qs["client"]
-        if len(client_specs) != 1:
-            continue
-        addr = parse_addr_spec(client_specs[0])
-        transport = "websocket"
-        return Endpoint(addr, transport)
-    return None
+        qs = urlparse.parse_qs(line, keep_blank_values=True, strict_parsing=True)
+        addr = parse_addr_spec(get_single(qs, "client"))
+        transport = get_single(qs, "client-transport", DEFAULT_CLIENT_TRANSPORT)
+        yield Endpoint(addr, transport)
 
 
 class Transport(namedtuple("Transport", "inner outer")):

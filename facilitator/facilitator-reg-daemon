@@ -107,12 +107,13 @@ class Handler(SocketServer.StreamRequestHandler):
         try:
             ciphertext = b64_ciphertext.decode("base64")
             plaintext = rsa.private_decrypt(ciphertext, RSA.pkcs1_oaep_padding)
-            client_reg = fac.find_client_addr(plaintext)
-            log(u"registering %s" % safe_str(fac.format_addr(client_reg.addr)))
-            if fac.put_reg(FACILITATOR_ADDR, client_reg.addr, client_reg.transport):
-                print >> self.wfile, "OK"
+            for client_reg in fac.read_client_registrations(plaintext):
+                log(u"registering %s" % safe_str(fac.format_addr(client_reg.addr)))
+                if not fac.put_reg(FACILITATOR_ADDR, client_reg.addr, client_reg.transport):
+                    print >> self.wfile, "FAIL"
+                    break
             else:
-                print >> self.wfile, "FAIL"
+                print >> self.wfile, "OK"
         except Exception, e:
             log("error registering: %s" % str(e))
             print >> self.wfile, "FAIL"
