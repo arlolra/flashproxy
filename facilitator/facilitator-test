@@ -26,6 +26,7 @@ FACILITATOR_HOST = "127.0.0.1"
 FACILITATOR_PORT = 39002 # diff port to not conflict with production service
 FACILITATOR_ADDR = (FACILITATOR_HOST, FACILITATOR_PORT)
 CLIENT_TP = "websocket"
+RELAY_TP = "websocket"
 PROXY_TPS = ["websocket", "webrtc"]
 
 def gimme_socket(host, port):
@@ -204,14 +205,16 @@ class FacilitatorProcTest(unittest.TestCase):
     IPV6_CLIENT_ADDR = ("[11::11]", 9000)
     IPV4_PROXY_ADDR = ("2.2.2.2", 13000)
     IPV6_PROXY_ADDR = ("[22::22]", 13000)
+    IPV4_RELAY_ADDR = ("0.0.1.0", 1)
+    IPV6_RELAY_ADDR = ("[0:0::1:0]", 1)
 
     def gimme_socket(self):
         return gimme_socket(FACILITATOR_HOST, FACILITATOR_PORT)
 
     def setUp(self):
         self.relay_file = tempfile.NamedTemporaryFile()
-        self.relay_file.write("websocket 0.0.1.0:1\n")
-        self.relay_file.write("websocket [0:0::1:0]:1\n")
+        self.relay_file.write("%s %s\n" % (RELAY_TP, fac.format_addr(self.IPV4_RELAY_ADDR)))
+        self.relay_file.write("%s %s\n" % (RELAY_TP, fac.format_addr(self.IPV6_RELAY_ADDR)))
         self.relay_file.flush()
         self.relay_file.seek(0)
         self.process = subprocess.Popen(["./facilitator", "-d", "-p", str(FACILITATOR_PORT), "-r", self.relay_file.name, "-l", "/dev/null"])
