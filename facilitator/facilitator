@@ -320,11 +320,11 @@ class Handler(SocketServer.StreamRequestHandler):
     # Example: PUT CLIENT="1.1.1.1:5555" TRANSPORT="obfs3|websocket"
     def do_PUT(self, params):
         # Check out if we recognize the transport in this registration request
-        transport = fac.param_first("TRANSPORT", params)
-        if transport is None:
+        transport_spec = fac.param_first("TRANSPORT", params)
+        if transport_spec is None:
             return self.error(u"PUT missing TRANSPORT param")
 
-        transport = Transport.parse(transport)
+        transport = Transport.parse(transport_spec)
         # See if we have relays that support this transport
         if transport.outer not in options.outer_transports:
             return self.error(u"Unrecognized transport: %s" % transport.outer)
