@@ -155,9 +155,7 @@ class EndpointsTest(unittest.TestCase):
         self.pts.addEndpoint("A", "p")
         self.pts2 = Endpoints(af=socket.AF_INET, maxserve=2)
         self.pts2.addEndpoint("B", "p")
-        print self.pts2._indexes, self.pts2._served
         Endpoints.match(self.pts2, self.pts, ["p"])
-        print self.pts2._indexes, self.pts2._served
         Endpoints.match(self.pts2, self.pts, ["p"])
         empty = Endpoints.EMPTY_MATCH
         self.assertTrue("B" not in self.pts2._endpoints)
