@@ -280,10 +280,12 @@ class FacilitatorProcTest(unittest.TestCase):
         reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, PROXY_TPS)
         self.assertEqual(reg["client"], fac.format_addr(self.IPV6_CLIENT_ADDR))
 
-    def test_check_back_in(self):
-        """Test that facilitator responses contain a CHECK-BACK-IN key with a
-        numeric value."""
-        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, PROXY_TPS)
+    def test_fields(self):
+        """Test that facilitator responses contain all the required fields."""
+        fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, CLIENT_TP)
+        reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR, PROXY_TPS)
+        self.assertEqual(reg["client"], fac.format_addr(self.IPV4_CLIENT_ADDR))
+        self.assertEqual(reg["relay"], fac.format_addr(self.IPV4_RELAY_ADDR))
         self.assertGreater(int(reg["check-back-in"]), 0)
 
 #     def test_same_proxy(self):
