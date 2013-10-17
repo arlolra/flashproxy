@@ -308,7 +308,9 @@ class Handler(SocketServer.StreamRequestHandler):
                 (safe_str(repr(proxy_spec)), safe_str(repr(client_reg.addr)), transport_list, num_relays(), num_unhandled_regs(), num_regs()))
             print >> self.wfile, fac.render_transaction("OK",
                 ("CLIENT", fac.format_addr(client_reg.addr)),
+                ("CLIENT-TRANSPORT", client_reg.transport.outer),
                 ("RELAY", fac.format_addr(relay_reg.addr)),
+                ("RELAY-TRANSPORT", relay_reg.transport.outer),
                 ("CHECK-BACK-IN", str(check_back_in)))
         else:
             log(u"proxy (%s) gets none" % safe_str(repr(proxy_spec)))
