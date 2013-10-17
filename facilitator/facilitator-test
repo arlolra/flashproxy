@@ -205,7 +205,7 @@ class FacilitatorProcTest(unittest.TestCase):
         self.relay_file.write("websocket [0:0::1:0]:1\n")
         self.relay_file.flush()
         self.relay_file.seek(0)
-        self.process = subprocess.Popen(["./facilitator", "-p", str(FACILITATOR_PORT), "-r", self.relay_file.name, "-d", "--unsafe-logging"])
+        self.process = subprocess.Popen(["./facilitator", "-d", "-p", str(FACILITATOR_PORT), "-r", self.relay_file.name, "-l", "/dev/null"])
         time.sleep(0.1)
 
     def tearDown(self):
