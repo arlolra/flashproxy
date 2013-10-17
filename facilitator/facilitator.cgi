@@ -102,6 +102,12 @@ def do_post():
     # them look like "client-websocket=1.2.3.4:9000". We then split
     # all those items and send them as separate registrations to the
     # facilitator.
+    #
+    # We treat sys.stdin as being a bunch of newline-separated query strings. I
+    # think that this is technically a violation of the
+    # application/x-www-form-urlencoded content-type the client likely used, but
+    # it at least matches the standard multiline registration format used by
+    # facilitator-reg-daemon.
     try:
         regs = list(fac.read_client_registrations(sys.stdin.read(), defhost=remote_addr[0]))
     except ValueError:
