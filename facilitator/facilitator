@@ -357,7 +357,6 @@ class Handler(SocketServer.StreamRequestHandler):
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
-# Registration sets per-outermost-transport
 # Addresses are plain tuples (str(host), int(port))
 
 CLIENTS = {
