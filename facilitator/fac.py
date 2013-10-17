@@ -5,6 +5,7 @@ import socket
 import stat
 import subprocess
 import pwd
+import urlparse
 from collections import namedtuple
 
 # Return true iff the given fd is readable, writable, and executable only by its
@@ -146,6 +147,21 @@ def format_addr(addr):
     if not host_str and not port_str:
         raise ValueError("host and port may not both be None")
     return u"%s%s" % (host_str, port_str)
+
+def find_client_addr(body):
+    """Find and parse the first client line of the form
+        client=...
+    Returns None if no client line was found."""
+    for line in body.splitlines():
+        try:
+            qs = urlparse.parse_qs(line, keep_blank_values=True, strict_parsing=True)
+        except ValueError:
+            continue
+        client_specs = qs["client"]
+        if len(client_specs) != 1:
+            continue
+        return parse_addr_spec(client_specs[0])
+    return None
 
 
 class Transport(namedtuple("Transport", "inner outer")):
