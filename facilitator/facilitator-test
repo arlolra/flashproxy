@@ -285,7 +285,9 @@ class FacilitatorProcTest(unittest.TestCase):
         fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, CLIENT_TP)
         reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR, PROXY_TPS)
         self.assertEqual(reg["client"], fac.format_addr(self.IPV4_CLIENT_ADDR))
+        self.assertEqual(reg["client-transport"], CLIENT_TP)
         self.assertEqual(reg["relay"], fac.format_addr(self.IPV4_RELAY_ADDR))
+        self.assertEqual(reg["relay-transport"], RELAY_TP)
         self.assertGreater(int(reg["check-back-in"]), 0)
 
 #     def test_same_proxy(self):
