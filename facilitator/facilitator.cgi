@@ -9,7 +9,6 @@ import urllib
 import fac
 
 FACILITATOR_ADDR = ("127.0.0.1", 9002)
-FACILITATOR_REG_URL_ADDR = ("127.0.0.1", 9003)
 
 def output_status(status):
     print """\
