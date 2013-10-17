@@ -89,20 +89,9 @@ Access-Control-Allow-Origin: *\r
 def do_post():
     """Parse client registration."""
 
-    # Old style client registration:
-    #   client=1.2.3.4:9000
-    # New style client registration:
-    #   client-addr=1.2.3.4:9000&client-transport=websocket
-    #   client-addr=1.2.3.4:9090&client-transport=obfs3|websocket
-
     if path_info != "/":
         exit_error(400)
 
-    # We iterate through the items in the POST body, and see if any of
-    # them look like "client-websocket=1.2.3.4:9000". We then split
-    # all those items and send them as separate registrations to the
-    # facilitator.
-    #
     # We treat sys.stdin as being a bunch of newline-separated query strings. I
     # think that this is technically a violation of the
     # application/x-www-form-urlencoded content-type the client likely used, but

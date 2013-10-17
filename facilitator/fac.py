@@ -162,7 +162,16 @@ def get_single(qs, key, default=None):
     return vals[0]
 
 def read_client_registrations(body, defhost=None, defport=None):
-    """Parse the lines of body and yield an Endpoint for each."""
+    """Yield client registrations (as Endpoints) from an encoded registration
+    message body. The message format is one registration per line, with each
+    line being encoded as application/x-www-form-urlencoded. The key "client" is
+    required and contains the client address and port (perhaps filled in by
+    defhost and defport). The key "client-transport" is optional and defaults to
+    "websocket".
+    Example:
+      client=1.2.3.4:9000&client-transport=websocket
+      client=1.2.3.4:9090&client-transport=obfs3|websocket
+    """
     for line in body.splitlines():
         qs = urlparse.parse_qs(line, keep_blank_values=True, strict_parsing=True)
         addr = parse_addr_spec(get_single(qs, "client"), defhost, defport)
@@ -305,7 +314,8 @@ def transact(f, command, *params):
 
 def put_reg(facilitator_addr, client_addr, transport):
     """Send a registration to the facilitator using a one-time socket. Returns
-    true iff the command was successful."""
+    true iff the command was successful. transport is a transport string such as
+    "websocket" or "obfs3|websocket"."""
     f = fac_socket(facilitator_addr)
     params = [("CLIENT", format_addr(client_addr))]
     params.append(("TRANSPORT", transport))
