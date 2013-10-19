@@ -7,8 +7,10 @@ import socket
 import sys
 import threading
 import time
+from collections import defaultdict
 
 import fac
+from fac import Transport, Endpoint
 
 LISTEN_ADDRESS = "127.0.0.1"
 DEFAULT_LISTEN_PORT = 9002
@@ -24,23 +26,27 @@ CLIENT_TIMEOUT = 1.0
 READLINE_MAX_LENGTH = 10240
 
 MAX_PROXIES_PER_CLIENT = 5
+DEFAULT_OUTER_TRANSPORTS = ["websocket"]
 
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+# Dictionary containing Tor relay addresses that we can pass to
+# proxies. It looks like this:
+# {("websocket"): [("1.1.1.1", 123)], ("obfs3", "websocket"): [("3.1.2.3", 5555), ("1.2.3.4", 6666)], ("obfs2", "websocket"): [("1.2.4.4", 5123)]}
+RELAYS = {}
+
+class UnknownTransport(Exception): pass
 
 class options(object):
     listen_port = DEFAULT_LISTEN_PORT
     log_filename = DEFAULT_LOG_FILENAME
     log_file = sys.stdout
-    relay_spec = None
+    relay_filename = None
     daemonize = True
     pid_filename = None
     privdrop_username = None
     safe_logging = True
-
-    @staticmethod
-    def set_relay_spec(spec):
-        spec = fac.parse_addr_spec(spec, defport = DEFAULT_RELAY_PORT, resolve = True)
-        options.relay_spec = fac.format_addr(spec)
+    outer_transports = DEFAULT_OUTER_TRANSPORTS
 
 def usage(f = sys.stdout):
     print >> f, """\
@@ -54,12 +60,16 @@ again. Listen on 127.0.0.1 and port PORT (by default %(port)d).
   -p, --port PORT           listen on PORT (default %(port)d).
       --pidfile FILENAME    write PID to FILENAME after daemonizing.
       --privdrop-user USER  switch UID and GID to those of USER.
-  -r, --relay RELAY         send RELAY (host:port) to proxies as the relay to use.
+  -r, --relay-file RELAY    learn relays from FILE.
+      --outer-transports TRANSPORTS
+                            comma-sep list of outer transports to accept proxies
+                            for (by default %(outer-transports)s)
       --unsafe-logging      don't scrub IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
     "port": DEFAULT_LISTEN_PORT,
     "log": DEFAULT_LOG_FILENAME,
+    "outer-transports": ",".join(DEFAULT_OUTER_TRANSPORTS)
 }
 
 def safe_str(s):
@@ -75,68 +85,124 @@ def log(msg):
         print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
         options.log_file.flush()
 
-class TCPReg(object):
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
 
-    def __unicode__(self):
-        return fac.format_addr((self.host, self.port))
+class Endpoints(object):
+    """
+    Tracks endpoints (either client/server) and the transports they support.
+    """
 
-    def __str__(self):
-        return unicode(self).encode("UTF-8")
+    matchingLock = threading.Condition()
 
-    def __cmp__(self, other):
-        if isinstance(other, TCPReg):
-            return cmp((self.host, self.port), (other.host, other.port))
-        else:
-            return False
+    def __init__(self, af, maxserve=float("inf")):
+        self.af = af
+        self._maxserve = maxserve
+        self._endpoints = {} # address -> transport
+        self._indexes = defaultdict(lambda: defaultdict(set)) # outer -> inner -> [ addresses ]
+        self._served = {} # address -> num_times_served
+        self._cv = threading.Condition()
 
-class Reg(object):
+    def getNumEndpoints(self):
+        """:returns: the number of endpoints known to us."""
+        with self._cv:
+            return len(self._endpoints)
+
+    def getNumUnservedEndpoints(self):
+        """:returns: the number of unserved endpoints known to us."""
+        with self._cv:
+            return len(filter(lambda t: t == 0, self._served.itervalues()))
+
+    def addEndpoint(self, addr, transport):
+        """Add an endpoint.
+
+        :param addr: Address of endpoint, usage-dependent.
+        :param list transports: List of transports.
+        :returns: False if the address is already known, in which case no
+            update is made to its supported transports, else True.
+        """
+        transport = Transport.parse(transport)
+        with self._cv:
+            if addr in self._endpoints: return False
+            inner, outer = transport
+            self._endpoints[addr] = transport
+            self._served[addr] = 0
+            self._indexes[outer][inner].add(addr)
+            self._cv.notify()
+            return True
+
+    def delEndpoint(self, addr):
+        """Forget an endpoint.
+
+        :param addr: Address of endpoint, usage-dependent.
+        :returns: False if the address was already forgotten, else True.
+        """
+        with self._cv:
+            if addr not in self._endpoints: return False
+            inner, outer = self._endpoints[addr]
+            self._indexes[outer][inner].remove(addr) # TODO(infinity0): maybe delete empty bins
+            del self._served[addr]
+            del self._endpoints[addr]
+            self._cv.notify()
+            return True
+
+    def _findInnerForOuter(self, *supported_outer):
+        """
+        :returns: { inner: [addr] }, where each address supports some outer
+            from supported_outer. TODO(infinity0): describe better
+        """
+        inners = defaultdict(set)
+        for outer in set(supported_outer) & set(self._indexes.iterkeys()):
+            for inner, addrs in self._indexes[outer].iteritems():
+                if addrs:
+                    # don't add empty bins, to avoid false-positive key checks
+                    inners[inner].update(addrs)
+        return inners
+
+    def _serveReg(self, addrpool):
+        """
+        :param list addrpool: List of candidate addresses.
+        :returns: An Endpoint whose address is from the given pool. The serve
+            counter for that address is also incremented, and if it hits
+            self._maxserve the endpoint is removed from this collection.
+        :raises: KeyError if any address is not registered with this collection
+        """
+        if not addrpool: raise ValueError("gave empty address pool")
+        prio_addr = min(addrpool, key=lambda a: self._served[a])
+        assert self._served[prio_addr] < self._maxserve
+        self._served[prio_addr] += 1
+        transport = self._endpoints[prio_addr]
+        if self._served[prio_addr] == self._maxserve:
+            self.delEndpoint(prio_addr)
+        return Endpoint(prio_addr, transport)
+
+    EMPTY_MATCH = (None, None)
     @staticmethod
-    def parse(spec, defhost = None, defport = None):
-        host, port = fac.parse_addr_spec(spec, defhost, defport)
-        return TCPReg(host, port)
+    def match(ptsClient, ptsServer, supported_outer):
+        """
+        :returns: A tuple (client Reg, server Reg) arbitrarily selected from
+            the available endpoints that can satisfy supported_outer.
+        """
+        if ptsClient.af != ptsServer.af:
+            raise ValueError("address family not equal")
+        if ptsServer._maxserve < float("inf"):
+            raise ValueError("servers mustn't run out")
+        # need to operate on both structures
+        # so hold both locks plus a pair-wise lock
+        with Endpoints.matchingLock, ptsClient._cv, ptsServer._cv:
+            server_inner = ptsServer._findInnerForOuter(*supported_outer)
+            client_inner = ptsClient._findInnerForOuter(*supported_outer)
+            both = set(server_inner.keys()) & set(client_inner.keys())
+            if not both: return Endpoints.EMPTY_MATCH
+            # find a client to serve
+            client_pool = [addr for inner in both for addr in client_inner[inner]]
+            assert len(client_pool)
+            client_reg = ptsClient._serveReg(client_pool)
+            # find a server to serve that has the same inner transport
+            inner = client_reg.transport.inner
+            assert inner in server_inner and len(server_inner[inner])
+            server_reg = ptsServer._serveReg(server_inner[inner])
+            # assume servers never run out
+            return (client_reg, server_reg)
 
-class RegSet(object):
-    def __init__(self):
-        self.tiers = [[] for i in range(MAX_PROXIES_PER_CLIENT)]
-        self.cv = threading.Condition()
-
-    def add(self, reg):
-        self.cv.acquire()
-        try:
-            for tier in self.tiers:
-                if reg in tier:
-                    break
-            else:
-                self.tiers[0].append(reg)
-                self.cv.notify()
-                return True
-            return False
-        finally:
-            self.cv.release()
-
-    def fetch(self):
-        self.cv.acquire()
-        try:
-            for i in range(len(self.tiers)):
-                tier = self.tiers[i]
-                if tier:
-                    reg = tier.pop(0)
-                    if i + 1 < len(self.tiers):
-                        self.tiers[i+1].append(reg)
-                    return reg
-            return None
-        finally:
-            self.cv.release()
-
-    def __len__(self):
-        self.cv.acquire()
-        try:
-            return sum(len(tier) for tier in self.tiers)
-        finally:
-            self.cv.release()
 
 class Handler(SocketServer.StreamRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -220,6 +286,8 @@ class Handler(SocketServer.StreamRequestHandler):
         self.send_error()
         return False
 
+    # Handle a GET request (got flashproxy poll; need to return a proper client registration)
+    # Example: GET FROM="3.3.3.3:3333" TRANSPORT="websocket" TRANSPORT="webrtc"
     def do_GET(self, params):
         proxy_spec = fac.param_first("FROM", params)
         if proxy_spec is None:
@@ -229,38 +297,62 @@ class Handler(SocketServer.StreamRequestHandler):
         except ValueError, e:
             return self.error(u"syntax error in proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
 
+        transport_list = fac.param_getlist("PROXY_TRANSPORT", params)
+        if not transport_list:
+            return self.error(u"PROXY TRANSPORT missing FROM param")
+
         try:
-            reg = get_reg_for_proxy(proxy_addr)
+            client_reg, relay_reg = get_match_for_proxy(proxy_addr, transport_list)
         except Exception, e:
             return self.error(u"error getting reg for proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
+
         check_back_in = get_check_back_in_for_proxy(proxy_addr)
-        if reg:
-            log(u"proxy gets %s, relay %s (now %d)" %
-                (safe_str(unicode(reg)), options.relay_spec, num_regs()))
-            print >> self.wfile, fac.render_transaction("OK", ("CLIENT", str(reg)), ("RELAY", options.relay_spec), ("CHECK-BACK-IN", str(check_back_in)))
+
+        if client_reg:
+            log(u"proxy (%s) gets client '%s' (supported transports: %s) (num relays: %s) (remaining regs: %d/%d)" %
+                (safe_str(repr(proxy_spec)), safe_str(repr(client_reg.addr)), transport_list, num_relays(), num_unhandled_regs(), num_regs()))
+            print >> self.wfile, fac.render_transaction("OK",
+                ("CLIENT", fac.format_addr(client_reg.addr)),
+                ("RELAY", fac.format_addr(relay_reg.addr)),
+                ("CHECK-BACK-IN", str(check_back_in)))
         else:
-            log(u"proxy gets none")
+            log(u"proxy (%s) gets none" % safe_str(repr(proxy_spec)))
             print >> self.wfile, fac.render_transaction("NONE", ("CHECK-BACK-IN", str(check_back_in)))
+
         return True
 
+    # Handle a PUT request (client made a registration request; register it.)
+    # Example: PUT CLIENT="1.1.1.1:5555" TRANSPORT="obfs3|websocket"
     def do_PUT(self, params):
+        # Check out if we recognize the transport in this registration request
+        transport = fac.param_first("TRANSPORT", params)
+        if transport is None:
+            return self.error(u"PUT missing TRANSPORT param")
+
+        transport = Transport.parse(transport)
+        # See if we have relays that support this transport
+        if transport.outer not in options.outer_transports:
+            return self.error(u"Unrecognized transport: %s" % transport)
+
         client_spec = fac.param_first("CLIENT", params)
         if client_spec is None:
             return self.error(u"PUT missing CLIENT param")
 
         try:
-            reg = Reg.parse(client_spec)
-        except ValueError, e:
+            reg = Endpoint.parse(client_spec, transport)
+        except (UnknownTransport, ValueError) as e:
+            # XXX should we throw a better error message to the client? Is it possible?
             return self.error(u"syntax error in %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
 
         try:
             ok = put_reg(reg)
         except Exception, e:
             return self.error(u"error putting reg %s: %s" % (safe_str(repr(client_spec)), safe_str(repr(str(e)))))
+
         if ok:
-            log(u"client %s (now %d)" % (safe_str(unicode(reg)), num_regs()))
+            log(u"client %s (transports: %s) (remaining regs: %d/%d)" % (safe_str(unicode(reg)), reg.transport, num_unhandled_regs(), num_regs()))
         else:
-            log(u"client %s (already present, now %d)" % (safe_str(unicode(reg)), num_regs()))
+            log(u"client %s (already present) (transports: %s) (remaining regs: %d/%d)" % (safe_str(unicode(reg)), reg.transport, num_unhandled_regs(), num_regs()))
 
         self.send_ok()
         return True
@@ -270,22 +362,30 @@ class Handler(SocketServer.StreamRequestHandler):
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
-# Separate pools for IPv4 and IPv6 clients.
-REGS_IPV4 = RegSet()
-REGS_IPV6 = RegSet()
+# Registration sets per-outermost-transport
+# Addresses are plain tuples (str(host), int(port))
+
+CLIENTS = {
+    socket.AF_INET: Endpoints(af=socket.AF_INET, maxserve=MAX_PROXIES_PER_CLIENT),
+    socket.AF_INET6: Endpoints(af=socket.AF_INET6, maxserve=MAX_PROXIES_PER_CLIENT)
+}
+
+SERVERS = {
+    socket.AF_INET: Endpoints(af=socket.AF_INET),
+    socket.AF_INET6: Endpoints(af=socket.AF_INET6)
+}
+
+def num_relays():
+    """Return the total number of relays."""
+    return sum(pts.getNumEndpoints() for pts in SERVERS.itervalues())
 
 def num_regs():
     """Return the total number of registrations."""
-    return len(REGS_IPV4) + len(REGS_IPV6)
+    return sum(pts.getNumEndpoints() for pts in CLIENTS.itervalues())
 
-def regs_for_af(af):
-    """Return the correct regs pool for the given address family."""
-    if af == socket.AF_INET:
-        return REGS_IPV4
-    elif af == socket.AF_INET6:
-        return REGS_IPV6
-    else:
-        raise ValueError("unknown address family %d" % af)
+def num_unhandled_regs():
+    """Return the total number of unhandled registrations."""
+    return sum(pts.getNumUnservedEndpoints() for pts in CLIENTS.itervalues())
 
 def addr_af(addr_str):
     """Return the address family for an address string. This is a plain string,
@@ -293,13 +393,12 @@ def addr_af(addr_str):
     addrs = socket.getaddrinfo(addr_str, 0, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
     return addrs[0][0]
 
-def get_reg_for_proxy(proxy_addr):
-    """Get a client registration appropriate for the given proxy (one of a
-    matching address family)."""
-    addr_str = proxy_addr[0]
-    af = addr_af(addr_str)
-    REGS = regs_for_af(af)
-    return REGS.fetch()
+def get_match_for_proxy(proxy_addr, transport_list):
+    af = addr_af(proxy_addr[0])
+    try:
+        return Endpoints.match(CLIENTS[af], SERVERS[af], transport_list)
+    except ValueError as e:
+        raise UnknownTransport("Could not find registration for transport list: %s: %s" % (transport_list, e))
 
 def get_check_back_in_for_proxy(proxy_addr):
     """Get a CHECK-BACK-IN interval suitable for this proxy."""
@@ -307,10 +406,26 @@ def get_check_back_in_for_proxy(proxy_addr):
 
 def put_reg(reg):
     """Add a registration."""
-    addr_str = reg.host
-    af = addr_af(addr_str)
-    REGS = regs_for_af(af)
-    return REGS.add(reg)
+    af = addr_af(reg.addr[0])
+    return CLIENTS[af].addEndpoint(reg.addr, reg.transport)
+
+def parse_relay_file(servers, fp):
+    """Parse a file containing Tor relays that we can point proxies to.
+    Throws ValueError on a parsing error. Each line contains a transport chain
+    and an address, for example
+        obfs2|websocket 1.4.6.1:4123
+    """
+    for line in fp.readlines():
+        try:
+            transport_spec, addr_spec = line.strip().split()
+        except ValueError, e:
+            raise ValueError("Wrong line format: %s." % repr(line))
+        addr = fac.parse_addr_spec(addr_spec, defport=DEFAULT_RELAY_PORT, resolve=True)
+        transport = Transport.parse(transport_spec)
+        if transport.outer not in options.outer_transports:
+            raise ValueError(u"Unrecognized transport: %s" % transport)
+        af = addr_af(addr[0])
+        servers[af].addEndpoint(addr, transport)
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:", [
@@ -320,7 +435,7 @@ def main():
         "port=",
         "pidfile=",
         "privdrop-user=",
-        "relay=",
+        "relay-file=",
         "unsafe-logging",
     ])
     for o, a in opts:
@@ -338,22 +453,31 @@ def main():
             options.pid_filename = a
         elif o == "--privdrop-user":
             options.privdrop_username = a
-        elif o == "-r" or o == "--relay":
-            try:
-                options.set_relay_spec(a)
-            except socket.gaierror, e:
-                print >> sys.stderr, u"Can't resolve relay %s: %s" % (repr(a), str(e))
-                sys.exit(1)
+        elif o == "-r" or o == "--relay-file":
+            options.relay_filename = a
+        elif o == "--outer-transports":
+            options.outer_transports = a.split(",")
         elif o == "--unsafe-logging":
             options.safe_logging = False
 
-    if not options.relay_spec:
+    if not options.relay_filename:
         print >> sys.stderr, """\
-The -r option is required. Give it the relay that will be sent to proxies.
-  -r HOST[:PORT]\
-    """
+The -r option is required. Give it the name of a file
+containing relay transports and addresses.
+  -r HOST[:PORT]
+Example file contents:
+obfs2|websocket 1.4.6.1:4123\
+"""
         sys.exit(1)
 
+    try:
+        with open(options.relay_filename) as fp:
+            parse_relay_file(SERVERS, fp)
+    except ValueError as e:
+        print >> sys.stderr, u"Could not parse file '%s': %s" % (repr(a), str(e))
+        sys.exit(1)
+
+    # Setup log file
     if options.log_filename:
         options.log_file = open(options.log_filename, "a")
         # Send error tracebacks to the log.
@@ -366,7 +490,8 @@ The -r option is required. Give it the relay that will be sent to proxies.
     server = Server(addrinfo[4], Handler)
 
     log(u"start on %s" % fac.format_addr(addrinfo[4]))
-    log(u"using relay address %s" % options.relay_spec)
+    log(u"using IPv4 relays %s" % str(SERVERS[socket.AF_INET]._endpoints))
+    log(u"using IPv6 relays %s" % str(SERVERS[socket.AF_INET6]._endpoints))
 
     if options.daemonize:
         log(u"daemonizing")

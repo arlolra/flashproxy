@@ -5,6 +5,7 @@ import socket
 import stat
 import subprocess
 import pwd
+from collections import namedtuple
 
 # Return true iff the given fd is readable, writable, and executable only by its
 # owner.
@@ -146,6 +147,36 @@ def format_addr(addr):
         raise ValueError("host and port may not both be None")
     return u"%s%s" % (host_str, port_str)
 
+
+class Transport(namedtuple("Transport", "inner outer")):
+    @classmethod
+    def parse(cls, transport):
+        if isinstance(transport, cls):
+            return transport
+        elif type(transport) == str:
+            if "|" in transport:
+                inner, outer = transport.rsplit("|", 1)
+            else:
+                inner, outer = "", transport
+            return cls(inner, outer)
+        else:
+            raise ValueError("could not parse transport: %s" % transport)
+
+    def __init__(self, inner, outer):
+        if not outer:
+            raise ValueError("outer (proxy) part of transport must be non-empty: %s" % str(self))
+
+    def __str__(self):
+        return "%s|%s" % (self.inner, self.outer) if self.inner else self.outer
+
+
+class Endpoint(namedtuple("Endpoint", "addr transport")):
+    @classmethod
+    def parse(cls, spec, transport, defhost = None, defport = None):
+        host, port = parse_addr_spec(spec, defhost, defport)
+        return cls((host, port), Transport.parse(transport))
+
+
 def skip_space(pos, line):
     """Skip a (possibly empty) sequence of space characters (the ASCII character
     '\x20' exactly). Returns a pair (pos, num_skipped)."""
@@ -206,10 +237,21 @@ def parse_transaction(line):
     return command, tuple(pairs)
 
 def param_first(key, params):
+    """Search 'params' for 'key' and return the first value that
+    occurs. If 'key' was not found, return None."""
     for k, v in params:
         if key == k:
             return v
     return None
+
+def param_getlist(key, params):
+    """Search 'params' for 'key' and return a list with its values. If
+    'key' did not appear in 'params', return the empty list."""
+    result = []
+    for k, v in params:
+        if key == k:
+            result.append(v)
+    return result
 
 def quote_string(s):
     chars = []
@@ -239,25 +281,39 @@ def transact(f, command, *params):
         raise ValueError("No newline at end of string returned by facilitator")
     return parse_transaction(line[:-1])
 
-def put_reg(facilitator_addr, client_addr):
+def put_reg(facilitator_addr, client_addr, transport):
     """Send a registration to the facilitator using a one-time socket. Returns
     true iff the command was successful."""
     f = fac_socket(facilitator_addr)
     params = [("CLIENT", format_addr(client_addr))]
+    params.append(("TRANSPORT", transport))
     try:
         command, params = transact(f, "PUT", *params)
     finally:
         f.close()
     return command == "OK"
 
-def get_reg(facilitator_addr, proxy_addr):
-    """Get a registration from the facilitator using a one-time socket. Returns
-    a dict with keys "client" and "relay" if successful, or a dict with the key
-    "client" mapped to the value "" if there are no registrations available for
+def get_reg(facilitator_addr, proxy_addr, proxy_transport_list):
+    """
+    Get a client registration for proxy 'proxy_addr' from the
+    facilitator at 'facilitator_addr' using a one-time
+    socket. 'transports' is a list containing the transport names that
+    the flashproxy supports.
+
+    Returns a dict with keys "client-<transport>" and
+    "relay-<transport>" if successful, or a dict with the key "client"
+    mapped to the value "" if there are no registrations available for
     proxy_addr. Raises an exception otherwise."""
     f = fac_socket(facilitator_addr)
+
+    # Form a list (in transact() format) with the transports that we
+    # should send to the facilitator.  Then pass that list to the
+    # transact() function.
+    # For example, TRANSPORT=obfs2 TRANSPORT=obfs3.
+    transports = [("PROXY_TRANSPORT", tp) for tp in proxy_transport_list]
+
     try:
-        command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)))
+        command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)), *transports)
     finally:
         f.close()
     response = {}
