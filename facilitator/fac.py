@@ -227,7 +227,7 @@ def parse_transaction(line):
         if not (pos < len(line)):
             break
         if skipped == 0:
-            raise ValueError("Expected space before key-value pair: %r" % line)
+            raise ValueError("Expected space before key-value pair")
         pos, key = get_token(pos, line)
         if not (pos < len(line) and line[pos] == '='):
             raise ValueError("No '=' found after key")
@@ -278,7 +278,7 @@ def transact(f, command, *params):
     f.flush()
     line = f.readline()
     if not (len(line) > 0 and line[-1] == '\n'):
-        raise ValueError("No newline at end of string returned by facilitator: %r" % line)
+        raise ValueError("No newline at end of string returned by facilitator")
     return parse_transaction(line[:-1])
 
 def put_reg(facilitator_addr, client_addr, transport, registrant_addr=None):
@@ -343,7 +343,7 @@ def get_reg(facilitator_addr, proxy_addr, proxy_transport_list):
         response["relay"] = format_addr(relay)
         return response
     else:
-        raise ValueError("Facilitator response was not \"OK\": %s: %s" % (command, params))
+        raise ValueError("Facilitator response was not \"OK\"")
 
 def put_reg_base64(b64):
     """Attempt to add a registration by running a facilitator-reg program
