@@ -1,2 +1,4 @@
 obfs3|websocket 173.255.221.44:9500
 websocket 173.255.221.44:9901
+obfs3|websocket [2600:3c01::f03c:91ff:fe93:6cd2]:9500
+websocket [2600:3c01::f03c:91ff:fe93:6cd2]:9901
