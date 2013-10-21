@@ -5,7 +5,6 @@
 
 PACKAGE = flashproxy-client
 VERSION = 1.3
-DISTNAME = $(PACKAGE)-$(VERSION)
 DESTDIR =
 
 THISFILE = $(lastword $(MAKEFILE_LIST))
@@ -72,27 +71,11 @@ clean:
 	rm -f *.pyc
 
 distclean: clean
-	rm -rf $(DISTNAME)
-	rm -f $(DISTNAME).tar.gz
 
 maintainer-clean: distclean
 	rm -f $(DST_MAN1)
 
-$(DISTNAME): $(SRC_ALL) $(TEST_ALL) $(THISFILE)
-	mkdir -p $@
-	cp --parents -t "$@" $^
-
-$(DISTNAME).tar.gz: $(DISTNAME)
-	tar czf "$@" "$<"
-
-# we never actually use this target, but it is given for completeness, in case
-# distro packagers want to do something with a client-only source tarball
-dist: force-dist $(DISTNAME).tar.gz
-
 check: $(THISFILE)
 	for i in $(TEST_PY); do $(PYTHON) "$$i"; done
 
-force-dist:
-	rm -rf $(DISTNAME) $(DISTNAME).tar.gz
-
-.PHONY: all install uninstall clean distclean maintainer-clean dist check force-dist
+.PHONY: all install uninstall clean distclean maintainer-clean dist check
