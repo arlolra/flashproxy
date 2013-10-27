@@ -150,17 +150,6 @@ def format_addr(addr):
         raise ValueError("host and port may not both be None")
     return u"%s%s" % (host_str, port_str)
 
-def get_single(qs, key, default=None):
-    try:
-        vals = qs[key]
-    except KeyError:
-        if default is None:
-            raise ValueError("missing %r key" % key)
-        vals = (default,)
-    if len(vals) != 1:
-        raise ValueError("more than one %r key" % key)
-    return vals[0]
-
 def read_client_registrations(body, defhost=None, defport=None):
     """Yield client registrations (as Endpoints) from an encoded registration
     message body. The message format is one registration per line, with each
@@ -174,8 +163,20 @@ def read_client_registrations(body, defhost=None, defport=None):
     """
     for line in body.splitlines():
         qs = urlparse.parse_qs(line, keep_blank_values=True, strict_parsing=True)
-        addr = parse_addr_spec(get_single(qs, "client"), defhost, defport)
-        transport = get_single(qs, "client-transport", DEFAULT_CLIENT_TRANSPORT)
+        # Get the unique value associated with the given key in qs. If the key
+        # is absent or appears more than once, raise ValueError.
+        def get_unique(key, default=None):
+            try:
+                vals = qs[key]
+            except KeyError:
+                if default is None:
+                    raise ValueError("missing %r key" % key)
+                vals = (default,)
+            if len(vals) != 1:
+                raise ValueError("more than one %r key" % key)
+            return vals[0]
+        addr = parse_addr_spec(get_unique("client"), defhost, defport)
+        transport = get_unique("client-transport", DEFAULT_CLIENT_TRANSPORT)
         yield Endpoint(addr, transport)
 
 
