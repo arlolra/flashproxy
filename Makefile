@@ -14,7 +14,6 @@ CLIENT_DIST_FILES = $(CLIENT_BIN) Makefile README LICENSE ChangeLog torrc
 CLIENT_DIST_DOC_FILES = $(CLIENT_MAN)
 
 all: $(CLIENT_DIST_FILES) $(CLIENT_MAN)
-	:
 
 %.1: %.1.txt
 	rm -f $@
