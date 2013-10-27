@@ -282,7 +282,7 @@ class Handler(SocketServer.StreamRequestHandler):
         return False
 
     # Handle a GET request (got flashproxy poll; need to return a proper client registration)
-    # Example: GET FROM="3.3.3.3:3333" PROXY_TRANSPORT="websocket" PROXY_TRANSPORT="webrtc"
+    # Example: GET FROM="3.3.3.3:3333" PROXY-TRANSPORT="websocket" PROXY-TRANSPORT="webrtc"
     def do_GET(self, params):
         proxy_spec = fac.param_first("FROM", params)
         if proxy_spec is None:
@@ -292,9 +292,9 @@ class Handler(SocketServer.StreamRequestHandler):
         except ValueError, e:
             return self.error(u"syntax error in proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
 
-        transport_list = fac.param_getlist("PROXY_TRANSPORT", params)
+        transport_list = fac.param_getlist("PROXY-TRANSPORT", params)
         if not transport_list:
-            return self.error(u"GET missing PROXY_TRANSPORT param")
+            return self.error(u"GET missing PROXY-TRANSPORT param")
 
         try:
             client_reg, relay_reg = get_match_for_proxy(proxy_addr, transport_list)

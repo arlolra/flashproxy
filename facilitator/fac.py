@@ -341,8 +341,8 @@ def get_reg(facilitator_addr, proxy_addr, proxy_transport_list):
     # Form a list (in transact() format) with the transports that we
     # should send to the facilitator.  Then pass that list to the
     # transact() function.
-    # For example, PROXY_TRANSPORT=obfs2 PROXY_TRANSPORT=obfs3.
-    transports = [("PROXY_TRANSPORT", tp) for tp in proxy_transport_list]
+    # For example, PROXY-TRANSPORT=obfs2 PROXY-TRANSPORT=obfs3.
+    transports = [("PROXY-TRANSPORT", tp) for tp in proxy_transport_list]
 
     try:
         command, params = transact(f, "GET", ("FROM", format_addr(proxy_addr)), *transports)
