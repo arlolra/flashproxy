@@ -28,7 +28,7 @@ install:
 
 DISTNAME = flashproxy-client-$(VERSION)
 DISTDIR = dist/$(DISTNAME)
-dist: $(CLIENT_MAN)
+dist:
 	rm -rf dist
 	mkdir -p $(DISTDIR)
 	mkdir $(DISTDIR)/doc
@@ -50,7 +50,6 @@ $(PY2EXE_TMPDIR)/dist: $(CLIENT_BIN)
 
 dist-exe: DISTNAME := $(DISTNAME)-win32
 dist-exe: CLIENT_BIN := $(PY2EXE_TMPDIR)/dist/*
-dist-exe: CLIENT_MAN := $(addsuffix .txt,$(CLIENT_MAN))
 # Delegate to the "dist" target using the substitutions above.
 dist-exe: $(PY2EXE_TMPDIR)/dist setup.py dist
 
