@@ -8,6 +8,8 @@ all:
 install:
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp -f facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg facilitator.cgi fac.py $(DESTDIR)$(BINDIR)
+	mkdir -p $(DESTDIR)/etc/flashproxy
+	cp -f relays $(DESTDIR)/etc/flashproxy
 	cp -f init.d/facilitator init.d/facilitator-email-poller init.d/facilitator-reg-daemon $(DESTDIR)/etc/init.d/
 
 clean:

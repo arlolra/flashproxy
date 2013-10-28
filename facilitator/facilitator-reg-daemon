@@ -7,7 +7,6 @@ import socket
 import sys
 import threading
 import time
-import urlparse
 
 import fac
 
@@ -77,21 +76,6 @@ def log(msg):
     finally:
         log_lock.release()
 
-def find_client_addr(body):
-    """Find and parse the first client line of the form
-        client=...
-    Returns None if no client line was found."""
-    for line in body.splitlines():
-        try:
-            qs = urlparse.parse_qs(line, keep_blank_values=True, strict_parsing=True)
-        except ValueError:
-            continue
-        client_specs = qs["client"]
-        if len(client_specs) != 1:
-            continue
-        return fac.parse_addr_spec(client_specs[0])
-    return None
-
 class Handler(SocketServer.StreamRequestHandler):
     def __init__(self, *args, **kwargs):
         self.deadline = time.time() + CLIENT_TIMEOUT
@@ -123,12 +107,13 @@ class Handler(SocketServer.StreamRequestHandler):
         try:
             ciphertext = b64_ciphertext.decode("base64")
             plaintext = rsa.private_decrypt(ciphertext, RSA.pkcs1_oaep_padding)
-            client_addr = find_client_addr(plaintext)
-            log(u"registering %s" % safe_str(fac.format_addr(client_addr)))
-            if fac.put_reg(FACILITATOR_ADDR, client_addr):
-                print >> self.wfile, "OK"
+            for client_reg in fac.read_client_registrations(plaintext):
+                log(u"registering %s" % safe_str(fac.format_addr(client_reg.addr)))
+                if not fac.put_reg(FACILITATOR_ADDR, client_reg.addr, client_reg.transport):
+                    print >> self.wfile, "FAIL"
+                    break
             else:
-                print >> self.wfile, "FAIL"
+                print >> self.wfile, "OK"
         except Exception, e:
             log("error registering: %s" % str(e))
             print >> self.wfile, "FAIL"
