@@ -322,6 +322,26 @@ function test_lang_keys() {
     }
 }
 
+function test_have_websocket_binary_frames() {
+    var TESTS = [
+        { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36", expected: true },
+        { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/536.30.1 (KHTML, like Gecko) Version/6.0.5 Safari/536.30.1", expected: true },
+        { expected: false },  // no userAgent
+    ];
+    var _navigator = window.navigator;
+    for (var i = 0; i < TESTS.length; i++) {
+        var test = TESTS[i];
+        window.navigator = { userAgent: test.ua };
+        var actual = have_websocket_binary_frames();
+
+        if (objects_equal(actual, test.expected))
+            pass(test.ua);
+        else
+            fail(test.ua, test.expected, actual);
+    }
+    window.navigator = _navigator;
+}
+
 test_build_url();
 test_parse_cookie_string();
 test_parse_query_string();
@@ -329,6 +349,7 @@ test_get_param_boolean();
 test_parse_addr_spec();
 test_get_param_addr();
 test_lang_keys();
+test_have_websocket_binary_frames();
 
 if (num_failed == 0)
     quit(0);
