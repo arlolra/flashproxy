@@ -324,6 +324,8 @@ function test_lang_keys() {
 
 function test_have_websocket_binary_frames() {
     var TESTS = [
+        { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:10.0.2) Gecko/20100101 Firefox/10.0.2", expected: false },
+        { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:11.0) Gecko/20100101 Firefox/11.0", expected: true },
         { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36", expected: true },
         { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/536.30.1 (KHTML, like Gecko) Version/6.0.5 Safari/536.30.1", expected: true },
         { expected: false },  // no userAgent

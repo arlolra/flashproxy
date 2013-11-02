@@ -435,6 +435,7 @@ function have_websocket_binary_frames() {
     browsers = [
       { idString: "Chrome",  verString: "Chrome",  version: 16 },
       { idString: "Safari",  verString: "Version", version: 6  },
+      { idString: "Firefox", verString: "Firefox", version: 11 }
     ];
 
     for (var i = 0; i < browsers.length; i++) {
