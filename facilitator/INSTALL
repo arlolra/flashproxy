@@ -14,17 +14,8 @@ facilitator-reg-daemon, facilitator-reg, and fac.py to /usr/local/bin.
 It also installs System V init files to /etc/init.d/.
 
 The pre/post-install scripts create a user for the daemon to as, and
-sets up the initscripts in the default system runlevels.
-
-They also generate a RSA key in /usr/local/etc/flashproxy/reg-daemon.{key,pub}.
-You should securely distribute the public key to anyone that wants to
-use your facilitator; they will need to pass it as the
---facilitator-pubkey option to flashproxy-reg-email.
-
-You should also edit /usr/local/etc/default/facilitator-email-poller to
-contain your Gmail address and /usr/local/etc/flashproxy/reg-email.pass
-to contain your app-specific password; see doc/gmail-howto.txt for
-instructions.
+sets up the initscripts in the default system runlevels. They also
+generate a RSA key in /usr/local/etc/flashproxy/reg-daemon.{key,pub}.
 
 Uninstall.
 

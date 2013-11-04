@@ -1,6 +1,16 @@
 These are instructions for setting up a Gmail account for use with the
-email-based rendezvous and flashproxy-reg-email. These instructions were
-current as of May 2013.
+email-based rendezvous (facilitator-email-poller / flashproxy-reg-email).
+
+You are strongly advised to use a new Google account dedicated for this
+purpose. For those that need to protect their information even from
+Google, we provide some instructions on how to do this below.
+
+Once you have an email address and the password for it, you should add
+this information to reg-email.pass in your flashproxy config directory.
+
+== Creating a Google account securely
+
+These instructions were current as of May 2013.
 
 You may have trouble if you are using Tor to create the account, for two
 reasons. The first is that exit nodes are a source of abuse and Google
