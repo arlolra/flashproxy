@@ -9,7 +9,7 @@ initscriptdir = /etc/init.d
 exampledir = $(docdir)/examples
 appenginedir = $(pkgdatadir)/appengine
 pkgconfdir = $(sysconfdir)/flashproxy
-appengineconfdir = $(pkgconfdir)/reg-appengine
+appengineconfdir = $(pkgconfdir)/reg-appspot
 
 # automake PLVs
 
@@ -19,7 +19,7 @@ initscript_SCRIPTS = init.d/facilitator init.d/facilitator-email-poller init.d/f
 dist_initconf_DATA = default/facilitator default/facilitator-email-poller default/facilitator-reg-daemon
 endif
 
-dist_doc_DATA = doc/appengine-howto.txt doc/facilitator-design.txt doc/facilitator-howto.txt doc/gmail-howto.txt doc/http-howto.txt README
+dist_doc_DATA = doc/appspot-howto.txt doc/facilitator-design.txt doc/email-howto.txt doc/http-howto.txt doc/server-howto.txt README
 dist_example_DATA = examples/fp-facilitator examples/reg-email.pass
 dist_appengine_DATA = appengine/app.yaml appengine/config.go appengine/fp-reg.go appengine/README
 appengineconf_DATA = appengine/config.go

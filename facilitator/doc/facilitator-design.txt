@@ -2,10 +2,11 @@ The main facilitator program is a backend server that is essentially a
 dynamic database of client addresses, as well as helper programs that
 receive client registrations from the Internet over various means and
 pass them to the backend. There are three supported helper rendezvous
-methods: HTTP, URL, and email.
+methods: HTTP, email, and appspot.
 
 facilitator-reg is a simple program that forwards its standard input to
-a locally running facilitator-reg-daemon process.
+a locally running facilitator-reg-daemon process. It is not used by the
+other components, but is useful for debugging and test purposes.
 
 facilitator-reg-daemon accepts connections containing encrypted client
 registrations and forwards them to the facilitator. It exists as a
@@ -24,9 +25,11 @@ Clients use the flashproxy-reg-email program to send an encrypted
 message to a Gmail address. The poller constantly checks for new
 messages and forwards them to facilitator-reg.
 
-The URL rendezvous uses the helper program flashproxy-reg-email. The
-helper program doesn't actually make a registration; rather, it prints
-out a URL which, when retrieved, makes the registration.
+The appspot rendezvous uses Google's appengine platform as a proxy for
+the HTTP method, either yours or that of another facilitator. It takes
+advantage of the fact that a censor cannot distinguish between a TLS
+connection to appspot.com or google.com, since the IPs are the same, and
+it is highly unlikely that anyone will try to block the latter.
 
 fac.py is a Python module containing code common to the various
 facilitator programs.

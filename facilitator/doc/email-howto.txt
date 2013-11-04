@@ -1,12 +1,16 @@
-These are instructions for setting up a Gmail account for use with the
+These are instructions for setting up an email account for use with the
 email-based rendezvous (facilitator-email-poller / flashproxy-reg-email).
 
-You are strongly advised to use a new Google account dedicated for this
-purpose. For those that need to protect their information even from
-Google, we provide some instructions on how to do this below.
+You are strongly advised to use an email account dedicated for this
+purpose. If your email provider supports it, we advise you to use an
+app-specific password rather than your account password.
 
 Once you have an email address and the password for it, you should add
 this information to reg-email.pass in your flashproxy config directory.
+
+The following section provides some instructions on how to set up a new
+Google account whilst revealing as little information to Google as is
+feasible.
 
 == Creating a Google account securely
 

@@ -1,7 +1,7 @@
 This is the server-side code that runs on Google App Engine for the
 "appspot" registration method.
 
-See doc/appengine-howto.txt for information about setting up an
+See doc/appspot-howto.txt for information about setting up an
 application.
 
 To run locally using the development server:
