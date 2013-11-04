@@ -4,6 +4,13 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
 AC_ARG_VAR(fpfacilitatoruser, [the user/group for the facilitator to run as])
 fpfacilitatoruser="${fpfacilitatoruser:-flashproxy-fac}"
+AC_ARG_VAR(initconfdir, [directory for initscripts configuration])
+# Try to detect the appropriate conf dir. Several systems have both /etc/default
+# and /etc/sysconfig but latter is always primary.
+AC_CHECK_FILE(/etc/conf.d, [initconfdir="${initconfdir:-\$(sysconfdir)/conf.d}"], [# Gentoo/Arch
+AC_CHECK_FILE(/etc/sysconfig, [initconfdir="${initconfdir:-\$(sysconfdir)/sysconfig}"], [# RedHat/Fedora/Slax/Mandriva/SuSE
+AC_CHECK_FILE(/etc/default, [initconfdir="${initconfdir:-\$(sysconfdir)/default}"], [# Debian/Ubuntu
+AC_MSG_ERROR([could not determine system\'s initscripts config dir, please set initconfdir manually])])])])
 
 AC_PROG_LN_S
 AM_PATH_PYTHON

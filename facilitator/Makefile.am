@@ -1,13 +1,14 @@
 # our own variables
 
 fpfacilitatoruser = @fpfacilitatoruser@
+initconfdir = @initconfdir@
+
 # unfortunately sysvinit does not support having initscripts in /usr/local/etc
 # yet, so we have to hard code a path here. :(
 initscriptdir = /etc/init.d
 exampledir = $(docdir)/examples
 appenginedir = $(pkgdatadir)/appengine
 pkgconfdir = $(sysconfdir)/flashproxy
-initdefaultdir = $(sysconfdir)/default
 appengineconfdir = $(pkgconfdir)/reg-appengine
 
 # automake PLVs
@@ -15,7 +16,7 @@ appengineconfdir = $(pkgconfdir)/reg-appengine
 dist_bin_SCRIPTS = facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg facilitator.cgi fac.py
 if DO_INITSCRIPTS
 initscript_SCRIPTS = init.d/facilitator init.d/facilitator-email-poller init.d/facilitator-reg-daemon
-dist_initdefault_DATA = default/facilitator default/facilitator-email-poller default/facilitator-reg-daemon
+dist_initconf_DATA = default/facilitator default/facilitator-email-poller default/facilitator-reg-daemon
 endif
 
 dist_doc_DATA = doc/appengine-howto.txt doc/facilitator-howto.txt doc/gmail-howto.txt README
