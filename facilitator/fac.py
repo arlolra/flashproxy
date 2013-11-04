@@ -46,7 +46,7 @@ def catch_epipe(fn):
                 raise
     return ret
 
-def parse_addr_spec(spec, defhost = None, defport = None, resolve = False):
+def parse_addr_spec(spec, defhost = None, defport = None, resolve = False, nameOk = False):
     """Parse a host:port specification and return a 2-tuple ("host", port) as
     understood by the Python socket functions.
     >>> parse_addr_spec("192.168.0.1:9999")
@@ -67,9 +67,9 @@ def parse_addr_spec(spec, defhost = None, defport = None, resolve = False):
     >>> parse_addr_spec("", defhost="192.168.0.1", defport=9999)
     ('192.168.0.1', 9999)
 
-    If resolve is true, then the host in the specification or the defhost may be
-    a domain name, which will be resolved. If resolve is false, then the host
-    must be a numeric IPv4 or IPv6 address.
+    If nameOk is true, then the host in the specification or the defhost may be
+    a domain name. Otherwise, it must be a numeric IPv4 or IPv6 address.
+    If resolve is true, this implies nameOk, and the host will be resolved.
 
     IPv6 addresses must be enclosed in square brackets."""
     host = None
@@ -107,6 +107,9 @@ def parse_addr_spec(spec, defhost = None, defport = None, resolve = False):
     # done only if resolve is true; otherwise the address must be numeric.
     if resolve:
         flags = 0
+    elif nameOk:
+        # don't pass through the getaddrinfo numeric check, just return directly
+        return host, int(port)
     else:
         flags = socket.AI_NUMERICHOST
     try:

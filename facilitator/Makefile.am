@@ -20,7 +20,7 @@ dist_initconf_DATA = default/facilitator default/facilitator-email-poller defaul
 endif
 
 dist_doc_DATA = doc/appengine-howto.txt doc/facilitator-howto.txt doc/gmail-howto.txt README
-dist_example_DATA = examples/fp-facilitator
+dist_example_DATA = examples/fp-facilitator examples/reg-email.pass
 dist_appengine_DATA = appengine/app.yaml appengine/config.go appengine/fp-reg.go appengine/README
 appengineconf_DATA = appengine/config.go
 
@@ -87,10 +87,7 @@ install-secrets:
 	  openssl rsa -pubout > $(pkgconfdir)/reg-daemon.pub; }
 	test -f $(pkgconfdir)/reg-email.pass || { \
 	  install -m 600 /dev/null $(pkgconfdir)/reg-email.pass && \
-	  echo >> $(pkgconfdir)/reg-email.pass \
-	  "Replace this file's contents with your Gmail app-specific password;" && \
-	  echo >> $(pkgconfdir)/reg-email.pass \
-	  "see gmail-howto.txt in this package's documentation for details."; }
+	  cat $(exampledir)/reg-email.pass > $(pkgconfdir)/reg-email.pass; }
 
 remove-secrets:
 	rm -f $(pkgconfdir)/reg-*

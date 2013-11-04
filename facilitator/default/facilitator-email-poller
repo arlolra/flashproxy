@@ -5,11 +5,3 @@ RUN_DAEMON="no"
 # This may be useful for debugging or diagnosing functional problems, but
 # should be avoided in a high-risk environment.
 #UNSAFE_LOGGING="yes"
-
-# Replace this with the email address for your facilitator.
-# You should also edit the reg-email.pass file as needed.
-FACILITATOR_EMAIL_ADDR="invalid"
-
-# Set the host:port for the remote IMAP service to contact
-# If not set, uses the default (imap.gmail.com:993).
-#IMAPADDR="imap.gmail.com:993"

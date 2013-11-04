@@ -156,6 +156,11 @@ class ParseAddrSpecTest(unittest.TestCase):
         """Test that parse_addr_spec does not do DNS resolution by default."""
         self.assertRaises(ValueError, fac.parse_addr_spec, "example.com")
 
+    def test_noresolve_nameok(self):
+        """Test that nameok passes through a domain name without resolving it."""
+        self.assertEqual(fac.parse_addr_spec("example.com:8888", defhost="other.com", defport=9999, nameOk=True), ("example.com", 8888))
+        self.assertEqual(fac.parse_addr_spec("", defhost="other.com", defport=9999, nameOk=True), ("other.com", 9999))
+
 class ParseTransactionTest(unittest.TestCase):
     def test_empty_string(self):
         self.assertRaises(ValueError, fac.parse_transaction, "")
