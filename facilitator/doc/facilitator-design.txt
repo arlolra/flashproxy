@@ -17,8 +17,11 @@ The HTTP rendezvous uses an HTTP server and a CGI program. The HTTP
 server is responsible for speaking TLS and invoking the CGI program. The
 CGI program receives client registrations and proxy requests for
 clients, parses them, and forwards them to the backend. We use Apache 2
-as the HTTP server. The CGI script is facilitator.cgi. The backend is
-facilitator.
+as the HTTP server. The CGI script is facilitator.cgi. There are two
+formats - plain vs. (end-to-end) encrypted. Direct client registrations
+(e.g. flashproxy-reg-http) can use the plain format over HTTPS, which
+provides transport encryption; but if you proxy registrations through
+another service (e.g. reg-appspot), you must use the end-to-end format.
 
 The email rendezvous uses the helper program facilitator-email-poller.
 Clients use the flashproxy-reg-email program to send an encrypted

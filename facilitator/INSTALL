@@ -1,7 +1,7 @@
 Install the dependencies.
 
 	$ apt-get install make openssl python-m2crypto
-	$ apt-get install gnulib # if running from git
+	$ apt-get install automake autoconf # if running from git
 
 Configure and install.
 

@@ -7,6 +7,7 @@ app-specific password rather than your account password.
 
 Once you have an email address and the password for it, you should add
 this information to reg-email.pass in your flashproxy config directory.
+For your security, this file should be on encrypted storage.
 
 The following section provides some instructions on how to set up a new
 Google account whilst revealing as little information to Google as is
@@ -71,6 +72,4 @@ https://www.google.com/accounts/SmsAuthConfig.
 
 Still on the 2-step summary page, click "Manage application-specific
 passwords". Enter "IMAP" for the name and click "Generate password".
-Save the password to encrypted storage. You should save this password
-into /etc/flashproxy/reg-email.pass (or wherever you installed it), so
-that facilitator-email-poller can pick it up.
+Now store this in reg-email.pass, as mentioned in the introduction.

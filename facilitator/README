@@ -6,8 +6,17 @@ For instructions on building/installing this package from source, see
 INSTALL. (This should only be necessary if your distro does not already
 integrate this package into its repositories.)
 
-Each installation has its own public-private keypair, typically in
-reg-daemon.{pub,key} in your flashproxy config directory. You will need
+The flashproxy config directory is installation-dependant, usually at
+/etc/flashproxy or /usr/local/etc/flashproxy. You are strongly
+recommended to keep this on encrypted storage.
+
+The main backends, facilitator and facilitator-reg-daemon, are installed
+as system services, and you should be able to configure them in the
+appropriate place for your system (e.g. /etc/default/facilitator for a
+Debian-based system using initscripts).
+
+At a minimum, each installation has its own public-private keypair at
+reg-daemon.{pub,key} in the flashproxy config directory. You will need
 to securely distribute the public part (.pub) to your users - e.g. by
 publishing it somewhere, signed by your own PGP key.
 

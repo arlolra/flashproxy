@@ -1,7 +1,9 @@
 These are instructions for how to set up a Google App Engine application
 for the appspot rendezvous method (flashproxy-reg-appspot). It requires
 the HTTP rendezvous to be available, so you should set that up first and
-ensure it is working correctly, or find someone else's to use.
+ensure it is working correctly, or find someone else's to use. If you
+choose the latter, note that it is *their* reg-daemon.pub that your users
+must give to flashproxy-reg-appspot.
 
 General links:
 https://developers.google.com/appengine/

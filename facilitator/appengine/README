@@ -5,7 +5,7 @@ See doc/appspot-howto.txt for information about setting up an
 application.
 
 To run locally using the development server:
-$ ~/google_appengine/dev_appserver.py appengine/
+$ ~/google_appengine/dev_appserver.py .
 
 To upload a new version:
-$ torify ~/google_appengine/appcfg.py -A $YOUR_APP_ID update appengine/
+$ torify ~/google_appengine/appcfg.py -A $YOUR_APP_ID update .
