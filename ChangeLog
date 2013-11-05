@@ -1,3 +1,4 @@
+Changes in version 1.4
   o Allowed websocket-server to gracefully handle SIGTERM.
 
   o Makefiles that install now obey DESTDIR to install relative to a
