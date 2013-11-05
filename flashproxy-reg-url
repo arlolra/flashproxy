@@ -8,6 +8,9 @@ import sys
 import urllib
 import urlparse
 
+from flashproxy.keys import DEFAULT_FACILITATOR_PUBKEY_PEM
+from flashproxy.util import parse_addr_spec, format_addr
+
 try:
     from M2Crypto import BIO, RSA
 except ImportError:
@@ -18,17 +21,6 @@ DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
 DEFAULT_TRANSPORT = "websocket"
-DEFAULT_FACILITATOR_PUBKEY_PEM = """\
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA44Mt8c599/4N2fgu6ppN
-oatPW1GOgZxxObljFtEy0OWM1eHB35OOn+Kn9MxNHTRxVWwCEi0HYxWNVs2qrXxV
-84LmWBz6A65d2qBlgltgLXusiXLrpwxVmJeO+GfmbF8ur0U9JSYxA20cGW/kujNg
-XYDGQxO1Gvxq2lHK2LQmBpkfKEE1DMFASmIvlHDQgDj3XBb5lYeOsHZmg16UrGAq
-1UH238hgJITPGLXBtwLtJkYbrATJvrEcmvI7QSm57SgYGpaB5ZdCbJL5bag5Pgt6
-M5SDDYYY4xxEPzokjFJfCQv+kcyAnzERNMQ9kR41ePTXG62bpngK5iWGeJ5XdkxG
-gwIDAQAB
------END PUBLIC KEY-----
-"""
 
 class options(object):
     facilitator_url = None
@@ -56,56 +48,6 @@ default PORT is %(port)d.
     "port": DEFAULT_REMOTE_PORT,
     "transport": DEFAULT_TRANSPORT,
 }
-
-def parse_addr_spec(spec, defhost = None, defport = None):
-    host = None
-    port = None
-    af = 0
-    m = None
-    # IPv6 syntax.
-    if not m:
-        m = re.match(ur'^\[(.+)\]:(\d*)$', spec)
-        if m:
-            host, port = m.groups()
-            af = socket.AF_INET6
-    if not m:
-        m = re.match(ur'^\[(.+)\]$', spec)
-        if m:
-            host, = m.groups()
-            af = socket.AF_INET6
-    # IPv4/hostname/port-only syntax.
-    if not m:
-        try:
-            host, port = spec.split(":", 1)
-        except ValueError:
-            host = spec
-        if re.match(ur'^[\d.]+$', host):
-            af = socket.AF_INET
-        else:
-            af = 0
-    host = host or defhost
-    port = port or defport
-    if port is not None:
-        port = int(port)
-    return host, port
-
-def format_addr(addr):
-    host, port = addr
-    if not host:
-        return u":%d" % port
-    # Numeric IPv6 address?
-    try:
-        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
-        af = addrs[0][0]
-    except socket.gaierror, e:
-        af = 0
-    if af == socket.AF_INET6:
-        result = u"[%s]" % host
-    else:
-        result = "%s" % host
-    if port is not None:
-        result += u":%d" % port
-    return result
 
 def build_reg(addr, transport):
     return urllib.urlencode((

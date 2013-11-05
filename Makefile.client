@@ -1,0 +1,81 @@
+# Makefile for a source distribution of flashproxy-client.
+#
+# This package is not self-contained and the build products may require other
+# dependencies to function; it is given as a reference for distro packagers.
+
+PACKAGE = flashproxy-client
+VERSION = 1.4
+DESTDIR =
+
+THISFILE = $(lastword $(MAKEFILE_LIST))
+PYTHON = python
+
+# GNU command variables
+# see http://www.gnu.org/prep/standards/html_node/Command-Variables.html
+
+INSTALL = install
+INSTALL_DATA = $(INSTALL) -m 644
+INSTALL_PROGRAM = $(INSTALL)
+INSTALL_SCRIPT = $(INSTALL)
+
+# GNU directory variables
+# see http://www.gnu.org/prep/standards/html_node/Directory-Variables.html
+
+prefix = /usr/local
+exec_prefix = $(prefix)
+bindir = $(exec_prefix)/bin
+
+datarootdir = $(prefix)/share
+datadir = $(datarootdir)
+sysconfdir = $(prefix)/etc
+
+docdir = $(datarootdir)/doc/$(PACKAGE)
+mandir = $(datarootdir)/man
+man1dir = $(mandir)/man1
+
+srcdir = .
+
+SRC_MAN1 = doc/flashproxy-client.1.txt doc/flashproxy-reg-appspot.1.txt doc/flashproxy-reg-email.1.txt doc/flashproxy-reg-http.1.txt doc/flashproxy-reg-url.1.txt
+SRC_SCRIPT = flashproxy-client flashproxy-reg-appspot flashproxy-reg-email flashproxy-reg-http flashproxy-reg-url
+SRC_DOC = README LICENSE ChangeLog torrc
+SRC_ALL = $(SRC_SCRIPT) $(SRC_DOC) $(SRC_MAN1)
+
+DST_MAN1 = $(SRC_MAN1:%.1.txt=%.1)
+DST_SCRIPT = $(SRC_SCRIPT)
+DST_DOC = $(SRC_DOC)
+DST_ALL = $(DST_SCRIPT) $(DST_DOC) $(DST_MAN1)
+
+TEST_PY = flashproxy-client-test.py
+TEST_ALL = $(TEST_PY)
+
+all: $(DST_ALL) $(THISFILE)
+
+%.1: %.1.txt $(THISFILE)
+	rm -f $@
+	a2x --no-xmllint --xsltproc-opts "--stringparam man.th.title.max.length 24" -d manpage -f manpage $<
+
+install: all
+	mkdir -p $(DESTDIR)$(bindir)
+	for i in $(DST_SCRIPT); do $(INSTALL_SCRIPT) "$$i" $(DESTDIR)$(bindir); done
+	mkdir -p $(DESTDIR)$(docdir)
+	for i in $(DST_DOC); do $(INSTALL_DATA) "$$i" $(DESTDIR)$(docdir); done
+	mkdir -p $(DESTDIR)$(man1dir)
+	for i in $(DST_MAN1); do $(INSTALL_DATA) "$$i" $(DESTDIR)$(man1dir); done
+
+uninstall:
+	for i in $(notdir $(DST_SCRIPT)); do rm $(DESTDIR)$(bindir)/"$$i"; done
+	for i in $(notdir $(DST_DOC)); do rm $(DESTDIR)$(docdir)/"$$i"; done
+	for i in $(notdir $(DST_MAN1)); do rm $(DESTDIR)$(man1dir)/"$$i"; done
+
+clean:
+	rm -f *.pyc
+
+distclean: clean
+
+maintainer-clean: distclean
+	rm -f $(DST_MAN1)
+
+check: $(THISFILE)
+	for i in $(TEST_PY); do $(PYTHON) "$$i"; done
+
+.PHONY: all install uninstall clean distclean maintainer-clean dist check

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+"""Setup file for the flashproxy-common python module."""
 from distutils.core import setup
 import os
 import py2exe

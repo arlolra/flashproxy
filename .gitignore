@@ -1,5 +1,11 @@
 *.pyc
+
+# built by setup*.py
+/build
 /dist
+/*.egg-info
 /py2exe-tmp
+
 /proxy/modules/nodejs/node_modules
 /proxy/modules/nodejs/flashproxy.js
+
