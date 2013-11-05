@@ -48,11 +48,17 @@ DST_ALL = $(DST_SCRIPT) $(DST_DOC) $(DST_MAN1)
 TEST_PY = flashproxy-client-test.py
 TEST_ALL = $(TEST_PY)
 
+REBUILD_MAN = 1
+
 all: $(DST_ALL) $(THISFILE)
 
-%.1: %.1.txt $(THISFILE)
+%.1: %.1.txt
+ifeq ($(REBUILD_MAN),0)
+	@echo "warning: $@ *may* be out-of-date; if so then rm and re-checkout from VCS or force a re-build with REBUILD_MAN=1"
+else
 	rm -f $@
 	a2x --no-xmllint --xsltproc-opts "--stringparam man.th.title.max.length 24" -d manpage -f manpage $<
+endif
 
 install: all
 	mkdir -p $(DESTDIR)$(bindir)

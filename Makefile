@@ -23,6 +23,8 @@ PYTHON = python
 PYTHON_W32 = $(PYTHON)
 
 MAKE_CLIENT = $(MAKE) -f Makefile.client PYTHON="$(PYTHON)"
+# don't rebuild man pages due to VCS giving spurious timestamps, see #9940
+REBUILD_MAN = 0
 
 # all is N/A for a binary package, but include for completeness
 all: dist
@@ -31,7 +33,7 @@ DISTDIR = dist/$(DISTNAME)
 $(DISTDIR): Makefile.client setup-common.py $(THISFILE)
 	mkdir -p $(DISTDIR)
 	$(MAKE_CLIENT) DESTDIR=$(DISTDIR) bindir=/ docdir=/ man1dir=/doc/ \
-	  install
+	  REBUILD_MAN="$(REBUILD_MAN)" install
 	$(PYTHON) setup-common.py build_py -d $(DISTDIR)
 
 dist/%.zip: dist/%
@@ -57,7 +59,7 @@ $(DISTDIR_W32): $(PY2EXE_TMPDIR) $(THISFILE)
 	mkdir -p $(DISTDIR_W32)
 	$(MAKE_CLIENT) DESTDIR=$(DISTDIR_W32) bindir=/ docdir=/ man1dir=/doc/ \
 	  DST_SCRIPT= DST_MAN1='$$(SRC_MAN1)' \
-	  install
+	  REBUILD_MAN="$(REBUILD_MAN)" install
 	cp -t $(DISTDIR_W32) $(PY2EXE_TMPDIR)/dist/*
 
 dist-exe: force-dist-exe $(DISTDIR_W32).zip
