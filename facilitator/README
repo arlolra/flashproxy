@@ -15,15 +15,16 @@ as system services, and you should be able to configure them in the
 appropriate place for your system (e.g. /etc/default/facilitator for a
 Debian-based system using initscripts).
 
-At a minimum, each installation has its own public-private keypair at
-reg-daemon.{pub,key} in the flashproxy config directory. You will need
-to securely distribute the public part (.pub) to your users - e.g. by
-publishing it somewhere, signed by your own PGP key.
+Each installation has its own public-private keypair, stored in the
+flashproxy config directory. You will need to securely distribute the
+public key (reg-daemon.pub) to your users - e.g. by publishing it
+somewhere, signed by your own PGP key.
 
 There are three supported helper rendezvous methods: HTTP, email, and
 appspot. Each helper method may require additional manual configuration
 and might also depend on other helper methods; see the corresponding
-doc/x-howto.txt for more details.
+doc/x-howto.txt for more details. At a very minimum, you must configure
+and enable the HTTP method, since that also serves the browser proxies.
 
 For suggestions on configuring a dedicated facilitator machine, see
 doc/server-howto.txt.

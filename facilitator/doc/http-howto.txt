@@ -1,5 +1,7 @@
-These are instructions for how to set up an Apache Web Server for handling
-the HTTP registration method (facilitator.cgi / flashproxy-reg-http).
+These are instructions for how to set up an Apache Web Server for
+handling the HTTP client registration method (facilitator.cgi /
+flashproxy-reg-http / flashproxy-reg-url), as well as for browser
+proxies to poll and receive a client to serve.
 
 == HTTP server setup
 
