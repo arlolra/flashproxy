@@ -1,4 +1,4 @@
 .PHONY: prepublish
 prepublish: flashproxy.js
-flashproxy.js: ../../proxy/flashproxy.js
+flashproxy.js: ../../flashproxy.js
 	cp -f $< $@
