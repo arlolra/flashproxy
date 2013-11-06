@@ -77,7 +77,7 @@ distclean:
 test: check
 check:
 	$(MAKE_CLIENT) check
-	$(PYTHON) setup-common.py check
+	$(PYTHON) setup-common.py test
 	cd facilitator && ./facilitator-test
 	cd proxy && ./flashproxy-test.js
 

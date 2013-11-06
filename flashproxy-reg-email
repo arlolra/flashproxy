@@ -11,9 +11,8 @@ import sys
 import tempfile
 import urllib
 
-from flashproxy.keys import PIN_GOOGLE_CERT, PIN_GOOGLE_PUBKEY_SHA1, DEFAULT_FACILITATOR_PUBKEY_PEM
+from flashproxy.keys import PIN_GOOGLE_CERT, PIN_GOOGLE_PUBKEY_SHA1, DEFAULT_FACILITATOR_PUBKEY_PEM, check_certificate_pin, temp_cert
 from flashproxy.util import parse_addr_spec, format_addr
-from hashlib import sha1
 
 try:
     from M2Crypto import BIO, RSA, SSL, X509
@@ -185,11 +184,7 @@ try:
     ctx = SSL.Context("tlsv1")
     ctx.set_verify(SSL.verify_peer, 3)
 
-    ca_certs_fd, ca_certs_path = tempfile.mkstemp(prefix="flashproxy-reg-email-",
-        dir=get_state_dir(), suffix=".crt")
-    try:
-        os.write(ca_certs_fd, PIN_GOOGLE_CERT)
-        os.close(ca_certs_fd)
+    with temp_cert(PIN_GOOGLE_CERT) as ca_file:
         # We roll our own initial EHLO/STARTTLS because smtplib.SMTP.starttls
         # doesn't allow enough certificate validation.
         code, msg = smtp.docmd("EHLO", EHLO_FQDN)
@@ -198,10 +193,8 @@ try:
         code, msg = smtp.docmd("STARTTLS")
         if code != 220:
             raise ValueError("Got code %d after STARTTLS" % code)
-        ret = ctx.load_verify_locations(ca_certs_path)
+        ret = ctx.load_verify_locations(ca_file.name)
         assert ret == 1
-    finally:
-        os.unlink(ca_certs_path)
 
     smtp.sock = SSL.Connection(ctx, smtp.sock)
     smtp.sock.setup_ssl()
@@ -210,23 +203,7 @@ try:
     smtp.file = smtp.sock.makefile()
 
     if options.use_certificate_pin:
-        found = []
-        for cert in smtp.sock.get_peer_cert_chain():
-            pubkey_der = cert.get_pubkey().as_der()
-            pubkey_digest = sha1(pubkey_der).digest()
-            if pubkey_digest in PIN_GOOGLE_PUBKEY_SHA1:
-                break
-            found.append(pubkey_digest)
-        else:
-            found = "(" + ", ".join(x.encode("hex") for x in found) + ")"
-            expected = "(" + ", ".join(x.encode("hex") for x in PIN_GOOGLE_PUBKEY_SHA1) + ")"
-            raise ValueError("Public key does not match pin: got %s but expected any of %s" % (found, expected))
-
-    if options.use_certificate_pin and pubkey_digest not in PIN_GOOGLE_PUBKEY_SHA1:
-        expected = "(" + ", ".join(x.encode("hex") for x in PIN_GOOGLE_PUBKEY_SHA1) + ")"
-        raise ValueError("Public key does not match pin: got %s but expected any of %s" %
-            (pubkey_digest.encode("hex"), expected))
-
+        check_certificate_pin(smtp.sock, PIN_GOOGLE_PUBKEY_SHA1)
     smtp.ehlo(EHLO_FQDN)
 
     if not options.remote_addr[0]:

@@ -1,3 +1,7 @@
+import tempfile
+
+from hashlib import sha1
+
 # We trust no other CA certificate than this.
 #
 # To find the certificate to copy here,
@@ -52,3 +56,30 @@ M5SDDYYY4xxEPzokjFJfCQv+kcyAnzERNMQ9kR41ePTXG62bpngK5iWGeJ5XdkxG
 gwIDAQAB
 -----END PUBLIC KEY-----
 """
+
+def check_certificate_pin(sock, cert_pubkey):
+    found = []
+    for cert in sock.get_peer_cert_chain():
+        pubkey_der = cert.get_pubkey().as_der()
+        pubkey_digest = sha1(pubkey_der).digest()
+        if pubkey_digest in cert_pubkey:
+            break
+        found.append(pubkey_digest)
+    else:
+        found = "(" + ", ".join(x.encode("hex") for x in found) + ")"
+        expected = "(" + ", ".join(x.encode("hex") for x in cert_pubkey) + ")"
+        raise ValueError("Public key does not match pin: got %s but expected any of %s" % (found, expected))
+
+class temp_cert(object):
+    """Implements a with-statement over raw certificate data."""
+
+    def __init__(self, certdata):
+        self.fd = tempfile.NamedTemporaryFile(prefix="fp-cert-temp-", suffix=".crt", delete=True)
+        self.fd.write(certdata)
+        self.fd.flush()
+
+    def __enter__(self):
+        return self.fd
+
+    def __exit__(self, type, value, traceback):
+        self.fd.close()

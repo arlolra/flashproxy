@@ -32,7 +32,8 @@ setup(
     license = "BSD",
     keywords = ['tor', 'flashproxy'],
 
-    packages = find_packages(),
+    packages = find_packages(exclude=['*.test']),
+    test_suite='flashproxy.test',
 
     version = "1.4",
 

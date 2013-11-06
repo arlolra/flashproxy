@@ -13,9 +13,8 @@ import tempfile
 import urlparse
 import urllib2
 
-from flashproxy.keys import PIN_GOOGLE_CERT, PIN_GOOGLE_PUBKEY_SHA1
+from flashproxy.keys import PIN_GOOGLE_CERT, PIN_GOOGLE_PUBKEY_SHA1, check_certificate_pin, temp_cert
 from flashproxy.util import parse_addr_spec, format_addr
-from hashlib import sha1
 
 try:
     from M2Crypto import SSL, X509
@@ -142,31 +141,15 @@ class PinHTTPSConnection(httplib.HTTPSConnection):
         ctx = SSL.Context("tlsv1")
         ctx.set_verify(SSL.verify_peer, 3)
 
-        ca_certs_fd, ca_certs_path = tempfile.mkstemp(prefix="flashproxy-reg-appspot-",
-            dir=get_state_dir(), suffix=".crt")
-        try:
-            os.write(ca_certs_fd, PIN_GOOGLE_CERT)
-            os.close(ca_certs_fd)
-            ret = ctx.load_verify_locations(ca_certs_path)
+        with temp_cert(PIN_GOOGLE_CERT) as ca_file:
+            ret = ctx.load_verify_locations(ca_file.name)
             assert ret == 1
-        finally:
-            os.unlink(ca_certs_path)
 
         self.sock = SSL.Connection(ctx, sock)
         self.sock.connect((self.host, self.port))
 
         if options.use_certificate_pin:
-            found = []
-            for cert in self.sock.get_peer_cert_chain():
-                pubkey_der = cert.get_pubkey().as_der()
-                pubkey_digest = sha1(pubkey_der).digest()
-                if pubkey_digest in PIN_GOOGLE_PUBKEY_SHA1:
-                    break
-                found.append(pubkey_digest)
-            else:
-                found = "(" + ", ".join(x.encode("hex") for x in found) + ")"
-                expected = "(" + ", ".join(x.encode("hex") for x in PIN_GOOGLE_PUBKEY_SHA1) + ")"
-                raise ValueError("Public key does not match pin: got %s but expected any of %s" % (found, expected))
+            check_certificate_pin(self.sock, PIN_GOOGLE_PUBKEY_SHA1)
 
 class PinHTTPSHandler(urllib2.HTTPSHandler):
     def https_open(self, req):
