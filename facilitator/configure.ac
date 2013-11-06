@@ -3,7 +3,7 @@ AC_INIT([flashproxy-facilitator], [1.3])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
 AC_ARG_VAR(fpfacilitatoruser, [the user/group for the facilitator to run as])
-fpfacilitatoruser="${fpfacilitatoruser:-flashproxy-fac}"
+fpfacilitatoruser="${fpfacilitatoruser:-fp-facilitator}"
 
 # check that we want to install initscripts. don't bother checking that they
 # are supported, since we might be doing a staged install on a different system.
