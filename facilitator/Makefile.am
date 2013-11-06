@@ -20,7 +20,7 @@ dist_initconf_DATA = default/facilitator default/facilitator-email-poller defaul
 endif
 
 dist_doc_DATA = doc/appspot-howto.txt doc/facilitator-design.txt doc/email-howto.txt doc/http-howto.txt doc/server-howto.txt README
-dist_example_DATA = examples/fp-facilitator examples/reg-email.pass
+dist_example_DATA = examples/fp-facilitator.conf examples/reg-email.pass
 dist_appengine_DATA = appengine/app.yaml appengine/config.go appengine/fp-reg.go appengine/README
 appengineconf_DATA = appengine/config.go
 
