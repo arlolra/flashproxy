@@ -2,6 +2,9 @@
 
 fpfacilitatoruser = @fpfacilitatoruser@
 initconfdir = @initconfdir@
+# TODO(infinity0): switch this to @cgibindir@ once we replace fac.py with
+# flashproxy-common, so that we install facilitator.cgi in the right place
+cgibindir = @bindir@
 
 # unfortunately sysvinit does not support having initscripts in /usr/local/etc
 # yet, so we have to hard code a path here. :(
@@ -13,7 +16,8 @@ appengineconfdir = $(pkgconfdir)/reg-appspot
 
 # automake PLVs
 
-dist_bin_SCRIPTS = facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg facilitator.cgi fac.py
+dist_bin_SCRIPTS = facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg fac.py
+dist_cgibin_SCRIPTS = facilitator.cgi
 if DO_INITSCRIPTS
 initscript_SCRIPTS = init.d/facilitator init.d/facilitator-email-poller init.d/facilitator-reg-daemon
 dist_initconf_DATA = default/facilitator default/facilitator-email-poller default/facilitator-reg-daemon
@@ -23,6 +27,8 @@ dist_doc_DATA = doc/appspot-howto.txt doc/facilitator-design.txt doc/email-howto
 dist_example_DATA = examples/fp-facilitator.conf examples/reg-email.pass
 dist_appengine_DATA = appengine/app.yaml appengine/config.go appengine/fp-reg.go appengine/README
 appengineconf_DATA = appengine/config.go
+CLEANFILES = examples/fp-facilitator.conf
+EXTRA_DIST = examples/fp-facilitator.conf.in $(TESTS)
 
 TESTS = facilitator-test.py
 # see http://www.gnu.org/software/automake/manual/html_node/Parallel-Test-Harness.html#index-TEST_005fEXTENSIONS
@@ -31,9 +37,16 @@ PY_LOG_COMPILER = $(PYTHON)
 AM_TESTS_ENVIRONMENT = PYTHONPATH='$(srcdir)'; export PYTHONPATH;
 AM_PY_LOG_FLAGS =
 
-EXTRA_DIST = $(TESTS)
+# AC_CONFIG_FILES doesn't fully-expand directory variables
+# see http://www.gnu.org/software/automake/manual/automake.html#Scripts
+subst_vars = sed -e 's,[@]cgibindir[@],$(cgibindir),g'
 
 # our own targets
+
+examples/fp-facilitator.conf: examples/fp-facilitator.conf.in Makefile
+# mkdir needed for out-of-source build
+	mkdir -p $$(dirname "$@")
+	$(subst_vars) "$<" > "$@"
 
 # The {pre,post}-{install,remove} targets are just given as reference, and
 # ought to be separate scripts as part of your distro's installation process.

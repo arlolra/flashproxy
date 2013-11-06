@@ -8,8 +8,7 @@ MaxClients 256
 	# Update this with your hostname!
 	ServerName fp-facilitator.example.com
 	DocumentRoot /dev/null
-	# Make sure the path below matchs where you installed the facilitator.
-	ScriptAliasMatch ^(.*) /usr/bin/facilitator.cgi$1
+	ScriptAliasMatch ^(.*) @cgibindir@/facilitator.cgi$1
 
 	# Non-Debian distros will need to tweak this too
 	CustomLog ${APACHE_LOG_DIR}/fp-access.log common

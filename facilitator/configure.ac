@@ -26,6 +26,18 @@ AC_MSG_ERROR([could not determine system initscripts config dir; please set init
 fi
 fi
 
+# Try to detect cgi-bin directory, falling back to $(libexec) if not found
+# from http://wiki.apache.org/httpd/DistrosDefaultLayout
+AC_ARG_VAR(cgibindir, [directory for CGI executables])
+if test "x$cgibindir" = x; then
+AC_CHECK_FILE(/usr/lib/cgi-bin, [cgibindir='$(libdir)/cgi-bin'], [
+AC_CHECK_FILE(/var/www/cgi-bin, [cgibindir='/var/www/cgi-bin'], [
+AC_CHECK_FILE(/srv/httpd/cgi-bin, [cgibindir='/srv/httpd/cgi-bin'], [
+AC_MSG_WARN([could not determine system CGI executables dir, using \$(libexecdir); set cgibindir to override.])
+cgibindir='$(libexecdir)'
+])])])
+fi
+
 AC_PROG_LN_S
 AM_PATH_PYTHON
 
