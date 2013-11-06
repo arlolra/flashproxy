@@ -113,7 +113,7 @@ def create_socket(address, timeout = None):
     host, port = address
     addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)
     if not addrs:
-        raise error("getaddrinfo returns an empty list")
+        raise socket.error("getaddrinfo returns an empty list")
     err = None
     for addr in addrs:
         try:
