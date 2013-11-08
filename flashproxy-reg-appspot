@@ -17,11 +17,10 @@ from flashproxy.keys import PIN_GOOGLE_CA_CERT, PIN_GOOGLE_PUBKEY_SHA1, check_ce
 from flashproxy.util import parse_addr_spec, format_addr
 
 try:
-    from M2Crypto import SSL, X509
+    from M2Crypto import SSL
 except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
     SSL = None
-    X509 = None
 
 DEFAULT_REMOTE_ADDRESS = None
 DEFAULT_REMOTE_PORT = 9000
@@ -200,7 +199,7 @@ else:
     usage(sys.stderr)
     sys.exit(1)
 
-if X509 is None:
+if SSL is None:
     print >> sys.stderr, """\
 This program requires the M2Crypto library, which is not installed.
 

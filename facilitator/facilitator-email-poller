@@ -19,7 +19,7 @@ import time
 import fac
 
 from hashlib import sha1
-from M2Crypto import SSL, X509
+from M2Crypto import SSL
 
 DEFAULT_IMAP_HOST = "imap.gmail.com"
 DEFAULT_IMAP_PORT = 993
