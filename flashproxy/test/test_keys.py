@@ -1,7 +1,7 @@
 import os.path
 import unittest
 
-from flashproxy.keys import PIN_GOOGLE_CERT, PIN_GOOGLE_PUBKEY_SHA1, DEFAULT_FACILITATOR_PUBKEY_PEM, check_certificate_pin, temp_cert
+from flashproxy.keys import PIN_GOOGLE_CERT, PIN_GOOGLE_PUBKEY_SHA1, check_certificate_pin, temp_cert
 
 class TempCertTest(unittest.TestCase):
     def test_temp_cert_success(self):
