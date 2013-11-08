@@ -7,7 +7,7 @@ from hashlib import sha1
 # To find the certificate to copy here,
 # $ strace openssl s_client -connect FRONT_DOMAIN:443 -verify 10 -CApath /etc/ssl/certs 2>&1 | grep /etc/ssl/certs
 # stat("/etc/ssl/certs/XXXXXXXX.0", {st_mode=S_IFREG|0644, st_size=YYYY, ...}) = 0
-PIN_GOOGLE_CERT = """\
+PIN_GOOGLE_CA_CERT = """\
 subject=/C=US/O=Equifax/OU=Equifax Secure Certificate Authority
 issuer=/C=US/O=Equifax/OU=Equifax Secure Certificate Authority
 -----BEGIN CERTIFICATE-----
