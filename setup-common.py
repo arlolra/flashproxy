@@ -20,9 +20,12 @@ To build/install a self-contained binary distribution of flashproxy-client
 #
 # See discussion on #6810 for more details.
 
+import subprocess
 import sys
 
 from setuptools import setup, find_packages
+
+version = subprocess.check_output(["sh", "version.sh"]).strip()
 
 setup(
     name = "flashproxy-common",
@@ -35,7 +38,7 @@ setup(
     packages = find_packages(exclude=['*.test']),
     test_suite='flashproxy.test',
 
-    version = "1.4",
+    version = version,
 
     install_requires = [
         'setuptools',

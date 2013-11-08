@@ -4,7 +4,7 @@
 # dependencies to function; it is given as a reference for distro packagers.
 
 PACKAGE = flashproxy-client
-VERSION = 1.4
+VERSION = $(shell sh version.sh)
 DESTDIR =
 
 THISFILE = $(lastword $(MAKEFILE_LIST))

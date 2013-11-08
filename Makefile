@@ -15,7 +15,7 @@
 # then running `make PYTHON_W32="wine python" dist-exe`.
 
 PACKAGE = flashproxy-client
-VERSION = 1.4
+VERSION = $(shell sh version.sh)
 DISTNAME = $(PACKAGE)-$(VERSION)
 
 THISFILE = $(lastword $(MAKEFILE_LIST))
