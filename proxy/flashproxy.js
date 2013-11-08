@@ -2,24 +2,13 @@
  * For example:
  *   http://www.example.com/embed.html?facilitator=http://127.0.0.1:9002&debug=1
  *
- * client=<HOST>:<PORT>
- * The address of the client to connect to. The proxy normally receives this
- * information from the facilitator. When this option is used, the facilitator
- * query is not done. The "relay" parameter must be given as well.
- *
- * debug=0|1
- * If true, show verbose terminal-like output instead of the badge. The values
- * "1", "true", and the empty string "" all enable debug mode. Any other value
- * uses the normal badge display.
- *
  * cookierequired=0|1
  * If true, the proxy will disable itself if the user has not explicitly opted
  * in by setting a cookie through the options page. If absent or false, the proxy
  * will run unless the user has explicitly opted out.
  *
- * facilitator=https://host:port/
- * The URL of the facilitator CGI script. By default it is
- * DEFAULT_FACILITATOR_URL.
+ * lang=<CODE>
+ * Display language of the badge, as an IETF language tag.
  *
  * facilitator_poll_interval=<FLOAT>
  * How often to poll the facilitator, in seconds. The default is
@@ -33,18 +22,29 @@
  * How many clients to serve concurrently. The default is
  * DEFAULT_MAX_NUM_PROXY_PAIRS.
  *
- * relay=<HOST>:<PORT>
- * The address of the relay to connect to. The proxy normally receives this
- * information from the facilitator. When this option is used, the facilitator
- * query is not done. The "client" parameter must be given as well.
- *
  * ratelimit=<FLOAT>(<UNIT>)?|off
  * What rate to limit all proxy traffic combined to. The special value "off"
  * disables the limit. The default is DEFAULT_RATE_LIMIT. There is a
  * sanity-check minimum of "10K".
  *
- * lang=<CODE>
- * Display language of the badge, as an IETF language tag.
+ * facilitator=https://host:port/
+ * The URL of the facilitator CGI script. By default it is
+ * DEFAULT_FACILITATOR_URL.
+ *
+ * debug=0|1
+ * If true, show verbose terminal-like output instead of the badge. The values
+ * "1", "true", and the empty string "" all enable debug mode. Any other value
+ * uses the normal badge display.
+ *
+ * client=<HOST>:<PORT>
+ * The address of the client to connect to. The proxy normally receives this
+ * information from the facilitator. When this option is used, the facilitator
+ * query is not done. The "relay" parameter must be given as well.
+ *
+ * relay=<HOST>:<PORT>
+ * The address of the relay to connect to. The proxy normally receives this
+ * information from the facilitator. When this option is used, the facilitator
+ * query is not done. The "client" parameter must be given as well.
  */
 
 /* WebSocket links.
