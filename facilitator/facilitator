@@ -140,9 +140,11 @@ class Endpoints(object):
             return True
 
     def _findInnerForOuter(self, *supported_outer):
-        """
+        """Find all endpoint addresses that support any of the given outer
+        transports. Results are grouped by the inner transport.
+
         :returns: { inner: [addr] }, where each address supports some outer
-            from supported_outer. TODO(infinity0): describe better
+            transport from supported_outer.
         """
         inners = defaultdict(set)
         for outer in set(supported_outer) & set(self._indexes.iterkeys()):

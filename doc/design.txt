@@ -206,4 +206,36 @@ Design of flash proxies
 
 10. Inner and outer transports
 
-  TODO: import discussion from #9349.
+  The client can talk to the relay using not only the Tor protocol, but
+  any transport protocol implemented by e.g. another pluggable transport
+  that sits between tor and the flashproxy PT. For the facilitator to
+  match a client with a relay that understands it, flashproxy-client
+  must be given the name of the transport protocol, via the --transport
+  option. This is divided into two parts, the inner and outer transport,
+  written like "inner|outer" or just "outer" if the inner transport is
+  the plain Tor protocol.
+
+  The inner transport is the protocol that the non-flashproxy parts of
+  the client and relay talk to each other with, and must be the same for
+  each connected pair. Beyond that, the semantics of the transport are
+  opaque to flashproxy; it does not know or care.
+
+  The outer transports are the protocols that the browser proxy uses to
+  talk to the client and relay, and may be different for each. The proxy
+  un-applies the outer transport of the client so that only the inner
+  traffic remains, then re-applies the outer transport of the relay to
+  this and sends it to the relay; and vice-versa for traffic going in
+  the opposite direction.
+
+  Diagram:
+
+    client <======outer-C=======> proxy <======outer-S=======> relay
+           <=======inner=========-------========inner========>
+
+  Currently the only supported outer transport is "websocket", but we
+  will also add support for newer technologies such as webRTC.
+
+  (We have also seen third-party proxies running outside the browser
+  on NodeJS that can open plain TCP connections, so that the outer
+  transport is effectively just "tcp", although this is not currently
+  recognised by the facilitator.)
