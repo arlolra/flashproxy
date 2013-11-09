@@ -77,6 +77,7 @@ class temp_cert(object):
         self.fd = tempfile.NamedTemporaryFile(prefix="fp-cert-temp-", suffix=".crt", delete=True)
         self.fd.write(certdata)
         self.fd.flush()
+        self.fd.seek(0)
 
     def __enter__(self):
         return self.fd
