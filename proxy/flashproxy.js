@@ -1065,14 +1065,14 @@ function flashproxy_should_disable() {
                 return true;
             }
         }
-    }
 
-    if (ua.match(/\bsafari\b/i) && !ua.match(/\bchrome\b/i)
-        && !ua.match(/\bversion\/[6789]\./i)) {
-        /* Disable before Safari 6.0 because it doesn't have the hybi/RFC type
-           of WebSockets. */
-        puts("Disable because User-Agent is Safari before 6.0.");
-        return true;
+        if (ua.match(/\bsafari\b/i) && !ua.match(/\bchrome\b/i)
+            && !ua.match(/\bversion\/[6789]\./i)) {
+            /* Disable before Safari 6.0 because it doesn't have the hybi/RFC type
+               of WebSockets. */
+            puts("Disable because User-Agent is Safari before 6.0.");
+            return true;
+        }
     }
 
     if (!WebSocket) {
