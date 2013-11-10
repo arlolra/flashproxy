@@ -426,25 +426,26 @@ function format_addr(addr) {
    6455 section 5.6.) If not, we have to use base64-encoded text frames. It is
    assumed that the client and relay endpoints always support binary frames. */
 function have_websocket_binary_frames() {
-    var ua, matches, browsers, reg;
+    var BROWSERS = [
+        { idString: "Chrome", verString: "Chrome", version: 16 },
+        { idString: "Safari", verString: "Version", version: 6 },
+        { idString: "Firefox", verString: "Firefox", version: 11 }
+    ];
+    var ua;
 
     ua = window.navigator.userAgent;
     if (!ua)
         return false;
 
-    browsers = [
-        { idString: "Chrome", verString: "Chrome", version: 16 },
-        { idString: "Safari", verString: "Version", version: 6 },
-        { idString: "Firefox", verString: "Firefox", version: 11 }
-    ];
+    for (var i = 0; i < BROWSERS.length; i++) {
+        var matches, reg;
 
-    for (var i = 0; i < browsers.length; i++) {
-        reg = "\\b" + browsers[i].idString + "\\b";
-        if (ua.match(new RegExp(reg, "i")) == null)
+        reg = "\\b" + BROWSERS[i].idString + "\\b";
+        if (!ua.match(new RegExp(reg, "i")))
             continue;
-        reg = "\\b" + browsers[i].verString + "\\/(\\d+)";
+        reg = "\\b" + BROWSERS[i].verString + "\\/(\\d+)";
         matches = ua.match(new RegExp(reg, "i"));
-        return (matches != null && Number(matches[1]) >= browsers[i].version) ? true : false;
+        return matches !== null && Number(matches[1]) >= BROWSERS[i].version;
     }
 
     return false;
