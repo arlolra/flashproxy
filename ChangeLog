@@ -20,6 +20,12 @@ Changes in version 1.4
     assign proxies to clients that use matching transports. Patch by
     George Kadianakis. Part of bug 9349.
 
+  o Allowed the facilitator to handle layered transports. For example, a
+    client that register with the transport "obfs3|websocket" will
+    receive a connection from a proxy using websocket, and will be
+    connected to a relay that has an obfs3 server behind a websocket
+    front end. Patch by Ximin Luo and George Kadianakis. Fixes bug 9349.
+
   o Changed to use the pluggable transport method name "flashproxy"
     rather than "websocket". Both names are equivalent and "websocket"
     continues to work. The reason for this change is to reduce confusion
