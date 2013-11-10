@@ -429,7 +429,7 @@ function have_websocket_binary_frames() {
     var ua, matches;
 
     ua = window.navigator.userAgent;
-    if (ua === null)
+    if (!ua)
         return false;
 
     /* We are cool for Chrome 16 or Safari 6.0. */
@@ -1050,7 +1050,7 @@ function flashproxy_should_disable() {
     }
 
     ua = window.navigator.userAgent;
-    if (ua !== null) {
+    if (ua) {
         var UA_LIST = [
             /\bmobile\b/i,
             /\bandroid\b/i,
