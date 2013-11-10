@@ -433,19 +433,18 @@ function have_websocket_binary_frames() {
         return false;
 
     browsers = [
-      { idString: "Chrome",  verString: "Chrome",  version: 16 },
-      { idString: "Safari",  verString: "Version", version: 6  },
-      { idString: "Firefox", verString: "Firefox", version: 11 }
+        { idString: "Chrome", verString: "Chrome", version: 16 },
+        { idString: "Safari", verString: "Version", version: 6 },
+        { idString: "Firefox", verString: "Firefox", version: 11 }
     ];
 
     for (var i = 0; i < browsers.length; i++) {
-      reg = "\\b" + browsers[i].idString + "\\b";
-      if (ua.match(new RegExp(reg, "i")) == null)
-          continue;
-      reg = "\\b" + browsers[i].verString + "\\/(\\d+)";
-      matches = ua.match(new RegExp(reg, "i"));
-      return (matches != null
-          && Number(matches[1]) >= browsers[i].version) ? true : false;
+        reg = "\\b" + browsers[i].idString + "\\b";
+        if (ua.match(new RegExp(reg, "i")) == null)
+            continue;
+        reg = "\\b" + browsers[i].verString + "\\/(\\d+)";
+        matches = ua.match(new RegExp(reg, "i"));
+        return (matches != null && Number(matches[1]) >= browsers[i].version) ? true : false;
     }
 
     return false;
