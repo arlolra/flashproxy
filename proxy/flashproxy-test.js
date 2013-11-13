@@ -1,4 +1,4 @@
-#!/usr/bin/env js
+#!/usr/bin/env rhino
 
 /* To run this test program, install the Rhino JavaScript interpreter
    (apt-get install rhino). */
