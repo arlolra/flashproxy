@@ -93,7 +93,8 @@ class Handler(SocketServer.StreamRequestHandler):
             if not data:
                 break
             self.buffer += data
-            if len(self.buffer) > MAX_LENGTH:
+            buflen = len(self.buffer)
+            if buflen > MAX_LENGTH:
                 raise socket.error("refusing to buffer %d bytes (last read was %d bytes)" % (buflen, len(data)))
         return self.buffer
 
