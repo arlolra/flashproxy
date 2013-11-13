@@ -49,6 +49,9 @@ examples/fp-facilitator.conf: examples/fp-facilitator.conf.in Makefile
 	mkdir -p $$(dirname "$@")
 	$(subst_vars) "$<" > "$@"
 
+pylint: $(dist_bin_SCRIPTS)
+	pylint -E $^
+
 # The {pre,post}-{install,remove} targets are just given as reference, and
 # ought to be separate scripts as part of your distro's installation process.
 # They are intentionally not linked to the install target since they require
@@ -143,3 +146,4 @@ endif
 .PHONY: pre-install post-install pre-remove post-remove pre-purge post-purge
 .PHONY: install-user install-secrets install-symlinks install-daemon
 .PHONY: remove-user remove-secrets remove-symlinks remove-daemon
+.PHONY: pylint
