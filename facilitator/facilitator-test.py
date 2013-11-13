@@ -9,8 +9,9 @@ import sys
 import time
 import unittest
 
-import fac
-from fac import Transport, Endpoint
+from flashproxy import fac
+from flashproxy.reg import Transport, Endpoint
+from flashproxy.util import format_addr
 
 # Import the facilitator program as a module.
 import imp
@@ -178,19 +179,6 @@ class EndpointsTest(unittest.TestCase):
 
 class FacilitatorTest(unittest.TestCase):
 
-    def test_transport_parse(self):
-        self.assertEquals(Transport.parse("a"), Transport("", "a"))
-        self.assertEquals(Transport.parse("|a"), Transport("", "a"))
-        self.assertEquals(Transport.parse("a|b|c"), Transport("a|b","c"))
-        self.assertEquals(Transport.parse(Transport("a|b","c")), Transport("a|b","c"))
-        self.assertRaises(ValueError, Transport, "", "")
-        self.assertRaises(ValueError, Transport, "a", "")
-        self.assertRaises(ValueError, Transport.parse, "")
-        self.assertRaises(ValueError, Transport.parse, "|")
-        self.assertRaises(ValueError, Transport.parse, "a|")
-        self.assertRaises(ValueError, Transport.parse, ["a"])
-        self.assertRaises(ValueError, Transport.parse, [Transport("a", "b")])
-
     def test_parse_relay_file(self):
         fp = StringIO()
         fp.write("websocket 0.0.1.0:1\n")
@@ -200,6 +188,7 @@ class FacilitatorTest(unittest.TestCase):
         servers = { af: Endpoints(af=af) }
         parse_relay_file(servers, fp)
         self.assertEquals(servers[af]._endpoints, {('0.0.1.0', 1): Transport('', 'websocket')})
+
 
 class FacilitatorProcTest(unittest.TestCase):
     IPV4_CLIENT_ADDR = ("1.1.1.1", 9000)
@@ -214,8 +203,8 @@ class FacilitatorProcTest(unittest.TestCase):
 
     def setUp(self):
         self.relay_file = tempfile.NamedTemporaryFile()
-        self.relay_file.write("%s %s\n" % (RELAY_TP, fac.format_addr(self.IPV4_RELAY_ADDR)))
-        self.relay_file.write("%s %s\n" % (RELAY_TP, fac.format_addr(self.IPV6_RELAY_ADDR)))
+        self.relay_file.write("%s %s\n" % (RELAY_TP, format_addr(self.IPV4_RELAY_ADDR)))
+        self.relay_file.write("%s %s\n" % (RELAY_TP, format_addr(self.IPV6_RELAY_ADDR)))
         self.relay_file.flush()
         self.relay_file.seek(0)
         fn = os.path.join(os.path.dirname(__file__), "./facilitator")
@@ -261,7 +250,7 @@ class FacilitatorProcTest(unittest.TestCase):
         fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, CLIENT_TP)
         fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, CLIENT_TP)
         reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR, PROXY_TPS)
-        self.assertEqual(reg["client"], fac.format_addr(self.IPV4_CLIENT_ADDR))
+        self.assertEqual(reg["client"], format_addr(self.IPV4_CLIENT_ADDR))
 
     def test_af_v4_v6(self):
         """Test that IPv4 proxies do not get IPv6 clients."""
@@ -280,15 +269,15 @@ class FacilitatorProcTest(unittest.TestCase):
         fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, CLIENT_TP)
         fac.put_reg(FACILITATOR_ADDR, self.IPV6_CLIENT_ADDR, CLIENT_TP)
         reg = fac.get_reg(FACILITATOR_ADDR, self.IPV6_PROXY_ADDR, PROXY_TPS)
-        self.assertEqual(reg["client"], fac.format_addr(self.IPV6_CLIENT_ADDR))
+        self.assertEqual(reg["client"], format_addr(self.IPV6_CLIENT_ADDR))
 
     def test_fields(self):
         """Test that facilitator responses contain all the required fields."""
         fac.put_reg(FACILITATOR_ADDR, self.IPV4_CLIENT_ADDR, CLIENT_TP)
         reg = fac.get_reg(FACILITATOR_ADDR, self.IPV4_PROXY_ADDR, PROXY_TPS)
-        self.assertEqual(reg["client"], fac.format_addr(self.IPV4_CLIENT_ADDR))
+        self.assertEqual(reg["client"], format_addr(self.IPV4_CLIENT_ADDR))
         self.assertEqual(reg["client-transport"], CLIENT_TP)
-        self.assertEqual(reg["relay"], fac.format_addr(self.IPV4_RELAY_ADDR))
+        self.assertEqual(reg["relay"], format_addr(self.IPV4_RELAY_ADDR))
         self.assertEqual(reg["relay-transport"], RELAY_TP)
         self.assertGreater(int(reg["check-back-in"]), 0)
 
@@ -322,118 +311,6 @@ class FacilitatorProcTest(unittest.TestCase):
 #     def test_hostname(self):
 #         """Test that the facilitator rejects hostnames."""
 #         self.fail()
-
-class ParseAddrSpecTest(unittest.TestCase):
-    def test_ipv4(self):
-        self.assertEqual(fac.parse_addr_spec("192.168.0.1:9999"), ("192.168.0.1", 9999))
-
-    def test_ipv6(self):
-        self.assertEqual(fac.parse_addr_spec("[12::34]:9999"), ("12::34", 9999))
-
-    def test_defhost_defport_ipv4(self):
-        self.assertEqual(fac.parse_addr_spec("192.168.0.2:8888", defhost="192.168.0.1", defport=9999), ("192.168.0.2", 8888))
-        self.assertEqual(fac.parse_addr_spec("192.168.0.2:", defhost="192.168.0.1", defport=9999), ("192.168.0.2", 9999))
-        self.assertEqual(fac.parse_addr_spec("192.168.0.2", defhost="192.168.0.1", defport=9999), ("192.168.0.2", 9999))
-        self.assertEqual(fac.parse_addr_spec(":8888", defhost="192.168.0.1", defport=9999), ("192.168.0.1", 8888))
-        self.assertEqual(fac.parse_addr_spec(":", defhost="192.168.0.1", defport=9999), ("192.168.0.1", 9999))
-        self.assertEqual(fac.parse_addr_spec("", defhost="192.168.0.1", defport=9999), ("192.168.0.1", 9999))
-
-    def test_defhost_defport_ipv6(self):
-        self.assertEqual(fac.parse_addr_spec("[1234::2]:8888", defhost="1234::1", defport=9999), ("1234::2", 8888))
-        self.assertEqual(fac.parse_addr_spec("[1234::2]:", defhost="1234::1", defport=9999), ("1234::2", 9999))
-        self.assertEqual(fac.parse_addr_spec("[1234::2]", defhost="1234::1", defport=9999), ("1234::2", 9999))
-        self.assertEqual(fac.parse_addr_spec(":8888", defhost="1234::1", defport=9999), ("1234::1", 8888))
-        self.assertEqual(fac.parse_addr_spec(":", defhost="1234::1", defport=9999), ("1234::1", 9999))
-        self.assertEqual(fac.parse_addr_spec("", defhost="1234::1", defport=9999), ("1234::1", 9999))
-
-    def test_canonical_ip_noresolve(self):
-        """Test that canonical_ip does not do DNS resolution by default."""
-        self.assertRaises(ValueError, fac.canonical_ip, *fac.parse_addr_spec("example.com:80"))
-
-class ParseTransactionTest(unittest.TestCase):
-    def test_empty_string(self):
-        self.assertRaises(ValueError, fac.parse_transaction, "")
-
-    def test_correct(self):
-        self.assertEqual(fac.parse_transaction("COMMAND"), ("COMMAND", ()))
-        self.assertEqual(fac.parse_transaction("COMMAND X=\"\""), ("COMMAND", (("X", ""),)))
-        self.assertEqual(fac.parse_transaction("COMMAND X=\"ABC\""), ("COMMAND", (("X", "ABC"),)))
-        self.assertEqual(fac.parse_transaction("COMMAND X=\"\\A\\B\\C\""), ("COMMAND", (("X", "ABC"),)))
-        self.assertEqual(fac.parse_transaction("COMMAND X=\"\\\\\\\"\""), ("COMMAND", (("X", "\\\""),)))
-        self.assertEqual(fac.parse_transaction("COMMAND X=\"ABC\" Y=\"DEF\""), ("COMMAND", (("X", "ABC"), ("Y", "DEF"))))
-        self.assertEqual(fac.parse_transaction("COMMAND KEY-NAME=\"ABC\""), ("COMMAND", (("KEY-NAME", "ABC"),)))
-        self.assertEqual(fac.parse_transaction("COMMAND KEY_NAME=\"ABC\""), ("COMMAND", (("KEY_NAME", "ABC"),)))
-
-    def test_missing_command(self):
-        self.assertRaises(ValueError, fac.parse_transaction, "X=\"ABC\"")
-        self.assertRaises(ValueError, fac.parse_transaction, " X=\"ABC\"")
-
-    def test_missing_space(self):
-        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND/X=\"ABC\"")
-        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC\"Y=\"DEF\"")
-
-    def test_bad_quotes(self):
-        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"")
-        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC")
-        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC\" Y=\"ABC")
-        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC\\")
-
-    def test_truncated(self):
-        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=")
-
-    def test_newline(self):
-        self.assertRaises(ValueError, fac.parse_transaction, "COMMAND X=\"ABC\" \nY=\"DEF\"")
-
-class ReadClientRegistrationsTest(unittest.TestCase):
-    def testSingle(self):
-        l = list(fac.read_client_registrations(""))
-        self.assertEqual(len(l), 0)
-        l = list(fac.read_client_registrations("client=1.2.3.4:1111"))
-        self.assertEqual(len(l), 1)
-        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
-        l = list(fac.read_client_registrations("client=1.2.3.4:1111\n"))
-        self.assertEqual(len(l), 1)
-        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
-        l = list(fac.read_client_registrations("foo=bar&client=1.2.3.4:1111&baz=quux"))
-        self.assertEqual(len(l), 1)
-        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
-        l = list(fac.read_client_registrations("foo=b%3dar&client=1.2.3.4%3a1111"))
-        self.assertEqual(len(l), 1)
-        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
-        l = list(fac.read_client_registrations("client=%5b1::2%5d:3333"))
-        self.assertEqual(len(l), 1)
-        self.assertEqual(l[0].addr, ("1::2", 3333))
-
-    def testDefaultAddress(self):
-        l = list(fac.read_client_registrations("client=:1111&transport=websocket", defhost="1.2.3.4"))
-        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
-        l = list(fac.read_client_registrations("client=1.2.3.4:&transport=websocket", defport=1111))
-        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
-
-    def testDefaultTransport(self):
-        l = list(fac.read_client_registrations("client=1.2.3.4:1111"))
-        self.assertEqual(l[0].transport, "websocket")
-
-    def testMultiple(self):
-        l = list(fac.read_client_registrations("client=1.2.3.4:1111&foo=bar\nfoo=bar&client=5.6.7.8:2222"))
-        self.assertEqual(len(l), 2)
-        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
-        self.assertEqual(l[1].addr, ("5.6.7.8", 2222))
-        l = list(fac.read_client_registrations("client=1.2.3.4:1111&foo=bar\nfoo=bar&client=%5b1::2%5d:3333"))
-        self.assertEqual(len(l), 2)
-        self.assertEqual(l[0].addr, ("1.2.3.4", 1111))
-        self.assertEqual(l[1].addr, ("1::2", 3333))
-
-    def testInvalid(self):
-        # Missing "client".
-        with self.assertRaises(ValueError):
-            list(fac.read_client_registrations("foo=bar"))
-        # More than one "client".
-        with self.assertRaises(ValueError):
-            list(fac.read_client_registrations("client=1.2.3.4:1111&foo=bar&client=5.6.7.8:2222"))
-        # Single client with bad syntax.
-        with self.assertRaises(ValueError):
-            list(fac.read_client_registrations("client=1.2.3.4,1111"))
 
 if __name__ == "__main__":
     unittest.main()

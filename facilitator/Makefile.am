@@ -2,9 +2,7 @@
 
 fpfacilitatoruser = @fpfacilitatoruser@
 initconfdir = @initconfdir@
-# TODO(infinity0): switch this to @cgibindir@ once we replace fac.py with
-# flashproxy-common, so that we install facilitator.cgi in the right place
-cgibindir = @bindir@
+cgibindir = @cgibindir@
 
 # unfortunately sysvinit does not support having initscripts in /usr/local/etc
 # yet, so we have to hard code a path here. :(
@@ -16,7 +14,7 @@ appengineconfdir = $(pkgconfdir)/reg-appspot
 
 # automake PLVs
 
-dist_bin_SCRIPTS = facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg fac.py
+dist_bin_SCRIPTS = facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg
 dist_cgibin_SCRIPTS = facilitator.cgi
 if DO_INITSCRIPTS
 initscript_SCRIPTS = init.d/facilitator init.d/facilitator-email-poller init.d/facilitator-reg-daemon
@@ -29,13 +27,13 @@ pkgconf_DATA = examples/facilitator-relays
 dist_appengine_DATA = appengine/app.yaml appengine/config.go appengine/fp-reg.go
 appengineconf_DATA = appengine/config.go
 CLEANFILES = examples/fp-facilitator.conf
-EXTRA_DIST = examples/fp-facilitator.conf.in $(TESTS)
+EXTRA_DIST = examples/fp-facilitator.conf.in HACKING $(TESTS)
 
 TESTS = facilitator-test.py
 # see http://www.gnu.org/software/automake/manual/html_node/Parallel-Test-Harness.html#index-TEST_005fEXTENSIONS
 TEST_EXTENSIONS = .py
 PY_LOG_COMPILER = $(PYTHON)
-AM_TESTS_ENVIRONMENT = PYTHONPATH='$(srcdir)'; export PYTHONPATH;
+AM_TESTS_ENVIRONMENT = PYTHONPATH='$(srcdir):$(PYTHONPATH)'; export PYTHONPATH;
 AM_PY_LOG_FLAGS =
 
 # AC_CONFIG_FILES doesn't fully-expand directory variables

@@ -8,7 +8,9 @@ import sys
 import threading
 import time
 
-import fac
+from flashproxy import fac
+from flashproxy import proc
+from flashproxy.util import format_addr
 
 from M2Crypto import RSA
 
@@ -98,7 +100,7 @@ class Handler(SocketServer.StreamRequestHandler):
                 raise socket.error("refusing to buffer %d bytes (last read was %d bytes)" % (buflen, len(data)))
         return self.buffer
 
-    @fac.catch_epipe
+    @proc.catch_epipe
     def handle(self):
         try:
             b64_ciphertext = self.read_input()
@@ -109,7 +111,7 @@ class Handler(SocketServer.StreamRequestHandler):
             ciphertext = b64_ciphertext.decode("base64")
             plaintext = rsa.private_decrypt(ciphertext, RSA.pkcs1_oaep_padding)
             for client_reg in fac.read_client_registrations(plaintext):
-                log(u"registering %s" % safe_str(fac.format_addr(client_reg.addr)))
+                log(u"registering %s" % safe_str(format_addr(client_reg.addr)))
                 if not fac.put_reg(FACILITATOR_ADDR, client_reg.addr, client_reg.transport):
                     print >> self.wfile, "FAIL"
                     break
@@ -120,7 +122,7 @@ class Handler(SocketServer.StreamRequestHandler):
             print >> self.wfile, "FAIL"
             raise
 
-    finish = fac.catch_epipe(SocketServer.StreamRequestHandler.finish)
+    finish = proc.catch_epipe(SocketServer.StreamRequestHandler.finish)
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
@@ -164,7 +166,7 @@ def main():
         print >> sys.stderr, "Failed to open private key file \"%s\": %s." % (options.key_filename, str(e))
         sys.exit(1)
     try:
-        if not fac.check_perms(key_file.fileno()):
+        if not proc.check_perms(key_file.fileno()):
             print >> sys.stderr, "Refusing to run with group- or world-readable private key file. Try"
             print >> sys.stderr, "\tchmod 600 %s" % options.key_filename
             sys.exit(1)
@@ -183,7 +185,7 @@ def main():
 
     server = Server(addrinfo[4], Handler)
 
-    log(u"start on %s" % fac.format_addr(addrinfo[4]))
+    log(u"start on %s" % format_addr(addrinfo[4]))
 
     if options.daemonize:
         log(u"daemonizing")
@@ -198,7 +200,7 @@ def main():
     if options.privdrop_username is not None:
         log(u"dropping privileges to those of user %s" % options.privdrop_username)
         try:
-            fac.drop_privs(options.privdrop_username)
+            proc.drop_privs(options.privdrop_username)
         except BaseException, e:
             print >> sys.stderr, "Can't drop privileges:", str(e)
             sys.exit(1)

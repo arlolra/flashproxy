@@ -1,11 +1,20 @@
 Install the dependencies.
 
-	$ apt-get install make openssl python-m2crypto
-	$ apt-get install automake autoconf # if running from git
-	$ apt-get install apache2
+	# apt-get install make openssl python-m2crypto
+	# apt-get install automake autoconf # if running from git
+
+	# apt-get install apache2
 
 You may use a different webserver, but currently we only provide an apache2 site
 config example, so you will need to adapt this to the correct syntax.
+
+	# apt-get install flashproxy-common
+
+If your distro does not have flashproxy-common, you can install it
+directly from the top-level source directory:
+
+	flashproxy# python setup-common.py install --record install.log \
+	  --single-version-externally-managed
 
 Configure and install.
 

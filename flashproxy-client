@@ -1129,14 +1129,14 @@ def main():
     default_remote_port = DEFAULT_REMOTE_PORT
 
     if len(args) == 0:
-        local_addr = (None, default_local_port)
-        remote_addr = (None, default_remote_port)
+        local_addr = ("", default_local_port)
+        remote_addr = ("", default_remote_port)
     elif len(args) == 1:
-        local_addr = parse_addr_spec(args[0], defport=default_local_port)
-        remote_addr = (None, default_remote_port)
+        local_addr = parse_addr_spec(args[0], defhost="", defport=default_local_port)
+        remote_addr = ("", default_remote_port)
     elif len(args) == 2:
-        local_addr = parse_addr_spec(args[0], defport=default_local_port)
-        remote_addr = parse_addr_spec(args[1], defport=default_remote_port)
+        local_addr = parse_addr_spec(args[0], defhost="", defport=default_local_port)
+        remote_addr = parse_addr_spec(args[1], defhost="", defport=default_remote_port)
     else:
         usage(sys.stderr)
         sys.exit(1)

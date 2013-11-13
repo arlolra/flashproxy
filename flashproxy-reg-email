@@ -20,7 +20,7 @@ except ImportError:
     RSA = None
     SSL = None
 
-DEFAULT_REMOTE_ADDRESS = None
+DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_EMAIL_ADDRESS = "flashproxyreg.a@gmail.com"
 # dig MX gmail.com

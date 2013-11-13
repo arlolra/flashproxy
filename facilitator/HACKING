@@ -1,0 +1,26 @@
+== Running from source checkout
+
+In order to run the code directly from a source checkout, you must make sure it
+can find the flashproxy module, located in the top-level directory of the
+source checkout, which is probably the parent directory. You have two options:
+
+1. Install it in "development mode", see [1]
+
+  flashproxy# python setup-common.py develop
+
+This process is reversible too:
+
+  flashproxy# python setup-common.py develop --uninstall
+
+The disadvantage is that other programs (such as a system-installed flashproxy,
+or other checkouts in another directory) will see this development copy, rather
+than a more appropriate copy.
+
+2. Export PYTHONPATH when you need to run
+
+  $ export PYTHONPATH=..
+  $ make check
+
+The disadvantage is that you need to do this every shell session.
+
+[1] http://pythonhosted.org/distribute/setuptools.html#development-mode

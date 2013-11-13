@@ -39,6 +39,3 @@ the HTTP method, either yours or that of another facilitator. It takes
 advantage of the fact that a censor cannot distinguish between a TLS
 connection to appspot.com or google.com, since the IPs are the same,
 and it is highly unlikely that anyone will try to block the latter.
-
-fac.py is a Python module containing code common to the various
-facilitator programs.

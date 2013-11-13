@@ -2,6 +2,27 @@ import re
 import socket
 
 def parse_addr_spec(spec, defhost = None, defport = None):
+    """Parse a host:port specification and return a 2-tuple ("host", port) as
+    understood by the Python socket functions.
+    >>> parse_addr_spec("192.168.0.1:9999")
+    ('192.168.0.1', 9999)
+
+    If defhost or defport are given, those parts of the specification may be
+    omitted; if so, they will be filled in with defaults.
+    >>> parse_addr_spec("192.168.0.2:8888", defhost="192.168.0.1", defport=9999)
+    ('192.168.0.2', 8888)
+    >>> parse_addr_spec(":8888", defhost="192.168.0.1", defport=9999)
+    ('192.168.0.1', 8888)
+    >>> parse_addr_spec("192.168.0.2", defhost="192.168.0.1", defport=9999)
+    ('192.168.0.2', 9999)
+    >>> parse_addr_spec("192.168.0.2:", defhost="192.168.0.1", defport=9999)
+    ('192.168.0.2', 9999)
+    >>> parse_addr_spec(":", defhost="192.168.0.1", defport=9999)
+    ('192.168.0.1', 9999)
+    >>> parse_addr_spec("", defhost="192.168.0.1", defport=9999)
+    ('192.168.0.1', 9999)
+
+    IPv6 addresses must be enclosed in square brackets."""
     host = None
     port = None
     af = 0
@@ -29,24 +50,61 @@ def parse_addr_spec(spec, defhost = None, defport = None):
             af = 0
     host = host or defhost
     port = port or defport
-    if port is not None:
-        port = int(port)
-    return host, port
+    if host is None or port is None:
+        raise ValueError("Bad address specification \"%s\"" % spec)
+    return host, int(port)
+
+def resolve_to_ip(host, port, af=0, gai_flags=0):
+    """Resolves a host string to an IP address in canonical format.
+
+    Note: in many cases this is not necessary since the consumer of the address
+    can probably accept host names directly.
+
+    :param: host string to resolve; may be a DNS name or an IP address.
+    :param: port of the host
+    :param: af address family, default unspecified. set to socket.AF_INET or
+        socket.AF_INET6 to force IPv4 or IPv6 name resolution.
+    :returns: (IP address in canonical format, port)
+    """
+    # Forward-resolve the name into an addrinfo struct. Real DNS resolution is
+    # done only if resolve is true; otherwise the address must be numeric.
+    try:
+        addrs = socket.getaddrinfo(host, port, af, 0, 0, gai_flags)
+    except socket.gaierror, e:
+        raise ValueError("Bad host or port: \"%s\" \"%s\": %s" % (host, port, str(e)))
+    if not addrs:
+        raise ValueError("Bad host or port: \"%s\" \"%s\"" % (host, port))
+
+    # Convert the result of socket.getaddrinfo (which is a 2-tuple for IPv4 and
+    # a 4-tuple for IPv6) into a (host, port) 2-tuple.
+    host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
+    return host, int(port)
+
+def canonical_ip(host, port, af=0):
+    """Convert an IP address to a canonical format. Identical to resolve_to_ip,
+    except that the host param must already be an IP address."""
+    return resolve_to_ip(host, port, af, gai_flags=socket.AI_NUMERICHOST)
 
 def format_addr(addr):
     host, port = addr
-    if not host:
-        return u":%d" % port
-    # Numeric IPv6 address?
-    try:
-        addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
-        af = addrs[0][0]
-    except socket.gaierror, e:
-        af = 0
-    if af == socket.AF_INET6:
-        result = u"[%s]" % host
-    else:
-        result = "%s" % host
+    host_str = u""
+    port_str = u""
+    if host is not None:
+        # Numeric IPv6 address?
+        try:
+            addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+            af = addrs[0][0]
+        except socket.gaierror, e:
+            af = 0
+        if af == socket.AF_INET6:
+            host_str = u"[%s]" % host
+        else:
+            host_str = u"%s" % host
     if port is not None:
-        result += u":%d" % port
-    return result
+        if not (0 < port <= 65535):
+            raise ValueError("port must be between 1 and 65535 (is %d)" % port)
+        port_str = u":%d" % port
+
+    if not host_str and not port_str:
+        raise ValueError("host and port may not both be None")
+    return u"%s%s" % (host_str, port_str)

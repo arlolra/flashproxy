@@ -6,7 +6,7 @@ import socket
 import sys
 import urllib
 
-import fac
+from flashproxy import fac
 
 FACILITATOR_ADDR = ("127.0.0.1", 9002)
 

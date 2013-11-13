@@ -16,7 +16,9 @@ import sys
 import tempfile
 import time
 
-import fac
+from flashproxy import fac
+from flashproxy import proc
+from flashproxy.util import parse_addr_spec
 
 from hashlib import sha1
 from M2Crypto import SSL
@@ -209,7 +211,7 @@ Failed to open password file "%s": %s.\
 """ % (options.password_filename, str(e))
     sys.exit(1)
 try:
-    if not fac.check_perms(password_file.fileno()):
+    if not proc.check_perms(password_file.fileno()):
         print >> sys.stderr, "Refusing to run with group- or world-readable password file. Try"
         print >> sys.stderr, "\tchmod 600 %s" % options.password_filename
         sys.exit(1)
@@ -221,7 +223,7 @@ try:
         if not res:
             raise ValueError("could not find email or password on line %s" % (lineno0+1))
         (imap_addr_spec, email_addr, email_password) = res.groups()
-        imap_addr = fac.parse_addr_spec(
+        imap_addr = parse_addr_spec(
             imap_addr_spec or "", DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
         break
     else:
@@ -255,7 +257,7 @@ if options.daemonize:
 if options.privdrop_username is not None:
     log(u"dropping privileges to those of user %s" % options.privdrop_username)
     try:
-        fac.drop_privs(options.privdrop_username)
+        proc.drop_privs(options.privdrop_username)
     except BaseException, e:
         print >> sys.stderr, "Can't drop privileges:", str(e)
         sys.exit(1)

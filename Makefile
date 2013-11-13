@@ -84,7 +84,7 @@ test-full: test
 	cd facilitator && \
 	  { test -x ./config.status && ./config.status || \
 	  { test -x ./configure || ./autogen.sh; } && ./configure; } \
-	  && make && make check
+	  && make && PYTHONPATH=.. make check
 	cd proxy && make test
 
 force-dist:

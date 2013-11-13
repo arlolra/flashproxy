@@ -9,8 +9,10 @@ import threading
 import time
 from collections import defaultdict
 
-import fac
-from fac import Transport, Endpoint
+from flashproxy import fac
+from flashproxy import proc
+from flashproxy.reg import Transport, Endpoint
+from flashproxy.util import parse_addr_spec, format_addr, canonical_ip
 
 LISTEN_ADDRESS = "127.0.0.1"
 DEFAULT_LISTEN_PORT = 9002
@@ -241,7 +243,7 @@ class Handler(SocketServer.StreamRequestHandler):
                 if buflen >= READLINE_MAX_LENGTH:
                     raise socket.error("readline: refusing to buffer %d bytes (last read was %d bytes)" % (buflen, len(data)))
 
-    @fac.catch_epipe
+    @proc.catch_epipe
     def handle(self):
         num_lines = 0
         while True:
@@ -290,7 +292,7 @@ class Handler(SocketServer.StreamRequestHandler):
         if proxy_spec is None:
             return self.error(u"GET missing FROM param")
         try:
-            proxy_addr = fac.canonical_ip(*fac.parse_addr_spec(proxy_spec, defport=0))
+            proxy_addr = canonical_ip(*parse_addr_spec(proxy_spec, defport=0))
         except ValueError, e:
             return self.error(u"syntax error in proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
 
@@ -309,9 +311,9 @@ class Handler(SocketServer.StreamRequestHandler):
             log(u"proxy (%s) gets client '%s' (supported transports: %s) (num relays: %s) (remaining regs: %d/%d)" %
                 (safe_str(repr(proxy_spec)), safe_str(repr(client_reg.addr)), transport_list, num_relays(), num_unhandled_regs(), num_regs()))
             print >> self.wfile, fac.render_transaction("OK",
-                ("CLIENT", fac.format_addr(client_reg.addr)),
+                ("CLIENT", format_addr(client_reg.addr)),
                 ("CLIENT-TRANSPORT", client_reg.transport.outer),
-                ("RELAY", fac.format_addr(relay_reg.addr)),
+                ("RELAY", format_addr(relay_reg.addr)),
                 ("RELAY-TRANSPORT", relay_reg.transport.outer),
                 ("CHECK-BACK-IN", str(check_back_in)))
         else:
@@ -356,7 +358,7 @@ class Handler(SocketServer.StreamRequestHandler):
         self.send_ok()
         return True
 
-    finish = fac.catch_epipe(SocketServer.StreamRequestHandler.finish)
+    finish = proc.catch_epipe(SocketServer.StreamRequestHandler.finish)
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
@@ -422,7 +424,7 @@ def parse_relay_file(servers, fp):
             transport_spec, addr_spec = line.strip().split()
         except ValueError, e:
             raise ValueError("Wrong line format: %s." % repr(line))
-        addr = fac.parse_addr_spec(addr_spec, defport=DEFAULT_RELAY_PORT)
+        addr = parse_addr_spec(addr_spec, defport=DEFAULT_RELAY_PORT)
         transport = Transport.parse(transport_spec)
         if transport.outer not in options.outer_transports:
             raise ValueError(u"Unrecognized transport: %s" % transport)
@@ -495,7 +497,7 @@ obfs2|websocket 1.4.6.1:4123\
 
     server = Server(addrinfo[4], Handler)
 
-    log(u"start on %s" % fac.format_addr(addrinfo[4]))
+    log(u"start on %s" % format_addr(addrinfo[4]))
     log(u"using IPv4 relays %s" % str(RELAYS[socket.AF_INET]._endpoints))
     log(u"using IPv6 relays %s" % str(RELAYS[socket.AF_INET6]._endpoints))
 
@@ -512,7 +514,7 @@ obfs2|websocket 1.4.6.1:4123\
     if options.privdrop_username is not None:
         log(u"dropping privileges to those of user %s" % options.privdrop_username)
         try:
-            fac.drop_privs(options.privdrop_username)
+            proc.drop_privs(options.privdrop_username)
         except BaseException, e:
             print >> sys.stderr, "Can't drop privileges:", str(e)
             sys.exit(1)

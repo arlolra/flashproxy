@@ -15,7 +15,7 @@ except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
     RSA = None
 
-DEFAULT_REMOTE_ADDRESS = None
+DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
 DEFAULT_TRANSPORT = "websocket"
