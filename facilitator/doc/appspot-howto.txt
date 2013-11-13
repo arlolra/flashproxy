@@ -1,31 +1,33 @@
 These are instructions for how to set up a Google App Engine application
-to run at appspot.com.
+for the appspot rendezvous method (flashproxy-reg-appspot). It requires
+the HTTP rendezvous to be available, so you should set that up first and
+ensure it is working correctly, or find someone else's to use. If you
+choose the latter, note that it is *their* reg-daemon.pub that your users
+must give to flashproxy-reg-appspot.
 
 General links:
 https://developers.google.com/appengine/
 https://developers.google.com/appengine/docs/whatisgoogleappengine
 https://developers.google.com/appengine/docs/go/gettingstarted/
 
-You first need to create a Google account. See gmail-howto.txt for how
+You first need to create a Google account. See email-howto.txt for how
 to do that.
 
 Download the SDK:
 https://developers.google.com/appengine/docs/go/gettingstarted/devenvironment
 
-Write your program and app.yaml file:
-https://developers.google.com/appengine/docs/go/gettingstarted/helloworld
+Find your facilitator appengine installation, probably in reg-appspot/
+in your flashproxy config dir. Edit config.go to point to the address of
+the HTTP facilitator.
 
-When you're ready to upload, log in with your Google account and follow
-the directions:
-https://appengine.google.com/
+Follow the directions to register a new application:
 https://developers.google.com/appengine/docs/go/gettingstarted/uploading
-
 Enter an application ID and create the application.
 
 Use the appcfg.py program to upload the program. It should look
 something like this:
 
-$ torify ./google_appengine/appcfg.py update myapp/
+$ torify ./google_appengine/appcfg.py -A <YOUR_APP_ID> update reg-appspot/
 07:25 PM Host: appengine.google.com
 07:25 PM Application: application-id; version: 1
 07:25 PM

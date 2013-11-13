@@ -1,0 +1,10 @@
+# This file should contain "[<imap_host>] <email> <password>" on a single line,
+# separated by whitespace. If <imap_host> is omitted, it defaults to
+# imap.(<email> domain):993.
+#
+# If your email provider supports it, we advise you to use an app-specific
+# password rather than your account password; see email-howto.txt in this
+# package's documentation for details on how to do this.
+#
+#imap.gmail.com:993 flashproxyreg.a@gmail.com topsecret11!one
+#flashproxyreg.a@gmail.com passwords with spaces are ok too

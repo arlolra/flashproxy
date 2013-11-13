@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from cStringIO import StringIO
+import os
 import socket
 import subprocess
 import tempfile
@@ -217,7 +218,8 @@ class FacilitatorProcTest(unittest.TestCase):
         self.relay_file.write("%s %s\n" % (RELAY_TP, fac.format_addr(self.IPV6_RELAY_ADDR)))
         self.relay_file.flush()
         self.relay_file.seek(0)
-        self.process = subprocess.Popen(["./facilitator", "-d", "-p", str(FACILITATOR_PORT), "-r", self.relay_file.name, "-l", "/dev/null"])
+        fn = os.path.join(os.path.dirname(__file__), "./facilitator")
+        self.process = subprocess.Popen(["python", fn, "-d", "-p", str(FACILITATOR_PORT), "-r", self.relay_file.name, "-l", "/dev/null"])
         time.sleep(0.1)
 
     def tearDown(self):
@@ -347,6 +349,11 @@ class ParseAddrSpecTest(unittest.TestCase):
     def test_noresolve(self):
         """Test that parse_addr_spec does not do DNS resolution by default."""
         self.assertRaises(ValueError, fac.parse_addr_spec, "example.com")
+
+    def test_noresolve_nameok(self):
+        """Test that nameok passes through a domain name without resolving it."""
+        self.assertEqual(fac.parse_addr_spec("example.com:8888", defhost="other.com", defport=9999, nameOk=True), ("example.com", 8888))
+        self.assertEqual(fac.parse_addr_spec("", defhost="other.com", defport=9999, nameOk=True), ("other.com", 9999))
 
 class ParseTransactionTest(unittest.TestCase):
     def test_empty_string(self):

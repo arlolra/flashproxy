@@ -10,8 +10,6 @@ import (
 	"appengine/urlfetch"
 )
 
-const BASE = "https://fp-facilitator.org/reg/"
-
 func robotsTxtHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Write([]byte("User-agent: *\nDisallow:\n"))
@@ -33,7 +31,7 @@ func regHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	client := urlfetch.Client(appengine.NewContext(r))
-	resp, err := client.Get(BASE + blob)
+	resp, err := client.Get("https://" + FP_FACILITATOR + "/reg/" + blob)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -51,4 +49,7 @@ func init() {
 	http.HandleFunc("/robots.txt", robotsTxtHandler)
 	http.HandleFunc("/ip", ipHandler)
 	http.HandleFunc("/reg/", regHandler)
+	if FP_FACILITATOR == "" {
+		panic("FP_FACILITATOR empty; did you forget to edit config.go?")
+	}
 }

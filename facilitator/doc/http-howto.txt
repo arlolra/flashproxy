@@ -1,0 +1,49 @@
+These are instructions for how to set up an Apache Web Server for
+handling the HTTP client registration method (facilitator.cgi /
+flashproxy-reg-http / flashproxy-reg-url), as well as for browser
+proxies to poll and receive a client to serve.
+
+Unfortunately we only had time to give commands specific to the Debian
+distribution of Apache; other distributions may need to tweak some
+things, e.g. a2enmod, a2ensite only exist on Debian.
+
+== HTTP server setup
+
+Apache is the web server that runs the CGI program.
+
+	# apt-get install apache2 libapache2-mod-evasive
+	# a2enmod ssl headers
+
+Edit /etc/apache2/ports.conf and comment out the port 80 configuration.
+
+	# NameVirtualHost *:80
+	# Listen 80
+
+Copy examples/fp-facilitator.conf to /etc/apache2/sites-available/ or
+wherever is appropriate for your Apache2 installation, then edit it as
+per the instructions given in that file itself.
+
+Link the configured site into sites-enabled.
+	# a2ensite fp-facilitator
+
+=== HTTPS setup
+
+The HTTP server should serve only over HTTPS and not unencrypted HTTP.
+You will need a certificate and private key from a certificate
+authority. An article on making a certificate signing request and
+getting it signed is here:
+	http://www.debian-administration.org/articles/284
+This is the basic command to generate a CSR.
+	$ openssl req -new -nodes -out fp-facilitator.csr.pem
+The instructions below assume you have an offline private key
+in fp-facilitator.key.pem and a certificate in fp-facilitator.crt.pem.
+
+Make a file containing both the private key and a certificate.
+
+	$ cat fp-facilitator.key.pem fp-facilitator.crt.pem > fp-facilitator.pem
+	$ chmod 400 fp-facilitator.pem
+
+Copy the new fp-facilitator.pem to the facilitator server as
+/etc/apache2/fp-facilitator.pem.
+
+	# /etc/init.d/apache2 restart

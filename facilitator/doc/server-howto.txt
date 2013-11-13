@@ -1,0 +1,55 @@
+This document describes how to configure a server running the facilitator on
+Debian 7. It is not necessary to make things work, but gives you some added
+security, and is a good reference if you want to create a dedicated VM for a
+facilitator from scratch.
+
+We will use the domain name fp-facilitator.example.com.
+
+== Basic and security setup
+
+Install some essential packages and configure a firewall.
+
+	# cat >/etc/apt/apt.conf.d/90suggests<<EOF
+APT::Install-Recommends "0";
+APT::Install-Suggests "0";
+EOF
+	# apt-get remove portmap
+	# apt-get update
+	# apt-get upgrade
+	# apt-get install shorewall shorewall6
+
+Away from the facilitator, generate an SSH key for authentication:
+
+	$ ssh-keygen -f ~/.ssh/fp-facilitator
+	$ ssh-copy-id -i ~/.ssh/fp-facilitator.pub root@fp-facilitator.example.com
+
+Then log in and edit /etc/ssh/sshd_config to disable password
+authentication:
+
+	PasswordAuthentication no
+
+Configure the firewall to allow only SSH and HTTPS.
+
+	# cd /etc/shorewall
+	# cp /usr/share/doc/shorewall/examples/Universal/{interfaces,policy,rules,zones} .
+	Edit /etc/shorewall/rules:
+SECTION NEW
+SSH(ACCEPT)	net	$FW
+HTTPS(ACCEPT)	net	$FW
+
+	# cd /etc/shorewall6
+	# cp /usr/share/doc/shorewall6/examples/Universal/{interfaces,policy,rules,zones} .
+	Edit /etc/shorewall6/rules:
+SECTION NEW
+SSH(ACCEPT)	all	$FW
+HTTPS(ACCEPT)	all	$FW
+
+Edit /etc/default/shorewall and /etc/default/shorewall6 and set
+
+	startup=1
+
+Restart servers.
+
+	# /etc/init.d/ssh restart
+	# /etc/init.d/shorewall start
+	# /etc/init.d/shorewall6 start
