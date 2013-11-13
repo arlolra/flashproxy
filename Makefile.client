@@ -81,7 +81,12 @@ distclean: clean
 maintainer-clean: distclean
 	rm -f $(DST_MAN1)
 
+# TODO(infinity0): eventually do this as part of 'check' once we have a decent
+# overrides file in place that filters out false-positives
+pylint: $(SRC_SCRIPT)
+	pylint -E $^
+
 check: $(THISFILE)
 	for i in $(TEST_PY); do $(PYTHON) "$$i"; done
 
-.PHONY: all install uninstall clean distclean maintainer-clean dist check
+.PHONY: all install uninstall clean distclean maintainer-clean dist check pylint
