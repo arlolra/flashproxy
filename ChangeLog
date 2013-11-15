@@ -1,6 +1,8 @@
   o Enabled binary frames (avoiding the overhead of base64 encoding) for
     Firefox 11 and later. Patch by Arlo Breault. Fixes bug 9069.
 
+  o Removed a Python 2.7–dependent reference in flashproxy-reg-appspot.
+
 Changes in version 1.4
   o Allowed websocket-server to gracefully handle SIGTERM.
 

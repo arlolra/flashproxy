@@ -109,7 +109,7 @@ def generate_url(addr):
 
 # Like socket.create_connection in that it tries resolving different address
 # families, but doesn't connect the socket.
-def create_socket(address, timeout = None, source_address = None):
+def create_socket(address, timeout = None):
     host, port = address
     addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)
     if not addrs:
@@ -120,8 +120,6 @@ def create_socket(address, timeout = None, source_address = None):
             s = socket.socket(addr[0], addr[1], addr[2])
             if timeout is not None and type(timeout) == float:
                 s.settimeout(timeout)
-            if source_address is not None:
-                s.bind(source_address)
             return s
         except Exception, e:
             err = e
@@ -132,7 +130,7 @@ def create_socket(address, timeout = None, source_address = None):
 
 class PinHTTPSConnection(httplib.HTTPSConnection):
     def connect(self):
-        sock = create_socket((self.host, self.port), self.timeout, self.source_address)
+        sock = create_socket((self.host, self.port), self.timeout)
         if self._tunnel_host:
             self.sock = sock
             self._tunnel()
