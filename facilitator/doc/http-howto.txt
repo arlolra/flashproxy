@@ -24,7 +24,7 @@ wherever is appropriate for your Apache2 installation, then edit it as
 per the instructions given in that file itself.
 
 Link the configured site into sites-enabled.
-	# a2ensite fp-facilitator
+	# a2ensite fp-facilitator.conf
 
 === HTTPS setup
 
