@@ -44,7 +44,7 @@ Install some essential packages and configure a firewall.
 APT::Install-Recommends "0";
 APT::Install-Suggests "0";
 EOF
-	# apt-get remove portmap
+	# apt-get remove rpcbind
 	# apt-get update
 	# apt-get upgrade
 	# apt-get install shorewall shorewall6
