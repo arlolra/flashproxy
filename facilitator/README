@@ -13,7 +13,8 @@ recommended to keep this on encrypted storage.
 The main backends, facilitator and facilitator-reg-daemon, are installed
 as system services, and you should be able to configure them in the
 appropriate place for your system (e.g. /etc/default/facilitator for a
-Debian-based system using initscripts).
+Debian-based system using initscripts). You probably need to at least
+set RUN_DAEMON=yes to enable the services.
 
 Each installation has its own public-private keypair, stored in the
 flashproxy config directory. You will need to securely distribute the
