@@ -412,8 +412,12 @@ def parse_relay_file(servers, fp):
     Throws ValueError on a parsing error. Each line contains a transport chain
     and an address, for example
         obfs2|websocket 1.4.6.1:4123
+    :returns: number of relays added
     """
+    n = 0
     for line in fp.readlines():
+        line = line.strip("\n")
+        if not line or line.startswith('#'): continue
         try:
             transport_spec, addr_spec = line.strip().split()
         except ValueError, e:
@@ -424,6 +428,8 @@ def parse_relay_file(servers, fp):
             raise ValueError(u"Unrecognized transport: %s" % transport)
         af = addr_af(addr[0])
         servers[af].addEndpoint(addr, transport)
+        n += 1
+    return n
 
 def main():
     opts, args = getopt.gnu_getopt(sys.argv[1:], "dhl:p:r:", [
@@ -470,9 +476,11 @@ obfs2|websocket 1.4.6.1:4123\
 
     try:
         with open(options.relay_filename) as fp:
-            parse_relay_file(RELAYS, fp)
+            n = parse_relay_file(RELAYS, fp)
+            if not n:
+                raise ValueError("file contained no relays")
     except ValueError as e:
-        print >> sys.stderr, u"Could not parse file '%s': %s" % (repr(a), str(e))
+        print >> sys.stderr, u"Could not parse file %s: %s" % (repr(options.relay_filename), str(e))
         sys.exit(1)
 
     # Setup log file
