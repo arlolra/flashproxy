@@ -222,7 +222,7 @@ try:
             raise ValueError("could not find email or password on line %s" % (lineno0+1))
         (imap_addr_spec, email_addr, email_password) = res.groups()
         imap_addr = fac.parse_addr_spec(
-            imap_addr_spec or "", DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT, nameOk=True)
+            imap_addr_spec or "", DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
         break
     else:
         raise ValueError("no email line found")

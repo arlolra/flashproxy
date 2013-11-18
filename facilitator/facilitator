@@ -290,7 +290,7 @@ class Handler(SocketServer.StreamRequestHandler):
         if proxy_spec is None:
             return self.error(u"GET missing FROM param")
         try:
-            proxy_addr = fac.parse_addr_spec(proxy_spec, defport=0)
+            proxy_addr = fac.canonical_ip(*fac.parse_addr_spec(proxy_spec, defport=0))
         except ValueError, e:
             return self.error(u"syntax error in proxy address %s: %s" % (safe_str(repr(proxy_spec)), safe_str(repr(str(e)))))
 
@@ -422,7 +422,7 @@ def parse_relay_file(servers, fp):
             transport_spec, addr_spec = line.strip().split()
         except ValueError, e:
             raise ValueError("Wrong line format: %s." % repr(line))
-        addr = fac.parse_addr_spec(addr_spec, defport=DEFAULT_RELAY_PORT, resolve=True)
+        addr = fac.parse_addr_spec(addr_spec, defport=DEFAULT_RELAY_PORT)
         transport = Transport.parse(transport_spec)
         if transport.outer not in options.outer_transports:
             raise ValueError(u"Unrecognized transport: %s" % transport)

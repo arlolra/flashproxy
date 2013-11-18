@@ -50,7 +50,7 @@ def catch_epipe(fn):
                 raise
     return ret
 
-def parse_addr_spec(spec, defhost = None, defport = None, resolve = False, nameOk = False):
+def parse_addr_spec(spec, defhost = None, defport = None):
     """Parse a host:port specification and return a 2-tuple ("host", port) as
     understood by the Python socket functions.
     >>> parse_addr_spec("192.168.0.1:9999")
@@ -70,11 +70,6 @@ def parse_addr_spec(spec, defhost = None, defport = None, resolve = False, nameO
     ('192.168.0.1', 9999)
     >>> parse_addr_spec("", defhost="192.168.0.1", defport=9999)
     ('192.168.0.1', 9999)
-
-    If nameOk is true, then the host in the specification or the defhost may be
-    a domain name. Otherwise, it must be a numeric IPv4 or IPv6 address.
-    If resolve is true, this implies nameOk, and the host will be resolved.
-
     IPv6 addresses must be enclosed in square brackets."""
     host = None
     port = None
@@ -105,19 +100,24 @@ def parse_addr_spec(spec, defhost = None, defport = None, resolve = False, nameO
     port = port or defport
     if host is None or port is None:
         raise ValueError("Bad address specification \"%s\"" % spec)
+    return host, int(port)
 
-    # Now we have split around the colon and have a guess at the address family.
+def resolve_to_ip(host, port, af=0, gai_flags=0):
+    """Resolves a host string to an IP address in canonical format.
+
+    Note: in many cases this is not necessary since the consumer of the address
+    can probably accept host names directly.
+
+    :param: host string to resolve; may be a DNS name or an IP address.
+    :param: port of the host
+    :param: af address family, default unspecified. set to socket.AF_INET or
+        socket.AF_INET6 to force IPv4 or IPv6 name resolution.
+    :returns: (IP address in canonical format, port)
+    """
     # Forward-resolve the name into an addrinfo struct. Real DNS resolution is
     # done only if resolve is true; otherwise the address must be numeric.
-    if resolve:
-        flags = 0
-    elif nameOk:
-        # don't pass through the getaddrinfo numeric check, just return directly
-        return host, int(port)
-    else:
-        flags = socket.AI_NUMERICHOST
     try:
-        addrs = socket.getaddrinfo(host, port, af, socket.SOCK_STREAM, socket.IPPROTO_TCP, flags)
+        addrs = socket.getaddrinfo(host, port, af, 0, 0, gai_flags)
     except socket.gaierror, e:
         raise ValueError("Bad host or port: \"%s\" \"%s\": %s" % (host, port, str(e)))
     if not addrs:
@@ -126,8 +126,12 @@ def parse_addr_spec(spec, defhost = None, defport = None, resolve = False, nameO
     # Convert the result of socket.getaddrinfo (which is a 2-tuple for IPv4 and
     # a 4-tuple for IPv6) into a (host, port) 2-tuple.
     host, port = socket.getnameinfo(addrs[0][4], socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
-    port = int(port)
-    return host, port
+    return host, int(port)
+
+def canonical_ip(host, port, af=0):
+    """Convert an IP address to a canonical format. Identical to resolve_to_ip,
+    except that the host param must already be an IP address."""
+    return resolve_to_ip(host, port, af, gai_flags=socket.AI_NUMERICHOST)
 
 def format_addr(addr):
     host, port = addr
