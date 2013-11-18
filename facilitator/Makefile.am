@@ -122,6 +122,9 @@ remove-symlinks:
 
 install-daemon:
 if DO_INITSCRIPTS
+# initscripts use these directories for logs and runtime data
+	mkdir -p $(localstatedir)/log
+	mkdir -p $(localstatedir)/run
 	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
 	  update-rc.d $$i defaults; \
 	  invoke-rc.d $$i start; \
@@ -130,6 +133,7 @@ endif
 
 remove-daemon:
 if DO_INITSCRIPTS
+# we don't rm created directories since they might be system-managed
 	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
 	  invoke-rc.d $$i stop; \
 	  update-rc.d $$i remove; \
