@@ -38,8 +38,6 @@ DEFAULTSFILE=@sysconfdir@/default/$NAME
 . /lib/lsb/init-functions
 
 [ "$UNSAFE_LOGGING" = "yes" ] && DAEMON_ARGS="$DAEMON_ARGS --unsafe-logging"
-[ -n "$IMAPADDR" ] && DAEMON_ARGS="$DAEMON_ARGS --imap $IMAPADDR"
-DAEMON_ARGS="$DAEMON_ARGS --email $FACILITATOR_EMAIL_ADDR"
 
 #
 # Function that starts the daemon/service

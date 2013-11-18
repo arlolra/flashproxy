@@ -21,6 +21,9 @@ import fac
 from hashlib import sha1
 from M2Crypto import SSL
 
+# TODO(infinity0): we only support gmail so this is OK for now. in the future,
+# could maybe do an MX lookup and try to guess the imap server from that.
+DEFAULT_IMAP_HOST = "imap.gmail.com"
 DEFAULT_IMAP_PORT = 993
 DEFAULT_LOG_FILENAME = "facilitator-email-poller.log"
 
@@ -122,7 +125,7 @@ class IMAP4_SSL_REQUIRED(imaplib.IMAP4_SSL):
 
 def usage(f = sys.stdout):
     print >> f, """\
-Usage: %(progname)s --email=ADDRESS --pass=PASSFILE
+Usage: %(progname)s --pass=PASSFILE
 Facilitator-side helper for the facilitator-reg-email rendezvous. Polls
 an IMAP server for email messages with client registrations, deletes
 them, and forwards the registrations to the facilitator.
@@ -210,17 +213,16 @@ try:
         print >> sys.stderr, "Refusing to run with group- or world-readable password file. Try"
         print >> sys.stderr, "\tchmod 600 %s" % options.password_filename
         sys.exit(1)
-    for line in password_file.readlines():
+    for (lineno0, line) in enumerate(password_file.readlines()):
         line = line.strip("\n")
         if not line or line.startswith('#'): continue
         # we do this stricter regex match because passwords might have spaces in
         res = re.match(r"(?:(\S+)\s)?(\S+@\S+)\s(.+)", line)
         if not res:
-            raise ValueError("could not find email or password: %s" % line)
+            raise ValueError("could not find email or password on line %s" % (lineno0+1))
         (imap_addr_spec, email_addr, email_password) = res.groups()
-        default_imap_host = "imap.%s" % (email_addr.split('@', 1)[1])
         imap_addr = fac.parse_addr_spec(
-            imap_addr_spec or "", default_imap_host, DEFAULT_IMAP_PORT, nameOk=True)
+            imap_addr_spec or "", DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT, nameOk=True)
         break
     else:
         raise ValueError("no email line found")
