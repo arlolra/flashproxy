@@ -5,13 +5,12 @@ ensure it is working correctly, or find someone else's to use. If you
 choose the latter, note that it is *their* reg-daemon.pub that your users
 must give to flashproxy-reg-appspot.
 
-General links:
-https://developers.google.com/appengine/
-https://developers.google.com/appengine/docs/whatisgoogleappengine
-https://developers.google.com/appengine/docs/go/gettingstarted/
+For more information about Google App Engine, see the links at the bottom
+of this document.
 
-You first need to create a Google account. See email-howto.txt for how
-to do that.
+You are strongly recommended to create a Google account dedicated for
+this purpose, rather than a personal or organisation account. See
+email-howto.txt for how to do that.
 
 Download the SDK:
 https://developers.google.com/appengine/docs/go/gettingstarted/devenvironment
@@ -24,10 +23,15 @@ Follow the directions to register a new application:
 https://developers.google.com/appengine/docs/go/gettingstarted/uploading
 Enter an application ID and create the application.
 
+To run locally using the development server:
+$ ~/go_appengine/dev_appserver.py reg-appspot/
+You are advised to do this on a non-production machine, away from the main
+facilitator.
+
 Use the appcfg.py program to upload the program. It should look
 something like this:
 
-$ torify ./google_appengine/appcfg.py -A <YOUR_APP_ID> update reg-appspot/
+$ torify ./google_appengine/appcfg.py --no_cookies -A <YOUR_APP_ID> update reg-appspot/
 07:25 PM Host: appengine.google.com
 07:25 PM Application: application-id; version: 1
 07:25 PM
@@ -48,11 +52,21 @@ Password for xxx@gmail.com:
 07:26 PM Checking if updated app version is serving.
 07:26 PM Completed update of app: application-id, version: 1
 
-Uploading the program in this way seems to create the files
-~/.appcfg_nag and ~/.appcfg_cookies. Running the update command again
-doesn't require you to enter your password again.
+The --no_cookies flag stops authentication cookies from being written
+to disk, in ~/.appcfg_cookies. We recommend this for security, since no
+long-running services need this password, only the update process above
+which is run once. However, if this reasoning doesn't apply to you
+(e.g. if your facilitator-email-poller uses the same account, so that
+the password is already on the disk) *and* you find yourself running
+update a lot for some reason, then you may at your own risk omit it for
+convenience.
 
 Once logged in, you can disable logging for the application. Click
 "Logs" on the left panel. Under "Total Logs Storage", click "Change
 Settings". Enter "0" in the "days of logs" box and click "Save
 Settings".
+
+General links:
+https://developers.google.com/appengine/
+https://developers.google.com/appengine/docs/whatisgoogleappengine
+https://developers.google.com/appengine/docs/go/gettingstarted/

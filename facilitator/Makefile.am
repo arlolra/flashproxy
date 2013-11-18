@@ -26,7 +26,7 @@ endif
 dist_doc_DATA = doc/appspot-howto.txt doc/facilitator-design.txt doc/email-howto.txt doc/http-howto.txt doc/server-howto.txt README
 dist_example_DATA = examples/fp-facilitator.conf examples/reg-email.pass examples/facilitator-relays
 pkgconf_DATA = examples/facilitator-relays
-dist_appengine_DATA = appengine/app.yaml appengine/config.go appengine/fp-reg.go appengine/README
+dist_appengine_DATA = appengine/app.yaml appengine/config.go appengine/fp-reg.go
 appengineconf_DATA = appengine/config.go
 CLEANFILES = examples/fp-facilitator.conf
 EXTRA_DIST = examples/fp-facilitator.conf.in $(TESTS)
