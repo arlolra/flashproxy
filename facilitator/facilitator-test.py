@@ -16,7 +16,7 @@ from fac import Transport, Endpoint
 import imp
 dont_write_bytecode = sys.dont_write_bytecode
 sys.dont_write_bytecode = True
-facilitator = imp.load_source("facilitator", "facilitator")
+facilitator = imp.load_source("facilitator", os.path.join(os.path.dirname(__file__), "facilitator"))
 Endpoints = facilitator.Endpoints
 parse_relay_file = facilitator.parse_relay_file
 sys.dont_write_bytecode = dont_write_bytecode
