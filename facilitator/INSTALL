@@ -2,6 +2,10 @@ Install the dependencies.
 
 	$ apt-get install make openssl python-m2crypto
 	$ apt-get install automake autoconf # if running from git
+	$ apt-get install apache2
+
+You may use a different webserver, but currently we only provide an apache2 site
+config example, so you will need to adapt this to the correct syntax.
 
 Configure and install.
 
