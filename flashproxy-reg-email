@@ -63,9 +63,11 @@ def get_facilitator_pubkey():
         return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
 
 parser = argparse.ArgumentParser(
+    usage="%(prog)s [OPTIONS] [REMOTE][:PORT]",
     description="Register with a flash proxy facilitator through email. Makes "
     "a STARTTLS connection to an SMTP server and sends mail with a client IP "
-    "address to a designated address.",
+    "address to a designated address. If only the external port is given, the "
+    "external address is guessed from the SMTP EHLO response.",
     epilog="Using an SMTP server or email address other than the defaults will "
     "not work unless you have made special arrangements to connect them to a "
     "facilitator.")

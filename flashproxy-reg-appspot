@@ -126,7 +126,10 @@ def get_external_ip():
         f.close()
 
 parser = argparse.ArgumentParser(
-    description="Register with a facilitator through a Google App Engine app.")
+    usage="%(prog)s [OPTIONS] [REMOTE][:PORT]",
+    description="Register with a facilitator through a Google App Engine app. "
+    "If only the external port is given, the remote server guesses our "
+    "external address.")
 # common opts
 parser.add_argument("-4", help="name lookups use only IPv4.",
     action="store_const", const=socket.AF_INET, dest="address_family")

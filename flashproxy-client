@@ -1007,6 +1007,7 @@ def main():
     global unlinked_locals, unlinked_remotes
 
     parser = argparse.ArgumentParser(
+        usage="%(prog)s --register [OPTIONS] [LOCAL][:PORT] [REMOTE][:PORT]",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="""\
 Wait for connections on a local and a remote port. When any pair of connections

@@ -38,6 +38,7 @@ def get_facilitator_pubkey():
         return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
 
 parser = argparse.ArgumentParser(
+    usage="%(prog)s [OPTIONS] REMOTE[:PORT]",
     description="Print a URL, which, when retrieved, will cause the input "
     "client address to be registered with the flash proxy facilitator.")
 # common opts
