@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Register with a facilitator using the email method."""
 
-import getopt
+import argparse
 import os
 import re
 import smtplib
@@ -18,12 +18,10 @@ except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
     pass
 
-DEFAULT_REMOTE_ADDRESS = ""
-DEFAULT_REMOTE_PORT = 9000
+DEFAULT_REMOTE = ("", 9000)
 DEFAULT_EMAIL_ADDRESS = "flashproxyreg.a@gmail.com"
 # dig MX gmail.com
-DEFAULT_SMTP_HOST = "gmail-smtp-in.l.google.com"
-DEFAULT_SMTP_PORT = 25
+DEFAULT_SMTP = ("gmail-smtp-in.l.google.com", 25)
 DEFAULT_TRANSPORT = "websocket"
 
 # Use this to prevent Python smtplib from guessing and leaking our hostname.
@@ -41,41 +39,6 @@ class options(object):
     smtp_addr = None
     transport = DEFAULT_TRANSPORT
     safe_logging = True
-
-def usage(f = sys.stdout):
-    print >> f, """\
-Usage: %(progname)s [REMOTE][:PORT]
-Register with a flash proxy facilitator through email. Makes a STARTTLS
-connection to an SMTP server and sends mail with a client IP address to a
-designated address. By default the remote address registered is
-"%(remote_addr)s" (the external IP address is guessed).
-
-Using an SMTP server or email address other than the defaults will not work
-unless you have made special arrangements to connect them to a facilitator.
-
-This program requires the M2Crypto library for Python.
-
-  -4                      name lookups use only IPv4.
-  -6                      name lookups use only IPv6.
-  -d, --debug             enable debugging output (Python smtplib messages).
-      --disable-pin       don't check server public key against a known pin.
-  -e, --email=ADDRESS     send mail to ADDRESS (default "%(email_addr)s").
-      --facilitator-pubkey=FILENAME
-                          encrypt registrations to the given PEM-formatted
-                            public key (default built-in).
-  -h, --help              show this help.
-  -s, --smtp=HOST[:PORT]  use the given SMTP server
-                            (default "%(smtp_addr)s").
-      --transport=TRANSPORT  register using the given transport
-                            (default "%(transport)s").
-      --unsafe-logging    don't scrub IP addresses from logs.\
-""" % {
-    "progname": sys.argv[0],
-    "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
-    "email_addr": DEFAULT_EMAIL_ADDRESS,
-    "smtp_addr": format_addr((DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)),
-    "transport": DEFAULT_TRANSPORT,
-}
 
 def safe_str(s):
     """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
@@ -99,57 +62,63 @@ def get_facilitator_pubkey():
     else:
         return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
 
-options.email_addr = DEFAULT_EMAIL_ADDRESS
-options.smtp_addr = (DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
+parser = argparse.ArgumentParser(
+    description="Register with a flash proxy facilitator through email. Makes "
+    "a STARTTLS connection to an SMTP server and sends mail with a client IP "
+    "address to a designated address.",
+    epilog="Using an SMTP server or email address other than the defaults will "
+    "not work unless you have made special arrangements to connect them to a "
+    "facilitator.")
+# common opts
+parser.add_argument("-4", help="name lookups use only IPv4.",
+    action="store_const", const=socket.AF_INET, dest="address_family")
+parser.add_argument("-6", help="name lookups use only IPv6.",
+    action="store_const", const=socket.AF_INET6, dest="address_family")
+parser.add_argument("--unsafe-logging", help="don't scrub IP addresses and "
+    "other sensitive information from logs.", action="store_true")
+parser.add_argument("--disable-pin", help="disable all certificate pinning "
+    "checks", action="store_true",)
+parser.add_argument("--facilitator-pubkey", help="encrypt registrations to "
+    "the given PEM-formatted public key file (default built-in).",
+    metavar='FILENAME')
+parser.add_argument("--transport",
+    help="register using the given transport, default %(default)s.",
+    default=DEFAULT_TRANSPORT)
+# common args
+parser.add_argument("remote_addr",
+    help="remote to register, default %s - the external IP address is guessed."
+        % format_addr(DEFAULT_REMOTE),
+    metavar="REMOTE:PORT", default="", nargs="?",
+    type=lambda x: parse_addr_spec(x, *DEFAULT_REMOTE))
+# specific opts
+parser.add_argument("-e", "--email", metavar="ADDRESS",
+    help="send mail to ADDRESS, default %(default)s.",
+    default=DEFAULT_EMAIL_ADDRESS)
+parser.add_argument("-s", "--smtp", metavar="HOST[:PORT]",
+    help="use the given SMTP server, default %s." % format_addr(DEFAULT_SMTP),
+    default="", type=lambda x: parse_addr_spec(x, *DEFAULT_SMTP))
+parser.add_argument("-d", "--debug",
+    help="enable debugging output (Python smtplib messages).",
+    action="store_true")
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "46de:hs:", [
-    "debug",
-    "disable-pin",
-    "email=",
-    "facilitator-pubkey=",
-    "help",
-    "smtp=",
-    "transport=",
-    "unsafe-logging",
-])
-for o, a in opts:
-    if o == "-4":
-        options.address_family = socket.AF_INET
-    elif o == "-6":
-        options.address_family = socket.AF_INET6
-    elif o == "-d" or o == "--debug":
-        options.debug = True
-    elif o == "--disable-pin":
-        options.use_certificate_pin = False
-    elif o == "-e" or o == "--email":
-        options.email_addr = a
-    elif o == "--facilitator-pubkey":
-        options.facilitator_pubkey_filename = a
-    elif o == "-h" or o == "--help":
-        usage()
-        sys.exit()
-    elif o == "-s" or o == "--smtp":
-        options.smtp_addr = parse_addr_spec(a, DEFAULT_SMTP_HOST, DEFAULT_SMTP_PORT)
-    elif o == "--transport":
-        options.transport = a
-    elif o == "--unsafe-logging":
-        options.safe_logging = False
-
-if len(args) == 0:
-    options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-elif len(args) == 1:
-    options.remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-else:
-    usage(sys.stderr)
-    sys.exit(1)
-
-ensure_M2Crypto()
-
+ns = parser.parse_args(sys.argv[1:])
+options.address_family = ns.address_family or socket.AF_UNSPEC
 if options.address_family != socket.AF_UNSPEC:
     getaddrinfo = socket.getaddrinfo
     def getaddrinfo_replacement(host, port, family, *args, **kwargs):
         return getaddrinfo(host, port, options.address_family, *args, **kwargs)
     socket.getaddrinfo = getaddrinfo_replacement
+options.safe_logging = not ns.unsafe_logging
+options.use_certificate_pin = not ns.disable_pin
+options.facilitator_pubkey_filename = ns.facilitator_pubkey
+options.transport = ns.transport
+options.remote_addr = ns.remote_addr
+# specific parsing
+options.email_addr = ns.email
+options.smtp_addr = ns.smtp
+options.debug = ns.debug
+
+ensure_M2Crypto()
 
 smtp = smtplib.SMTP(options.smtp_addr[0], options.smtp_addr[1], EHLO_FQDN)
 

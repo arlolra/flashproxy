@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Register with a facilitator through Google App Engine."""
 
-import getopt
+import argparse
 import httplib
 import os
 import socket
@@ -19,8 +19,7 @@ except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
     pass
 
-DEFAULT_REMOTE_ADDRESS = ""
-DEFAULT_REMOTE_PORT = 9000
+DEFAULT_REMOTE = ("", 9000)
 DEFAULT_TRANSPORT = "websocket"
 
 # The domain to which requests appear to go.
@@ -36,29 +35,6 @@ class options(object):
     facilitator_pubkey_filename = None
     transport = DEFAULT_TRANSPORT
     safe_logging = True
-
-def usage(f = sys.stdout):
-    print >> f, """\
-Usage: %(progname)s [REMOTE][:PORT]
-Register with a flash proxy facilitator through a Google App Engine app.
-By default the remote address registered is "%(remote_addr)s" (the
-external IP address is guessed).
-
-  -4                    name lookups use only IPv4.
-  -6                    name lookups use only IPv6.
-      --disable-pin     don't check server public key against a known pin.
-      --facilitator-pubkey=FILENAME
-                        encrypt registrations to the given PEM-formatted
-                          public key (default built-in).
-  -h, --help            show this help.
-      --transport=TRANSPORT  register using the given transport
-                          (default "%(transport)s").
-      --unsafe-logging  don't scrub IP addresses from logs.\
-""" % {
-    "progname": sys.argv[0],
-    "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
-    "transport": DEFAULT_TRANSPORT,
-}
 
 def safe_str(s):
     """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
@@ -149,45 +125,44 @@ def get_external_ip():
     finally:
         f.close()
 
-opt, args = getopt.gnu_getopt(sys.argv[1:], "46h", [
-    "disable-pin",
-    "facilitator-pubkey=",
-    "help",
-    "transport=",
-    "unsafe-logging",
-])
-for o, a in opt:
-    if o == "-4":
-        options.address_family = socket.AF_INET
-    elif o == "-6":
-        options.address_family = socket.AF_INET6
-    elif o == "--disable-pin":
-        options.use_certificate_pin = False
-    elif o == "--facilitator-pubkey":
-        options.facilitator_pubkey_filename = a
-    elif o == "-h" or o == "--help":
-        usage()
-        sys.exit()
-    elif o == "--transport":
-        options.transport = a
-    elif o == "--unsafe-logging":
-        options.safe_logging = False
+parser = argparse.ArgumentParser(
+    description="Register with a facilitator through a Google App Engine app.")
+# common opts
+parser.add_argument("-4", help="name lookups use only IPv4.",
+    action="store_const", const=socket.AF_INET, dest="address_family")
+parser.add_argument("-6", help="name lookups use only IPv6.",
+    action="store_const", const=socket.AF_INET6, dest="address_family")
+parser.add_argument("--unsafe-logging", help="don't scrub IP addresses and "
+    "other sensitive information from logs.", action="store_true")
+parser.add_argument("--disable-pin", help="disable all certificate pinning "
+    "checks", action="store_true",)
+parser.add_argument("--facilitator-pubkey", help="encrypt registrations to "
+    "the given PEM-formatted public key file (default built-in).",
+    metavar='FILENAME')
+parser.add_argument("--transport",
+    help="register using the given transport, default %(default)s.",
+    default=DEFAULT_TRANSPORT)
+# common args
+parser.add_argument("remote_addr",
+    help="remote to register, default %s - the external IP address is guessed."
+        % format_addr(DEFAULT_REMOTE),
+    metavar="REMOTE:PORT", default="", nargs="?",
+    type=lambda x: parse_addr_spec(x, *DEFAULT_REMOTE))
 
-if len(args) == 0:
-    remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-elif len(args) == 1:
-    remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-else:
-    usage(sys.stderr)
-    sys.exit(1)
-
-ensure_M2Crypto()
-
+ns = parser.parse_args(sys.argv[1:])
+options.address_family = ns.address_family or socket.AF_UNSPEC
 if options.address_family != socket.AF_UNSPEC:
     getaddrinfo = socket.getaddrinfo
     def getaddrinfo_replacement(host, port, family, *args, **kwargs):
         return getaddrinfo(host, port, options.address_family, *args, **kwargs)
     socket.getaddrinfo = getaddrinfo_replacement
+options.safe_logging = not ns.unsafe_logging
+options.use_certificate_pin = not ns.disable_pin
+options.facilitator_pubkey_filename = ns.facilitator_pubkey
+options.transport = ns.transport
+remote_addr = ns.remote_addr
+
+ensure_M2Crypto()
 
 if not remote_addr[0]:
     try:

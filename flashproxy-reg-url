@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """Register with a facilitator using an indirect URL."""
 
+import argparse
 import base64
-import getopt
 import sys
 import urllib
 import urlparse
@@ -16,8 +16,7 @@ except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
     pass
 
-DEFAULT_REMOTE_ADDRESS = ""
-DEFAULT_REMOTE_PORT = 9000
+DEFAULT_REMOTE = ("", 9000)
 DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
 DEFAULT_TRANSPORT = "websocket"
 
@@ -25,28 +24,6 @@ class options(object):
     facilitator_url = None
     facilitator_pubkey_filename = None
     transport = DEFAULT_TRANSPORT
-
-def usage(f = sys.stdout):
-    print >> f, """\
-Usage: %(progname)s REMOTE[:PORT]
-Print a URL, which, when retrieved, will cause the client address
-REMOTE[:PORT] to be registered with the flash proxy facilitator. The
-default PORT is %(port)d.
-
-  -f, --facilitator=URL  register with the given facilitator
-                           (default "%(fac_url)s").
-      --facilitator-pubkey=FILENAME
-                         encrypt registrations to the given PEM-formatted
-                           public key (default built-in).
-  -h, --help             show this help.
-      --transport=TRANSPORT  register using the given transport
-                           (default "%(transport)s").\
-""" % {
-    "progname": sys.argv[0],
-    "fac_url": DEFAULT_FACILITATOR_URL,
-    "port": DEFAULT_REMOTE_PORT,
-    "transport": DEFAULT_TRANSPORT,
-}
 
 def build_reg(addr, transport):
     return urllib.urlencode((
@@ -60,35 +37,38 @@ def get_facilitator_pubkey():
     else:
         return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
 
-options.facilitator_url = DEFAULT_FACILITATOR_URL
+parser = argparse.ArgumentParser(
+    description="Print a URL, which, when retrieved, will cause the input "
+    "client address to be registered with the flash proxy facilitator.")
+# common opts
+parser.add_argument("--facilitator-pubkey", help="encrypt registrations to "
+    "the given PEM-formatted public key file (default built-in).",
+    metavar='FILENAME')
+parser.add_argument("--transport",
+    help="register using the given transport, default %(default)s.",
+    default=DEFAULT_TRANSPORT)
+# common args
+parser.add_argument("remote_addr",
+    help="remote to register, default %s - the external IP address is guessed."
+        % format_addr(DEFAULT_REMOTE),
+    metavar="REMOTE:PORT", default="", nargs="?",
+    type=lambda x: parse_addr_spec(x, *DEFAULT_REMOTE))
+# specific opts
+parser.add_argument("-f", "--facilitator", metavar="URL",
+    help="register with the given facilitator, default %(default)s.",
+    default=DEFAULT_FACILITATOR_URL)
 
-opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h", [
-    "facilitator=",
-    "facilitator-pubkey=",
-    "help",
-    "transport=",
-])
-for o, a in opt:
-    if o == "-f" or o == "--facilitator":
-        options.facilitator_url = a
-    elif o == "--facilitator-pubkey":
-        options.facilitator_pubkey_filename = a
-    elif o == "-h" or o == "--help":
-        usage()
-        sys.exit()
-    elif o == "--transport":
-        options.transport = a
-
-if len(args) != 1:
-    usage(sys.stderr)
-    sys.exit(1)
-
-remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-if not remote_addr[0]:
-    print >> sys.stderr, "An IP address (not just a port) is required."
-    sys.exit(1)
+ns = parser.parse_args(sys.argv[1:])
+options.facilitator_pubkey_filename = ns.facilitator_pubkey
+options.transport = ns.transport
+remote_addr = ns.remote_addr
+options.facilitator_url = ns.facilitator
 
 ensure_M2Crypto()
+
+if not ns.remote_addr[0]:
+    print >> sys.stderr, "An IP address (not just a port) is required."
+    sys.exit(1)
 
 reg_plain = build_reg(remote_addr, options.transport)
 rsa = get_facilitator_pubkey()
