@@ -18,11 +18,7 @@ import traceback
 
 from flashproxy.util import parse_addr_spec, format_addr
 
-try:
-    from hashlib import sha1
-except ImportError:
-    # Python 2.4 uses this name.
-    from sha import sha as sha1
+from hashlib import sha1
 
 try:
     import numpy
@@ -143,12 +139,9 @@ def safe_str(s):
 
 log_lock = threading.Lock()
 def log(msg):
-    log_lock.acquire()
-    try:
+    with log_lock:
         print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
         options.log_file.flush()
-    finally:
-        log_lock.release()
 
 def safe_format_addr(addr):
     return safe_str(format_addr(addr))
@@ -690,10 +683,9 @@ def register():
     global register_flag
     if not options.register:
         return
-    register_condvar.acquire()
-    register_flag = True
-    register_condvar.notify()
-    register_condvar.release()
+    with register_condvar:
+        register_flag = True
+        register_condvar.notify()
 
 def register_using_command(command):
     basename = os.path.basename(command[0])
@@ -725,11 +717,10 @@ def register_one():
 def registration_thread_func():
     global register_flag
     while True:
-        register_condvar.acquire()
-        while not register_flag:
-            register_condvar.wait()
-        register_flag = False
-        register_condvar.release()
+        with register_condvar:
+            while not register_flag:
+                register_condvar.wait()
+            register_flag = False
         if len(unlinked_remotes) < DESIRED_NUMBER_OF_PROXIES:
             register_one()
 
