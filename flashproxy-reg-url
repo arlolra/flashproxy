@@ -7,14 +7,14 @@ import sys
 import urllib
 import urlparse
 
-from flashproxy.keys import DEFAULT_FACILITATOR_PUBKEY_PEM
+from flashproxy.keys import DEFAULT_FACILITATOR_PUBKEY_PEM, ensure_M2Crypto
 from flashproxy.util import parse_addr_spec, format_addr
 
 try:
     from M2Crypto import BIO, RSA
 except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
-    RSA = None
+    pass
 
 DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
@@ -88,16 +88,7 @@ if not remote_addr[0]:
     print >> sys.stderr, "An IP address (not just a port) is required."
     sys.exit(1)
 
-if RSA is None:
-    print >> sys.stderr, """\
-This program requires the M2Crypto library, which is not installed.
-
-You can install it using one of the packages at
-http://chandlerproject.org/Projects/MeTooCrypto#Downloads.
-
-On Debian-like systems, use the command "apt-get install python-m2crypto".\
-"""
-    sys.exit(1)
+ensure_M2Crypto()
 
 reg_plain = build_reg(remote_addr, options.transport)
 rsa = get_facilitator_pubkey()

@@ -4,6 +4,12 @@ import tempfile
 
 from hashlib import sha1
 
+try:
+    import M2Crypto
+except ImportError:
+    # Defer the error so that the main program gets a chance to print help text
+    M2Crypto = None
+
 # We trust no other CA certificate than this.
 #
 # To find the certificate to copy here,
@@ -98,3 +104,16 @@ class temp_cert(object):
 
     def __exit__(self, type, value, traceback):
         os.unlink(self.path)
+
+def ensure_M2Crypto():
+    if M2Crypto is None:
+        print >> sys.stderr, """\
+This program requires the M2Crypto library, which is not installed.
+
+You can install it using one of the packages at
+http://chandlerproject.org/Projects/MeTooCrypto#Downloads.
+
+On Debian-like systems, use the command "apt-get install python-m2crypto".\
+"""
+        sys.exit(1)
+

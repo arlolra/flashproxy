@@ -9,16 +9,14 @@ import socket
 import sys
 import urllib
 
-from flashproxy.keys import PIN_GOOGLE_CA_CERT, PIN_GOOGLE_PUBKEY_SHA1, DEFAULT_FACILITATOR_PUBKEY_PEM, check_certificate_pin, temp_cert
+from flashproxy.keys import PIN_GOOGLE_CA_CERT, PIN_GOOGLE_PUBKEY_SHA1, DEFAULT_FACILITATOR_PUBKEY_PEM, check_certificate_pin, ensure_M2Crypto, temp_cert
 from flashproxy.util import parse_addr_spec, format_addr
 
 try:
     from M2Crypto import BIO, RSA, SSL
 except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
-    BIO = None
-    RSA = None
-    SSL = None
+    pass
 
 DEFAULT_REMOTE_ADDRESS = ""
 DEFAULT_REMOTE_PORT = 9000
@@ -145,16 +143,7 @@ else:
     usage(sys.stderr)
     sys.exit(1)
 
-if SSL is None:
-    print >> sys.stderr, """\
-This program requires the M2Crypto library, which is not installed.
-
-You can install it using one of the packages at
-http://chandlerproject.org/Projects/MeTooCrypto#Downloads.
-
-On Debian-like systems, use the command "apt-get install python-m2crypto".\
-"""
-    sys.exit(1)
+ensure_M2Crypto()
 
 if options.address_family != socket.AF_UNSPEC:
     getaddrinfo = socket.getaddrinfo
