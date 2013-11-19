@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 import getopt
-import httplib
-import re
 import socket
 import sys
 import urllib

@@ -3,13 +3,10 @@
 import errno
 import getopt
 import httplib
-import re
 import os
 import socket
-import ssl
 import subprocess
 import sys
-import tempfile
 import urlparse
 import urllib2
 

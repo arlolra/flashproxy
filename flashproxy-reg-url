@@ -2,8 +2,6 @@
 
 import base64
 import getopt
-import re
-import socket
 import sys
 import urllib
 import urlparse
