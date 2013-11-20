@@ -1,0 +1,30 @@
+# This is an example apache2 config for serving the facilitator.
+#
+# For instructions on how to install it, see doc/http-howto.txt. You
+# should also edit the contents according to the instructions below.
+#
+MaxClients 256
+<VirtualHost *:443>
+	# Update this with your hostname!
+	ServerName fp-facilitator.example.com
+	DocumentRoot /dev/null
+	ScriptAliasMatch ^(.*) @cgibindir@/facilitator.cgi$1
+
+	# Non-Debian distros will need to tweak the log dir too
+	# Only log errors by default, to protect sensitive information.
+	CustomLog /dev/null common
+	#CustomLog ${APACHE_LOG_DIR}/fp-access.log common
+	ErrorLog ${APACHE_LOG_DIR}/fp-error.log
+	LogLevel warn
+
+	# requires mod_ssl
+	SSLEngine on
+	# Manually install your certificate to the following location.
+	SSLCertificateFile /etc/apache2/fp-facilitator.pem
+	# If you got an intermediate certificate, uncomment the following line
+	# and install the certificate to that location too.
+	#SSLCertificateChainFile /etc/apache2/fp-intermediate.pem
+
+	# requires mod_headers
+	Header add Strict-Transport-Security "max-age=15768000"
+</VirtualHost>

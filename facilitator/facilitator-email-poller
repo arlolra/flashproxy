@@ -21,9 +21,10 @@ import fac
 from hashlib import sha1
 from M2Crypto import SSL
 
+# TODO(infinity0): we only support gmail so this is OK for now. in the future,
+# could maybe do an MX lookup and try to guess the imap server from that.
 DEFAULT_IMAP_HOST = "imap.gmail.com"
 DEFAULT_IMAP_PORT = 993
-DEFAULT_EMAIL_ADDRESS = "flashproxyreg.a@gmail.com"
 DEFAULT_LOG_FILENAME = "facilitator-email-poller.log"
 
 POLL_INTERVAL = 60
@@ -75,8 +76,6 @@ PUBKEY_SHA1 = (
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class options(object):
-    email_addr = None
-    imap_addr = None
     password_filename = None
     log_filename = DEFAULT_LOG_FILENAME
     log_file = sys.stdout
@@ -133,19 +132,18 @@ them, and forwards the registrations to the facilitator.
 
   -d, --debug               don't daemonize, log to stdout.
       --disable-pin         don't check server public key against a known pin.
-  -e, --email=ADDRESS       log in as ADDRESS (default "%(email_addr)s").
   -h, --help                show this help.
-  -i, --imap=HOST[:PORT]    use the given IMAP server (default "%(imap_addr)s").
       --imaplib-debug       show raw IMAP messages (will include email password).
   -l, --log FILENAME        write log to FILENAME (default \"%(log)s\").
-  -p, --pass=PASSFILE       use the email password contained in PASSFILE.
+  -p, --pass=PASSFILE       use the email/password contained in PASSFILE. This file
+                            should contain "[<imap_host>] <email> <password>" on a
+                            single line, separated by whitespace. If <imap_host> is
+                            omitted, it defaults to imap.(<email> domain):993.
       --pidfile FILENAME    write PID to FILENAME after daemonizing.
       --privdrop-user USER  switch UID and GID to those of USER.
       --unsafe-logging      don't scrub email password and IP addresses from logs.\
 """ % {
     "progname": sys.argv[0],
-    "email_addr": DEFAULT_EMAIL_ADDRESS,
-    "imap_addr": fac.format_addr((DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)),
     "log": DEFAULT_LOG_FILENAME,
 }
 
@@ -159,9 +157,6 @@ def safe_str(s):
 def log(msg):
     print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
     options.log_file.flush()
-
-options.email_addr = DEFAULT_EMAIL_ADDRESS
-options.imap_addr = (DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
 
 opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:", [
     "debug",
@@ -182,13 +177,9 @@ for o, a in opts:
         options.log_filename = None
     elif o == "--disable-pin":
         options.use_certificate_pin = False
-    elif o == "-e" or o == "--email":
-        options.email_addr = a
     elif o == "-h" or o == "--help":
         usage()
         sys.exit()
-    elif o == "-i" or o == "--imap":
-        options.imap_addr = fac.parse_addr_spec(a, DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
     if o == "--imaplib-debug":
         options.imaplib_debug = True
     elif o == "-l" or o == "--log":
@@ -222,7 +213,25 @@ try:
         print >> sys.stderr, "Refusing to run with group- or world-readable password file. Try"
         print >> sys.stderr, "\tchmod 600 %s" % options.password_filename
         sys.exit(1)
-    email_password = password_file.read().strip()
+    for (lineno0, line) in enumerate(password_file.readlines()):
+        line = line.strip("\n")
+        if not line or line.startswith('#'): continue
+        # we do this stricter regex match because passwords might have spaces in
+        res = re.match(r"(?:(\S+)\s)?(\S+@\S+)\s(.+)", line)
+        if not res:
+            raise ValueError("could not find email or password on line %s" % (lineno0+1))
+        (imap_addr_spec, email_addr, email_password) = res.groups()
+        imap_addr = fac.parse_addr_spec(
+            imap_addr_spec or "", DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
+        break
+    else:
+        raise ValueError("no email line found")
+except Exception, e:
+    print >> sys.stderr, """\
+Failed to parse password file "%s": %s.
+Syntax is [<imap_host>] <email> <password>.
+""" % (options.password_filename, str(e))
+    sys.exit(1)
 finally:
     password_file.close()
 
@@ -372,7 +381,7 @@ def imap_login():
     try:
         ca_certs_file.write(CA_CERTS)
         ca_certs_file.flush()
-        imap = IMAP4_SSL_REQUIRED(options.imap_addr[0], options.imap_addr[1],
+        imap = IMAP4_SSL_REQUIRED(imap_addr[0], imap_addr[1],
             None, ca_certs_file.name)
     finally:
         ca_certs_file.close()
@@ -390,8 +399,8 @@ def imap_login():
             expected = "(" + ", ".join(x.encode("hex") for x in PUBKEY_SHA1) + ")"
             raise ValueError("Public key does not match pin: got %s but expected any of %s" % (found, expected))
 
-    log(u"logging in as %s" % options.email_addr)
-    imap.login(options.email_addr, email_password)
+    log(u"logging in as %s" % email_addr)
+    imap.login(email_addr, email_password)
 
     return imap
 

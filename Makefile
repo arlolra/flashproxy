@@ -78,8 +78,14 @@ test: check
 check:
 	$(MAKE_CLIENT) check
 	$(PYTHON) setup-common.py test
-	cd facilitator && ./facilitator-test
-	cd proxy && ./flashproxy-test.js
+
+
+test-full: test
+	cd facilitator && \
+	  { test -x ./config.status && ./config.status || \
+	  { test -x ./configure || ./autogen.sh; } && ./configure; } \
+	  && make && make check
+	cd proxy && make test
 
 force-dist:
 	rm -rf $(DISTDIR) $(DISTDIR).zip
@@ -87,4 +93,4 @@ force-dist:
 force-dist-exe:
 	rm -rf $(DISTDIR_W32) $(DISTDIR_W32).zip $(PY2EXE_TMPDIR)
 
-.PHONY: all dist sign dist-exe sign-exe clean distclean test check force-dist force-dist-exe
+.PHONY: all dist sign dist-exe sign-exe clean distclean test check test-full force-dist force-dist-exe
