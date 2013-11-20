@@ -1,4 +1,13 @@
-This directory contains the flash proxy JavaScript proxy program and
+The proxy directory contains the flash proxy JavaScript proxy program and
 associated HTML and media files. End users don't have to do anything
 with these files. They are meant to be installed on a centralized web
 server and then accessed through a browser.
+
+The modules subdirectory contains modules and plugins for making flash
+proxies work with other systems such as web publishing platforms.
+
+See a collection of modules for other platforms at
+https://github.com/glamrock/cupcake.
+
+For a plugin for Mozilla Firefox, see
+https://addons.mozilla.org/en-us/firefox/addon/tor-flashproxy-badge/.
