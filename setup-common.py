@@ -42,5 +42,6 @@ setup(
 
     install_requires = [
         'setuptools',
+        'M2Crypto',
         ],
 )
