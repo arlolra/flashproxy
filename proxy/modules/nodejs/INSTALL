@@ -1,0 +1,35 @@
+First, install nodejs:
+
+    # apt-get install nodejs
+
+Make sure flashproxy.js exists in the current directory, either a symlink or
+a plain copy.
+
+== Install from source
+
+If your distribution contains both the following packages (newer suites of
+Debian and Ubuntu), you can run main.js directly:
+
+    # apt-get install node-xmlhttprequest node-ws
+    $ nodejs main.js
+
+Otherwise, you can use npm to install it as a package, along with all its
+dependencies:
+
+    # apt-get install npm
+    # npm install -g
+    $ flashproxy
+
+== Install from npm registry
+
+This package is also being published on the npm registry. To install from there
+rather than your local copy, run:
+
+    # npm install -g flashproxy
+    $ flashproxy
+
+Rather than install globally, you can also,
+
+    $ cd ~/  # or, to the dir of your choice
+    $ npm install flashproxy
+    $ npm start flashproxy  # or, node node_modules/flashproxy
