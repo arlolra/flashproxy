@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Register with a facilitator using the email method."""
 
 import errno
 import getopt

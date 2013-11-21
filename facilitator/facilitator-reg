@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Forwards encrypted client registrations to a running facilitator-reg-daemon.
+"""
 
 import getopt
 import socket

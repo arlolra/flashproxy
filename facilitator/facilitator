@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+The flashproxy facilitator.
+"""
 
 import SocketServer
 import getopt

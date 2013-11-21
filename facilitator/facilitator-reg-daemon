@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Accepts encrypted client registrations and forwards them to the facilitator.
+"""
 
 import SocketServer
 import getopt

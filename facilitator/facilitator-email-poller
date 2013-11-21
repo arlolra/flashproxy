@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Polls a mailbox for new registrations and forwards them using facilitator-reg.
+"""
 
 import calendar
 import datetime

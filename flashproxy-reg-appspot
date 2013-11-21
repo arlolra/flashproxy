@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Register with a facilitator through Google App Engine."""
 
 import errno
 import getopt

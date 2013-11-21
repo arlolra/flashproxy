@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Register with a facilitator using the HTTP method."""
 
 import getopt
 import socket

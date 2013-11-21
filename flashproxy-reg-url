@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Register with a facilitator using an indirect URL."""
 
 import base64
 import getopt
