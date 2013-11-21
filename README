@@ -62,16 +62,6 @@ computer into a flash proxy as long as the page is open.
 http://crypto.stanford.edu/flashproxy/
 
 
-== Using a public client transport plugin
-
-Rather than running flashproxy-client on your computer, you can use a
-public instance of it. This way is not as realistic because all your Tor
-traffic will first go to a fixed address and can be easily blocked.
-However this is an easy way to try out the system without having to do
-port forwarding.
-	$ tor ClientTransportPlugin "flashproxy socks4 fp-facilitator.org:9999" UseBridges 1 Bridge "flashproxy 0.0.1.0:1" LearnCircuitBuildTimeout 0 CircuitBuildTimeout 60
-
-
 == Troubleshooting
 
 Make sure someone is viewing http://crypto.stanford.edu/flashproxy/, or
