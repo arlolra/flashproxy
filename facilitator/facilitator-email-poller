@@ -265,7 +265,7 @@ def message_ok(msg):
 
 def handle_message(msg):
     try:
-        if fac.put_reg_base64(msg.get_payload()):
+        if fac.put_reg_proc(["facilitator-reg"], msg.get_payload()):
             log(u"registered client")
         else:
             log(u"failed to register client")

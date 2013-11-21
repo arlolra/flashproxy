@@ -5,8 +5,8 @@ pass them to the backend. There are three supported helper rendezvous
 methods: HTTP, email, and appspot.
 
 facilitator-reg is a simple program that forwards its standard input to
-a locally running facilitator-reg-daemon process. It is not used by the
-other components, but is useful for debugging and test purposes.
+a locally running facilitator-reg-daemon process. It is used by other
+components as a utility, but is also useful for debugging and testing.
 
 facilitator-reg-daemon accepts connections containing encrypted client
 registrations and forwards them to the facilitator. It exists as a

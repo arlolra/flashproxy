@@ -48,11 +48,16 @@ def main():
     s = socket.socket(addrinfo[0], addrinfo[1], addrinfo[2])
     s.connect(addrinfo[4])
 
+    sent = 0
     while True:
         data = sys.stdin.read(1024)
         if data == "":
+            mod = sent % 4
+            if mod != 0:
+                s.sendall((4 - mod) * "=")
             break
-        s.send(data)
+        s.sendall(data)
+        sent += len(data)
     s.shutdown(socket.SHUT_WR)
     data = s.recv(1024)
 

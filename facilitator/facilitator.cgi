@@ -23,7 +23,7 @@ def exit_error(status):
 def send_url_reg(reg):
     # Translate from url-safe base64 alphabet to the standard alphabet.
     reg = reg.replace('-', '+').replace('_', '/')
-    return fac.put_reg_base64(reg)
+    return fac.put_reg_proc(["facilitator-reg"], reg)
 
 method = os.environ.get("REQUEST_METHOD")
 remote_addr = (os.environ.get("REMOTE_ADDR"), None)

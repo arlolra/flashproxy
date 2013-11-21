@@ -211,14 +211,8 @@ def get_reg(facilitator_addr, proxy_addr, proxy_transport_list):
     else:
         raise ValueError("Facilitator response was not \"OK\"")
 
-def put_reg_base64(b64):
-    """Attempt to add a registration by running a facilitator-reg program
-    locally."""
-    # Padding is optional, but the python base64 functions can't
-    # handle lack of padding. Add it here. Assumes correct encoding.
-    mod = len(b64) % 4
-    if mod != 0:
-        b64 += (4 - mod) * "="
-    p = subprocess.Popen(["facilitator-reg"], stdin=subprocess.PIPE)
-    stdout, stderr = p.communicate(b64)
+def put_reg_proc(args, data):
+    """Attempt to add a registration by running a program."""
+    p = subprocess.Popen(args, stdin=subprocess.PIPE)
+    stdout, stderr = p.communicate(data)
     return p.returncode == 0
