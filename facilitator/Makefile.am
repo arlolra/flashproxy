@@ -68,52 +68,52 @@ meta-install-sanity:
 	  "don't run {pre,post}-{install,remove} when DESTDIR is set"; false; }
 
 install-user:
-	id -u $(fpfacilitatoruser) >/dev/null 2>&1 || { \
+	id -u ${fpfacilitatoruser} >/dev/null 2>&1 || { \
 	which adduser >/dev/null 2>&1 && \
 	  adduser --quiet \
 	    --system \
 	    --group \
 	    --disabled-password \
-	    --home $(sysconfdir)/flashproxy \
+	    --home ${sysconfdir}/flashproxy \
 	    --no-create-home \
 	    --shell /bin/false \
-	    $(fpfacilitatoruser) || \
+	    ${fpfacilitatoruser} || \
 	  useradd \
 	    --system \
-	    --home $(sysconfdir)/flashproxy \
+	    --home ${sysconfdir}/flashproxy \
 	    -M \
 	    --shell /bin/false \
-	    $(fpfacilitatoruser) ; }
+	    ${fpfacilitatoruser} ; }
 
 remove-user:
 	: # deluser does actually remove the group as well
-	id -u $(fpfacilitatoruser) >/dev/null 2>&1 && { \
+	id -u ${fpfacilitatoruser} >/dev/null 2>&1 && { \
 	which deluser >/dev/null 2>&1 && \
 	  deluser --quiet \
 	    --system \
-	    $(fpfacilitatoruser) || \
+	    ${fpfacilitatoruser} || \
 	  userdel \
-	    $(fpfacilitatoruser) ; } || true
+	    ${fpfacilitatoruser} ; } || true
 
 install-secrets:
-	test -f $(pkgconfdir)/reg-daemon.key || { \
-	  install -m 600 /dev/null $(pkgconfdir)/reg-daemon.key && \
-	  openssl genrsa 2048 | tee $(pkgconfdir)/reg-daemon.key | \
-	  openssl rsa -pubout > $(pkgconfdir)/reg-daemon.pub; }
-	test -f $(pkgconfdir)/reg-email.pass || { \
-	  install -m 600 /dev/null $(pkgconfdir)/reg-email.pass && \
-	  cat $(exampledir)/reg-email.pass > $(pkgconfdir)/reg-email.pass; }
+	test -f ${pkgconfdir}/reg-daemon.key || { \
+	  install -m 600 /dev/null ${pkgconfdir}/reg-daemon.key && \
+	  openssl genrsa 2048 | tee ${pkgconfdir}/reg-daemon.key | \
+	  openssl rsa -pubout > ${pkgconfdir}/reg-daemon.pub; }
+	test -f ${pkgconfdir}/reg-email.pass || { \
+	  install -m 600 /dev/null ${pkgconfdir}/reg-email.pass && \
+	  cat ${exampledir}/reg-email.pass > ${pkgconfdir}/reg-email.pass; }
 
 remove-secrets:
-	rm -f $(pkgconfdir)/reg-*
+	rm -f ${pkgconfdir}/reg-*
 
 install-symlinks:
 	for i in fp-reg.go app.yaml README; do \
-	  $(LN_S) -f $(appenginedir)/$$i $(appengineconfdir)/$$i; \
+	  $(LN_S) -f ${appenginedir}/$$i ${appengineconfdir}/$$i; \
 	done
 
 remove-symlinks:
-	rm -rf $(appengineconfdir)
+	rm -rf ${appengineconfdir}
 
 # initscripts: assume that if the user wanted to install them, then they also
 # wanted to configure them, and that the system supports them. if this isn't the
@@ -124,8 +124,8 @@ remove-symlinks:
 install-daemon:
 if DO_INITSCRIPTS
 # initscripts use these directories for logs and runtime data
-	mkdir -p $(localstatedir)/log
-	mkdir -p $(localstatedir)/run
+	mkdir -p ${localstatedir}/log
+	mkdir -p ${localstatedir}/run
 	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
 	  update-rc.d $$i defaults; \
 	  invoke-rc.d $$i start; \
