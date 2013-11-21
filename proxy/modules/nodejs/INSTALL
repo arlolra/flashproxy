@@ -10,7 +10,7 @@ a plain copy.
 If your distribution contains both the following packages (newer suites of
 Debian and Ubuntu), you can run main.js directly:
 
-    # apt-get install node-xmlhttprequest node-ws
+    # apt-get install node-optimist node-xmlhttprequest node-ws
     $ nodejs main.js
 
 Otherwise, you can use npm to install it as a package, along with all its
