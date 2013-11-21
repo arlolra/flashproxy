@@ -125,110 +125,136 @@ def log(msg):
     print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
     options.log_file.flush()
 
-opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:", [
-    "debug",
-    "disable-pin",
-    "email=",
-    "help",
-    "imap=",
-    "imaplib-debug",
-    "log=",
-    "pass=",
-    "pidfile=",
-    "privdrop-user=",
-    "unsafe-logging",
-])
-for o, a in opts:
-    if o == "-d" or o == "--debug":
-        options.daemonize = False
-        options.log_filename = None
-    elif o == "--disable-pin":
-        options.use_certificate_pin = False
-    elif o == "-h" or o == "--help":
-        usage()
-        sys.exit()
-    if o == "--imaplib-debug":
-        options.imaplib_debug = True
-    elif o == "-l" or o == "--log":
-        options.log_filename = a
-    elif o == "-p" or o == "--pass":
-        options.password_filename = a
-    elif o == "--pidfile":
-        options.pid_filename = a
-    elif o == "--privdrop-user":
-        options.privdrop_username = a
-    elif o == "--unsafe-logging":
-        options.safe_logging = False
+def main():
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "de:hi:l:p:", [
+        "debug",
+        "disable-pin",
+        "email=",
+        "help",
+        "imap=",
+        "imaplib-debug",
+        "log=",
+        "pass=",
+        "pidfile=",
+        "privdrop-user=",
+        "unsafe-logging",
+    ])
+    for o, a in opts:
+        if o == "-d" or o == "--debug":
+            options.daemonize = False
+            options.log_filename = None
+        elif o == "--disable-pin":
+            options.use_certificate_pin = False
+        elif o == "-h" or o == "--help":
+            usage()
+            sys.exit()
+        if o == "--imaplib-debug":
+            options.imaplib_debug = True
+        elif o == "-l" or o == "--log":
+            options.log_filename = a
+        elif o == "-p" or o == "--pass":
+            options.password_filename = a
+        elif o == "--pidfile":
+            options.pid_filename = a
+        elif o == "--privdrop-user":
+            options.privdrop_username = a
+        elif o == "--unsafe-logging":
+            options.safe_logging = False
 
-if len(args) != 0:
-    usage(sys.stderr)
-    sys.exit(1)
-
-# Load the email password.
-if options.password_filename is None:
-    print >> sys.stderr, "The --pass option is required."
-    sys.exit(1)
-try:
-    password_file = open(options.password_filename)
-except Exception, e:
-    print >> sys.stderr, """\
-Failed to open password file "%s": %s.\
-""" % (options.password_filename, str(e))
-    sys.exit(1)
-try:
-    if not proc.check_perms(password_file.fileno()):
-        print >> sys.stderr, "Refusing to run with group- or world-readable password file. Try"
-        print >> sys.stderr, "\tchmod 600 %s" % options.password_filename
+    if len(args) != 0:
+        usage(sys.stderr)
         sys.exit(1)
-    for (lineno0, line) in enumerate(password_file.readlines()):
-        line = line.strip("\n")
-        if not line or line.startswith('#'): continue
-        # we do this stricter regex match because passwords might have spaces in
-        res = re.match(r"(?:(\S+)\s)?(\S+@\S+)\s(.+)", line)
-        if not res:
-            raise ValueError("could not find email or password on line %s" % (lineno0+1))
-        (imap_addr_spec, email_addr, email_password) = res.groups()
-        imap_addr = parse_addr_spec(
-            imap_addr_spec or "", DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
-        break
-    else:
-        raise ValueError("no email line found")
-except Exception, e:
-    print >> sys.stderr, """\
-Failed to parse password file "%s": %s.
-Syntax is [<imap_host>] <email> <password>.
-""" % (options.password_filename, str(e))
-    sys.exit(1)
-finally:
-    password_file.close()
 
-if options.log_filename:
-    options.log_file = open(options.log_filename, "a")
-    # Send error tracebacks to the log.
-    sys.stderr = options.log_file
-else:
-    options.log_file = sys.stdout
-
-if options.daemonize:
-    log(u"daemonizing")
-    pid = os.fork()
-    if pid != 0:
-        if options.pid_filename:
-            f = open(options.pid_filename, "w")
-            print >> f, pid
-            f.close()
-        sys.exit(0)
-
-if options.privdrop_username is not None:
-    log(u"dropping privileges to those of user %s" % options.privdrop_username)
+    # Load the email password.
+    if options.password_filename is None:
+        print >> sys.stderr, "The --pass option is required."
+        sys.exit(1)
     try:
-        proc.drop_privs(options.privdrop_username)
-    except BaseException, e:
-        print >> sys.stderr, "Can't drop privileges:", str(e)
+        password_file = open(options.password_filename)
+    except Exception, e:
+        print >> sys.stderr, """\
+    Failed to open password file "%s": %s.\
+    """ % (options.password_filename, str(e))
         sys.exit(1)
+    try:
+        if not proc.check_perms(password_file.fileno()):
+            print >> sys.stderr, "Refusing to run with group- or world-readable password file. Try"
+            print >> sys.stderr, "\tchmod 600 %s" % options.password_filename
+            sys.exit(1)
+        for (lineno0, line) in enumerate(password_file.readlines()):
+            line = line.strip("\n")
+            if not line or line.startswith('#'): continue
+            # we do this stricter regex match because passwords might have spaces in
+            res = re.match(r"(?:(\S+)\s)?(\S+@\S+)\s(.+)", line)
+            if not res:
+                raise ValueError("could not find email or password on line %s" % (lineno0+1))
+            (imap_addr_spec, email_addr, email_password) = res.groups()
+            imap_addr = parse_addr_spec(
+                imap_addr_spec or "", DEFAULT_IMAP_HOST, DEFAULT_IMAP_PORT)
+            break
+        else:
+            raise ValueError("no email line found")
+    except Exception, e:
+        print >> sys.stderr, """\
+    Failed to parse password file "%s": %s.
+    Syntax is [<imap_host>] <email> <password>.
+    """ % (options.password_filename, str(e))
+        sys.exit(1)
+    finally:
+        password_file.close()
 
-if options.imaplib_debug:
-    imaplib.Debug = 4
+    if options.log_filename:
+        options.log_file = open(options.log_filename, "a")
+        # Send error tracebacks to the log.
+        sys.stderr = options.log_file
+    else:
+        options.log_file = sys.stdout
+
+    if options.daemonize:
+        log(u"daemonizing")
+        pid = os.fork()
+        if pid != 0:
+            if options.pid_filename:
+                f = open(options.pid_filename, "w")
+                print >> f, pid
+                f.close()
+            sys.exit(0)
+
+    if options.privdrop_username is not None:
+        log(u"dropping privileges to those of user %s" % options.privdrop_username)
+        try:
+            proc.drop_privs(options.privdrop_username)
+        except BaseException, e:
+            print >> sys.stderr, "Can't drop privileges:", str(e)
+            sys.exit(1)
+
+    if options.imaplib_debug:
+        imaplib.Debug = 4
+
+    login_limit = RateLimit()
+    while True:
+        try:
+            imap = imap_login(imap_addr, email_addr, email_password)
+            try:
+                imap_loop(imap)
+            except imaplib.IMAP4.error:
+                imap.close()
+                imap.logout()
+        except (imaplib.IMAP4.error, ssl.SSLError, SSL.SSLError, socket.error), e:
+            # Try again after a disconnection.
+            log(u"lost server connection: %s" % str(e))
+        except KeyboardInterrupt:
+            break
+
+        # Don't reconnect too fast.
+        t = login_limit.time_to_wait()
+        if t > 0:
+            log(u"waiting %.2f seconds before logging in again" % t)
+            time.sleep(t)
+
+    log(u"closing")
+    imap.close()
+    imap.logout()
 
 def message_get_date(msg):
     """Get the datetime when the message was received by reading the X-Received
@@ -342,7 +368,7 @@ def imap_loop(imap):
 
         time.sleep(POLL_INTERVAL)
 
-def imap_login():
+def imap_login(imap_addr, email_addr, email_password):
     """Make an IMAP connection, check the certificate and public key, and log in."""
     with keys.temp_cert(keys.PIN_GOOGLE_CA_CERT) as ca_certs_file:
         imap = IMAP4_SSL_REQUIRED(
@@ -375,27 +401,5 @@ class RateLimit(object):
         self.interval = self.interval * math.exp(-self.DECAY * delta) * self.MULTIPLIER
         return wait
 
-login_limit = RateLimit()
-while True:
-    try:
-        imap = imap_login()
-        try:
-            imap_loop(imap)
-        except imaplib.IMAP4.error:
-            imap.close()
-            imap.logout()
-    except (imaplib.IMAP4.error, ssl.SSLError, SSL.SSLError, socket.error), e:
-        # Try again after a disconnection.
-        log(u"lost server connection: %s" % str(e))
-    except KeyboardInterrupt:
-        break
-
-    # Don't reconnect too fast.
-    t = login_limit.time_to_wait()
-    if t > 0:
-        log(u"waiting %.2f seconds before logging in again" % t)
-        time.sleep(t)
-
-log(u"closing")
-imap.close()
-imap.logout()
+if __name__ == "__main__":
+    main()
