@@ -60,7 +60,7 @@ pre-install: meta-install-sanity install-user
 post-install: meta-install-sanity install-secrets install-symlinks install-daemon
 pre-remove: meta-install-sanity remove-daemon remove-symlinks
 post-remove: meta-install-sanity
-pre-purge: pre-remove remove-secrets
+pre-purge: pre-remove remove-secrets remove-daemon-data
 post-purge: post-remove remove-user
 
 meta-install-sanity:
@@ -74,13 +74,13 @@ install-user:
 	    --system \
 	    --group \
 	    --disabled-password \
-	    --home ${sysconfdir}/flashproxy \
+	    --home ${pkgconfdir} \
 	    --no-create-home \
 	    --shell /bin/false \
 	    ${fpfacilitatoruser} || \
 	  useradd \
 	    --system \
-	    --home ${sysconfdir}/flashproxy \
+	    --home ${pkgconfdir} \
 	    -M \
 	    --shell /bin/false \
 	    ${fpfacilitatoruser} ; }
@@ -105,15 +105,19 @@ install-secrets:
 	  cat ${exampledir}/reg-email.pass > ${pkgconfdir}/reg-email.pass; }
 
 remove-secrets:
-	rm -f ${pkgconfdir}/reg-*
+	for i in reg-daemon.key reg-daemon.pub reg-email.pass; do \
+	  rm -f ${pkgconfdir}/$$i; \
+	done
 
 install-symlinks:
-	for i in fp-reg.go app.yaml README; do \
+	for i in fp-reg.go app.yaml; do \
 	  $(LN_S) -f ${appenginedir}/$$i ${appengineconfdir}/$$i; \
 	done
 
 remove-symlinks:
-	rm -rf ${appengineconfdir}
+	for i in fp-reg.go app.yaml; do \
+	  rm -f ${appengineconfdir}/$$i; \
+	done
 
 # initscripts: assume that if the user wanted to install them, then they also
 # wanted to configure them, and that the system supports them. if this isn't the
@@ -138,6 +142,14 @@ if DO_INITSCRIPTS
 	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
 	  invoke-rc.d $$i stop; \
 	  update-rc.d $$i remove; \
+	done
+endif
+
+remove-daemon-data:
+if DO_INITSCRIPTS
+	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
+	  rm -f ${localstatedir}/log/$$i.log* \
+	  rm -f ${localstatedir}/run/$$i.pid \
 	done
 endif
 
