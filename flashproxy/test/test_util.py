@@ -27,6 +27,14 @@ class ParseAddrSpecTest(unittest.TestCase):
         self.assertEqual(parse_addr_spec(":", defhost="1234::1", defport=9999), ("1234::1", 9999))
         self.assertEqual(parse_addr_spec("", defhost="1234::1", defport=9999), ("1234::1", 9999))
 
+    def test_empty_defaults(self):
+        self.assertEqual(parse_addr_spec("192.168.0.2:8888"), ("192.168.0.2", 8888))
+        self.assertEqual(parse_addr_spec("", defhost="", defport=0), ("", 0))
+        self.assertEqual(parse_addr_spec(":8888", defhost=""), ("", 8888))
+        self.assertRaises(ValueError, parse_addr_spec, ":8888")
+        self.assertEqual(parse_addr_spec("192.168.0.2", defport=0), ("192.168.0.2", 0))
+        self.assertRaises(ValueError, parse_addr_spec, "192.168.0.2")
+
     def test_canonical_ip_noresolve(self):
         """Test that canonical_ip does not do DNS resolution by default."""
         self.assertRaises(ValueError, canonical_ip, *parse_addr_spec("example.com:80"))

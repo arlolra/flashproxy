@@ -4,11 +4,15 @@ import socket
 def parse_addr_spec(spec, defhost = None, defport = None):
     """Parse a host:port specification and return a 2-tuple ("host", port) as
     understood by the Python socket functions.
+
     >>> parse_addr_spec("192.168.0.1:9999")
     ('192.168.0.1', 9999)
 
-    If defhost or defport are given, those parts of the specification may be
-    omitted; if so, they will be filled in with defaults.
+    If defhost or defport are given and not None, the respective parts of the
+    specification may be omitted, and will be filled in with the defaults.
+    If defhost or defport are omitted or None, the respective parts of the
+    specification must be given, or else a ValueError will be raised.
+
     >>> parse_addr_spec("192.168.0.2:8888", defhost="192.168.0.1", defport=9999)
     ('192.168.0.2', 8888)
     >>> parse_addr_spec(":8888", defhost="192.168.0.1", defport=9999)
@@ -21,6 +25,12 @@ def parse_addr_spec(spec, defhost = None, defport = None):
     ('192.168.0.1', 9999)
     >>> parse_addr_spec("", defhost="192.168.0.1", defport=9999)
     ('192.168.0.1', 9999)
+    >>> parse_addr_spec(":")
+    Traceback (most recent call last):
+    [..]
+    ValueError: Bad address specification ":"
+    >>> parse_addr_spec(":", "", 0)
+    ('', 0)
 
     IPv6 addresses must be enclosed in square brackets."""
     host = None
