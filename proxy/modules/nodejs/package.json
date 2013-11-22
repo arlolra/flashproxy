@@ -1,6 +1,6 @@
 {
     "name": "flashproxy",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Standalone flash proxy. A flash proxy is a lightweight proxy providing access to the Tor network.",
     "main": "main.js",
     "scripts": {
