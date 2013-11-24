@@ -89,4 +89,4 @@ pylint: $(SRC_SCRIPT)
 check: $(THISFILE)
 	for i in $(TEST_PY); do $(PYTHON) "$$i"; done
 
-.PHONY: all install uninstall clean distclean maintainer-clean dist check pylint
+.PHONY: all install uninstall clean distclean maintainer-clean check pylint
