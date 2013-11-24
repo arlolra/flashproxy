@@ -62,11 +62,11 @@ endif
 
 install: all
 	mkdir -p $(DESTDIR)$(bindir)
-	for i in $(DST_SCRIPT); do $(INSTALL_SCRIPT) "$$i" $(DESTDIR)$(bindir); done
+	$(INSTALL_SCRIPT) $(DST_SCRIPT) $(DESTDIR)$(bindir)
 	mkdir -p $(DESTDIR)$(docdir)
-	for i in $(DST_DOC); do $(INSTALL_DATA) "$$i" $(DESTDIR)$(docdir); done
+	$(INSTALL_DATA) $(DST_DOC) $(DESTDIR)$(docdir)
 	mkdir -p $(DESTDIR)$(man1dir)
-	for i in $(DST_MAN1); do $(INSTALL_DATA) "$$i" $(DESTDIR)$(man1dir); done
+	$(INSTALL_DATA) $(DST_MAN1) $(DESTDIR)$(man1dir)
 
 uninstall:
 	for i in $(notdir $(DST_SCRIPT)); do rm $(DESTDIR)$(bindir)/"$$i"; done
