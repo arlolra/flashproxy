@@ -27,7 +27,7 @@ MAKE_CLIENT = $(MAKE) -f Makefile.client PYTHON="$(PYTHON)"
 REBUILD_MAN = 0
 
 # all is N/A for a binary package, but include for completeness
-all: dist
+all:
 
 DISTDIR = dist/$(DISTNAME)
 $(DISTDIR): Makefile.client setup-common.py $(THISFILE)
