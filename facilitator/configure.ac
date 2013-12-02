@@ -1,6 +1,6 @@
 AC_PREREQ([2.68])
 AC_INIT([flashproxy-facilitator], [1.4])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall foreign])
 
 AC_ARG_VAR(fpfacilitatoruser, [the user/group for the facilitator to run as])
 fpfacilitatoruser="${fpfacilitatoruser:-fp-facilitator}"
