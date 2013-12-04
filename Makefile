@@ -31,7 +31,7 @@ all:
 
 install:
 	$(MAKE_CLIENT) DESTDIR=$(DESTDIR) REBUILD_MAN=$(REBUILD_MAN) install
-	$(PYTHON) setup-common.py install --root=$(DESTDIR)
+	$(PYTHON) setup-common.py install $(if $(DESTDIR),--root=$(DESTDIR))
 
 DISTDIR = dist/$(DISTNAME)
 $(DISTDIR): Makefile.client setup-common.py $(THISFILE)
