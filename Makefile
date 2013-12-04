@@ -29,6 +29,10 @@ REBUILD_MAN = 0
 # all is N/A for a binary package, but include for completeness
 all:
 
+install:
+	$(MAKE_CLIENT) DESTDIR=$(DESTDIR) REBUILD_MAN=$(REBUILD_MAN) install
+	$(PYTHON) setup-common.py install --root=$(DESTDIR)
+
 DISTDIR = dist/$(DISTNAME)
 $(DISTDIR): Makefile.client setup-common.py $(THISFILE)
 	mkdir -p $(DISTDIR)
