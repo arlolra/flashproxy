@@ -18,6 +18,7 @@
 
 # files built by make
 /examples/fp-facilitator.conf
+/doc/*.1
 
 # files for binary-distribution
 /flashproxy-facilitator-*.tar.*

@@ -12,9 +12,12 @@ appenginedir = $(pkgdatadir)/appengine
 pkgconfdir = $(sysconfdir)/flashproxy
 appengineconfdir = $(pkgconfdir)/reg-appspot
 
+PYENV = PYTHONPATH='$(srcdir):$(PYTHONPATH)'; export PYTHONPATH;
+
 # automake PLVs
 
 dist_bin_SCRIPTS = facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg
+man1_MANS = doc/facilitator.1 doc/facilitator-email-poller.1 doc/facilitator-reg-daemon.1 doc/facilitator-reg.1
 dist_cgibin_SCRIPTS = facilitator.cgi
 if DO_INITSCRIPTS
 initscript_SCRIPTS = init.d/facilitator init.d/facilitator-email-poller init.d/facilitator-reg-daemon
@@ -26,14 +29,14 @@ dist_example_DATA = examples/fp-facilitator.conf examples/reg-email.pass example
 pkgconf_DATA = examples/facilitator-relays
 dist_appengine_DATA = appengine/app.yaml appengine/config.go appengine/fp-reg.go
 appengineconf_DATA = appengine/config.go
-CLEANFILES = examples/fp-facilitator.conf
-EXTRA_DIST = examples/fp-facilitator.conf.in HACKING $(TESTS)
+CLEANFILES = examples/fp-facilitator.conf $(man1_MANS)
+EXTRA_DIST = examples/fp-facilitator.conf.in mkman.sh mkman.inc HACKING $(TESTS)
 
 TESTS = facilitator-test.py
 # see http://www.gnu.org/software/automake/manual/html_node/Parallel-Test-Harness.html#index-TEST_005fEXTENSIONS
 TEST_EXTENSIONS = .py
 PY_LOG_COMPILER = $(PYTHON)
-AM_TESTS_ENVIRONMENT = PYTHONPATH='$(srcdir):$(PYTHONPATH)'; export PYTHONPATH;
+AM_TESTS_ENVIRONMENT = $(PYENV)
 AM_PY_LOG_FLAGS =
 
 # AC_CONFIG_FILES doesn't fully-expand directory variables
@@ -41,6 +44,10 @@ AM_PY_LOG_FLAGS =
 subst_vars = sed -e 's,[@]cgibindir[@],$(cgibindir),g'
 
 # our own targets
+
+doc/%.1: % mkman.sh mkman.inc Makefile
+	{ $(PYENV) $(PYTHON) "$<" --help; } \
+	  | { $(PYENV) ./mkman.sh "$<" $(VERSION) > "$@"; }
 
 examples/fp-facilitator.conf: examples/fp-facilitator.conf.in Makefile
 # mkdir needed for out-of-source build
