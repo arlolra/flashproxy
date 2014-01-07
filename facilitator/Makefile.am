@@ -7,7 +7,7 @@ cgibindir = @cgibindir@
 # unfortunately sysvinit does not support having initscripts in /usr/local/etc
 # yet, so we have to hard code a path here. :(
 initscriptdir = /etc/init.d
-exampledir = $(docdir)/examples
+exampledir = $(pkgdatadir)/examples
 appenginedir = $(pkgdatadir)/appengine
 pkgconfdir = $(sysconfdir)/flashproxy
 appengineconfdir = $(pkgconfdir)/reg-appspot
