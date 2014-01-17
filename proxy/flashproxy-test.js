@@ -1,10 +1,9 @@
-#!/usr/bin/env rhino
+#!/usr/bin/env node
 
-/* To run this test program, install the Rhino JavaScript interpreter
-   (apt-get install rhino). */
+/* To run this test program, install nodejs (apt-get install nodejs). */
 
 var VERBOSE = false;
-if (arguments.indexOf("-v") >= 0)
+if (process.argv.indexOf("-v") >= 0)
     VERBOSE = true;
 
 var num_tests = 0;
@@ -13,7 +12,9 @@ var num_failed = 0;
 var window = {location: {search: "?"}};
 var document = {cookie: ""};
 
-load("flashproxy.js");
+var fs = require("fs");
+var data = fs.readFileSync("./flashproxy.js", "utf-8");
+eval(data);
 
 function objects_equal(a, b) {
     if ((a === null) != (b === null))
@@ -39,8 +40,8 @@ var top = true;
 function announce(test_name) {
     if (VERBOSE) {
         if (!top)
-            print();
-        print(test_name);
+            console.log();
+        console.log(test_name);
     }
     top = false;
 }
@@ -48,13 +49,13 @@ function announce(test_name) {
 function pass(test) {
     num_tests++;
     if (VERBOSE)
-        print("PASS " + repr(test));
+        console.log("PASS " + repr(test));
 }
 
 function fail(test, expected, actual) {
     num_tests++;
     num_failed++;
-    print("FAIL " + repr(test) + "  expected: " + repr(expected) + "  actual: " + repr(actual));
+    console.log("FAIL " + repr(test) + "  expected: " + repr(expected) + "  actual: " + repr(actual));
 }
 
 function test_build_url() {
@@ -354,6 +355,6 @@ test_lang_keys();
 test_have_websocket_binary_frames();
 
 if (num_failed == 0)
-    quit(0);
+    process.exit(0);
 else
-    quit(1);
+    process.exit(1);
