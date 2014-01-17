@@ -4,7 +4,7 @@
    (apt-get install rhino). */
 
 var VERBOSE = false;
-if ("-v" in arguments)
+if (arguments.indexOf("-v") >= 0)
     VERBOSE = true;
 
 var num_tests = 0;
