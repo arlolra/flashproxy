@@ -13,7 +13,8 @@ this purpose, rather than a personal or organisation account. See
 email-howto.txt for how to do that.
 
 Download the SDK:
-https://developers.google.com/appengine/docs/go/gettingstarted/devenvironment
+https://developers.google.com/appengine/downloads#Google_App_Engine_SDK_for_Go
+This guide was written for version 1.8.9 of the SDK.
 
 Find your facilitator appengine installation, probably in reg-appspot/
 in your flashproxy config dir. Edit config.go to point to the address of
@@ -24,14 +25,14 @@ https://developers.google.com/appengine/docs/go/gettingstarted/uploading
 Enter an application ID and create the application.
 
 To run locally using the development server:
-$ ~/google_appengine/dev_appserver.py reg-appspot/
+$ ~/go_appengine/goapp serve reg-appspot/
 You are advised to do this on a non-production machine, away from the main
 facilitator.
 
 Use the appcfg.py program to upload the program. It should look
 something like this:
 
-$ torify ./google_appengine/appcfg.py --no_cookies -A <YOUR_APP_ID> update reg-appspot/
+$ torify ./go_appengine/goapp --no_cookies -A <YOUR_APP_ID> update reg-appspot/
 07:25 PM Host: appengine.google.com
 07:25 PM Application: application-id; version: 1
 07:25 PM
