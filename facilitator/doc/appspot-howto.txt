@@ -24,7 +24,7 @@ https://developers.google.com/appengine/docs/go/gettingstarted/uploading
 Enter an application ID and create the application.
 
 To run locally using the development server:
-$ ~/go_appengine/dev_appserver.py reg-appspot/
+$ ~/google_appengine/dev_appserver.py reg-appspot/
 You are advised to do this on a non-production machine, away from the main
 facilitator.
 
