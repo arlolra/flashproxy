@@ -19,7 +19,7 @@ import threading
 import time
 import traceback
 
-from flashproxy.util import parse_addr_spec, format_addr
+from flashproxy.util import parse_addr_spec, addr_family, format_addr
 
 from hashlib import sha1
 
@@ -678,6 +678,27 @@ def forward_ports(pairs):
         return False
     return True
 
+def forward_listeners(listeners):
+    """Attempt to forward the ports belonging to the given listening sockets.
+    Non-IPv4 addresses are ignored. If options.port_forwarding_external is not
+    None, only the first IPv4 address in the list will be forwarded."""
+    forward_list = []
+    for listener in remote_listen:
+        host, port = socket.getnameinfo(listener.getsockname(), socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
+        port = int(port)
+        af = addr_family(host)
+        if af != socket.AF_INET:
+            # I guess tor-fw-helper can only handle IPv4.
+            log(u"Not forwarding to %s because it is not an IPv4 address." % format_addr((host, port)))
+            continue
+        if options.port_forwarding_external is not None:
+            forward_list.append((options.port_forwarding_external, port))
+            # A fixed external address means we can forward only one port.
+            break
+        else:
+            forward_list.append((port, port))
+    forward_ports(forward_list)
+
 register_condvar = threading.Condition()
 # register_flag true means registration_thread_func should register at its next
 # opportunity.
@@ -1165,15 +1186,6 @@ def main():
     for method in register_methods:
         options.register_commands.append(build_register_command(method))
 
-    # Attempt to forward ports if requested.
-    if options.port_forwarding:
-        internal = remote_addr[1]
-        if options.port_forwarding_external is not None:
-            external = options.port_forwarding_external
-        else:
-            external = internal
-        forward_ports(((external, internal),))
-
     # Remote sockets, accepting remote WebSocket connections from proxies.
     remote_listen = []
     for addr in options.remote_addrs:
@@ -1205,6 +1217,10 @@ def main():
         pt_cmethoderror("Failed to open any local listeners.")
     if options.managed:
         pt_cmethods_done()
+
+    # Attempt to forward ports if requested.
+    if options.port_forwarding:
+        forward_listeners(remote_listen)
 
     # New remote sockets waiting to finish their WebSocket negotiation.
     websocket_pending = []
