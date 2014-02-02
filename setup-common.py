@@ -25,7 +25,10 @@ import sys
 
 from setuptools import setup, find_packages
 
-version = subprocess.check_output(["sh", "version.sh"]).strip()
+p = subprocess.Popen(["sh", "version.sh"], stdout=subprocess.PIPE)
+output, _ = p.communicate()
+assert p.poll() == 0
+version = output.strip()
 
 setup(
     name = "flashproxy-common",
