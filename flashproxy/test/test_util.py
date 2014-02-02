@@ -3,7 +3,7 @@
 import socket
 import unittest
 
-from flashproxy.util import parse_addr_spec, canonical_ip, addr_family
+from flashproxy.util import parse_addr_spec, canonical_ip, addr_family, format_addr
 
 class ParseAddrSpecTest(unittest.TestCase):
     def test_ipv4(self):
@@ -49,6 +49,43 @@ class AddrFamilyTest(unittest.TestCase):
 
     def test_name(self):
         self.assertRaises(socket.gaierror, addr_family, "localhost")
+
+class FormatAddrTest(unittest.TestCase):
+    def test_none_none(self):
+        self.assertRaises(ValueError, format_addr, (None, None))
+
+    def test_none_port(self):
+        self.assertEqual(format_addr((None, 1234)), ":1234")
+
+    def test_none_invalid(self):
+        self.assertRaises(ValueError, format_addr, (None, "string"))
+
+    def test_ipv4_none(self):
+        self.assertEqual(format_addr(("1.2.3.4", None)), "1.2.3.4")
+
+    def test_ipv4_port(self):
+        self.assertEqual(format_addr(("1.2.3.4", 1234)), "1.2.3.4:1234")
+
+    def test_ipv4_invalid(self):
+        self.assertRaises(ValueError, format_addr, ("1.2.3.4", "string"))
+
+    def test_ipv6_none(self):
+        self.assertEqual(format_addr(("1:2::3:4", None)), "[1:2::3:4]")
+
+    def test_ipv6_port(self):
+        self.assertEqual(format_addr(("1:2::3:4", 1234)), "[1:2::3:4]:1234")
+
+    def test_ipv6_invalid(self):
+        self.assertRaises(ValueError, format_addr, ("1:2::3:4", "string"))
+
+    def test_name_none(self):
+        self.assertEqual(format_addr(("localhost", None)), "localhost")
+
+    def test_name_port(self):
+        self.assertEqual(format_addr(("localhost", 1234)), "localhost:1234")
+
+    def test_name_invalid(self):
+        self.assertRaises(ValueError, format_addr, ("localhost", "string"))
 
 if __name__ == "__main__":
     unittest.main()
