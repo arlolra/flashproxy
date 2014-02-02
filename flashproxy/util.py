@@ -95,6 +95,12 @@ def canonical_ip(host, port, af=0):
     except that the host param must already be an IP address."""
     return resolve_to_ip(host, port, af, gai_flags=socket.AI_NUMERICHOST)
 
+def addr_family(ip):
+    """Return the address family of an IP address. Raises socket.gaierror if ip
+    is not a numeric IP."""
+    addrs = socket.getaddrinfo(ip, 0, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
+    return addrs[0][0]
+
 def format_addr(addr):
     host, port = addr
     host_str = u""
@@ -102,8 +108,7 @@ def format_addr(addr):
     if host is not None:
         # Numeric IPv6 address?
         try:
-            addrs = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP, socket.AI_NUMERICHOST)
-            af = addrs[0][0]
+            af = addr_family(host)
         except socket.gaierror, e:
             af = 0
         if af == socket.AF_INET6:

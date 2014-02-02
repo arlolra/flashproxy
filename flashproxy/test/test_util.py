@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+import socket
 import unittest
 
-from flashproxy.util import parse_addr_spec, canonical_ip
+from flashproxy.util import parse_addr_spec, canonical_ip, addr_family
 
 class ParseAddrSpecTest(unittest.TestCase):
     def test_ipv4(self):
@@ -38,6 +39,16 @@ class ParseAddrSpecTest(unittest.TestCase):
     def test_canonical_ip_noresolve(self):
         """Test that canonical_ip does not do DNS resolution by default."""
         self.assertRaises(ValueError, canonical_ip, *parse_addr_spec("example.com:80"))
+
+class AddrFamilyTest(unittest.TestCase):
+    def test_ipv4(self):
+        self.assertEqual(addr_family("1.2.3.4"), socket.AF_INET)
+
+    def test_ipv6(self):
+        self.assertEqual(addr_family("1:2::3:4"), socket.AF_INET6)
+
+    def test_name(self):
+        self.assertRaises(socket.gaierror, addr_family, "localhost")
 
 if __name__ == "__main__":
     unittest.main()
