@@ -46,7 +46,6 @@ DST_DOC = $(SRC_DOC)
 DST_ALL = $(DST_SCRIPT) $(DST_DOC) $(DST_MAN1)
 
 TEST_PY = flashproxy-client-test.py
-TEST_ALL = $(TEST_PY)
 
 REBUILD_MAN = 1
 
