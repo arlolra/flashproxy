@@ -1113,7 +1113,7 @@ def main():
         elif o == "-r" or o == "--register":
             options.register = True
         elif o == "--register-addr":
-            if options.register_addr is not None:
+            if register_addr_spec is not None:
                 print >> sys.stderr, "%s: only one --register-addr is allowed." % sys.argv[0]
                 sys.exit(1)
             options.register = True
