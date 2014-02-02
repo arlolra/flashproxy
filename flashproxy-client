@@ -1179,7 +1179,6 @@ def main():
         options.remote_addrs.append(("0.0.0.0", remote_addr[1]))
         if socket.has_ipv6:
             options.remote_addrs.append(("::", remote_addr[1]))
-    options.register_addr = parse_addr_spec(register_addr_spec or ":", *remote_addr)
 
     if not register_methods:
         register_methods = DEFAULT_REGISTER_METHODS
@@ -1196,6 +1195,13 @@ def main():
             continue
         remote_listen.append(listen)
         log(u"Listening remote on %s." % format_sockaddr(listen.getsockname()))
+        if options.register_addr is None:
+            host, port = socket.getnameinfo(listen.getsockname(), socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
+            port = int(port)
+            if not remote_addr[0]:
+                # Make host part blank (not 0.0.0.0) if unspecified.
+                host = ""
+            options.register_addr = parse_addr_spec(register_addr_spec or ":", host, port)
     if not remote_listen:
         log(u"Failed to open any remote listeners, quitting.")
         pt_cmethoderror("Failed to open any remote listeners.")
