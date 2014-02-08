@@ -10,9 +10,9 @@
 # - common: setup-common.py
 # - facilitator: facilitator/{configure.ac,Makefile.am}
 #
-# Not for the faint-hearted: it is possible to build dist-exe on GNU/Linux by
-# using wine to install the windows versions of Python, py2exe, and m2crypto,
-# then running `make PYTHON_W32="wine python" dist-exe`.
+# It is possible to build dist-exe on GNU/Linux by using wine to install
+# the windows versions of Python, py2exe, and m2crypto, then running
+# `make PYTHON="wine python" dist-exe`.
 
 PACKAGE = flashproxy-client
 VERSION = $(shell sh version.sh)
@@ -20,7 +20,6 @@ DISTNAME = $(PACKAGE)-$(VERSION)
 
 THISFILE = $(lastword $(MAKEFILE_LIST))
 PYTHON = python
-PYTHON_W32 = $(PYTHON)
 
 MAKE_CLIENT = $(MAKE) -f Makefile.client PYTHON="$(PYTHON)"
 # don't rebuild man pages due to VCS giving spurious timestamps, see #9940
@@ -55,7 +54,7 @@ sign: force-dist $(DISTDIR).zip.asc
 PY2EXE_TMPDIR = py2exe-tmp
 export PY2EXE_TMPDIR
 $(PY2EXE_TMPDIR): setup-client-exe.py
-	$(PYTHON_W32) setup-client-exe.py py2exe -q
+	$(PYTHON) setup-client-exe.py py2exe -q
 
 DISTDIR_W32 = $(DISTDIR)-win32
 # below, we override DST_SCRIPT and DST_MAN1 for windows
