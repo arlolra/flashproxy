@@ -105,7 +105,7 @@ def format_addr(addr):
     host, port = addr
     host_str = u""
     port_str = u""
-    if host is not None:
+    if not (host is None or host == ""):
         # Numeric IPv6 address?
         try:
             af = addr_family(host)
