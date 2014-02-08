@@ -60,6 +60,15 @@ class FormatAddrTest(unittest.TestCase):
     def test_none_invalid(self):
         self.assertRaises(ValueError, format_addr, (None, "string"))
 
+    def test_empty_none(self):
+        self.assertRaises(ValueError, format_addr, ("", None))
+
+    def test_empty_port(self):
+        self.assertEqual(format_addr(("", 1234)), ":1234")
+
+    def test_empty_invalid(self):
+        self.assertRaises(ValueError, format_addr, ("", "string"))
+
     def test_ipv4_none(self):
         self.assertEqual(format_addr(("1.2.3.4", None)), "1.2.3.4")
 
