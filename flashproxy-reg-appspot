@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """Register with a facilitator through Google App Engine."""
 
-import errno
 import getopt
 import httplib
 import os
@@ -70,19 +69,6 @@ def safe_str(s):
 
 def safe_format_addr(addr):
     return safe_str(format_addr(addr))
-
-def get_state_dir():
-    """Get a directory where we can put temporary files. Returns None if any
-    suitable temporary directory will do."""
-    pt_dir = os.environ.get("TOR_PT_STATE_LOCATION")
-    if pt_dir is None:
-        return None
-    try:
-        os.makedirs(pt_dir)
-    except OSError, e:
-        if e.errno != errno.EEXIST:
-            raise
-    return pt_dir
 
 def generate_url(addr):
     if getattr(sys, "frozen", False):

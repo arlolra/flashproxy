@@ -1,3 +1,4 @@
+import errno
 import os
 import tempfile
 
@@ -71,11 +72,24 @@ def check_certificate_pin(sock, cert_pubkey):
         expected = "(" + ", ".join(x.encode("hex") for x in cert_pubkey) + ")"
         raise ValueError("Public key does not match pin: got %s but expected any of %s" % (found, expected))
 
+def get_state_dir():
+    """Get a directory where we can put temporary files. Returns None if any
+    suitable temporary directory will do."""
+    pt_dir = os.environ.get("TOR_PT_STATE_LOCATION")
+    if pt_dir is None:
+        return None
+    try:
+        os.makedirs(pt_dir)
+    except OSError, e:
+        if e.errno != errno.EEXIST:
+            raise
+    return pt_dir
+
 class temp_cert(object):
     """Implements a with-statement over raw certificate data."""
 
     def __init__(self, certdata):
-        fd, self.path = tempfile.mkstemp(prefix="fp-cert-temp-", suffix=".crt")
+        fd, self.path = tempfile.mkstemp(prefix="fp-cert-temp-", dir=get_state_dir(), suffix=".crt")
         os.write(fd, certdata)
         os.close(fd)
 
