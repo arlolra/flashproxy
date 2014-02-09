@@ -1,3 +1,4 @@
+import os
 import tempfile
 
 from hashlib import sha1
@@ -74,13 +75,12 @@ class temp_cert(object):
     """Implements a with-statement over raw certificate data."""
 
     def __init__(self, certdata):
-        self.fd = tempfile.NamedTemporaryFile(prefix="fp-cert-temp-", suffix=".crt", delete=True)
-        self.fd.write(certdata)
-        self.fd.flush()
-        self.fd.seek(0)
+        fd, self.path = tempfile.mkstemp(prefix="fp-cert-temp-", suffix=".crt")
+        os.write(fd, certdata)
+        os.close(fd)
 
     def __enter__(self):
-        return self.fd
+        return self.path
 
     def __exit__(self, type, value, traceback):
-        self.fd.close()
+        os.unlink(self.path)

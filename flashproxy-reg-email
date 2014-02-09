@@ -185,7 +185,7 @@ try:
     ctx = SSL.Context("tlsv1")
     ctx.set_verify(SSL.verify_peer, 3)
 
-    with temp_cert(PIN_GOOGLE_CA_CERT) as ca_file:
+    with temp_cert(PIN_GOOGLE_CA_CERT) as ca_filename:
         # We roll our own initial EHLO/STARTTLS because smtplib.SMTP.starttls
         # doesn't allow enough certificate validation.
         code, msg = smtp.docmd("EHLO", EHLO_FQDN)
@@ -194,7 +194,7 @@ try:
         code, msg = smtp.docmd("STARTTLS")
         if code != 220:
             raise ValueError("Got code %d after STARTTLS" % code)
-        ret = ctx.load_verify_locations(ca_file.name)
+        ret = ctx.load_verify_locations(ca_filename)
         assert ret == 1
 
     smtp.sock = SSL.Connection(ctx, smtp.sock)

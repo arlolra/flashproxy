@@ -136,8 +136,8 @@ class PinHTTPSConnection(httplib.HTTPSConnection):
         ctx = SSL.Context("tlsv1")
         ctx.set_verify(SSL.verify_peer, 3)
 
-        with temp_cert(PIN_GOOGLE_CA_CERT) as ca_file:
-            ret = ctx.load_verify_locations(ca_file.name)
+        with temp_cert(PIN_GOOGLE_CA_CERT) as ca_filename:
+            ret = ctx.load_verify_locations(ca_filename)
             assert ret == 1
 
         self.sock = SSL.Connection(ctx, sock)
