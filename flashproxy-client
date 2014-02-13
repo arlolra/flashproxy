@@ -54,10 +54,7 @@ class options(object):
 
     managed = True
 
-    address_family = socket.AF_UNSPEC
     daemonize = False
-    facilitator_url = None
-    facilitator_pubkey_filename = None
     log_filename = None
     log_file = sys.stdout
     pid_filename = None
@@ -66,8 +63,13 @@ class options(object):
     port_forwarding_external = None
     register = False
     register_commands = []
+
+    # registration options
+    address_family = socket.AF_UNSPEC
     transport = DEFAULT_TRANSPORT
     safe_logging = True
+    facilitator_url = None
+    facilitator_pubkey_filename = None
 
 def safe_str(s):
     """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
@@ -1087,13 +1089,17 @@ If you need to pass more options, use TODO #9976.""")
         % DEFAULT_REMOTE_PORT, default="", nargs="?")
 
     ns = parser.parse_args(sys.argv[1:])
+    # set registration options
     options.address_family = ns.address_family or socket.AF_UNSPEC
     if options.address_family != socket.AF_UNSPEC:
         getaddrinfo = socket.getaddrinfo
         def getaddrinfo_replacement(host, port, family, *args, **kwargs):
             return getaddrinfo(host, port, options.address_family, *args, **kwargs)
         socket.getaddrinfo = getaddrinfo_replacement
+    options.transport = ns.transport
     options.safe_logging = not ns.unsafe_logging
+    options.facilitator_url = ns.facilitator
+    options.facilitator_pubkey_filename = ns.facilitator_pubkey
 
     options.managed = not ns.external
 
