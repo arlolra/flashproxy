@@ -11,8 +11,7 @@ flashproxy.js: $(topsrcdir)/proxy/flashproxy.js
 	cp -f $< $@
 
 flashproxy.1: main.js flashproxy.js $(topsrcdir)/mkman.sh $(topsrcdir)/mkman.inc Makefile
-	./main.js --help \
-	  | sed -re 's,/\S+/nodejs ./main.js,flashproxy,g' \
+	./main.js --help | sed -e 's,node ./main.js,flashproxy,g' \
 	  | $(topsrcdir)/mkman.sh flashproxy "$(VERSION)" "The flashproxy standalone nodejs proxy" "$(VERSION)" > "$@"
 
 clean:
