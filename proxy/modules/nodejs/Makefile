@@ -2,7 +2,7 @@
 topsrcdir = ../../..
 
 ALL_DST = flashproxy.js flashproxy.1
-VERSION = $(shell sed -nre 's/^\s*"version"\s*:\s*"([^"]+)".*/\1/gp' package.json)
+VERSION = $(shell sed -ne 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"][^"]*\)".*/\1/gp' package.json)
 
 all: $(ALL_DST)
 
