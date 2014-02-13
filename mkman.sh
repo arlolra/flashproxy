@@ -25,13 +25,13 @@ EOF
 # Fixes some help2man quirks, see `man man`
 help2man_fixup() {
 	sed -e '
-# restricted to usage synopsis section
-/^\.SH SYNOPSIS$/,/^\.SH [A-Z][A-Z]*$/{
+# restricted to usage parameters
+/^\.SH SYNOPSIS$/,/^\.SH [A-Z][A-Z]*$/{/^[^.]/{
 	# change hypenated parameters to bold, "type exactly as shown"
 	s/\\fI\-/\\fB\-/g;
 	# change ALL-CAPS parameters to italic, "replace with appropriate argument"
 	s/\b\([A-Z][A-Z]*\)\b/\\fI\1\\fR/g;
-}'
+}}'
 }
 
 prog="$1"
