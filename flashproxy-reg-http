@@ -2,82 +2,29 @@
 """Register with a facilitator using the HTTP method."""
 
 import argparse
-import socket
+import flashproxy
 import sys
-import urllib
 import urllib2
 
-from flashproxy.util import parse_addr_spec, format_addr
-
-DEFAULT_REMOTE = ("", 9000)
-DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
-DEFAULT_TRANSPORT = "websocket"
-
-class options(object):
-    remote_addr = None
-
-    address_family = socket.AF_UNSPEC
-    facilitator_url = None
-    transport = DEFAULT_TRANSPORT
-    safe_logging = True
-
-def safe_str(s):
-    """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
-    if options.safe_logging:
-        return "[scrubbed]"
-    else:
-        return s
-
-def safe_format_addr(addr):
-    return safe_str(format_addr(addr))
-
-def build_reg(addr, transport):
-    return urllib.urlencode((
-        ("client", format_addr(addr)),
-        ("client-transport", transport),
-    ))
+from flashproxy.util import safe_format_addr
+from flashproxy.reg import DEFAULT_FACILITATOR_URL, build_reg
 
 parser = argparse.ArgumentParser(
     usage="%(prog)s [OPTIONS] [REMOTE][:PORT]",
     description="Register with a flash proxy facilitator using an HTTP POST. "
     "If only the external port is given, the remote server guesses our "
     "external address.")
-# common opts
-parser.add_argument("-4", help="name lookups use only IPv4.",
-    action="store_const", const=socket.AF_INET, dest="address_family")
-parser.add_argument("-6", help="name lookups use only IPv6.",
-    action="store_const", const=socket.AF_INET6, dest="address_family")
-parser.add_argument("--unsafe-logging", help="don't scrub IP addresses and "
-    "other sensitive information from logs.", action="store_true")
-parser.add_argument("--transport",
-    help="register using the given transport, default %(default)s.",
-    default=DEFAULT_TRANSPORT)
-# common args
-parser.add_argument("remote_addr",
-    help="remote to register, default %s - the external IP address is guessed."
-        % format_addr(DEFAULT_REMOTE),
-    metavar="REMOTE:PORT", default="", nargs="?",
-    type=lambda x: parse_addr_spec(x, *DEFAULT_REMOTE))
-# specific opts
+flashproxy.util.add_module_opts(parser)
+flashproxy.reg.add_registration_args(parser, ignore_pubkey=True)
 parser.add_argument("-f", "--facilitator", metavar="URL",
     help="register with the given facilitator, default %(default)s.",
     default=DEFAULT_FACILITATOR_URL)
 
-ns = parser.parse_args(sys.argv[1:])
-options.address_family = ns.address_family or socket.AF_UNSPEC
-if options.address_family != socket.AF_UNSPEC:
-    getaddrinfo = socket.getaddrinfo
-    def getaddrinfo_replacement(host, port, family, *args, **kwargs):
-        return getaddrinfo(host, port, options.address_family, *args, **kwargs)
-    socket.getaddrinfo = getaddrinfo_replacement
-options.safe_logging = not ns.unsafe_logging
-options.transport = ns.transport
-options.remote_addr = ns.remote_addr
-options.facilitator_url = ns.facilitator
+options = parser.parse_args(sys.argv[1:])
 
 body = build_reg(options.remote_addr, options.transport)
 try:
-    http = urllib2.urlopen(options.facilitator_url, body, 10)
+    http = urllib2.urlopen(options.facilitator, body, 10)
 except urllib2.HTTPError, e:
     print >> sys.stderr, "Status code was %d, not 200" % e.code
     sys.exit(1)
@@ -89,4 +36,4 @@ except Exception, e:
     sys.exit(1)
 http.close()
 
-print "Registered \"%s\" with %s." % (safe_format_addr(options.remote_addr), options.facilitator_url)
+print "Registered \"%s\" with %s." % (safe_format_addr(options.remote_addr), options.facilitator)

@@ -2,78 +2,29 @@
 """Register with a facilitator using an indirect URL."""
 
 import argparse
-import base64
+import flashproxy
 import sys
-import urllib
 import urlparse
 
-from flashproxy.keys import DEFAULT_FACILITATOR_PUBKEY_PEM, ensure_M2Crypto
-from flashproxy.util import parse_addr_spec, format_addr
-
-try:
-    from M2Crypto import BIO, RSA
-except ImportError:
-    # Defer the error reporting so that --help works even without M2Crypto.
-    pass
-
-DEFAULT_REMOTE = ("", 9000)
-DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
-DEFAULT_TRANSPORT = "websocket"
-
-class options(object):
-    facilitator_url = None
-    facilitator_pubkey_filename = None
-    transport = DEFAULT_TRANSPORT
-
-def build_reg(addr, transport):
-    return urllib.urlencode((
-        ("client", format_addr(addr)),
-        ("client-transport", transport),
-    ))
-
-def get_facilitator_pubkey():
-    if options.facilitator_pubkey_filename is not None:
-        return RSA.load_pub_key(options.facilitator_pubkey_filename)
-    else:
-        return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
+from flashproxy.keys import ensure_M2Crypto
+from flashproxy.reg import DEFAULT_FACILITATOR_URL, build_reg_b64enc
 
 parser = argparse.ArgumentParser(
     usage="%(prog)s [OPTIONS] REMOTE[:PORT]",
     description="Print a URL, which, when retrieved, will cause the input "
     "client address to be registered with the flash proxy facilitator.")
-# common opts
-parser.add_argument("--facilitator-pubkey", help="encrypt registrations to "
-    "the given PEM-formatted public key file (default built-in).",
-    metavar='FILENAME')
-parser.add_argument("--transport",
-    help="register using the given transport, default %(default)s.",
-    default=DEFAULT_TRANSPORT)
-# common args
-parser.add_argument("remote_addr",
-    help="remote to register, default %s - the external IP address is guessed."
-        % format_addr(DEFAULT_REMOTE),
-    metavar="REMOTE:PORT", default="", nargs="?",
-    type=lambda x: parse_addr_spec(x, *DEFAULT_REMOTE))
-# specific opts
+flashproxy.reg.add_registration_args(parser)
 parser.add_argument("-f", "--facilitator", metavar="URL",
     help="register with the given facilitator, default %(default)s.",
     default=DEFAULT_FACILITATOR_URL)
 
-ns = parser.parse_args(sys.argv[1:])
-options.facilitator_pubkey_filename = ns.facilitator_pubkey
-options.transport = ns.transport
-remote_addr = ns.remote_addr
-options.facilitator_url = ns.facilitator
+options = parser.parse_args(sys.argv[1:])
 
 ensure_M2Crypto()
 
-if not ns.remote_addr[0]:
+if not options.remote_addr[0]:
     print >> sys.stderr, "An IP address (not just a port) is required."
     sys.exit(1)
 
-reg_plain = build_reg(remote_addr, options.transport)
-rsa = get_facilitator_pubkey()
-reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
-reg = base64.urlsafe_b64encode(reg_crypt)
-
-print urlparse.urljoin(options.facilitator_url, "reg/" + reg)
+reg = build_reg_b64enc(options.remote_addr, options.transport, urlsafe=True)
+print urlparse.urljoin(options.facilitator, "reg/" + reg)

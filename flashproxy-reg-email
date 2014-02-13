@@ -2,65 +2,29 @@
 """Register with a facilitator using the email method."""
 
 import argparse
+import flashproxy
 import os
 import re
 import smtplib
-import socket
 import sys
-import urllib
 
-from flashproxy.keys import PIN_GOOGLE_CA_CERT, PIN_GOOGLE_PUBKEY_SHA1, DEFAULT_FACILITATOR_PUBKEY_PEM, check_certificate_pin, ensure_M2Crypto, temp_cert
-from flashproxy.util import parse_addr_spec, format_addr
+from flashproxy.keys import PIN_GOOGLE_CA_CERT, PIN_GOOGLE_PUBKEY_SHA1, check_certificate_pin, ensure_M2Crypto, temp_cert
+from flashproxy.reg import build_reg_b64enc
+from flashproxy.util import parse_addr_spec, format_addr, safe_format_addr
 
 try:
-    from M2Crypto import BIO, RSA, SSL
+    from M2Crypto import SSL
 except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
     pass
 
-DEFAULT_REMOTE = ("", 9000)
 DEFAULT_EMAIL_ADDRESS = "flashproxyreg.a@gmail.com"
 # dig MX gmail.com
 DEFAULT_SMTP = ("gmail-smtp-in.l.google.com", 25)
-DEFAULT_TRANSPORT = "websocket"
 
 # Use this to prevent Python smtplib from guessing and leaking our hostname.
 EHLO_FQDN = "[127.0.0.1]"
 FROM_EMAIL_ADDRESS = "nobody@localhost"
-
-class options(object):
-    remote_addr = None
-
-    address_family = socket.AF_UNSPEC
-    debug = False
-    use_certificate_pin = True
-    email_addr = None
-    facilitator_pubkey_filename = None
-    smtp_addr = None
-    transport = DEFAULT_TRANSPORT
-    safe_logging = True
-
-def safe_str(s):
-    """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
-    if options.safe_logging:
-        return "[scrubbed]"
-    else:
-        return s
-
-def safe_format_addr(addr):
-    return safe_str(format_addr(addr))
-
-def build_reg(addr, transport):
-    return urllib.urlencode((
-        ("client", format_addr(addr)),
-        ("client-transport", transport),
-    ))
-
-def get_facilitator_pubkey():
-    if options.facilitator_pubkey_filename is not None:
-        return RSA.load_pub_key(options.facilitator_pubkey_filename)
-    else:
-        return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
 
 parser = argparse.ArgumentParser(
     usage="%(prog)s [OPTIONS] [REMOTE][:PORT]",
@@ -71,27 +35,9 @@ parser = argparse.ArgumentParser(
     epilog="Using an SMTP server or email address other than the defaults will "
     "not work unless you have made special arrangements to connect them to a "
     "facilitator.")
-# common opts
-parser.add_argument("-4", help="name lookups use only IPv4.",
-    action="store_const", const=socket.AF_INET, dest="address_family")
-parser.add_argument("-6", help="name lookups use only IPv6.",
-    action="store_const", const=socket.AF_INET6, dest="address_family")
-parser.add_argument("--unsafe-logging", help="don't scrub IP addresses and "
-    "other sensitive information from logs.", action="store_true")
-parser.add_argument("--disable-pin", help="disable all certificate pinning "
-    "checks", action="store_true",)
-parser.add_argument("--facilitator-pubkey", help="encrypt registrations to "
-    "the given PEM-formatted public key file (default built-in).",
-    metavar='FILENAME')
-parser.add_argument("--transport",
-    help="register using the given transport, default %(default)s.",
-    default=DEFAULT_TRANSPORT)
-# common args
-parser.add_argument("remote_addr",
-    help="remote to register, default %s - the external IP address is guessed."
-        % format_addr(DEFAULT_REMOTE),
-    metavar="REMOTE:PORT", default="", nargs="?",
-    type=lambda x: parse_addr_spec(x, *DEFAULT_REMOTE))
+flashproxy.util.add_module_opts(parser)
+flashproxy.keys.add_module_opts(parser)
+flashproxy.reg.add_registration_args(parser)
 # specific opts
 parser.add_argument("-e", "--email", metavar="ADDRESS",
     help="send mail to ADDRESS, default %(default)s.",
@@ -103,26 +49,11 @@ parser.add_argument("-d", "--debug",
     help="enable debugging output (Python smtplib messages).",
     action="store_true")
 
-ns = parser.parse_args(sys.argv[1:])
-options.address_family = ns.address_family or socket.AF_UNSPEC
-if options.address_family != socket.AF_UNSPEC:
-    getaddrinfo = socket.getaddrinfo
-    def getaddrinfo_replacement(host, port, family, *args, **kwargs):
-        return getaddrinfo(host, port, options.address_family, *args, **kwargs)
-    socket.getaddrinfo = getaddrinfo_replacement
-options.safe_logging = not ns.unsafe_logging
-options.use_certificate_pin = not ns.disable_pin
-options.facilitator_pubkey_filename = ns.facilitator_pubkey
-options.transport = ns.transport
-options.remote_addr = ns.remote_addr
-# specific parsing
-options.email_addr = ns.email
-options.smtp_addr = ns.smtp
-options.debug = ns.debug
+options = parser.parse_args(sys.argv[1:])
 
 ensure_M2Crypto()
 
-smtp = smtplib.SMTP(options.smtp_addr[0], options.smtp_addr[1], EHLO_FQDN)
+smtp = smtplib.SMTP(options.smtp[0], options.smtp[1], EHLO_FQDN)
 
 if options.debug:
     smtp.set_debuglevel(1)
@@ -149,8 +80,7 @@ try:
     smtp.sock.connect_ssl()
     smtp.file = smtp.sock.makefile()
 
-    if options.use_certificate_pin:
-        check_certificate_pin(smtp.sock, PIN_GOOGLE_PUBKEY_SHA1)
+    check_certificate_pin(smtp.sock, PIN_GOOGLE_PUBKEY_SHA1)
     smtp.ehlo(EHLO_FQDN)
 
     if not options.remote_addr[0]:
@@ -164,21 +94,18 @@ try:
             spec = "[" + spec + "]"
         options.remote_addr = parse_addr_spec(spec, *options.remote_addr)
 
-    body_plain = build_reg(options.remote_addr, options.transport)
-    rsa = get_facilitator_pubkey()
-    body_crypt = rsa.public_encrypt(body_plain, RSA.pkcs1_oaep_padding)
-    body = body_crypt.encode("base64")
+    body = build_reg_b64enc(options.remote_addr, options.transport)
 
     # Add a random subject to keep Gmail from threading everything.
     rand_string = os.urandom(5).encode("hex")
-    smtp.sendmail(options.email_addr, options.email_addr, """\
+    smtp.sendmail(options.email, options.email, """\
 To: %(to_addr)s\r
 From: %(from_addr)s\r
 Subject: client reg %(rand_string)s\r
 \r
 %(body)s
 """ % {
-        "to_addr": options.email_addr,
+        "to_addr": options.email,
         "from_addr": FROM_EMAIL_ADDRESS,
         "rand_string": rand_string,
         "body": body,
@@ -188,4 +115,4 @@ except Exception, e:
     print >> sys.stderr, "Failed to register: %s" % str(e)
     sys.exit(1)
 
-print "Registered \"%s\" with %s." % (safe_format_addr(options.remote_addr), options.email_addr)
+print "Registered \"%s\" with %s." % (safe_format_addr(options.remote_addr), options.email)

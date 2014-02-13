@@ -1,14 +1,31 @@
+import base64
 import errno
 import os
+import sys
 import tempfile
 
 from hashlib import sha1
 
 try:
     import M2Crypto
+    from M2Crypto import BIO, RSA
 except ImportError:
     # Defer the error so that the main program gets a chance to print help text
     M2Crypto = None
+
+class options(object):
+    disable_pin = True
+
+def add_module_opts(parser):
+    parser.add_argument("--disable-pin", help="disable all certificate pinning "
+        "checks", action="store_true",)
+
+    old_parse = parser.parse_args
+    def parse_args(namespace):
+        options.disable_pin = namespace.disable_pin
+        return namespace
+    parser.parse_args = lambda *a, **kw: parse_args(old_parse(*a, **kw))
+
 
 # We trust no other CA certificate than this.
 #
@@ -49,23 +66,8 @@ PIN_GOOGLE_PUBKEY_SHA1 = (
     "\x43\xda\xd6\x30\xee\x53\xf8\xa9\x80\xca\x6e\xfd\x85\xf4\x6a\xa3\x79\x90\xe0\xea",
 )
 
-# Registrations are encrypted with this public key before being emailed. Only
-# the facilitator operators should have the corresponding private key. Given a
-# private key in reg-email, get the public key like this:
-# openssl rsa -pubout < reg-email > reg-email.pub
-DEFAULT_FACILITATOR_PUBKEY_PEM = """\
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA44Mt8c599/4N2fgu6ppN
-oatPW1GOgZxxObljFtEy0OWM1eHB35OOn+Kn9MxNHTRxVWwCEi0HYxWNVs2qrXxV
-84LmWBz6A65d2qBlgltgLXusiXLrpwxVmJeO+GfmbF8ur0U9JSYxA20cGW/kujNg
-XYDGQxO1Gvxq2lHK2LQmBpkfKEE1DMFASmIvlHDQgDj3XBb5lYeOsHZmg16UrGAq
-1UH238hgJITPGLXBtwLtJkYbrATJvrEcmvI7QSm57SgYGpaB5ZdCbJL5bag5Pgt6
-M5SDDYYY4xxEPzokjFJfCQv+kcyAnzERNMQ9kR41ePTXG62bpngK5iWGeJ5XdkxG
-gwIDAQAB
------END PUBLIC KEY-----
-"""
-
 def check_certificate_pin(sock, cert_pubkey):
+    if options.disable_pin: return
     found = []
     for cert in sock.get_peer_cert_chain():
         pubkey_der = cert.get_pubkey().as_der()
@@ -104,6 +106,19 @@ class temp_cert(object):
 
     def __exit__(self, type, value, traceback):
         os.unlink(self.path)
+
+def get_pubkey(defaultkeybytes, overridefn=None):
+    if overridefn is not None:
+        return RSA.load_pub_key(overridefn)
+    else:
+        return RSA.load_pub_key_bio(BIO.MemoryBuffer(defaultkeybytes))
+
+def pubkey_b64enc(plaintext, pubkey, urlsafe=False):
+    ciphertext = pubkey.public_encrypt(plaintext, RSA.pkcs1_oaep_padding)
+    if urlsafe:
+        return base64.urlsafe_b64encode(ciphertext)
+    else:
+        return ciphertext.encode("base64")
 
 def ensure_M2Crypto():
     if M2Crypto is None:

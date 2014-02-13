@@ -2,16 +2,16 @@
 """Register with a facilitator through Google App Engine."""
 
 import argparse
+import flashproxy
 import httplib
-import os
 import socket
-import subprocess
 import sys
 import urlparse
 import urllib2
 
 from flashproxy.keys import PIN_GOOGLE_CA_CERT, PIN_GOOGLE_PUBKEY_SHA1, check_certificate_pin, ensure_M2Crypto, temp_cert
-from flashproxy.util import parse_addr_spec, format_addr
+from flashproxy.reg import build_reg_b64enc
+from flashproxy.util import parse_addr_spec, safe_str, safe_format_addr
 
 try:
     from M2Crypto import SSL
@@ -19,53 +19,10 @@ except ImportError:
     # Defer the error reporting so that --help works even without M2Crypto.
     pass
 
-DEFAULT_REMOTE = ("", 9000)
-DEFAULT_TRANSPORT = "websocket"
-
 # The domain to which requests appear to go.
 FRONT_DOMAIN = "www.google.com"
 # The value of the Host header within requests.
 TARGET_DOMAIN = "fp-reg-a.appspot.com"
-
-FLASHPROXY_REG_URL = "flashproxy-reg-url"
-
-class options(object):
-    address_family = socket.AF_UNSPEC
-    use_certificate_pin = True
-    facilitator_pubkey_filename = None
-    transport = DEFAULT_TRANSPORT
-    safe_logging = True
-
-def safe_str(s):
-    """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
-    if options.safe_logging:
-        return "[scrubbed]"
-    else:
-        return s
-
-def safe_format_addr(addr):
-    return safe_str(format_addr(addr))
-
-def generate_url(addr):
-    if getattr(sys, "frozen", False):
-        script_dir = os.path.dirname(sys.executable)
-    else:
-        script_dir = sys.path[0]
-    if not script_dir:
-        # Maybe the script was read from stdin; in any case don't guess at the directory.
-        raise ValueError("Can't find executable directory for registration helpers")
-    command = [os.path.join(script_dir, FLASHPROXY_REG_URL)]
-    command += ["-f", urlparse.urlunparse(("https", FRONT_DOMAIN, "/", "", "", ""))]
-    if options.transport is not None:
-        command += ["--transport", options.transport]
-    if options.facilitator_pubkey_filename is not None:
-        command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
-    command.append(format_addr(addr))
-    p = subprocess.Popen(command, stdout=subprocess.PIPE)
-    stdout, stderr = p.communicate()
-    if p.returncode != 0:
-        raise ValueError("%s exited with status %d" % (FLASHPROXY_REG_URL, p.returncode))
-    return stdout.strip()
 
 # Like socket.create_connection in that it tries resolving different address
 # families, but doesn't connect the socket.
@@ -105,8 +62,7 @@ class PinHTTPSConnection(httplib.HTTPSConnection):
         self.sock = SSL.Connection(ctx, sock)
         self.sock.connect((self.host, self.port))
 
-        if options.use_certificate_pin:
-            check_certificate_pin(self.sock, PIN_GOOGLE_PUBKEY_SHA1)
+        check_certificate_pin(self.sock, PIN_GOOGLE_PUBKEY_SHA1)
 
 class PinHTTPSHandler(urllib2.HTTPSHandler):
     def https_open(self, req):
@@ -130,40 +86,12 @@ parser = argparse.ArgumentParser(
     description="Register with a facilitator through a Google App Engine app. "
     "If only the external port is given, the remote server guesses our "
     "external address.")
-# common opts
-parser.add_argument("-4", help="name lookups use only IPv4.",
-    action="store_const", const=socket.AF_INET, dest="address_family")
-parser.add_argument("-6", help="name lookups use only IPv6.",
-    action="store_const", const=socket.AF_INET6, dest="address_family")
-parser.add_argument("--unsafe-logging", help="don't scrub IP addresses and "
-    "other sensitive information from logs.", action="store_true")
-parser.add_argument("--disable-pin", help="disable all certificate pinning "
-    "checks", action="store_true",)
-parser.add_argument("--facilitator-pubkey", help="encrypt registrations to "
-    "the given PEM-formatted public key file (default built-in).",
-    metavar='FILENAME')
-parser.add_argument("--transport",
-    help="register using the given transport, default %(default)s.",
-    default=DEFAULT_TRANSPORT)
-# common args
-parser.add_argument("remote_addr",
-    help="remote to register, default %s - the external IP address is guessed."
-        % format_addr(DEFAULT_REMOTE),
-    metavar="REMOTE:PORT", default="", nargs="?",
-    type=lambda x: parse_addr_spec(x, *DEFAULT_REMOTE))
+flashproxy.util.add_module_opts(parser)
+flashproxy.keys.add_module_opts(parser)
+flashproxy.reg.add_registration_args(parser)
 
-ns = parser.parse_args(sys.argv[1:])
-options.address_family = ns.address_family or socket.AF_UNSPEC
-if options.address_family != socket.AF_UNSPEC:
-    getaddrinfo = socket.getaddrinfo
-    def getaddrinfo_replacement(host, port, family, *args, **kwargs):
-        return getaddrinfo(host, port, options.address_family, *args, **kwargs)
-    socket.getaddrinfo = getaddrinfo_replacement
-options.safe_logging = not ns.unsafe_logging
-options.use_certificate_pin = not ns.disable_pin
-options.facilitator_pubkey_filename = ns.facilitator_pubkey
-options.transport = ns.transport
-remote_addr = ns.remote_addr
+options = parser.parse_args(sys.argv[1:])
+remote_addr = options.remote_addr
 
 ensure_M2Crypto()
 
@@ -186,9 +114,10 @@ if not remote_addr[0]:
         sys.exit(1)
 
 try:
-    url = generate_url(remote_addr)
+    reg = build_reg_b64enc(remote_addr, options.transport, urlsafe=True)
+    url = urlparse.urljoin(urlparse.urlunparse(("https", FRONT_DOMAIN, "/", "", "", "")), "reg/" + reg)
 except Exception, e:
-    print >> sys.stderr, "Error running %s: %s" % (FLASHPROXY_REG_URL, str(e))
+    print >> sys.stderr, "Error generating URL: %s" % str(e)
     sys.exit(1)
 
 try:

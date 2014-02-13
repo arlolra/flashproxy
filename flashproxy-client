@@ -8,6 +8,7 @@ import BaseHTTPServer
 import array
 import base64
 import cStringIO
+import flashproxy
 import os
 import os.path
 import select
@@ -19,7 +20,8 @@ import threading
 import time
 import traceback
 
-from flashproxy.util import parse_addr_spec, addr_family, format_addr
+from flashproxy.util import parse_addr_spec, addr_family, format_addr, safe_str, safe_format_addr
+from flashproxy.reg import DEFAULT_TRANSPORT
 
 from hashlib import sha1
 
@@ -35,7 +37,6 @@ DEFAULT_LOCAL_PORT_EXTERNAL = 9001
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_REGISTER_METHODS = ["appspot", "email", "http"]
 DEFAULT_PORT_FORWARDING_HELPER = "tor-fw-helper"
-DEFAULT_TRANSPORT = "websocket"
 
 # We will re-register if we have fewer than this many waiting proxies. The
 # facilitator may choose to ignore our requests.
@@ -71,21 +72,11 @@ class options(object):
     facilitator_url = None
     facilitator_pubkey_filename = None
 
-def safe_str(s):
-    """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
-    if options.safe_logging:
-        return "[scrubbed]"
-    else:
-        return s
-
 log_lock = threading.Lock()
 def log(msg):
     with log_lock:
         print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
         options.log_file.flush()
-
-def safe_format_addr(addr):
-    return safe_str(format_addr(addr))
 
 def format_sockaddr(sockaddr):
     host, port = socket.getnameinfo(sockaddr, socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
@@ -1036,19 +1027,8 @@ The -4, -6, --unsafe-logging, --transport and --facilitator-pubkey options are
 propagated to the child registration helpers. For backwards compatilibility,
 the --facilitator option is also propagated to the http registration helper.
 If you need to pass more options, use TODO #9976.""")
-    # common opts
-    parser.add_argument("-4", help="name lookups use only IPv4.",
-        action="store_const", const=socket.AF_INET, dest="address_family")
-    parser.add_argument("-6", help="name lookups use only IPv6.",
-        action="store_const", const=socket.AF_INET6, dest="address_family")
-    parser.add_argument("--unsafe-logging", help="don't scrub IP addresses and "
-        "other sensitive information from logs.", action="store_true")
-    parser.add_argument("--facilitator-pubkey", help="encrypt registrations to "
-        "the given PEM-formatted public key file (default built-in).",
-        metavar='FILENAME')
-    parser.add_argument("--transport",
-        help="register using the given transport, default %(default)s.",
-        default=DEFAULT_TRANSPORT)
+    flashproxy.util.add_module_opts(parser)
+    flashproxy.reg.add_module_opts(parser)
     parser.add_argument("-f", "--facilitator", metavar="URL",
         help="register with the facilitator at this URL, default %(default)s. "
         "This is passed to the http registration ONLY.")
@@ -1090,12 +1070,7 @@ If you need to pass more options, use TODO #9976.""")
 
     ns = parser.parse_args(sys.argv[1:])
     # set registration options
-    options.address_family = ns.address_family or socket.AF_UNSPEC
-    if options.address_family != socket.AF_UNSPEC:
-        getaddrinfo = socket.getaddrinfo
-        def getaddrinfo_replacement(host, port, family, *args, **kwargs):
-            return getaddrinfo(host, port, options.address_family, *args, **kwargs)
-        socket.getaddrinfo = getaddrinfo_replacement
+    options.address_family = ns.address_family
     options.transport = ns.transport
     options.safe_logging = not ns.unsafe_logging
     options.facilitator_url = ns.facilitator
