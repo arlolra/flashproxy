@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Wrapper around help2man that takes input from stdin.
 
 set -o errexit
@@ -31,8 +31,14 @@ help2man_fixup() {
 	s/\\fI\-/\\fB\-/g;
 	# change ALL-CAPS parameters to italic, "replace with appropriate argument"
 	s/\b\([A-Z][A-Z]*\)\b/\\fI\1\\fR/g;
-}}'
+};}'
 }
+
+if stat -c "%s" . >/dev/null 2>&1; then
+	size() { stat -c "%s" "$@"; }
+else
+	size() { stat -f "%z" "$@"; }
+fi
 
 prog="$1"
 ver="$2"
@@ -46,7 +52,7 @@ mkdir -p ".tmp.$$"
 echo "$shebang"
 cat
 } > ".tmp.$$/$prog"
-test $(stat -c "%s" ".tmp.$$/$prog") -gt $((${#shebang} + 1)) || { echo >&2 "no input received; abort"; exit 1; }
+test $(size ".tmp.$$/$prog") -gt $((${#shebang} + 1)) || { echo >&2 "no input received; abort"; exit 1; }
 chmod +x ".tmp.$$/$prog"
 
 help2man ".tmp.$$/$prog" --help-option="-q" \
