@@ -1,3 +1,4 @@
+Changes in version 1.6
   o Allowed the --port-forwarding option to work when the remote port
     number is given as 0.
 
