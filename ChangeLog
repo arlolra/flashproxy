@@ -1,3 +1,6 @@
+  o Fixed a bug in the browser proxy which caused it to stop accepting
+    new connections once it had failed 5 previous connections.
+
 Changes in version 1.6
   o Allowed the --port-forwarding option to work when the remote port
     number is given as 0.
