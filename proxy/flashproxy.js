@@ -670,8 +670,7 @@ function FlashProxy() {
 
         proxy_pair = new ProxyPair(client_addr, relay_addr, this.rate_limit);
         this.proxy_pairs.push(proxy_pair);
-        proxy_pair.complete_callback = function(event) {
-            puts("Complete.");
+        proxy_pair.cleanup_callback = function(event) {
             /* Delete from the list of active proxy pairs. */
             this.proxy_pairs.splice(this.proxy_pairs.indexOf(proxy_pair), 1);
             if (this.badge)
@@ -730,7 +729,7 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
     this.flush_timeout_id = null;
 
     /* This callback function can be overridden by external callers. */
-    this.complete_callback = function() {
+    this.cleanup_callback = function() {
     };
 
     this.connect = function() {
@@ -766,15 +765,23 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
         log(ws.label + ": connected.");
     }.bind(this);
 
+    this.maybe_cleanup = function() {
+        if (this.running && is_closed(this.client_s) && is_closed(this.relay_s)) {
+            this.running = false;
+            this.cleanup_callback();
+            return true;
+        }
+        return false;
+    }
+
     this.onclose_callback = function(event) {
         var ws = event.target;
 
         log(ws.label + ": closed.");
         this.flush();
 
-        if (this.running && is_closed(this.client_s) && is_closed(this.relay_s)) {
-            this.running = false;
-            this.complete_callback();
+        if (this.maybe_cleanup()) {
+            puts("Complete.");
         }
     }.bind(this);
 
@@ -783,6 +790,11 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
 
         log(ws.label + ": error.");
         this.close();
+
+        // we can't rely on onclose_callback to cleanup, since one common error
+        // case is when the client fails to connect and the relay never starts.
+        // in that case close() is a NOP and onclose_callback is never called.
+        this.maybe_cleanup();
     }.bind(this);
 
     this.onmessage_client_to_relay = function(event) {
