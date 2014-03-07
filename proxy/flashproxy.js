@@ -103,6 +103,8 @@ if (HEADLESS) {
 
 function puts(s) {
     if (DEBUG) {
+        s = new Date().toISOString() + " | " + s;
+
         /* This shows up in the Web Console in Firefox and F12 developer tools
            in Internet Explorer. */
         (console.debug || console.log).call(console, s);
@@ -711,6 +713,9 @@ function ProxyPair(client_addr, relay_addr, rate_limit) {
     var MAX_BUFFER = 10 * 1024 * 1024;
 
     function log(s) {
+        if (!SAFE_LOGGING) {
+            s = format_addr(client_addr) + '|' + format_addr(relay_addr) + ' : ' + s
+        }
         puts(s)
     }
 
