@@ -345,6 +345,32 @@ function test_have_websocket_binary_frames() {
     window.navigator = _navigator;
 }
 
+function test_is_likely_tor_browser() {
+    var TESTS = [
+        { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:10.0.2) Gecko/20100101 Firefox/10.0.2", expected: false },
+        { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:11.0) Gecko/20100101 Firefox/11.0", expected: false },
+        { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36", expected: false },
+        { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/536.30.1 (KHTML, like Gecko) Version/6.0.5 Safari/536.30.1", expected: false },
+        { ua: "Mozilla/5.0 (Windows NT 6.1; rv:10.0) Gecko/20100101 Firefox/10.0", expected: true },
+        { ua: "Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0", expected: true },
+        { ua: "Mozilla/5.0 (Windows NT 6.1; rv:24.0) Gecko/20100101 Firefox/24.0", expected: true },
+        { expected: false },  // no userAgent
+    ];
+    var _navigator = window.navigator;
+    window.navigator = { mimeTypes: [] };
+    for (var i = 0; i < TESTS.length; i++) {
+        var test = TESTS[i];
+        window.navigator.userAgent = test.ua;
+        var actual = is_likely_tor_browser();
+
+        if (objects_equal(actual, test.expected))
+            pass(test.ua);
+        else
+            fail(test.ua, test.expected, actual);
+    }
+    window.navigator = _navigator;
+}
+
 test_build_url();
 test_parse_cookie_string();
 test_parse_query_string();
@@ -353,6 +379,7 @@ test_parse_addr_spec();
 test_get_param_addr();
 test_lang_keys();
 test_have_websocket_binary_frames();
+test_is_likely_tor_browser();
 
 if (num_failed == 0)
     process.exit(0);

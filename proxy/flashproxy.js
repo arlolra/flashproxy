@@ -1049,6 +1049,7 @@ function safe_repr(s) {
 var TBB_UAS = [
     "Mozilla/5.0 (Windows NT 6.1; rv:10.0) Gecko/20100101 Firefox/10.0",
     "Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0",
+    "Mozilla/5.0 (Windows NT 6.1; rv:24.0) Gecko/20100101 Firefox/24.0",
 ];
 function is_likely_tor_browser() {
     return TBB_UAS.indexOf(window.navigator.userAgent) > -1
