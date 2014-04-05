@@ -1,6 +1,9 @@
   o Fixed a bug in the browser proxy which caused it to stop accepting
     new connections once it had failed 5 previous connections.
 
+  o Updated the Tor Browser detection for the Firefox 24.0 User-Agent
+    string. Patch by Arlo Breault. Fixes bug 11290.
+
 Changes in version 1.6
   o Allowed the --port-forwarding option to work when the remote port
     number is given as 0.
