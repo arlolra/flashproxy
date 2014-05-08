@@ -53,8 +53,6 @@ SEE ALSO
 --------
 **http://crypto.stanford.edu/flashproxy/**
 
-**https://www.torproject.org/docs/pluggable-transports.html.en**
-
 BUGS
 ----
 Please report using **https://trac.torproject.org/projects/tor**.
