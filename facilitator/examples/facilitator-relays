@@ -1,7 +1,7 @@
 # List some relays that the facilitator will match proxies with.
 # Each line contains a transport and an address, separated by space.
 # See doc/design.txt for details of the transport syntax.
-#obfs3|websocket 173.255.221.44:9500
-#websocket 173.255.221.44:9901
-#obfs3|websocket [2600:3c01::f03c:91ff:fe93:6cd2]:9500
-#websocket [2600:3c01::f03c:91ff:fe93:6cd2]:9901
+#obfs3|websocket 192.81.135.242:9500
+#websocket 192.81.135.242:9901
+#obfs3|websocket [2600:3c01::f03c:91ff:fe73:b602]:9500
+#websocket [2600:3c01::f03c:91ff:fe73:b602]:9901
