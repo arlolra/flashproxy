@@ -43,6 +43,7 @@ fi
 prog="$1"
 ver="$2"
 name="${3:-$(get_description "$1")}"
+progname="$(basename "$prog")"
 
 # Prepare a temporary executable file that just dumps its own contents.
 trap 'rm -rf .tmp.$$' EXIT INT TERM
@@ -51,11 +52,11 @@ mkdir -p ".tmp.$$"
 {
 echo "$shebang"
 cat
-} > ".tmp.$$/$prog"
-test $(size ".tmp.$$/$prog") -gt $((${#shebang} + 1)) || { echo >&2 "no input received; abort"; exit 1; }
-chmod +x ".tmp.$$/$prog"
+} > ".tmp.$$/$progname"
+test $(size ".tmp.$$/$progname") -gt $((${#shebang} + 1)) || { echo >&2 "no input received; abort"; exit 1; }
+chmod +x ".tmp.$$/$progname"
 
-help2man ".tmp.$$/$prog" --help-option="-q" \
+help2man ".tmp.$$/$progname" --help-option="-q" \
   --name="$name" --version-string="$ver" \
   --no-info --include "$(dirname "$0")/mkman.inc" \
   | help2man_fixup

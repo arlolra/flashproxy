@@ -46,12 +46,14 @@ subst_vars = sed -e 's,[@]cgibindir[@],$(cgibindir),g'
 # our own targets
 
 doc/%.1: % mkman.sh mkman.inc Makefile
+# mkdir needed for out-of-source build
+	$(MKDIR_P) $$(dirname "$@")
 	{ $(PYENV) $(PYTHON) "$<" --help; } \
-	  | { $(PYENV) ./mkman.sh "$<" $(VERSION) > "$@"; }
+	  | { $(PYENV) $(srcdir)/mkman.sh "$<" $(VERSION) > "$@"; }
 
 examples/fp-facilitator.conf: examples/fp-facilitator.conf.in Makefile
 # mkdir needed for out-of-source build
-	mkdir -p $$(dirname "$@")
+	$(MKDIR_P) $$(dirname "$@")
 	$(subst_vars) "$<" > "$@"
 
 pylint: $(dist_bin_SCRIPTS)
