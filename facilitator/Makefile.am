@@ -7,7 +7,7 @@ cgibindir = @cgibindir@
 # unfortunately sysvinit does not support having initscripts in /usr/local/etc
 # yet, so we have to hard code a path here. :(
 initscriptdir = /etc/init.d
-exampledir = $(pkgdatadir)/examples
+exampledir = $(docdir)/examples
 appenginedir = $(pkgdatadir)/appengine
 pkgconfdir = $(sysconfdir)/flashproxy
 appengineconfdir = $(pkgconfdir)/reg-appspot
@@ -56,6 +56,12 @@ examples/fp-facilitator.conf: examples/fp-facilitator.conf.in Makefile
 
 pylint: $(dist_bin_SCRIPTS)
 	pylint -E $^
+
+install-data-local:
+	$(INSTALL_DATA) -m 600 -t $(DESTDIR)$(pkgconfdir) $(srcdir)/examples/reg-email.pass
+
+uninstall-local:
+	rm $(DESTDIR)$(pkgconfdir)/reg-email.pass
 
 # The {pre,post}-{install,remove} targets are just given as reference, and
 # ought to be separate scripts as part of your distro's installation process.
@@ -107,12 +113,9 @@ install-secrets:
 	  install -m 600 /dev/null ${pkgconfdir}/reg-daemon.key && \
 	  openssl genrsa 2048 | tee ${pkgconfdir}/reg-daemon.key | \
 	  openssl rsa -pubout > ${pkgconfdir}/reg-daemon.pub; }
-	test -f ${pkgconfdir}/reg-email.pass || { \
-	  install -m 600 /dev/null ${pkgconfdir}/reg-email.pass && \
-	  cat ${exampledir}/reg-email.pass > ${pkgconfdir}/reg-email.pass; }
 
 remove-secrets:
-	for i in reg-daemon.key reg-daemon.pub reg-email.pass; do \
+	for i in reg-daemon.key reg-daemon.pub; do \
 	  rm -f ${pkgconfdir}/$$i; \
 	done
 
