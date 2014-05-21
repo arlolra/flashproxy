@@ -589,7 +589,6 @@ function FlashProxy() {
                like "Component returned failure code: 0x805e0006
                [nsIXMLHttpRequest.open]" on Firefox. */
             puts("Facilitator: exception while connecting: " + repr(err.message) + ".");
-            this.die();
             return;
         }
         xhr.responseType = "text";
@@ -599,7 +598,6 @@ function FlashProxy() {
                     this.fac_complete(xhr.responseText);
                 } else {
                     puts("Facilitator: can't connect: got status " + repr(xhr.status) + " and status text " + repr(xhr.statusText) + ".");
-                    this.die();
                 }
             }
         }.bind(this);
@@ -681,7 +679,6 @@ function FlashProxy() {
             proxy_pair.connect();
         } catch (err) {
             puts("ProxyPair: exception while connecting: " + safe_repr(err.message) + ".");
-            this.die();
             return;
         }
 
