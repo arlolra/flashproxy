@@ -690,19 +690,24 @@ function FlashProxy() {
     };
 
     /* Cease all network operations and prevent any future ones. */
-    this.disable = function() {
-        puts("Disabling.");
+    this.cease_operation = function() {
         this.start = function() { };
         this.proxy_main = function() { };
         this.make_proxy_pair = function(client_addr, relay_addr) { };
         while (this.proxy_pairs.length > 0)
             this.proxy_pairs.pop().close();
+    };
+
+    this.disable = function() {
+        puts("Disabling.");
+        this.cease_operation();
         if (this.badge)
             this.badge.disable();
     };
 
     this.die = function() {
         puts("Dying.");
+        this.cease_operation();
         if (this.badge)
             this.badge.die();
     };
