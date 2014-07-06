@@ -898,34 +898,31 @@ def build_register_command(method):
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         raise ValueError("Can't find executable directory for registration helpers")
 
-    # "common" is options shared by every registration helper.
-    common = []
-    if options.address_family == socket.AF_INET:
-        common += ["-4"]
-    elif options.address_family == socket.AF_INET6:
-        common += ["-6"]
-    if options.transport is not None:
-        common += ["--transport", options.transport]
-    if not options.safe_logging:
-        common += ["--unsafe-logging"]
-
-    if method == "appspot":
-        command = [os.path.join(script_dir, "flashproxy-reg-appspot")] + common
-        if options.facilitator_pubkey_filename is not None:
-            command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
-        return command
-    elif method == "email":
-        command = [os.path.join(script_dir, "flashproxy-reg-email")] + common
-        if options.facilitator_pubkey_filename is not None:
-            command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
-        return command
-    elif method == "http":
-        command = [os.path.join(script_dir, "flashproxy-reg-http")] + common
-        if options.facilitator_url is not None:
-            command += ["-f", options.facilitator_url]
-        return command
-    else:
+    if method not in ("http", "appspot", "email"):
         raise ValueError("Unknown registration method \"%s\"" % method)
+
+    args = []
+
+    # facilitator selection
+    if method == "http":
+        if options.facilitator_url is not None:
+            args += ["-f", options.facilitator_url]
+    else:
+        if options.facilitator_pubkey_filename is not None:
+            args += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
+
+    # options shared by every registration helper.
+    if options.address_family == socket.AF_INET:
+        args += ["-4"]
+    elif options.address_family == socket.AF_INET6:
+        args += ["-6"]
+    if options.transport is not None:
+        args += ["--transport", options.transport]
+    if not options.safe_logging:
+        args += ["--unsafe-logging"]
+
+    prog = os.path.join(script_dir, "flashproxy-reg-%s" % method)
+    return [prog] + args
 
 def pt_escape(s):
     result = []
