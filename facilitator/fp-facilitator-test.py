@@ -17,7 +17,7 @@ from flashproxy.util import format_addr
 import imp
 dont_write_bytecode = sys.dont_write_bytecode
 sys.dont_write_bytecode = True
-facilitator = imp.load_source("facilitator", os.path.join(os.path.dirname(__file__), "facilitator"))
+facilitator = imp.load_source("fp-facilitator", os.path.join(os.path.dirname(__file__), "fp-facilitator"))
 Endpoints = facilitator.Endpoints
 parse_relay_file = facilitator.parse_relay_file
 sys.dont_write_bytecode = dont_write_bytecode
@@ -207,7 +207,7 @@ class FacilitatorProcTest(unittest.TestCase):
         self.relay_file.write("%s %s\n" % (RELAY_TP, format_addr(self.IPV6_RELAY_ADDR)))
         self.relay_file.flush()
         self.relay_file.seek(0)
-        fn = os.path.join(os.path.dirname(__file__), "./facilitator")
+        fn = os.path.join(os.path.dirname(__file__), "./fp-facilitator")
         self.process = subprocess.Popen(["python", fn, "-d", "-p", str(FACILITATOR_PORT), "-r", self.relay_file.name, "-l", "/dev/null"])
         time.sleep(0.1)
 

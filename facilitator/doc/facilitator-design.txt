@@ -1,23 +1,23 @@
-The main facilitator program is a backend server that is essentially a
-dynamic database of client addresses, as well as helper programs that
+The main fp-facilitator program is a backend server that is essentially
+a dynamic database of client addresses, as well as helper programs that
 receive client registrations from the Internet over various means and
 pass them to the backend. There are three supported helper rendezvous
 methods: HTTP, email, and appspot.
 
-facilitator-reg is a simple program that forwards its standard input to
-a locally running facilitator-reg-daemon process. It is used by other
-components as a utility, but is also useful for debugging and testing.
+fp-reg-decrypt is a simple program that forwards its standard input to
+a local fp-reg-decryptd process. It is used by other components as a
+utility, but is also useful for debugging and testing.
 
-facilitator-reg-daemon accepts connections containing encrypted client
+fp-reg-decryptd accepts connections containing encrypted client
 registrations and forwards them to the facilitator. It exists as a
 process of its own so that only one program requires access to the
 facilitator's private key.
 
 The HTTP rendezvous uses an HTTP server and a CGI program. The HTTP
-server is responsible for speaking TLS and invoking the CGI program. The
-CGI program receives client registrations and proxy requests for
+server is responsible for speaking TLS and invoking the CGI program.
+The CGI program receives client registrations and proxy requests for
 clients, parses them, and forwards them to the backend. We use Apache 2
-as the HTTP server. The CGI script is facilitator.cgi. Currently this
+as the HTTP server. The CGI script is fp-registrar.cgi. Currently this
 is also the only method for accepting browser proxy registrations, so
 you must enable this method, otherwise your clients will not be served.
 
@@ -29,10 +29,10 @@ another service (e.g. reg-appspot), you must use the end-to-end format.
 On the client side, you may use flashproxy-reg-url to generate
 registration URLs for the end-to-end encrypted format.
 
-The email rendezvous uses the helper program facilitator-email-poller.
+The email rendezvous uses the helper program fp-registrar-email.
 Clients use the flashproxy-reg-email program to send an encrypted
 message to a Gmail address. The poller constantly checks for new
-messages and forwards them to facilitator-reg.
+messages and forwards them to fp-reg-decrypt.
 
 The appspot rendezvous uses Google's appengine platform as a proxy for
 the HTTP method, either yours or that of another facilitator. It takes

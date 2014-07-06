@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Polls a mailbox for new registrations and forwards them using facilitator-reg.
+Polls a mailbox for new registrations and forwards them using fp-reg-decrypt.
 """
 
 import calendar
@@ -31,7 +31,7 @@ from M2Crypto import SSL
 # could maybe do an MX lookup and try to guess the imap server from that.
 DEFAULT_IMAP_HOST = "imap.gmail.com"
 DEFAULT_IMAP_PORT = 993
-DEFAULT_LOG_FILENAME = "facilitator-email-poller.log"
+DEFAULT_LOG_FILENAME = "fp-registrar-email.log"
 
 POLL_INTERVAL = 60
 # Ignore message older than this many seconds old, or newer than this many
@@ -93,7 +93,7 @@ class IMAP4_SSL_REQUIRED(imaplib.IMAP4_SSL):
 def usage(f = sys.stdout):
     print >> f, """\
 Usage: %(progname)s --pass=PASSFILE
-Facilitator-side helper for the facilitator-reg-email rendezvous. Polls
+Facilitator-side helper for the flashproxy-reg-email rendezvous. Polls
 an IMAP server for email messages with client registrations, deletes
 them, and forwards the registrations to the facilitator.
 
@@ -291,7 +291,7 @@ def message_ok(msg):
 
 def handle_message(msg):
     try:
-        if fac.put_reg_proc(["facilitator-reg"], msg.get_payload()):
+        if fac.put_reg_proc(["fp-reg-decrypt"], msg.get_payload()):
             log(u"registered client")
         else:
             log(u"failed to register client")

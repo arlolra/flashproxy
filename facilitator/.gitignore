@@ -9,9 +9,9 @@
 /Makefile.in
 
 # files built by ./configure
-/init.d/facilitator
-/init.d/facilitator-email-poller
-/init.d/facilitator-reg-daemon
+/init.d/fp-facilitator
+/init.d/fp-registrar-email
+/init.d/fp-reg-decryptd
 /Makefile
 /config.status
 /config.log

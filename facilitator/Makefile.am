@@ -16,12 +16,13 @@ PYENV = PYTHONPATH='$(srcdir):$(PYTHONPATH)'; export PYTHONPATH;
 
 # automake PLVs
 
-dist_bin_SCRIPTS = facilitator facilitator-email-poller facilitator-reg-daemon facilitator-reg
-man1_MANS = doc/facilitator.1 doc/facilitator-email-poller.1 doc/facilitator-reg-daemon.1 doc/facilitator-reg.1
-dist_cgibin_SCRIPTS = facilitator.cgi
+dist_bin_SCRIPTS = fp-facilitator fp-registrar-email fp-reg-decryptd fp-reg-decrypt
+man1_MANS = $(dist_bin_SCRIPTS:%=doc/%.1)
+dist_cgibin_SCRIPTS = fp-registrar.cgi
 if DO_INITSCRIPTS
-initscript_SCRIPTS = init.d/facilitator init.d/facilitator-email-poller init.d/facilitator-reg-daemon
-dist_initconf_DATA = default/facilitator default/facilitator-email-poller default/facilitator-reg-daemon
+initscript_names = fp-facilitator fp-registrar-email fp-reg-decryptd
+initscript_SCRIPTS = $(initscript_names:%=init.d/%)
+dist_initconf_DATA = $(initscript_names:%=default/%)
 endif
 
 dist_doc_DATA = doc/appspot-howto.txt doc/facilitator-design.txt doc/email-howto.txt doc/http-howto.txt doc/server-howto.txt README
@@ -32,7 +33,7 @@ appengineconf_DATA = appengine/config.go
 CLEANFILES = examples/fp-facilitator.conf $(man1_MANS)
 EXTRA_DIST = examples/fp-facilitator.conf.in mkman.sh mkman.inc HACKING $(TESTS)
 
-TESTS = facilitator-test.py
+TESTS = fp-facilitator-test.py
 # see http://www.gnu.org/software/automake/manual/html_node/Parallel-Test-Harness.html#index-TEST_005fEXTENSIONS
 TEST_EXTENSIONS = .py
 PY_LOG_COMPILER = $(PYTHON)
@@ -142,7 +143,7 @@ if DO_INITSCRIPTS
 # initscripts use these directories for logs and runtime data
 	mkdir -p ${localstatedir}/log
 	mkdir -p ${localstatedir}/run
-	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
+	for i in ${initscript_names}; do \
 	  update-rc.d $$i defaults; \
 	  invoke-rc.d $$i start; \
 	done
@@ -151,7 +152,7 @@ endif
 remove-daemon:
 if DO_INITSCRIPTS
 # we don't rm created directories since they might be system-managed
-	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
+	for i in ${initscript_names}; do \
 	  invoke-rc.d $$i stop; \
 	  update-rc.d $$i remove; \
 	done
@@ -159,7 +160,7 @@ endif
 
 remove-daemon-data:
 if DO_INITSCRIPTS
-	for i in facilitator facilitator-email-poller facilitator-reg-daemon; do \
+	for i in ${initscript_names}; do \
 	  rm -f ${localstatedir}/log/$$i.log* \
 	  rm -f ${localstatedir}/run/$$i.pid \
 	done

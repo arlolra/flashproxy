@@ -57,7 +57,7 @@ The --no_cookies flag stops authentication cookies from being written
 to disk, in ~/.appcfg_cookies. We recommend this for security, since no
 long-running services need this password, only the update process above
 which is run once. However, if this reasoning doesn't apply to you
-(e.g. if your facilitator-email-poller uses the same account, so that
+(e.g. if your fp-registrar-email uses the same account, so that
 the password is already on the disk) *and* you find yourself running
 update a lot for some reason, then you may at your own risk omit it for
 convenience.

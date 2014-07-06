@@ -8,7 +8,7 @@ MaxClients 256
 	# Update this with your hostname!
 	ServerName fp-facilitator.example.com
 	DocumentRoot /dev/null
-	ScriptAliasMatch ^(.*) @cgibindir@/facilitator.cgi$1
+	ScriptAliasMatch ^(.*) @cgibindir@/fp-registrar.cgi$1
 
 	# Non-Debian distros will need to tweak the log dir too
 	# Only log errors by default, to protect sensitive information.

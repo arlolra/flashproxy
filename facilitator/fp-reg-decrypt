@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Forwards encrypted client registrations to a running facilitator-reg-daemon.
+Forwards encrypted client registrations to a running fp-reg-decryptd.
 """
 
 import getopt
@@ -17,7 +17,7 @@ def usage(f = sys.stdout):
     print >> f, """\
 Usage: %(progname)s
 Reads a base64-encoded encrypted client registration from stdin and
-feeds it to a local facilitator-reg-daemon process. Returns 0 if the
+feeds it to a local fp-reg-decryptd process. Returns 0 if the
 registration was successful, 1 otherwise.
 
   -h, --help              show this help.

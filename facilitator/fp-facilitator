@@ -20,7 +20,7 @@ from flashproxy.util import parse_addr_spec, format_addr, canonical_ip
 LISTEN_ADDRESS = "127.0.0.1"
 DEFAULT_LISTEN_PORT = 9002
 DEFAULT_RELAY_PORT = 9001
-DEFAULT_LOG_FILENAME = "facilitator.log"
+DEFAULT_LOG_FILENAME = "fp-facilitator.log"
 
 # Tell proxies to poll for clients every POLL_INTERVAL seconds.
 POLL_INTERVAL = 600

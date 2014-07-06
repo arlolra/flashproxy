@@ -1,5 +1,5 @@
 These are instructions for how to set up an Apache Web Server for
-handling the HTTP client registration method (facilitator.cgi /
+handling the HTTP client registration method (fp-registrar.cgi /
 flashproxy-reg-http / flashproxy-reg-url), as well as for browser
 proxies to poll and receive a client to serve.
 

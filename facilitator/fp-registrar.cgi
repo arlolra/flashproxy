@@ -23,7 +23,7 @@ def exit_error(status):
 def send_url_reg(reg):
     # Translate from url-safe base64 alphabet to the standard alphabet.
     reg = reg.replace('-', '+').replace('_', '/')
-    return fac.put_reg_proc(["facilitator-reg"], reg)
+    return fac.put_reg_proc(["fp-reg-decrypt"], reg)
 
 method = os.environ.get("REQUEST_METHOD")
 remote_addr = (os.environ.get("REMOTE_ADDR"), None)
@@ -96,7 +96,7 @@ def do_post():
     # think that this is technically a violation of the
     # application/x-www-form-urlencoded content-type the client likely used, but
     # it at least matches the standard multiline registration format used by
-    # facilitator-reg-daemon.
+    # fp-reg-decryptd.
     try:
         regs = list(fac.read_client_registrations(sys.stdin.read(), defhost=remote_addr[0]))
     except ValueError:

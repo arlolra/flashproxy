@@ -24,7 +24,7 @@ from M2Crypto import RSA
 LISTEN_ADDRESS = "127.0.0.1"
 DEFAULT_LISTEN_PORT = 9003
 FACILITATOR_ADDR = ("127.0.0.1", 9002)
-DEFAULT_LOG_FILENAME = "facilitator-reg-daemon.log"
+DEFAULT_LOG_FILENAME = "fp-reg-decryptd.log"
 
 # Don't indulge clients for more than this many seconds.
 CLIENT_TIMEOUT = 1.0

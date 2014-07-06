@@ -1,5 +1,5 @@
 These are instructions for setting up an email account for use with the
-email-based rendezvous (facilitator-email-poller / flashproxy-reg-email).
+email rendezvous (fp-registrar-email / flashproxy-reg-email).
 
 You are strongly advised to use an email account dedicated for this
 purpose. If your email provider supports it, we advise you to use an

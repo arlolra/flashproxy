@@ -22,8 +22,8 @@ Configure and install.
 	$ ./configure --localstatedir=/var/local --enable-initscripts && make
 	# make pre-install install post-install
 
-This installs facilitator.cgi, facilitator, facilitator-email-poller,
-facilitator-reg-daemon, facilitator-reg, and fac.py to /usr/local/bin.
+This installs fp-registrar.cgi, fp-facilitator, fp-registrar-email,
+fp-reg-decryptd, and fp-reg-decrypt to /usr/local/bin.
 It also installs System V init files to /etc/init.d/.
 
 The pre/post-install scripts create a user for the daemon to as, and

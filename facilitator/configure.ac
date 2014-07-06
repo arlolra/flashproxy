@@ -42,8 +42,8 @@ AC_PROG_LN_S
 AM_PATH_PYTHON
 
 AC_CONFIG_FILES([Makefile
-	init.d/facilitator
-	init.d/facilitator-email-poller
-	init.d/facilitator-reg-daemon])
+	init.d/fp-facilitator
+	init.d/fp-registrar-email
+	init.d/fp-reg-decryptd])
 
 AC_OUTPUT

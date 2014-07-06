@@ -1,6 +1,6 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          facilitator
+# Provides:          fp-facilitator
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
@@ -16,7 +16,7 @@
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 DESC="Flash proxy facilitator"
-NAME=facilitator
+NAME=fp-facilitator
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
