@@ -6,8 +6,8 @@ import flashproxy
 import sys
 import urllib2
 
-from flashproxy.util import safe_format_addr
-from flashproxy.reg import DEFAULT_FACILITATOR_URL, build_reg
+from flashproxy.util import format_addr, parse_addr_spec, safe_format_addr
+from flashproxy.reg import DEFAULT_FACILITATOR_URL, DEFAULT_REMOTE, DEFAULT_TRANSPORT, build_reg
 
 parser = argparse.ArgumentParser(
     usage="%(prog)s [OPTIONS] [REMOTE][:PORT]",
@@ -15,7 +15,13 @@ parser = argparse.ArgumentParser(
     "If only the external port is given, the remote server guesses our "
     "external address.")
 flashproxy.util.add_module_opts(parser)
-flashproxy.reg.add_registration_args(parser, ignore_pubkey=True)
+parser.add_argument("--transport", metavar="TRANSPORT",
+    help="register using the given transport, default %(default)s.",
+    default=DEFAULT_TRANSPORT)
+parser.add_argument("remote_addr", metavar="ADDR:PORT",
+    help="external addr+port to register, default %s" %
+    format_addr(DEFAULT_REMOTE), default="", nargs="?",
+    type=lambda x: parse_addr_spec(x, *DEFAULT_REMOTE))
 parser.add_argument("-f", "--facilitator", metavar="URL",
     help="register with the given facilitator, default %(default)s.",
     default=DEFAULT_FACILITATOR_URL)

@@ -19,19 +19,18 @@ M5SDDYYY4xxEPzokjFJfCQv+kcyAnzERNMQ9kR41ePTXG62bpngK5iWGeJ5XdkxG
 gwIDAQAB
 -----END PUBLIC KEY-----
 """
-_OPTION_IGNORED = "ignored; for compatibility with other methods"
 
 class options(object):
     transport = DEFAULT_TRANSPORT
     facilitator_pubkey = None
 
-def add_module_opts(parser, ignore_pubkey=False):
+def add_module_opts(parser):
     parser.add_argument("--transport", metavar="TRANSPORT",
         help="register using the given transport, default %(default)s.",
         default=DEFAULT_TRANSPORT)
     parser.add_argument("--facilitator-pubkey", metavar="FILENAME",
-        help=(_OPTION_IGNORED if ignore_pubkey else "encrypt registrations to "
-        "the given PEM-formatted public key file (default built-in)."))
+        help=("encrypt registrations to the given PEM-formatted public "
+        "key file (default built-in)."))
 
     old_parse = parser.parse_args
     def parse_args(namespace):
@@ -40,8 +39,8 @@ def add_module_opts(parser, ignore_pubkey=False):
         return namespace
     parser.parse_args = lambda *a, **kw: parse_args(old_parse(*a, **kw))
 
-def add_registration_args(parser, **kwargs):
-    add_module_opts(parser, **kwargs)
+def add_registration_args(parser):
+    add_module_opts(parser)
     parser.add_argument("remote_addr", metavar="ADDR:PORT",
         help="external addr+port to register, default %s" %
         format_addr(DEFAULT_REMOTE), default="", nargs="?",
