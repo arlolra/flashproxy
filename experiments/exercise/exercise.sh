@@ -26,7 +26,7 @@ PIDS_TO_KILL+=($!)
 
 sleep 20
 
-"$TOR" ClientTransportPlugin "flashproxy socks4 127.0.0.1:$LOCAL_PORT" UseBridges 1 Bridge "flashproxy 0.0.1.0:1" LearnCircuitBuildTimeout 0 CircuitBuildTimeout 60 &
+"$TOR" ClientTransportPlugin "flashproxy socks4 127.0.0.1:$LOCAL_PORT" UseBridges 1 Bridge "flashproxy 0.0.1.0:1" &
 PIDS_TO_KILL+=($!)
 
 sleep 60
