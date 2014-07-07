@@ -1,107 +1,30 @@
 #!/usr/bin/env python
 """Register with a facilitator using an indirect URL."""
 
-import base64
-import getopt
+import argparse
+import flashproxy
 import sys
-import urllib
 import urlparse
 
-from flashproxy.keys import DEFAULT_FACILITATOR_PUBKEY_PEM
-from flashproxy.util import parse_addr_spec, format_addr
+from flashproxy.keys import ensure_M2Crypto
+from flashproxy.reg import DEFAULT_FACILITATOR_URL, build_reg_b64enc
 
-try:
-    from M2Crypto import BIO, RSA
-except ImportError:
-    # Defer the error reporting so that --help works even without M2Crypto.
-    RSA = None
+parser = argparse.ArgumentParser(
+    usage="%(prog)s [OPTIONS] REMOTE[:PORT]",
+    description="Print a URL, which, when retrieved, will cause the input "
+    "client address to be registered with the flash proxy facilitator.")
+flashproxy.reg.add_registration_args(parser)
+parser.add_argument("-f", "--facilitator", metavar="URL",
+    help="register with the given facilitator, default %(default)s.",
+    default=DEFAULT_FACILITATOR_URL)
 
-DEFAULT_REMOTE_ADDRESS = ""
-DEFAULT_REMOTE_PORT = 9000
-DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
-DEFAULT_TRANSPORT = "websocket"
+options = parser.parse_args(sys.argv[1:])
 
-class options(object):
-    facilitator_url = None
-    facilitator_pubkey_filename = None
-    transport = DEFAULT_TRANSPORT
+ensure_M2Crypto()
 
-def usage(f = sys.stdout):
-    print >> f, """\
-Usage: %(progname)s REMOTE[:PORT]
-Print a URL, which, when retrieved, will cause the client address
-REMOTE[:PORT] to be registered with the flash proxy facilitator. The
-default PORT is %(port)d.
-
-  -f, --facilitator=URL  register with the given facilitator
-                           (default "%(fac_url)s").
-      --facilitator-pubkey=FILENAME
-                         encrypt registrations to the given PEM-formatted
-                           public key (default built-in).
-  -h, --help             show this help.
-      --transport=TRANSPORT  register using the given transport
-                           (default "%(transport)s").\
-""" % {
-    "progname": sys.argv[0],
-    "fac_url": DEFAULT_FACILITATOR_URL,
-    "port": DEFAULT_REMOTE_PORT,
-    "transport": DEFAULT_TRANSPORT,
-}
-
-def build_reg(addr, transport):
-    return urllib.urlencode((
-        ("client", format_addr(addr)),
-        ("client-transport", transport),
-    ))
-
-def get_facilitator_pubkey():
-    if options.facilitator_pubkey_filename is not None:
-        return RSA.load_pub_key(options.facilitator_pubkey_filename)
-    else:
-        return RSA.load_pub_key_bio(BIO.MemoryBuffer(DEFAULT_FACILITATOR_PUBKEY_PEM))
-
-options.facilitator_url = DEFAULT_FACILITATOR_URL
-
-opt, args = getopt.gnu_getopt(sys.argv[1:], "f:h", [
-    "facilitator=",
-    "facilitator-pubkey=",
-    "help",
-    "transport=",
-])
-for o, a in opt:
-    if o == "-f" or o == "--facilitator":
-        options.facilitator_url = a
-    elif o == "--facilitator-pubkey":
-        options.facilitator_pubkey_filename = a
-    elif o == "-h" or o == "--help":
-        usage()
-        sys.exit()
-    elif o == "--transport":
-        options.transport = a
-
-if len(args) != 1:
-    usage(sys.stderr)
-    sys.exit(1)
-
-remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-if not remote_addr[0]:
+if not options.remote_addr[0]:
     print >> sys.stderr, "An IP address (not just a port) is required."
     sys.exit(1)
 
-if RSA is None:
-    print >> sys.stderr, """\
-This program requires the M2Crypto library, which is not installed.
-
-You can install it using one of the packages at
-http://chandlerproject.org/Projects/MeTooCrypto#Downloads.
-
-On Debian-like systems, use the command "apt-get install python-m2crypto".\
-"""
-    sys.exit(1)
-
-reg_plain = build_reg(remote_addr, options.transport)
-rsa = get_facilitator_pubkey()
-reg_crypt = rsa.public_encrypt(reg_plain, RSA.pkcs1_oaep_padding)
-reg = base64.urlsafe_b64encode(reg_crypt)
-
-print urlparse.urljoin(options.facilitator_url, "reg/" + reg)
+reg = build_reg_b64enc(options.remote_addr, options.transport, urlsafe=True)
+print urlparse.urljoin(options.facilitator, "reg/" + reg)

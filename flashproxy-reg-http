@@ -1,105 +1,36 @@
 #!/usr/bin/env python
 """Register with a facilitator using the HTTP method."""
 
-import getopt
-import socket
+import argparse
+import flashproxy
 import sys
-import urllib
 import urllib2
 
-from flashproxy.util import parse_addr_spec, format_addr
+from flashproxy.util import format_addr, parse_addr_spec, safe_format_addr
+from flashproxy.reg import DEFAULT_FACILITATOR_URL, DEFAULT_REMOTE, DEFAULT_TRANSPORT, build_reg
 
-DEFAULT_REMOTE_ADDRESS = ""
-DEFAULT_REMOTE_PORT = 9000
-DEFAULT_FACILITATOR_URL = "https://fp-facilitator.org/"
-DEFAULT_TRANSPORT = "websocket"
+parser = argparse.ArgumentParser(
+    usage="%(prog)s [OPTIONS] [REMOTE][:PORT]",
+    description="Register with a flash proxy facilitator using an HTTP POST. "
+    "If only the external port is given, the remote server guesses our "
+    "external address.")
+flashproxy.util.add_module_opts(parser)
+parser.add_argument("--transport", metavar="TRANSPORT",
+    help="register using the given transport, default %(default)s.",
+    default=DEFAULT_TRANSPORT)
+parser.add_argument("remote_addr", metavar="ADDR:PORT",
+    help="external addr+port to register, default %s" %
+    format_addr(DEFAULT_REMOTE), default="", nargs="?",
+    type=lambda x: parse_addr_spec(x, *DEFAULT_REMOTE))
+parser.add_argument("-f", "--facilitator", metavar="URL",
+    help="register with the given facilitator, default %(default)s.",
+    default=DEFAULT_FACILITATOR_URL)
 
-class options(object):
-    remote_addr = None
-
-    address_family = socket.AF_UNSPEC
-    facilitator_url = None
-    transport = DEFAULT_TRANSPORT
-    safe_logging = True
-
-def usage(f = sys.stdout):
-    print >> f, """\
-Usage: %(progname)s [REMOTE][:PORT]
-Register with a flash proxy facilitator using an HTTP POST. By default the
-remote address registered is "%(remote_addr)s".
-
-  -4                     name lookups use only IPv4.
-  -6                     name lookups use only IPv6.
-  -f, --facilitator=URL  register with the given facilitator
-                           (default "%(fac_url)s").
-  -h, --help             show this help.
-      --transport=TRANSPORT  register using the given transport
-                           (default "%(transport)s").
-      --unsafe-logging   don't scrub IP addresses from logs.\
-""" % {
-    "progname": sys.argv[0],
-    "fac_url": DEFAULT_FACILITATOR_URL,
-    "remote_addr": format_addr((DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)),
-    "transport": DEFAULT_TRANSPORT,
-}
-
-def safe_str(s):
-    """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
-    if options.safe_logging:
-        return "[scrubbed]"
-    else:
-        return s
-
-def safe_format_addr(addr):
-    return safe_str(format_addr(addr))
-
-def build_reg(addr, transport):
-    return urllib.urlencode((
-        ("client", format_addr(addr)),
-        ("client-transport", transport),
-    ))
-
-options.facilitator_url = DEFAULT_FACILITATOR_URL
-options.remote_addr = (DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-
-opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:h", [
-    "facilitator=",
-    "help",
-    "transport=",
-    "unsafe-logging",
-])
-for o, a in opts:
-    if o == "-4":
-        options.address_family = socket.AF_INET
-    elif o == "-6":
-        options.address_family = socket.AF_INET6
-    elif o == "-f" or o == "--facilitator":
-        options.facilitator_url = a
-    elif o == "-h" or o == "--help":
-        usage()
-        sys.exit()
-    elif o == "--transport":
-        options.transport = a
-    elif o == "--unsafe-logging":
-        options.safe_logging = False
-
-if len(args) == 0:
-    pass
-elif len(args) == 1:
-    options.remote_addr = parse_addr_spec(args[0], DEFAULT_REMOTE_ADDRESS, DEFAULT_REMOTE_PORT)
-else:
-    usage(sys.stderr)
-    sys.exit(1)
-
-if options.address_family != socket.AF_UNSPEC:
-    getaddrinfo = socket.getaddrinfo
-    def getaddrinfo_replacement(host, port, family, *args, **kwargs):
-        return getaddrinfo(host, port, options.address_family, *args, **kwargs)
-    socket.getaddrinfo = getaddrinfo_replacement
+options = parser.parse_args(sys.argv[1:])
 
 body = build_reg(options.remote_addr, options.transport)
 try:
-    http = urllib2.urlopen(options.facilitator_url, body, 10)
+    http = urllib2.urlopen(options.facilitator, body, 10)
 except urllib2.HTTPError, e:
     print >> sys.stderr, "Status code was %d, not 200" % e.code
     sys.exit(1)
@@ -111,4 +42,4 @@ except Exception, e:
     sys.exit(1)
 http.close()
 
-print "Registered \"%s\" with %s." % (safe_format_addr(options.remote_addr), options.facilitator_url)
+print "Registered \"%s\" with %s." % (safe_format_addr(options.remote_addr), options.facilitator)

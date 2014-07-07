@@ -3,11 +3,12 @@
 The flashproxy client transport plugin.
 """
 
+import argparse
 import BaseHTTPServer
 import array
 import base64
 import cStringIO
-import getopt
+import flashproxy
 import os
 import os.path
 import select
@@ -19,7 +20,8 @@ import threading
 import time
 import traceback
 
-from flashproxy.util import parse_addr_spec, addr_family, format_addr
+from flashproxy.util import parse_addr_spec, addr_family, format_addr, safe_str, safe_format_addr
+from flashproxy.reg import DEFAULT_TRANSPORT
 
 from hashlib import sha1
 
@@ -35,7 +37,6 @@ DEFAULT_LOCAL_PORT_EXTERNAL = 9001
 DEFAULT_REMOTE_PORT = 9000
 DEFAULT_REGISTER_METHODS = ["appspot", "email", "http"]
 DEFAULT_PORT_FORWARDING_HELPER = "tor-fw-helper"
-DEFAULT_TRANSPORT = "websocket"
 
 # We will re-register if we have fewer than this many waiting proxies. The
 # facilitator may choose to ignore our requests.
@@ -54,10 +55,7 @@ class options(object):
 
     managed = True
 
-    address_family = socket.AF_UNSPEC
     daemonize = False
-    facilitator_url = None
-    facilitator_pubkey_filename = None
     log_filename = None
     log_file = sys.stdout
     pid_filename = None
@@ -66,88 +64,19 @@ class options(object):
     port_forwarding_external = None
     register = False
     register_commands = []
+
+    # registration options
+    address_family = socket.AF_UNSPEC
     transport = DEFAULT_TRANSPORT
     safe_logging = True
-
-def usage(f = sys.stdout):
-    print >> f, """\
-Usage: %(progname)s --register [LOCAL][:PORT] [REMOTE][:PORT]
-Wait for connections on a local and a remote port. When any pair of connections
-exists, data is ferried between them until one side is closed. By default
-LOCAL is localhost addresses on port %(local_port)d and REMOTE is all addresses
-on port %(remote_port)d.
-
-The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
-request are ignored and the local connection is always linked to a remote
-connection.
-
-By default, runs as a managed proxy: informs a parent Tor process of support for
-the "flashproxy" or "websocket" pluggable transport. In managed mode,
-the LOCAL port is chosen arbitrarily instead of defaulting to
-%(local_port)d; however this can be overridden by including a LOCAL port
-in the command. This is the way the program should be invoked in a torrc
-ClientTransportPlugin "exec" line. Use the --external option to run as
-an external proxy that does not interact with Tor.
-
-If any of the --register, --register-addr, or --register-methods options are
-used, then your IP address will be sent to the facilitator so that proxies can
-connect to you. You need to register in some way in order to get any service.
-The --facilitator option allows controlling which facilitator is used; if
-omitted, it uses a public default.
-
-  -4                        registration helpers use IPv4.
-  -6                        registration helpers use IPv6.
-      --daemon              daemonize (Unix only).
-      --external            be an external proxy (don't interact with Tor using
-                              environment variables and stdout).
-  -f, --facilitator=URL     advertise willingness to receive connections to URL.
-      --facilitator-pubkey=FILENAME
-                            encrypt registrations to the given PEM-formatted
-                              public key (default built-in).
-  -h, --help                show this help.
-  -l, --log FILENAME        write log to FILENAME (default stdout).
-      --pidfile FILENAME    write PID to FILENAME after daemonizing.
-      --port-forwarding     attempt to forward REMOTE port.
-      --port-forwarding-helper=PROGRAM  use the given PROGRAM to forward ports
-                              (default "%(port_forwarding_helper)s"). Implies --port-forwarding.
-      --port-forwarding-external=PORT  forward the external PORT to REMOTE on
-                              the local host (default same as REMOTE). Implies
-                              --port-forwarding.
-  -r, --register            register with the facilitator.
-      --register-addr=ADDR  register the given address (in case it differs from
-                              REMOTE). Implies --register.
-      --register-methods=METHOD[,METHOD...]
-                            register using the given comma-separated list of
-                              methods. Implies --register. Possible methods are
-                                appspot email http
-                              Default is "%(reg_methods)s".
-      --transport=TRANSPORT  register using the given transport
-                              (default "%(transport)s").
-      --unsafe-logging      don't scrub IP addresses from logs.\
-""" % {
-    "progname": sys.argv[0],
-    "local_port": DEFAULT_LOCAL_PORT_EXTERNAL,
-    "remote_port": DEFAULT_REMOTE_PORT,
-    "reg_methods": ",".join(DEFAULT_REGISTER_METHODS),
-    "port_forwarding_helper": DEFAULT_PORT_FORWARDING_HELPER,
-    "transport": DEFAULT_TRANSPORT,
-}
-
-def safe_str(s):
-    """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""
-    if options.safe_logging:
-        return "[scrubbed]"
-    else:
-        return s
+    facilitator_url = None
+    facilitator_pubkey_filename = None
 
 log_lock = threading.Lock()
 def log(msg):
     with log_lock:
         print >> options.log_file, (u"%s %s" % (time.strftime(LOG_DATE_FORMAT), msg)).encode("UTF-8")
         options.log_file.flush()
-
-def safe_format_addr(addr):
-    return safe_str(format_addr(addr))
 
 def format_sockaddr(sockaddr):
     host, port = socket.getnameinfo(sockaddr, socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
@@ -969,34 +898,31 @@ def build_register_command(method):
         # Maybe the script was read from stdin; in any case don't guess at the directory.
         raise ValueError("Can't find executable directory for registration helpers")
 
-    # "common" is options shared by every registration helper.
-    common = []
-    if options.address_family == socket.AF_INET:
-        common += ["-4"]
-    elif options.address_family == socket.AF_INET6:
-        common += ["-6"]
-    if options.transport is not None:
-        common += ["--transport", options.transport]
-    if not options.safe_logging:
-        common += ["--unsafe-logging"]
-
-    if method == "appspot":
-        command = [os.path.join(script_dir, "flashproxy-reg-appspot")] + common
-        if options.facilitator_pubkey_filename is not None:
-            command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
-        return command
-    elif method == "email":
-        command = [os.path.join(script_dir, "flashproxy-reg-email")] + common
-        if options.facilitator_pubkey_filename is not None:
-            command += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
-        return command
-    elif method == "http":
-        command = [os.path.join(script_dir, "flashproxy-reg-http")] + common
-        if options.facilitator_url is not None:
-            command += ["-f", options.facilitator_url]
-        return command
-    else:
+    if method not in ("http", "appspot", "email"):
         raise ValueError("Unknown registration method \"%s\"" % method)
+
+    args = []
+
+    # facilitator selection
+    if method == "http":
+        if options.facilitator_url is not None:
+            args += ["-f", options.facilitator_url]
+    else:
+        if options.facilitator_pubkey_filename is not None:
+            args += ["--facilitator-pubkey", options.facilitator_pubkey_filename]
+
+    # options shared by every registration helper.
+    if options.address_family == socket.AF_INET:
+        args += ["-4"]
+    elif options.address_family == socket.AF_INET6:
+        args += ["-6"]
+    if options.transport is not None:
+        args += ["--transport", options.transport]
+    if not options.safe_logging:
+        args += ["--unsafe-logging"]
+
+    prog = os.path.join(script_dir, "flashproxy-reg-%s" % method)
+    return [prog] + args
 
 def pt_escape(s):
     result = []
@@ -1070,69 +996,98 @@ def main():
     global websocket_pending, socks_pending
     global unlinked_locals, unlinked_remotes
 
-    register_addr_spec = None
-    register_methods = []
+    parser = argparse.ArgumentParser(
+        usage="%(prog)s --register [OPTIONS] [LOCAL][:PORT] [REMOTE][:PORT]",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""\
+Wait for connections on a local and a remote port. When any pair of connections
+exists, data is ferried between them until one side is closed.
 
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "46f:hl:r", [
-        "daemon",
-        "external",
-        "facilitator=",
-        "facilitator-pubkey=",
-        "help",
-        "log=",
-        "pidfile=",
-        "register",
-        "register-addr=",
-        "register-methods=",
-        "port-forwarding",
-        "port-forwarding-helper=",
-        "port-forwarding-external=",
-        "transport=",
-        "unsafe-logging",
-    ])
-    for o, a in opts:
-        if o == "-4":
-            options.address_family = socket.AF_INET
-        elif o == "-6":
-            options.address_family = socket.AF_INET6
-        elif o == "--daemon":
-            options.daemonize = True
-        elif o == "--external":
-            options.managed = False
-        elif o == "-f" or o == "--facilitator":
-            options.facilitator_url = a
-        elif o == "--facilitator-pubkey":
-            options.facilitator_pubkey_filename = a
-        elif o == "-h" or o == "--help":
-            usage()
-            sys.exit()
-        elif o == "-l" or o == "--log":
-            options.log_filename = a
-        elif o == "--pidfile":
-            options.pid_filename = a
-        elif o == "-r" or o == "--register":
-            options.register = True
-        elif o == "--register-addr":
-            if register_addr_spec is not None:
-                print >> sys.stderr, "%s: only one --register-addr is allowed." % sys.argv[0]
-                sys.exit(1)
-            options.register = True
-            register_addr_spec = a
-        elif o == "--register-methods":
-            options.register = True
-            register_methods.extend(a.split(","))
-        elif o == "--port-forwarding":
-            options.port_forwarding = True
-        elif o == "--port-forwarding-helper":
-            options.port_forwarding = True
-            options.port_forwarding_helper = a
-        elif o == "--port-forwarding-external":
-            options.port_forwarding = True
-            options.port_forwarding_external = int(a)
-        elif o == "--transport":
-            options.transport = a
-        elif o == "--unsafe-logging":
-            options.safe_logging = False
+The local connection acts as a SOCKS4a proxy, but the host and port in the SOCKS
+request are ignored and the local connection is always linked to a remote
+connection.
+
+By default, runs as a managed proxy: informs a parent Tor process of support for
+the "flashproxy" or "websocket" pluggable transport. In managed mode, the LOCAL
+port is chosen arbitrarily instead of the default; this can be overridden by
+including a LOCAL port in the command. This is the way the program should be
+invoked in a torrc ClientTransportPlugin "exec" line. Use the --external option
+to run as an external proxy that does not interact with Tor.
+
+If any of the --register, --register-addr, or --register-methods options are
+used, then your IP address will be sent to the facilitator so that proxies can
+connect to you. You need to register in some way in order to get any service.
+The --facilitator option allows controlling which facilitator is used; if
+omitted, it uses a public default.""",
+        epilog="""\
+The -4, -6, --unsafe-logging, --transport and --facilitator-pubkey options are
+propagated to the child registration helpers. For backwards compatilibility,
+the --facilitator option is also propagated to the http registration helper.
+If you need to pass more options, use TODO #9976.""")
+    flashproxy.util.add_module_opts(parser)
+    flashproxy.reg.add_module_opts(parser)
+    parser.add_argument("-f", "--facilitator", metavar="URL",
+        help="register with the facilitator at this URL, default %(default)s. "
+        "This is passed to the http registration ONLY.")
+    # specific opts and args
+    parser.add_argument("--daemon",
+        help="daemonize (Unix only).", action="store_true")
+    parser.add_argument("--external",
+        help="be an external (non-managed) proxy - don't interact with Tor "
+        "using environment variables and stdout.", action="store_true")
+    parser.add_argument("-l", "--log", metavar="FILENAME",
+        help="write log to FILENAME (default stderr).")
+    parser.add_argument("--pidfile", metavar="FILENAME",
+        help="write PID to FILENAME after daemonizing.")
+    parser.add_argument("--port-forwarding",
+        help="attempt to forward REMOTE port.", action="store_true")
+    parser.add_argument("--port-forwarding-helper", metavar="PROGRAM",
+        help="use the given PROGRAM to forward ports, default %s. Implies "
+        "--port-forwarding." % DEFAULT_PORT_FORWARDING_HELPER)
+    parser.add_argument("--port-forwarding-external", metavar="PORT",
+        help="forward the external PORT to REMOTE on the local host, default "
+        "same as the REMOTE. Implies --port-forwarding.", type=int)
+    parser.add_argument("-r", "--register",
+        help="register with the facilitator.", action="store_true")
+    parser.add_argument("--register-addr", metavar="ADDR",
+        help="register the given address (in case it differs from REMOTE). "
+        "Implies --register.")
+    parser.add_argument("--register-methods", metavar="METHOD[,METHOD...]",
+        help="register using the given comma-separated list of methods. "
+        "Implies --register. Possible methods are appspot,email,http. Default "
+        "is %s." % ",".join(DEFAULT_REGISTER_METHODS),
+        type=lambda x: None if x is None else x.split(",") if x else [])
+    parser.add_argument("local_addr", metavar="LOCAL:PORT",
+        help="local addr+port to listen on, default all localhost addresses on "
+        "port %s. In managed mode, the port is chosen arbitrarily if not given."
+        % DEFAULT_LOCAL_PORT_EXTERNAL, default="", nargs="?")
+    parser.add_argument("remote_addr", metavar="REMOTE:PORT",
+        help="remote addr+port to listen on, default all addresses on port %s"
+        % DEFAULT_REMOTE_PORT, default="", nargs="?")
+
+    ns = parser.parse_args(sys.argv[1:])
+    # set registration options
+    options.address_family = ns.address_family
+    options.transport = ns.transport
+    options.safe_logging = not ns.unsafe_logging
+    options.facilitator_url = ns.facilitator
+    options.facilitator_pubkey_filename = ns.facilitator_pubkey
+
+    options.managed = not ns.external
+
+    # do registration if any of the register options were set
+    do_register = (ns.register or
+                   ns.register_addr is not None or
+                   ns.register_methods is not None)
+
+    # do port forwarding if any of the port-forwarding options were set
+    do_port_forwarding = (ns.port_forwarding or
+                          ns.port_forwarding_helper is not None or
+                          ns.port_forwarding_external is not None)
+
+    options.log_filename = ns.log
+    options.daemonize = ns.daemon
+    options.pid_filename = ns.pidfile
 
     if options.log_filename:
         options.log_file = open(options.log_filename, "a")
@@ -1152,18 +1107,8 @@ def main():
         default_local_port = DEFAULT_LOCAL_PORT_EXTERNAL
     default_remote_port = DEFAULT_REMOTE_PORT
 
-    if len(args) == 0:
-        local_addr = ("", default_local_port)
-        remote_addr = ("", default_remote_port)
-    elif len(args) == 1:
-        local_addr = parse_addr_spec(args[0], defhost="", defport=default_local_port)
-        remote_addr = ("", default_remote_port)
-    elif len(args) == 2:
-        local_addr = parse_addr_spec(args[0], defhost="", defport=default_local_port)
-        remote_addr = parse_addr_spec(args[1], defhost="", defport=default_remote_port)
-    else:
-        usage(sys.stderr)
-        sys.exit(1)
+    local_addr = parse_addr_spec(ns.local_addr, defhost="", defport=default_local_port)
+    remote_addr = parse_addr_spec(ns.remote_addr, defhost="", defport=default_remote_port)
 
     if local_addr[0]:
         options.local_addrs.append(local_addr)
@@ -1180,10 +1125,19 @@ def main():
         if socket.has_ipv6:
             options.remote_addrs.append(("::", remote_addr[1]))
 
+    # Determine registration info if requested.
+    options.register = do_register
+    register_addr_spec = ns.register_addr
+    register_methods = ns.register_methods
+
     if not register_methods:
         register_methods = DEFAULT_REGISTER_METHODS
     for method in register_methods:
         options.register_commands.append(build_register_command(method))
+
+    options.port_forwarding = do_port_forwarding
+    options.port_forwarding_helper = ns.port_forwarding_helper or DEFAULT_PORT_FORWARDING_HELPER
+    options.port_forwarding_external = ns.port_forwarding_external
 
     # Remote sockets, accepting remote WebSocket connections from proxies.
     remote_listen = []
