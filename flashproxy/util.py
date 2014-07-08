@@ -22,12 +22,15 @@ def add_module_opts(parser):
     def parse_args(namespace):
         options.safe_logging = not namespace.unsafe_logging
         options.address_family = namespace.address_family or socket.AF_UNSPEC
-        if options.address_family != socket.AF_UNSPEC:
-            def getaddrinfo_replacement(host, port, family, *args, **kwargs):
-                return _old_socket_getaddrinfo(host, port, options.address_family, *args, **kwargs)
-            socket.getaddrinfo = getaddrinfo_replacement
         return namespace
     parser.parse_args = lambda *a, **kw: parse_args(old_parse(*a, **kw))
+
+def enforce_address_family(address_family):
+    """Force all future name lookups to use the given address family."""
+    if address_family != socket.AF_UNSPEC:
+        def getaddrinfo_replacement(host, port, family, *args, **kwargs):
+            return _old_socket_getaddrinfo(host, port, options.address_family, *args, **kwargs)
+        socket.getaddrinfo = getaddrinfo_replacement
 
 def safe_str(s):
     """Return "[scrubbed]" if options.safe_logging is true, and s otherwise."""

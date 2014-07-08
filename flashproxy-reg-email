@@ -50,6 +50,7 @@ parser.add_argument("-d", "--debug",
     action="store_true")
 
 options = parser.parse_args(sys.argv[1:])
+flashproxy.util.enforce_address_family(options.address_family)
 
 ensure_M2Crypto()
 

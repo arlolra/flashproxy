@@ -91,6 +91,7 @@ flashproxy.keys.add_module_opts(parser)
 flashproxy.reg.add_registration_args(parser)
 
 options = parser.parse_args(sys.argv[1:])
+flashproxy.util.enforce_address_family(options.address_family)
 remote_addr = options.remote_addr
 
 ensure_M2Crypto()

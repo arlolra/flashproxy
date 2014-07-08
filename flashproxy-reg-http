@@ -27,6 +27,7 @@ parser.add_argument("-f", "--facilitator", metavar="URL",
     default=DEFAULT_FACILITATOR_URL)
 
 options = parser.parse_args(sys.argv[1:])
+flashproxy.util.enforce_address_family(options.address_family)
 
 body = build_reg(options.remote_addr, options.transport)
 try:
