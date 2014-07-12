@@ -60,16 +60,28 @@ Click "Save Changes".
 Enable two-factor authentication. We do this not so much for the
 two-factor, but because it allows creating an independent password that
 is used only for IMAP and does not have access to the web interface of
-Gmail. Click the email address in the upper right, then "Account". Click
-"Security". By "2-step verification" click "Edit". Click through until
-it lets you set up. The phone number you provided when the account was
-created will be automatically filled in. Choose "Text message (SMS)"
-then click "Send code". Get your text message, type it in, and hit
-"Verify". Uncheck "Trust this computer" on the next screen. Finally
-"Confirm". On the following summary page, click "Show backup codes" and
-save the codes to encrypted storage. Future codes can be generated at
-https://www.google.com/accounts/SmsAuthConfig.
+Gmail. Two-factor authentication also enables you to set up a Google
+Authenticator one-time password token and decouple the account from the
+phone number. Click the email address in the upper right, then
+"Account". Click "Security". By "2-step verification" click "Setup".
+Click through until it lets you set up. The phone number you provided
+when the account was created will be automatically filled in. Choose
+"Text message (SMS)" then click "Send code". Get your text message, type
+it in, and hit "Verify". Uncheck "Trust this computer" on the next
+screen. Finally "Confirm".
 
-Still on the 2-step summary page, click "Manage application-specific
-passwords". Enter "IMAP" for the name and click "Generate password".
-Now store this in reg-email.pass, as mentioned in the introduction.
+Now set up a Google Authenticator secret and. Under "Primary way you
+receive codes", click "Switch to app". Choose "BlackBerry" and
+"Continue". Copy the secret key to a file. Use a program such as
+https://github.com/tadeck/onetimepass to generate a verification code
+and click "Verify and Save". Now you can remove the phone number if you
+wish by clicking "Remove" next to it.
+
+Under "Backup codes", click "Print or download", and save the codes to a
+file so you can log in if all else fails.
+
+Still on the 2-step verification page, click the "App-specific
+passwords" tab and the "Manage application-specific passwords" button.
+Under "Select app", select "Custom" and enter "IMAP" for the name. Click
+"Generate". Store the password in reg-email.pass, as mentioned in the
+introduction.
