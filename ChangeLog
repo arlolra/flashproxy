@@ -1,3 +1,4 @@
+Changes in version 1.7
   o Fixed a bug in the browser proxy which caused it to stop accepting
     new connections once it had failed 5 previous connections.
 
