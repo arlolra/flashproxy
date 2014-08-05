@@ -49,6 +49,16 @@ do_start()
 	#   0 if daemon has been started
 	#   1 if daemon was already running
 	#   2 if daemon could not be started
+
+	# Automatically generate a key if one doesn't exist
+	if [ ! -f "$CONFDIR/reg-daemon.key" ]; then
+		echo >&2 "$CONFDIR/reg-daemon.key does not exist; generating it"
+		# prevent race for non-root to open read file handle
+		install -m 600 /dev/null "$CONFDIR/reg-daemon.key"
+		openssl genrsa 2048 | tee "$CONFDIR/reg-daemon.key" | \
+		  openssl rsa -pubout > "$CONFDIR/reg-daemon.pub"
+	fi
+
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \

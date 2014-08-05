@@ -73,10 +73,10 @@ uninstall-local:
 # non-standard directories to ./configure or DESTDIR to make.
 
 pre-install: meta-install-sanity install-user
-post-install: meta-install-sanity install-secrets install-symlinks install-daemon
+post-install: meta-install-sanity install-symlinks install-daemon
 pre-remove: meta-install-sanity remove-daemon remove-symlinks
 post-remove: meta-install-sanity
-pre-purge: pre-remove remove-secrets remove-daemon-data
+pre-purge: pre-remove remove-daemon-data
 post-purge: post-remove remove-user
 
 meta-install-sanity:
@@ -110,17 +110,6 @@ remove-user:
 	    ${fpfacilitatoruser} || \
 	  userdel \
 	    ${fpfacilitatoruser} ; } || true
-
-install-secrets:
-	test -f ${pkgconfdir}/reg-daemon.key || { \
-	  install -m 600 /dev/null ${pkgconfdir}/reg-daemon.key && \
-	  openssl genrsa 2048 | tee ${pkgconfdir}/reg-daemon.key | \
-	  openssl rsa -pubout > ${pkgconfdir}/reg-daemon.pub; }
-
-remove-secrets:
-	for i in reg-daemon.key reg-daemon.pub; do \
-	  rm -f ${pkgconfdir}/$$i; \
-	done
 
 install-symlinks:
 	for i in fp-reg.go app.yaml; do \
@@ -159,14 +148,17 @@ if DO_INITSCRIPTS
 endif
 
 remove-daemon-data:
+	for i in reg-daemon.key reg-daemon.pub; do \
+	  rm -f ${pkgconfdir}/$$i; \
+	done
 if DO_INITSCRIPTS
 	for i in ${initscript_names}; do \
 	  rm -f ${localstatedir}/log/$$i.log* \
-	  rm -f ${localstatedir}/run/$$i.pid \
+	  rm -f ${localstatedir}/run/$$i.pid; \
 	done
 endif
 
 .PHONY: pre-install post-install pre-remove post-remove pre-purge post-purge
-.PHONY: install-user install-secrets install-symlinks install-daemon
-.PHONY: remove-user remove-secrets remove-symlinks remove-daemon
+.PHONY: install-user install-symlinks install-daemon
+.PHONY: remove-user remove-symlinks remove-daemon
 .PHONY: pylint
