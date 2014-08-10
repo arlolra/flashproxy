@@ -11,9 +11,9 @@
         "flashproxy": "main.js"
     },
     "dependencies": {
-        "optimist": "~0.3.5",
-        "xmlhttprequest": "~1.5.0",
-        "ws": "~0.4.27"
+        "optimist": "~0.3.7",
+        "xmlhttprequest": "~1.6.0",
+        "ws": "~0.4.32"
     },
     "repository": {
         "type": "git",
