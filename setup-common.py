@@ -20,8 +20,14 @@ To build/install a self-contained binary distribution of flashproxy-client
 #
 # See discussion on #6810 for more details.
 
+import os
 import subprocess
 import sys
+
+# Prevent setuptools from trying to download dependencies.
+# https://trac.torproject.org/projects/tor/ticket/10847
+os.environ["http_proxy"] = "127.0.0.1:9"
+os.environ["https_proxy"] = "127.0.0.1:9"
 
 from setuptools import setup, find_packages
 

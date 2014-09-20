@@ -4,6 +4,11 @@ from distutils.core import setup
 import os
 import py2exe
 
+# Prevent setuptools from trying to download dependencies.
+# https://trac.torproject.org/projects/tor/ticket/10847
+os.environ["http_proxy"] = "127.0.0.1:9"
+os.environ["https_proxy"] = "127.0.0.1:9"
+
 build_path = os.path.join(os.environ["PY2EXE_TMPDIR"], "build")
 dist_path = os.path.join(os.environ["PY2EXE_TMPDIR"], "dist")
 

@@ -1,3 +1,6 @@
+  o Prevented setup.py scripts from automatically downloading
+    dependencies. Fixes bug 10847.
+
 Changes in version 1.7
   o Made the badge color reflect what's going on when it encounters a
     network error and tries to reconnect. Fixes bug 11400.
