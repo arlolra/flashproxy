@@ -27,4 +27,7 @@ MaxClients 256
 
 	# requires mod_headers
 	Header add Strict-Transport-Security "max-age=15768000"
+
+	# Disable creation of dos-* log files in /tmp.
+	DOSLogDir /dev/null
 </VirtualHost>
