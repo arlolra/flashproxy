@@ -1081,7 +1081,7 @@ function flashproxy_should_disable() {
         var UA_LIST = [
             /\bmobile\b/i,
             /\bandroid\b/i,
-            /\bopera mobi\b/i,
+            /\bopera mobi\b/i
         ];
 
         for (var i = 0; i < UA_LIST.length; i++) {
