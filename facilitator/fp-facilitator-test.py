@@ -209,7 +209,20 @@ class FacilitatorProcTest(unittest.TestCase):
         self.relay_file.seek(0)
         fn = os.path.join(os.path.dirname(__file__), "./fp-facilitator")
         self.process = subprocess.Popen(["python", fn, "-d", "-p", str(FACILITATOR_PORT), "-r", self.relay_file.name, "-l", "/dev/null"])
-        time.sleep(0.1)
+        self.waitForChild()
+
+    def waitForChild(self):
+        """Wait until the child process is responsive. This takes different
+        times on different machines so be flexible in how long to wait. e.g.
+        see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=765156"""
+        for i in xrange(0, 20):
+            try:
+                s = fac.fac_socket(FACILITATOR_ADDR)
+                s.close()
+                return
+            except socket.error as e:
+                time.sleep(0.05)
+        raise e
 
     def tearDown(self):
         ret = self.process.poll()
